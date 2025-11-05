@@ -431,7 +431,7 @@ const InformacionCursoPage = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <button
-                  onClick={() => navegarA('/profesor/cursos/calendario')}
+                  onClick={() => navegarA('/profesor/cursos/informacion/calendario')}
                   className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-lg border border-blue-200 transition-all group"
                 >
                   <CalendarDays className="text-blue-600 group-hover:scale-110 transition-transform" size={24} />
@@ -442,7 +442,7 @@ const InformacionCursoPage = () => {
                 </button>
                 
                 <button
-                  onClick={() => navegarA('/profesor/cursos/foro')}
+                  onClick={() => navegarA('/profesor/cursos/informacion/foro')}
                   className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg border border-purple-200 transition-all group"
                 >
                   <MessageCircle className="text-purple-600 group-hover:scale-110 transition-transform" size={24} />
