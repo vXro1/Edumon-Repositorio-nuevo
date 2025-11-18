@@ -14,19 +14,23 @@ import {
   BookOpen,
   Save,
   X,
-  RefreshCw,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  ClipboardList,
+  Upload,
+  Download,
+  FileText
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-edumon.onrender.com/api';
 
+// Componente de Loading Screen
+import LoadingScreen from '@/components/LoadingScreen';
 const ModulosPage = () => {
   const [cursoId, setCursoId] = useState('');
   const [modulos, setModulos] = useState([]);
   const [curso, setCurso] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState(null);
   const [formData, setFormData] = useState({
     titulo: '',
@@ -35,6 +39,10 @@ const ModulosPage = () => {
   const [errors, setErrors] = useState({});
   const [procesando, setProcesando] = useState(false);
   const [modalConfirmacion, setModalConfirmacion] = useState(null);
+  const [mensajeCarga, setMensajeCarga] = useState('Cargando módulos...');
+  const [file, setFile] = useState(null);
+  const [modalFormulario, setModalFormulario] = useState(false);
+  const [modalCargaMasiva, setModalCargaMasiva] = useState(false);
 
   // Separar módulos por estado (excluyendo eliminados)
   const modulosActivos = modulos.filter(m => m.estado === 'activo' && !m.eliminado);
@@ -65,6 +73,7 @@ const ModulosPage = () => {
     
     try {
       setLoading(true);
+      setMensajeCarga('Cargando información del curso...');
 
       // Cargar información del curso
       const cursoRes = await fetch(`${API_BASE_URL}/cursos/${id}`, {
@@ -78,15 +87,15 @@ const ModulosPage = () => {
       const cursoData = await cursoRes.json();
       setCurso(cursoData.curso || cursoData);
 
-      // Cargar módulos del curso usando el endpoint específico
-      // Agregar parámetro para incluir inactivos
+      setMensajeCarga('Cargando módulos...');
+
+      // Cargar módulos del curso
       const modulosRes = await fetch(`${API_BASE_URL}/modulos/curso/${id}?incluirInactivos=true`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (modulosRes.ok) {
         const modulosData = await modulosRes.json();
-        // Filtrar módulos que no estén eliminados (el backend maneja soft delete)
         const modulosNoEliminados = (modulosData.modulos || modulosData || []).filter(m => !m.eliminado);
         setModulos(modulosNoEliminados);
       } else {
@@ -95,7 +104,12 @@ const ModulosPage = () => {
 
     } catch (error) {
       console.error('Error cargando datos:', error);
-      alert('❌ Error al cargar los datos: ' + error.message);
+      setModalConfirmacion({
+        tipo: 'error',
+        titulo: 'Error al cargar',
+        mensaje: error.message,
+        accion: () => setModalConfirmacion(null)
+      });
     } finally {
       setLoading(false);
     }
@@ -132,7 +146,7 @@ const ModulosPage = () => {
     setEditando(null);
     setFormData({ titulo: '', descripcion: '' });
     setErrors({});
-    setMostrarFormulario(true);
+    setModalFormulario(true);
   };
 
   const handleEditarModulo = (modulo) => {
@@ -142,14 +156,218 @@ const ModulosPage = () => {
       descripcion: modulo.descripcion
     });
     setErrors({});
-    setMostrarFormulario(true);
+    setModalFormulario(true);
   };
 
   const handleCancelar = () => {
-    setMostrarFormulario(false);
+    setModalFormulario(false);
+    setModalCargaMasiva(false);
     setEditando(null);
     setFormData({ titulo: '', descripcion: '' });
     setErrors({});
+    setFile(null);
+  };
+
+  const descargarPlantillaCSV = () => {
+    const headers = ['titulo', 'descripcion', 'estado'];
+    const ejemplos = [
+      ['Prevención de la Violencia Sexual', 'Módulo sobre identificación y prevención de situaciones de riesgo', 'activo'],
+      ['Comunicación Familiar Efectiva', 'Estrategias para mejorar la comunicación entre padres e hijos', 'activo'],
+      ['Desarrollo Socioemocional', 'Herramientas para el desarrollo emocional de los niños', 'inactivo']
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...ejemplos.map(fila => fila.map(campo => `"${campo}"`).join(','))
+    ].join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'plantilla_modulos.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
+        setModalConfirmacion({
+          tipo: 'error',
+          titulo: 'Archivo inválido',
+          mensaje: 'Por favor selecciona un archivo CSV válido',
+          accion: () => setModalConfirmacion(null)
+        });
+        setFile(null);
+        e.target.value = '';
+        return;
+      }
+      setFile(selectedFile);
+    }
+  };
+
+  const subirCSV = async () => {
+    if (!file) {
+      setModalConfirmacion({
+        tipo: 'error',
+        titulo: 'Archivo requerido',
+        mensaje: 'Selecciona un archivo CSV primero',
+        accion: () => setModalConfirmacion(null)
+      });
+      return;
+    }
+
+    try {
+      setProcesando(true);
+      setMensajeCarga('Procesando archivo CSV...');
+      setModalCargaMasiva(false);
+
+      const token = localStorage.getItem('token');
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        try {
+          const text = e.target.result;
+          
+          // Eliminar BOM si existe
+          const cleanText = text.replace(/^\uFEFF/, '');
+          
+          // Dividir en líneas y filtrar vacías
+          const lines = cleanText.split(/\r?\n/).filter(line => line.trim());
+          
+          if (lines.length < 2) {
+            throw new Error('El archivo CSV está vacío o no tiene datos');
+          }
+          
+          // Saltar la primera línea (encabezados)
+          const dataLines = lines.slice(1);
+          
+          let exitosos = 0;
+          let errores = 0;
+          const erroresDetalle = [];
+
+          for (let i = 0; i < dataLines.length; i++) {
+            const line = dataLines[i].trim();
+            if (!line) continue;
+
+            try {
+              // Parsear CSV simple considerando comillas
+              const fields = [];
+              let currentField = '';
+              let inQuotes = false;
+              
+              for (let j = 0; j < line.length; j++) {
+                const char = line[j];
+                
+                if (char === '"') {
+                  inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                  fields.push(currentField.trim());
+                  currentField = '';
+                } else {
+                  currentField += char;
+                }
+              }
+              // Agregar el último campo
+              fields.push(currentField.trim());
+
+              const titulo = fields[0] || '';
+              const descripcion = fields[1] || '';
+              const estado = fields[2] || 'activo';
+
+              if (!titulo || !descripcion) {
+                errores++;
+                erroresDetalle.push(`Línea ${i + 2}: Faltan campos requeridos`);
+                continue;
+              }
+
+              const res = await fetch(`${API_BASE_URL}/modulos`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  titulo: titulo,
+                  descripcion: descripcion,
+                  estado: estado.toLowerCase() === 'inactivo' ? 'inactivo' : 'activo',
+                  cursoId
+                })
+              });
+
+              if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Error al crear módulo');
+              }
+
+              exitosos++;
+            } catch (error) {
+              errores++;
+              if (erroresDetalle.length < 5) {
+                erroresDetalle.push(`Línea ${i + 2}: ${error.message}`);
+              }
+            }
+          }
+
+          setProcesando(false);
+
+          // Mostrar resultado
+          let mensaje = `Procesamiento completado:\n\n✅ ${exitosos} módulos creados exitosamente`;
+          if (errores > 0) {
+            mensaje += `\n❌ ${errores} errores encontrados`;
+            if (erroresDetalle.length > 0) {
+              mensaje += '\n\nPrimeros errores:\n' + erroresDetalle.join('\n');
+            }
+          }
+
+          setModalConfirmacion({
+            tipo: exitosos > 0 ? 'exito' : 'error',
+            titulo: 'Carga masiva completada',
+            mensaje: mensaje,
+            accion: () => setModalConfirmacion(null)
+          });
+
+          setFile(null);
+          cargarDatos(cursoId);
+
+        } catch (error) {
+          setProcesando(false);
+          setModalConfirmacion({
+            tipo: 'error',
+            titulo: 'Error procesando archivo',
+            mensaje: 'Error al procesar el archivo CSV: ' + error.message,
+            accion: () => setModalConfirmacion(null)
+          });
+        }
+      };
+
+      reader.onerror = () => {
+        setProcesando(false);
+        setModalConfirmacion({
+          tipo: 'error',
+          titulo: 'Error',
+          mensaje: 'Error al leer el archivo',
+          accion: () => setModalConfirmacion(null)
+        });
+      };
+
+      reader.readAsText(file, 'UTF-8');
+
+    } catch (error) {
+      setProcesando(false);
+      setModalConfirmacion({
+        tipo: 'error',
+        titulo: 'Error en carga masiva',
+        mensaje: error.message,
+        accion: () => setModalConfirmacion(null)
+      });
+    }
   };
 
   const handleGuardar = async () => {
@@ -158,6 +376,7 @@ const ModulosPage = () => {
     }
 
     setProcesando(true);
+    setMensajeCarga(editando ? 'Actualizando módulo...' : 'Creando módulo...');
     const token = localStorage.getItem('token');
 
     try {
@@ -194,7 +413,7 @@ const ModulosPage = () => {
 
       setModalConfirmacion({
         tipo: 'exito',
-        titulo: '✅ Éxito',
+        titulo: 'Operación exitosa',
         mensaje: `Módulo ${editando ? 'actualizado' : 'creado'} exitosamente`,
         accion: () => setModalConfirmacion(null)
       });
@@ -206,7 +425,7 @@ const ModulosPage = () => {
       console.error('Error guardando módulo:', error);
       setModalConfirmacion({
         tipo: 'error',
-        titulo: '❌ Error',
+        titulo: 'Error',
         mensaje: error.message,
         accion: () => setModalConfirmacion(null)
       });
@@ -221,11 +440,12 @@ const ModulosPage = () => {
     
     setModalConfirmacion({
       tipo: 'advertencia',
-      titulo: '⚠️ Confirmar acción',
+      titulo: 'Confirmar acción',
       mensaje: `¿Seguro que deseas ${accion} este módulo?`,
       accion: async () => {
         setModalConfirmacion(null);
         setProcesando(true);
+        setMensajeCarga(`${accion === 'activar' ? 'Activando' : 'Desactivando'} módulo...`);
         const token = localStorage.getItem('token');
 
         try {
@@ -245,7 +465,7 @@ const ModulosPage = () => {
 
           setModalConfirmacion({
             tipo: 'exito',
-            titulo: '✅ Éxito',
+            titulo: 'Estado actualizado',
             mensaje: `Módulo ${nuevoEstado === 'activo' ? 'activado' : 'desactivado'} exitosamente`,
             accion: () => setModalConfirmacion(null)
           });
@@ -256,7 +476,7 @@ const ModulosPage = () => {
           console.error('Error cambiando estado:', error);
           setModalConfirmacion({
             tipo: 'error',
-            titulo: '❌ Error',
+            titulo: 'Error',
             mensaje: error.message,
             accion: () => setModalConfirmacion(null)
           });
@@ -271,11 +491,12 @@ const ModulosPage = () => {
   const handleEliminar = async (moduloId) => {
     setModalConfirmacion({
       tipo: 'peligro',
-      titulo: '🗑️ Eliminar módulo',
+      titulo: 'Eliminar módulo',
       mensaje: '¿Estás seguro de eliminar este módulo? Esta acción cambiará su estado a inactivo.',
       accion: async () => {
         setModalConfirmacion(null);
         setProcesando(true);
+        setMensajeCarga('Eliminando módulo...');
         const token = localStorage.getItem('token');
 
         try {
@@ -291,7 +512,7 @@ const ModulosPage = () => {
 
           setModalConfirmacion({
             tipo: 'exito',
-            titulo: '✅ Eliminado',
+            titulo: 'Módulo eliminado',
             mensaje: 'Módulo eliminado exitosamente',
             accion: () => setModalConfirmacion(null)
           });
@@ -302,7 +523,7 @@ const ModulosPage = () => {
           console.error('Error eliminando módulo:', error);
           setModalConfirmacion({
             tipo: 'error',
-            titulo: '❌ Error',
+            titulo: 'Error',
             mensaje: error.message,
             accion: () => setModalConfirmacion(null)
           });
@@ -316,41 +537,41 @@ const ModulosPage = () => {
 
   const ModuloCard = ({ modulo, index }) => (
     <div
-      className={`bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition-all ${
-        modulo.estado === 'inactivo' ? 'border-gray-300 bg-gray-50' : 'border-gray-200'
+      className={`bg-white rounded-2xl shadow-md border p-6 hover:shadow-lg transition-all ${
+        modulo.estado === 'inactivo' ? 'border-[#E2E8F0] bg-[#F7FAFC]' : 'border-[#E2E8F0]'
       }`}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <span className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
+            <span className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-base ${
               modulo.estado === 'activo' 
-                ? 'bg-blue-100 text-blue-600' 
-                : 'bg-gray-200 text-gray-600'
+                ? 'bg-[#00B9F0] text-white' 
+                : 'bg-[#E2E8F0] text-[#718096]'
             }`}>
               {index + 1}
             </span>
-            <h3 className={`text-lg font-bold ${
-              modulo.estado === 'activo' ? 'text-gray-800' : 'text-gray-500'
+            <h3 className={`text-xl font-bold flex-1 min-w-0 ${
+              modulo.estado === 'activo' ? 'text-[#2D3748]' : 'text-[#718096]'
             }`}>
               {modulo.titulo}
             </h3>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
+              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${
                 modulo.estado === 'activo'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-600'
+                  ? 'bg-[#7AD107]/10 text-[#7AD107] border border-[#7AD107]/20'
+                  : 'bg-[#718096]/10 text-[#718096] border border-[#718096]/20'
               }`}
             >
-              {modulo.estado === 'activo' ? '✓ Activo' : '○ Inactivo'}
+              {modulo.estado === 'activo' ? 'Activo' : 'Inactivo'}
             </span>
           </div>
-          <p className={`text-sm leading-relaxed ${
-            modulo.estado === 'activo' ? 'text-gray-600' : 'text-gray-500'
+          <p className={`text-base leading-relaxed mb-3 ${
+            modulo.estado === 'activo' ? 'text-[#718096]' : 'text-[#718096]/70'
           }`}>
             {modulo.descripcion}
           </p>
-          <p className="text-gray-400 text-xs mt-2">
+          <p className="text-[#718096] text-sm">
             Creado: {new Date(modulo.fechaCreacion).toLocaleDateString('es-ES', {
               year: 'numeric',
               month: 'long',
@@ -359,111 +580,129 @@ const ModulosPage = () => {
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => handleEditarModulo(modulo)}
-            className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors"
+            className="w-10 h-10 bg-[#00B9F0] hover:bg-[#01C9F4] rounded-lg transition-all flex items-center justify-center shadow-sm"
             title="Editar módulo"
           >
-            <Edit2 size={16} />
+            <Edit2 className="w-4 h-4 text-white" />
           </button>
           <button
             onClick={() => handleCambiarEstado(modulo._id, modulo.estado)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`w-10 h-10 rounded-lg transition-all flex items-center justify-center shadow-sm ${
               modulo.estado === 'activo'
-                ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-600'
-                : 'bg-green-100 hover:bg-green-200 text-green-600'
+                ? 'bg-[#FA6D00] hover:bg-[#FA6D00]/90'
+                : 'bg-[#7AD107] hover:bg-[#7AD107]/90'
             }`}
             title={modulo.estado === 'activo' ? 'Desactivar' : 'Activar'}
           >
-            {modulo.estado === 'activo' ? <PowerOff size={16} /> : <Power size={16} />}
+            {modulo.estado === 'activo' ? 
+              <PowerOff className="w-4 h-4 text-white" /> : 
+              <Power className="w-4 h-4 text-white" />
+            }
           </button>
           <button
             onClick={() => handleEliminar(modulo._id)}
-            className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
+            className="w-10 h-10 bg-[#FE327B] hover:bg-[#FE327B]/90 rounded-lg transition-all flex items-center justify-center shadow-sm"
             title="Eliminar módulo"
           >
-            <Trash2 size={16} />
+            <Trash2 className="w-4 h-4 text-white" />
           </button>
         </div>
       </div>
     </div>
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando módulos...</p>
-        </div>
-      </div>
-    );
+  if (loading || (procesando && !modalConfirmacion)) {
+    return <LoadingScreen mensaje={mensajeCarga} />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="bg-white shadow-sm border-b border-[#E2E8F0] sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => window.history.back()}
-                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-2 text-[#718096] hover:text-[#00B9F0] transition-colors"
               >
-                <ArrowLeft size={18} />
-                <span className="font-medium text-sm">Volver</span>
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center text-white hover:bg-[#01C9F4] transition-colors">
+                  <ArrowLeft size={18} className="text-white" />
+                </div>
+                <span className="font-semibold text-sm hidden sm:inline">Volver</span>
               </button>
-              <div className="h-5 w-px bg-gray-300"></div>
+              <div className="h-6 w-px bg-[#E2E8F0]"></div>
               <div className="flex items-center gap-2">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <BookOpen className="text-blue-600" size={20} />
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center">
+                  <BookOpen size={18} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-gray-800">
-                    Módulos: {curso?.nombre || 'Cargando...'}
+                  <h1 className="text-base sm:text-lg font-bold text-[#2D3748]">
+                    Módulos del Curso
                   </h1>
-                  <p className="text-xs text-gray-500">
-                    Administración de contenidos educativos
+                  <p className="text-xs text-[#718096] hidden sm:block">
+                    {curso?.nombre || 'Cargando...'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => window.location.href = '/profesor'}
-                className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#E2E8F0] hover:bg-[#718096] text-[#2D3748] hover:text-white rounded-lg transition-all text-sm font-medium"
               >
-                <Home size={16} />
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <Home size={16} />
+                </div>
                 <span className="hidden sm:inline">Inicio</span>
               </button>
               <button
                 onClick={() => window.location.href = `/profesor/cursos/crear/registropadres?cursoId=${cursoId}`}
-                className="flex items-center gap-2 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors text-sm"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#7AD107] hover:bg-[#7AD107]/90 text-white rounded-lg transition-all text-sm font-medium"
               >
-                <Users size={16} />
-                <span className="hidden sm:inline">Registrar Padres</span>
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <Users size={16} className="text-white" />
+                </div>
+                <span className="hidden sm:inline">Registrar</span>
+              </button>
+              <button
+                onClick={() => window.location.href = `/profesor/cursos/crear/modulos/tareas?cursoId=${cursoId}`}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#FE327B] hover:bg-[#FE327B]/90 text-white rounded-lg transition-all text-sm font-medium"
+              >
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <ClipboardList size={16} className="text-white" />
+                </div>
+                <span className="hidden sm:inline">Tareas</span>
               </button>
               <button
                 onClick={() => {
                   if (modulosActivos.length === 0) {
-                    alert('⚠️ Debes tener al menos un módulo activo antes de ver la información del curso');
+                    setModalConfirmacion({
+                      tipo: 'advertencia',
+                      titulo: 'Módulos requeridos',
+                      mensaje: 'Debes tener al menos un módulo activo antes de ver la información del curso',
+                      accion: () => setModalConfirmacion(null)
+                    });
                     return;
                   }
                   window.location.href = `/profesor/cursos/informacion?cursoId=${cursoId}`;
                 }}
                 disabled={modulosActivos.length === 0}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all text-sm font-medium ${
                   modulosActivos.length === 0
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                    ? 'bg-[#E2E8F0] text-[#718096] cursor-not-allowed'
+                    : 'bg-[#01C9F4] hover:bg-[#00B9F0] text-white'
                 }`}
                 title={modulosActivos.length === 0 ? 'Debes tener al menos un módulo activo' : 'Ver información del curso'}
               >
-                <Info size={16} />
-                <span className="hidden sm:inline">Información</span>
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <Info size={16} />
+                </div>
+                <span className="hidden sm:inline">Info</span>
               </button>
             </div>
           </div>
@@ -471,139 +710,57 @@ const ModulosPage = () => {
       </div>
 
       {/* Contenido principal */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Botón crear nuevo módulo */}
-        {!mostrarFormulario && (
-          <div className="mb-6">
-            <button
-              onClick={handleNuevoModulo}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold"
-            >
-              <Plus size={20} />
-              Crear Nuevo Módulo
-            </button>
-          </div>
-        )}
-
-        {/* Formulario de creación/edición */}
-        {mostrarFormulario && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 mb-6 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                {editando ? '✏️ Editar Módulo' : '➕ Nuevo Módulo'}
-              </h2>
-              <button
-                onClick={handleCancelar}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="titulo" className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Título del Módulo <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="titulo"
-                  name="titulo"
-                  type="text"
-                  value={formData.titulo}
-                  onChange={handleInputChange}
-                  placeholder="Ej: Prevención de la Violencia Sexual"
-                  maxLength={200}
-                  className={`w-full border-2 ${
-                    errors.titulo ? 'border-red-500' : 'border-gray-300'
-                  } rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition`}
-                />
-                <div className="flex justify-between mt-1">
-                  {errors.titulo ? (
-                    <p className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.titulo}
-                    </p>
-                  ) : (
-                    <p className="text-gray-400 text-xs">Mínimo 3 caracteres</p>
-                  )}
-                  <p className="text-gray-400 text-xs">{formData.titulo.length}/200</p>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Banner del curso */}
+        {curso && (
+          <div className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-6 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#00B9F0] flex items-center justify-center">
+                <BookOpen size={24} className="text-white" />
               </div>
-
-              <div>
-                <label htmlFor="descripcion" className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Descripción del Módulo <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="descripcion"
-                  name="descripcion"
-                  value={formData.descripcion}
-                  onChange={handleInputChange}
-                  placeholder="Describe el contenido y objetivos del módulo educativo..."
-                  rows="5"
-                  maxLength={1000}
-                  className={`w-full border-2 ${
-                    errors.descripcion ? 'border-red-500' : 'border-gray-300'
-                  } rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition`}
-                />
-                <div className="flex justify-between mt-1">
-                  {errors.descripcion ? (
-                    <p className="text-red-500 text-xs flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.descripcion}
-                    </p>
-                  ) : (
-                    <p className="text-gray-400 text-xs">Mínimo 10 caracteres</p>
-                  )}
-                  <p className="text-gray-400 text-xs">{formData.descripcion.length}/1000</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={handleGuardar}
-                  disabled={procesando}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {procesando ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={18} />
-                      {editando ? 'Actualizar Módulo' : 'Crear Módulo'}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleCancelar}
-                  disabled={procesando}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancelar
-                </button>
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-[#2D3748]">{curso.nombre}</h2>
+                <p className="text-[#718096]">{curso.descripcion}</p>
               </div>
             </div>
           </div>
         )}
+
+        {/* Botones de acción */}
+        <div className="mb-6 flex gap-3 flex-wrap">
+          <button
+            onClick={handleNuevoModulo}
+            className="flex items-center gap-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all font-semibold"
+          >
+            <Plus size={20} className="text-white" />
+            Crear Nuevo Módulo
+          </button>
+          <button
+            onClick={() => setModalCargaMasiva(true)}
+            className="flex items-center gap-2 bg-[#7AD107] hover:bg-[#7AD107]/90 text-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all font-semibold"
+          >
+            <Upload size={20} className="text-white" />
+            Carga Masiva CSV
+          </button>
+        </div>
 
         {/* Lista de módulos */}
         {modulos.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <BookOpen className="mx-auto text-gray-300 mb-4" size={48} />
-            <p className="text-gray-500 text-lg font-medium mb-2">
+          <div className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-[#E2E8F0] flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="text-[#718096]" size={40} />
+            </div>
+            <p className="text-[#2D3748] text-xl font-bold mb-2">
               No hay módulos creados
             </p>
-            <p className="text-gray-400 text-sm mb-6">
+            <p className="text-[#718096] text-base mb-6">
               Crea tu primer módulo educativo para comenzar
             </p>
             <button
               onClick={handleNuevoModulo}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl"
+              className="inline-flex items-center gap-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg font-semibold"
             >
-              <Plus size={18} />
+              <Plus size={20} className="text-white" />
               Crear Módulo
             </button>
           </div>
@@ -611,19 +768,25 @@ const ModulosPage = () => {
           <div className="space-y-8">
             {/* Módulos Activos */}
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 h-px bg-green-200"></div>
-                <h2 className="text-lg font-bold text-green-700 flex items-center gap-2">
-                  <Power size={20} />
-                  Módulos Activos ({modulosActivos.length})
-                </h2>
-                <div className="flex-1 h-px bg-green-200"></div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex-1 h-px bg-[#7AD107]/20"></div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-[#7AD107]/10 rounded-full border border-[#7AD107]/20">
+                  <div className="w-6 h-6 rounded-full bg-[#7AD107] flex items-center justify-center">
+                    <Power size={14} className="text-white" />
+                  </div>
+                  <h2 className="text-lg font-bold text-[#7AD107]">
+                    Módulos Activos ({modulosActivos.length})
+                  </h2>
+                </div>
+                <div className="flex-1 h-px bg-[#7AD107]/20"></div>
               </div>
 
               {modulosActivos.length === 0 ? (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-                  <CheckCircle className="mx-auto text-green-400 mb-2" size={32} />
-                  <p className="text-green-700 text-sm font-medium">
+                <div className="bg-[#7AD107]/5 border border-[#7AD107]/20 rounded-xl p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-[#7AD107]/10 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="text-[#7AD107]" size={32} />
+                  </div>
+                  <p className="text-[#7AD107] text-base font-semibold">
                     No hay módulos activos. Los módulos activos son visibles para los padres de familia.
                   </p>
                 </div>
@@ -639,13 +802,17 @@ const ModulosPage = () => {
             {/* Módulos Inactivos */}
             {modulosInactivos.length > 0 && (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex-1 h-px bg-gray-300"></div>
-                  <h2 className="text-lg font-bold text-gray-600 flex items-center gap-2">
-                    <PowerOff size={20} />
-                    Módulos Inactivos ({modulosInactivos.length})
-                  </h2>
-                  <div className="flex-1 h-px bg-gray-300"></div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex-1 h-px bg-[#718096]/20"></div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[#718096]/10 rounded-full border border-[#718096]/20">
+                    <div className="w-6 h-6 rounded-full bg-[#718096] flex items-center justify-center">
+                      <PowerOff size={14} className="text-white" />
+                    </div>
+                    <h2 className="text-lg font-bold text-[#718096]">
+                      Módulos Inactivos ({modulosInactivos.length})
+                    </h2>
+                  </div>
+                  <div className="flex-1 h-px bg-[#718096]/20"></div>
                 </div>
 
                 <div className="grid gap-4">
@@ -659,78 +826,308 @@ const ModulosPage = () => {
         )}
 
         {/* Información adicional */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-5">
-          <div className="flex items-start gap-3">
-            <Info className="text-blue-600 flex-shrink-0 mt-0.5" size={20} />
+        <div className="mt-8 bg-[#00B9F0]/5 border border-[#00B9F0]/20 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center flex-shrink-0">
+              <Info className="text-white" size={20} />
+            </div>
             <div className="flex-1">
-              <p className="text-sm text-blue-800 leading-relaxed">
-                <span className="font-semibold">ℹ️ Información importante:</span>
+              <p className="text-base text-[#2D3748] font-semibold mb-3">
+                Información importante
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-blue-700">
-                <li>• <strong>Activos:</strong> Visibles para los padres de familia</li>
-                <li>• <strong>Inactivos:</strong> Ocultos temporalmente, se pueden reactivar con el botón de encendido</li>
-                <li>• <strong>Eliminar:</strong> Cambia el módulo a estado inactivo (soft delete)</li>
+              <ul className="space-y-2 text-sm text-[#718096]">
+                <li className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full bg-[#7AD107] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <CheckCircle size={12} className="text-white" />
+                  </div>
+                  <span><strong className="text-[#2D3748]">Activos:</strong> Visibles para los padres de familia</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full bg-[#718096] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <PowerOff size={12} className="text-white" />
+                  </div>
+                  <span><strong className="text-[#2D3748]">Inactivos:</strong> Ocultos temporalmente, se pueden reactivar</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full bg-[#FE327B] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Trash2 size={12} className="text-white" />
+                  </div>
+                  <span><strong className="text-[#2D3748]">Eliminar:</strong> Cambia el módulo a estado inactivo (soft delete)</span>
+                </li>
               </ul>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal de confirmación con blur */}
-      {modalConfirmacion && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 p-4"
-          onClick={() => !modalConfirmacion.cancelar && setModalConfirmacion(null)}
-        >
-          <div
-            className="bg-white/95 backdrop-blur-xl p-6 sm:p-8 rounded-2xl shadow-2xl max-w-md w-full animate-scale-in border border-white/20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-6">
-              <div className={`w-14 h-14 ${
-                modalConfirmacion.tipo === 'peligro' ? 'bg-red-100' : 
-                modalConfirmacion.tipo === 'exito' ? 'bg-green-100' : 
-                modalConfirmacion.tipo === 'error' ? 'bg-red-100' :
-                'bg-yellow-100'
-              } rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
-                {modalConfirmacion.tipo === 'peligro' ? (
-                  <Trash2 className="w-7 h-7 text-red-600" />
-                ) : modalConfirmacion.tipo === 'exito' ? (
-                  <CheckCircle className="w-7 h-7 text-green-600" />
-                ) : modalConfirmacion.tipo === 'error' ? (
-                  <AlertCircle className="w-7 h-7 text-red-600" />
-                ) : (
-                  <AlertCircle className="w-7 h-7 text-yellow-600" />
-                )}
+      {/* Modal de Formulario Crear/Editar */}
+      {modalFormulario && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del Modal */}
+            <div className="sticky top-0 bg-[#00B9F0] text-white p-6 rounded-t-2xl">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    {editando ? <Edit2 className="w-5 h-5 text-white" /> : <Plus className="w-5 h-5 text-white" />}
+                  </div>
+                  <h2 className="text-2xl font-bold">
+                    {editando ? 'Editar Módulo' : 'Nuevo Módulo'}
+                  </h2>
+                </div>
+                <button
+                  onClick={handleCancelar}
+                  className="w-10 h-10 hover:bg-white/20 rounded-lg transition-all flex items-center justify-center"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
               </div>
-              <h2 className="font-bold text-2xl text-gray-800 mb-3">{modalConfirmacion.titulo}</h2>
-              <p className="text-gray-600 whitespace-pre-line leading-relaxed">{modalConfirmacion.mensaje}</p>
             </div>
 
-            <div className="flex gap-3">
+            {/* Contenido del Modal */}
+            <div className="p-6 space-y-6">
+              <div>
+                <label htmlFor="titulo" className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  Título del Módulo <span className="text-[#FE327B]">*</span>
+                </label>
+                <input
+                  id="titulo"
+                  name="titulo"
+                  type="text"
+                  value={formData.titulo}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Prevención de la Violencia Sexual"
+                  maxLength={200}
+                  className={`w-full border-2 ${
+                    errors.titulo ? 'border-[#FE327B]' : 'border-[#E2E8F0]'
+                  } rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] transition-all`}
+                />
+                <div className="flex justify-between mt-2">
+                  {errors.titulo ? (
+                    <p className="text-[#FE327B] text-xs flex items-center gap-1">
+                      <AlertCircle size={12} />
+                      {errors.titulo}
+                    </p>
+                  ) : (
+                    <p className="text-[#718096] text-xs">Mínimo 3 caracteres</p>
+                  )}
+                  <p className="text-[#718096] text-xs">{formData.titulo.length}/200</p>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="descripcion" className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  Descripción del Módulo <span className="text-[#FE327B]">*</span>
+                </label>
+                <textarea
+                  id="descripcion"
+                  name="descripcion"
+                  value={formData.descripcion}
+                  onChange={handleInputChange}
+                  placeholder="Describe el contenido y objetivos del módulo educativo..."
+                  rows="5"
+                  maxLength={1000}
+                  className={`w-full border-2 ${
+                    errors.descripcion ? 'border-[#FE327B]' : 'border-[#E2E8F0]'
+                  } rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] resize-none transition-all`}
+                />
+                <div className="flex justify-between mt-2">
+                  {errors.descripcion ? (
+                    <p className="text-[#FE327B] text-xs flex items-center gap-1">
+                      <AlertCircle size={12} />
+                      {errors.descripcion}
+                    </p>
+                  ) : (
+                    <p className="text-[#718096] text-xs">Mínimo 10 caracteres</p>
+                  )}
+                  <p className="text-[#718096] text-xs">{formData.descripcion.length}/1000</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="bg-[#F7FAFC] p-4 rounded-b-2xl border-t border-[#E2E8F0] flex gap-3">
+              <button
+                onClick={handleCancelar}
+                disabled={procesando}
+                className="flex-1 px-4 py-3 border-2 border-[#E2E8F0] rounded-xl font-semibold text-[#2D3748] hover:bg-[#F7FAFC] transition-all disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGuardar}
+                disabled={procesando}
+                className="flex-1 flex items-center justify-center gap-2 bg-[#7AD107] hover:bg-[#7AD107]/90 text-white py-3 rounded-xl font-semibold transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {procesando ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5 text-white" />
+                    {editando ? 'Actualizar' : 'Crear'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Carga Masiva */}
+      {modalCargaMasiva && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del Modal */}
+            <div className="sticky top-0 bg-[#7AD107] text-white p-6 rounded-t-2xl">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <Upload className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold">Carga Masiva de Módulos</h2>
+                </div>
+                <button
+                  onClick={handleCancelar}
+                  className="w-10 h-10 hover:bg-white/20 rounded-lg transition-all flex items-center justify-center"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-6 space-y-6">
+              {/* Paso 1: Descargar plantilla */}
+              <div className="p-5 bg-[#01C9F4]/5 rounded-xl border border-[#01C9F4]/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-[#01C9F4] flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  <h4 className="font-semibold text-[#2D3748] text-lg">Paso 1: Descarga la plantilla</h4>
+                </div>
+                <p className="text-sm text-[#718096] mb-4">
+                  Formato: <span className="font-mono bg-[#E2E8F0] px-2 py-1 rounded">titulo, descripcion, estado</span>
+                </p>
+                <p className="text-xs text-[#718096] mb-4">
+                  El campo <strong>estado</strong> puede ser: <span className="font-mono bg-[#7AD107]/10 text-[#7AD107] px-2 py-0.5 rounded">activo</span> o <span className="font-mono bg-[#718096]/10 text-[#718096] px-2 py-0.5 rounded">inactivo</span>
+                </p>
+                <button
+                  onClick={descargarPlantillaCSV}
+                  className="w-full bg-[#01C9F4] hover:bg-[#00B9F0] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md"
+                >
+                  <Download className="w-5 h-5 text-white" />
+                  Descargar Plantilla CSV
+                </button>
+              </div>
+
+              {/* Paso 2: Subir archivo */}
+              <div>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-3">
+                  Paso 2: Sube tu archivo CSV
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="w-full border-2 border-dashed border-[#E2E8F0] p-4 rounded-xl cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#7AD107] file:text-white hover:file:bg-[#7AD107]/90 transition-all hover:border-[#00B9F0]"
+                />
+                {file && (
+                  <div className="mt-3 p-3 bg-[#7AD107]/10 border border-[#7AD107]/20 rounded-lg flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#7AD107] flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-sm text-[#7AD107] font-medium">{file.name}</span>
+                  </div>
+                )}
+                <p className="text-xs text-[#718096] mt-2">
+                  Todos los módulos se crearán asociados a este curso
+                </p>
+              </div>
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="bg-[#F7FAFC] p-4 rounded-b-2xl border-t border-[#E2E8F0] flex gap-3">
+              <button
+                onClick={handleCancelar}
+                className="flex-1 px-4 py-3 border-2 border-[#E2E8F0] rounded-xl font-semibold text-[#2D3748] hover:bg-[#F7FAFC] transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={subirCSV}
+                disabled={!file}
+                className="flex-1 flex items-center justify-center gap-2 bg-[#7AD107] hover:bg-[#7AD107]/90 text-white py-3 rounded-xl font-semibold transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Upload className="w-5 h-5 text-white" />
+                Procesar CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación */}
+      {modalConfirmacion && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            {/* Header del Modal */}
+            <div className={`p-6 rounded-t-2xl text-white ${
+              modalConfirmacion.tipo === 'peligro' ? 'bg-[#FE327B]' : 
+              modalConfirmacion.tipo === 'exito' ? 'bg-[#7AD107]' : 
+              modalConfirmacion.tipo === 'error' ? 'bg-[#FE327B]' :
+              'bg-[#FA6D00]'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  {modalConfirmacion.tipo === 'peligro' ? (
+                    <Trash2 className="w-6 h-6 text-white" />
+                  ) : modalConfirmacion.tipo === 'exito' ? (
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  ) : modalConfirmacion.tipo === 'error' ? (
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-white" />
+                  )}
+                </div>
+                <h2 className="text-2xl font-bold">{modalConfirmacion.titulo}</h2>
+              </div>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-6">
+              <p className="text-[#2D3748] text-base leading-relaxed whitespace-pre-line">
+                {modalConfirmacion.mensaje}
+              </p>
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="bg-[#F7FAFC] p-4 rounded-b-2xl border-t border-[#E2E8F0]">
               {modalConfirmacion.cancelar ? (
-                <>
+                <div className="flex gap-3">
                   <button
                     onClick={() => setModalConfirmacion(null)}
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+                    className="flex-1 px-4 py-3 border-2 border-[#E2E8F0] rounded-xl font-semibold text-[#2D3748] hover:bg-[#F7FAFC] transition-all"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={modalConfirmacion.accion}
-                    className={`flex-1 px-4 py-3 ${
+                    className={`flex-1 px-4 py-3 rounded-xl font-semibold text-white transition-all shadow-md ${
                       modalConfirmacion.tipo === 'peligro' 
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800' 
-                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-                    } text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all`}
+                        ? 'bg-[#FE327B] hover:bg-[#FE327B]/90' 
+                        : 'bg-[#00B9F0] hover:bg-[#01C9F4]'
+                    }`}
                   >
                     Confirmar
                   </button>
-                </>
+                </div>
               ) : (
                 <button
                   onClick={modalConfirmacion.accion || (() => setModalConfirmacion(null))}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                  className="w-full px-4 py-3 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-xl font-semibold transition-all shadow-md"
                 >
                   Aceptar
                 </button>
@@ -739,22 +1136,6 @@ const ModulosPage = () => {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes scale-in {
-          from {
-            transform: scale(0.9);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        .animate-scale-in {
-          animation: scale-in 0.2s ease-out;
-        }
-      `}</style>
     </div>
   );
 };

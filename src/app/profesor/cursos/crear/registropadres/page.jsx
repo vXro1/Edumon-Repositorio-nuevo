@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Upload, UserPlus, Download, FileText, Trash2, Search, X, Home, BookOpen, Loader2, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, UserPlus, Download, FileText, Trash2, Search, X, Home, BookOpen, Loader2, ArrowLeft, CheckCircle, AlertCircle, Info, Eye, Mail, Phone, Badge } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-edumon.onrender.com/api';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://backend-edumon.onrender.com';
+
+// Componente de Loading Screen
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function RegistroPadresPage() {
   const [cursoId, setCursoId] = useState('');
@@ -16,6 +20,7 @@ export default function RegistroPadresPage() {
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(false);
   const [mensajeCarga, setMensajeCarga] = useState('Procesando...');
+  const [modalParticipante, setModalParticipante] = useState(null);
 
   const [form, setForm] = useState({
     nombre: '',
@@ -62,6 +67,12 @@ export default function RegistroPadresPage() {
     return `+57${telefonoLimpio}`;
   };
 
+  const getAvatarUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${BACKEND_URL}${url}`;
+  };
+
   const obtenerCurso = async (id) => {
     try {
       setCargando(true);
@@ -74,9 +85,47 @@ export default function RegistroPadresPage() {
       if (!res.ok) throw new Error('No se pudo obtener el curso');
       const data = await res.json();
       setCurso(data.curso);
-      const padresData = data.curso.participantes.filter(p => p.usuarioId.rol === 'padre');
-      setPadres(padresData);
-      setPadresFiltrados(padresData);
+      
+      // Obtener participantes con fotos
+      try {
+        const participantesRes = await fetch(`${API_BASE_URL}/cursos/${id}/participantes`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (participantesRes.ok) {
+          const participantesData = await participantesRes.json();
+          const participantesFormateados = participantesData.participantes || participantesData;
+          
+          const participantesMapeados = participantesFormateados
+            .filter(p => p.rol === 'padre')
+            .map(p => ({
+              _id: p._id,
+              etiqueta: p.etiqueta,
+              usuarioId: {
+                _id: p._id,
+                nombre: p.nombre,
+                apellido: p.apellido,
+                correo: p.correo,
+                telefono: p.telefono,
+                rol: p.rol,
+                estado: p.estado,
+                fotoPerfilUrl: p.fotoPerfilUrl,
+                contraseña: p.contraseña
+              }
+            }));
+
+          setPadres(participantesMapeados);
+          setPadresFiltrados(participantesMapeados);
+        } else {
+          const padresData = data.curso.participantes.filter(p => p.usuarioId.rol === 'padre');
+          setPadres(padresData);
+          setPadresFiltrados(padresData);
+        }
+      } catch (error) {
+        const padresData = data.curso.participantes.filter(p => p.usuarioId.rol === 'padre');
+        setPadres(padresData);
+        setPadresFiltrados(padresData);
+      }
     } catch (error) {
       setError('Error al cargar el curso');
     } finally {
@@ -135,6 +184,7 @@ export default function RegistroPadresPage() {
           setModal({
             titulo: 'Padre ya registrado en otro curso',
             mensaje: `${form.nombre} ${form.apellido} ya pertenece a otro curso. ¿Desea inscribirlo en este curso también?`,
+            tipo: 'advertencia',
             accion: () => confirmarInscripcion()
           });
         } else {
@@ -322,6 +372,10 @@ export default function RegistroPadresPage() {
     window.location.href = '/profesor';
   };
 
+  const handleNavigarInfo = () => {
+    window.location.href = `/profesor/cursos/informacion?cursoId=${cursoId}`;
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
@@ -336,58 +390,94 @@ export default function RegistroPadresPage() {
     }
   };
 
+  if (cargando && !modal) {
+    return <LoadingScreen mensaje={mensajeCarga} />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => window.history.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <ArrowLeft size={18} />
-              <span className="font-medium text-sm">Volver</span>
-            </button>
-            
-            <div className="flex gap-2">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-[#E2E8F0] sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.history.back()}
+                className="flex items-center gap-2 text-[#718096] hover:text-[#00B9F0] transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center text-white hover:bg-[#01C9F4] transition-colors">
+                  <ArrowLeft size={18} />
+                </div>
+                <span className="font-semibold text-sm hidden sm:inline">Volver</span>
+              </button>
+              <div className="h-6 w-px bg-[#E2E8F0]"></div>
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center text-white">
+                  <UserPlus size={18} />
+                </div>
+                <h1 className="text-base sm:text-lg font-bold text-[#2D3748]">Registro de Padres</h1>
+              </div>
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => window.location.href = '/profesor'}
-                className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-xl transition-all shadow-sm"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#E2E8F0] hover:bg-[#718096] text-[#2D3748] hover:text-white rounded-lg transition-all text-sm font-medium"
               >
-                <Home size={16} />
-                <span className="hidden sm:inline text-sm">Inicio</span>
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <Home size={16} className="text-white" />
+                </div>
+                <span className="hidden sm:inline">Inicio</span>
+              </button>
+              <button
+                onClick={handleNavigarInfo}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#01C9F4] hover:bg-[#00B9F0] text-white rounded-lg transition-all text-sm font-medium"
+              >
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <Info size={16} className="text-white" />
+                </div>
+                <span className="hidden sm:inline">Info</span>
               </button>
               <button
                 onClick={() => window.location.href = `/profesor/cursos/crear/modulos?cursoId=${cursoId}`}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-lg transition-all text-sm font-medium"
               >
-                <BookOpen size={16} />
-                <span className="hidden sm:inline text-sm">Módulos</span>
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <BookOpen size={16} className="text-white" />
+                </div>
+                <span className="hidden sm:inline">Módulos</span>
               </button>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Registro de Padres de Familia
-            </h1>
-            {curso && (
-              <p className="text-gray-600 flex items-center gap-2">
-                <BookOpen size={18} />
-                <span>Curso: <strong>{curso.nombre}</strong></span>
-              </p>
-            )}
-          </div>
         </div>
+      </div>
+
+      {/* Contenido */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Banner del curso */}
+        {curso && (
+          <div className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-6 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#00B9F0] flex items-center justify-center text-white">
+                <BookOpen size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-[#2D3748]">{curso.nombre}</h2>
+                <p className="text-[#718096]">{curso.descripcion}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+          <div className="bg-[#FE327B]/10 border-l-4 border-[#FE327B] p-4 rounded-lg mb-6">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              <span className="text-red-700">{error}</span>
-              <button onClick={() => setError('')} className="ml-auto text-red-500">
+              <div className="w-6 h-6 rounded-full bg-[#FE327B] flex items-center justify-center">
+                <AlertCircle className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-[#FE327B] font-medium flex-1">{error}</span>
+              <button onClick={() => setError('')} className="text-[#FE327B] hover:bg-[#FE327B]/10 rounded-lg p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -396,107 +486,109 @@ export default function RegistroPadresPage() {
 
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Registro Individual */}
-          <div className="bg-white p-6 rounded-xl shadow-md">
+          <div className="bg-white p-6 rounded-2xl shadow-md border border-[#E2E8F0]">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <UserPlus className="w-5 h-5 text-blue-600" />
+              <div className="w-12 h-12 rounded-full bg-[#00B9F0] flex items-center justify-center">
+                <UserPlus className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-800">Registro Individual</h3>
-                <p className="text-sm text-gray-500">Agrega un padre a la vez</p>
+                <h3 className="text-xl font-bold text-[#2D3748]">Registro Individual</h3>
+                <p className="text-sm text-[#718096]">Agrega un padre a la vez</p>
               </div>
             </div>
             
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                  <label className="block text-sm font-semibold text-[#2D3748] mb-2">Nombre</label>
                   <input
                     placeholder="María"
                     value={form.nombre}
                     onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                    className="w-full border-2 border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] outline-none transition-all"
                     disabled={cargando}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                  <label className="block text-sm font-semibold text-[#2D3748] mb-2">Apellido</label>
                   <input
                     placeholder="González"
                     value={form.apellido}
                     onChange={(e) => setForm({ ...form, apellido: e.target.value })}
-                    className="w-full border-2 border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] outline-none transition-all"
                     disabled={cargando}
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono (WhatsApp)</label>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">Teléfono (WhatsApp)</label>
                 <input
                   placeholder="3001234567"
                   value={form.telefono}
                   onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                  className="w-full border-2 border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] outline-none transition-all"
                   disabled={cargando}
                 />
-                <p className="text-xs text-gray-500 mt-1">Se enviará notificación por WhatsApp</p>
+                <p className="text-xs text-[#718096] mt-2">Se enviará notificación por WhatsApp</p>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cédula (contraseña)</label>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">Cédula (contraseña)</label>
                 <input
                   type="password"
                   placeholder="Ingrese cédula"
                   value={form.cedula}
                   onChange={(e) => setForm({ ...form, cedula: e.target.value })}
-                  className="w-full border-2 border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] outline-none transition-all"
                   disabled={cargando}
                 />
-                <p className="text-xs text-gray-500 mt-1">Se usará como contraseña de acceso</p>
+                <p className="text-xs text-[#718096] mt-2">Se usará como contraseña de acceso</p>
               </div>
             </div>
             
             <button 
               onClick={() => registrarPadre(false)}
               disabled={cargando || !form.nombre || !form.apellido || !form.telefono || !form.cedula}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="mt-6 w-full bg-[#00B9F0] hover:bg-[#01C9F4] text-white py-3 rounded-lg font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
             >
-              {cargando ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
+              {cargando ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <UserPlus className="w-5 h-5 text-white" />}
               {cargando ? 'Registrando...' : 'Registrar Padre'}
             </button>
           </div>
 
           {/* Registro Masivo */}
-          <div className="bg-white p-6 rounded-xl shadow-md">
+          <div className="bg-white p-6 rounded-2xl shadow-md border border-[#E2E8F0]">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Upload className="w-5 h-5 text-green-600" />
+              <div className="w-12 h-12 rounded-full bg-[#7AD107] flex items-center justify-center">
+                <Upload className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-800">Registro Masivo</h3>
-                <p className="text-sm text-gray-500">Carga múltiples padres con CSV</p>
+                <h3 className="text-xl font-bold text-[#2D3748]">Registro Masivo</h3>
+                <p className="text-sm text-[#718096]">Carga múltiples padres con CSV</p>
               </div>
             </div>
 
-            <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="flex items-center gap-2 mb-2">
-                <FileText className="w-5 h-5 text-purple-600" />
-                <h4 className="font-semibold text-gray-800">Paso 1: Descarga plantilla</h4>
+            <div className="mb-4 p-4 bg-[#01C9F4]/5 rounded-lg border border-[#01C9F4]/20">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-[#01C9F4] flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <h4 className="font-semibold text-[#2D3748]">Paso 1: Descarga plantilla</h4>
               </div>
-              <p className="text-sm text-gray-600 mb-3">Formato: nombre, apellido, telefono, cedula</p>
+              <p className="text-sm text-[#718096] mb-3">Formato: nombre, apellido, telefono, cedula</p>
               <button
                 onClick={descargarPlantillaCSV}
                 disabled={cargando}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2"
+                className="w-full bg-[#01C9F4] hover:bg-[#00B9F0] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all shadow-md"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-5 h-5 text-white" />
                 Descargar Plantilla
               </button>
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                 Paso 2: Sube tu archivo CSV
               </label>
               <input
@@ -504,15 +596,17 @@ export default function RegistroPadresPage() {
                 accept=".csv"
                 onChange={handleFileChange}
                 disabled={cargando}
-                className="w-full border-2 border-dashed border-gray-300 p-3 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-100 file:text-green-700 hover:file:bg-green-200"
+                className="w-full border-2 border-dashed border-[#E2E8F0] p-4 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#7AD107] file:text-white hover:file:bg-[#7AD107]/90 transition-all hover:border-[#00B9F0]"
               />
               {file && (
-                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-700">{file.name}</span>
+                <div className="mt-3 p-3 bg-[#7AD107]/10 border border-[#7AD107]/20 rounded-lg flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-[#7AD107] flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm text-[#7AD107] font-medium">{file.name}</span>
                 </div>
               )}
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-[#718096] mt-2">
                 Se enviará notificación WhatsApp a cada padre registrado
               </p>
             </div>
@@ -520,152 +614,334 @@ export default function RegistroPadresPage() {
             <button 
               onClick={subirCSV}
               disabled={cargando || !file}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-[#7AD107] hover:bg-[#7AD107]/90 text-white py-3 rounded-lg font-semibold shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
             >
-              {cargando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+              {cargando ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Upload className="w-5 h-5 text-white" />}
               {cargando ? 'Procesando...' : 'Subir y Registrar'}
             </button>
           </div>
         </div>
 
         {/* Lista de padres */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-sm">{padresFiltrados.length}</span>
+        <div className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-6">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#00B9F0] flex items-center justify-center">
+                <span className="text-white font-bold text-lg">{padresFiltrados.length}</span>
               </div>
-              Padres Registrados
-            </h3>
+              <h3 className="text-xl font-bold text-[#2D3748]">Padres Registrados</h3>
+            </div>
             
             {padres.length > 0 && (
               <button
                 onClick={eliminarTodosPadres}
                 disabled={cargando}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm"
+                className="flex items-center gap-2 bg-[#FE327B] hover:bg-[#FE327B]/90 text-white px-4 py-2.5 rounded-lg font-semibold text-sm shadow-md transition-all"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 text-white" />
                 Eliminar Todos
               </button>
             )}
           </div>
 
           {padres.length > 0 && (
-            <div className="mb-4 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="mb-6 relative">
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                <Search className="text-[#718096] w-5 h-5" />
+              </div>
               <input
                 type="text"
                 placeholder="Buscar por nombre, teléfono o correo..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full pl-12 pr-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] outline-none transition-all"
               />
             </div>
           )}
 
           {padresFiltrados.length === 0 ? (
-            <div className="text-center py-12">
-              <UserPlus className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">
+            <div className="text-center py-16">
+              <div className="w-20 h-20 rounded-full bg-[#E2E8F0] flex items-center justify-center mx-auto mb-4">
+                <UserPlus className="w-10 h-10 text-[#718096]" />
+              </div>
+              <p className="text-[#718096] text-lg font-medium">
                 {busqueda ? 'No se encontraron resultados' : 'Aún no hay padres registrados'}
               </p>
+              {!busqueda && (
+                <p className="text-[#718096] text-sm mt-2">Comienza registrando padres de familia</p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {padresFiltrados.map((p) => (
-                <div
-                  key={p.usuarioId._id}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-gray-800 mb-1">
-                        {p.usuarioId.nombre} {p.usuarioId.apellido}
-                      </h4>
-                      <div className="text-sm text-gray-600 space-y-0.5">
-                        <p>Teléfono: {p.usuarioId.telefono}</p>
-                        <p>Correo: {p.usuarioId.correo}</p>
+              {padresFiltrados.map((p) => {
+                const avatarUrl = getAvatarUrl(p.usuarioId?.fotoPerfilUrl);
+                const inicial = (p.usuarioId?.nombre?.[0] || 'U').toUpperCase();
+
+                return (
+                  <div
+                    key={p.usuarioId._id}
+                    className="p-4 bg-[#F7FAFC] rounded-xl border border-[#E2E8F0] hover:border-[#00B9F0]/30 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={p.usuarioId?.nombre}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-[#00B9F0]/20"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white font-bold text-lg"
+                          style={{ display: avatarUrl ? 'none' : 'flex' }}
+                        >
+                          {inicial}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-[#2D3748] text-lg truncate">
+                            {p.usuarioId.nombre} {p.usuarioId.apellido}
+                          </h4>
+                          <div className="text-sm text-[#718096] space-y-1">
+                            <p className="flex items-center gap-2 truncate">
+                              <Phone size={14} />
+                              {p.usuarioId.telefono}
+                            </p>
+                            <p className="flex items-center gap-2 truncate">
+                              <Mail size={14} />
+                              {p.usuarioId.correo}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setModalParticipante(p)}
+                          className="w-10 h-10 bg-[#00B9F0] hover:bg-[#01C9F4] rounded-lg flex items-center justify-center transition-all shadow-sm"
+                          title="Ver información"
+                        >
+                          <Eye className="w-4 h-4 text-white" />
+                        </button>
+                        <button
+                          onClick={() => eliminarPadre(p.usuarioId._id, `${p.usuarioId.nombre} ${p.usuarioId.apellido}`)}
+                          disabled={cargando}
+                          className="w-10 h-10 bg-[#FE327B] hover:bg-[#FE327B]/90 rounded-lg flex items-center justify-center transition-all shadow-sm"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4 text-white" />
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={() => eliminarPadre(p.usuarioId._id, `${p.usuarioId.nombre} ${p.usuarioId.apellido}`)}
-                      disabled={cargando}
-                      className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Eliminar
-                    </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Modal de carga con fondo transparente */}
-        {cargando && (
-          <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full">
-              <div className="flex flex-col items-center">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-                <h3 className="text-lg font-bold text-gray-800 mb-2">Procesando</h3>
-                <p className="text-gray-600 text-center text-sm">{mensajeCarga}</p>
+        {/* Modal de Información del Participante */}
+        {modalParticipante && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              {/* Header del Modal */}
+              <div className="sticky top-0 bg-[#00B9F0] text-white p-6 rounded-t-2xl">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <Eye className="w-5 h-5 text-white" />
+                      </div>
+                      <h2 className="text-2xl font-bold">Información del Padre</h2>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setModalParticipante(null)}
+                    className="w-10 h-10 hover:bg-white/20 rounded-lg transition-all flex items-center justify-center"
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Contenido del Modal */}
+              <div className="p-6 space-y-6">
+                {/* Avatar y nombre */}
+                <div className="flex flex-col items-center text-center space-y-4">
+                  {(() => {
+                    const avatarUrl = getAvatarUrl(modalParticipante.usuarioId?.fotoPerfilUrl);
+                    const inicial = (modalParticipante.usuarioId?.nombre?.[0] || 'U').toUpperCase();
+
+                    return avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={`Avatar de ${modalParticipante.usuarioId?.nombre || 'Usuario'}`}
+                        className="w-24 h-24 rounded-full object-cover border-4 border-[#00B9F0]/20 shadow-lg"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white font-bold text-4xl shadow-lg">
+                        {inicial}
+                      </div>
+                    );
+                  })()}
+
+                  <div>
+                    <p className="text-2xl font-bold text-[#2D3748] mb-2">
+                      {modalParticipante.usuarioId?.nombre || 'Sin nombre'}{' '}
+                      {modalParticipante.usuarioId?.apellido || ''}
+                    </p>
+                    <span className="px-4 py-2 rounded-full text-sm font-semibold bg-[#7AD107]/10 text-[#7AD107] border border-[#7AD107]/20">
+                      Padre de Familia
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#E2E8F0]"></div>
+
+                {/* Información detallada */}
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#00B9F0]/10 flex items-center justify-center flex-shrink-0">
+                      <Badge className="text-[#00B9F0] w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-[#718096] font-semibold mb-1">ID</p>
+                      <p className="text-sm text-[#2D3748] font-medium break-all">
+                        {modalParticipante.usuarioId?._id || modalParticipante._id}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#7AD107]/10 flex items-center justify-center flex-shrink-0">
+                      <Mail className="text-[#7AD107] w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-[#718096] font-semibold mb-1">Correo</p>
+                      <p className="text-sm text-[#2D3748] font-medium break-all">
+                        {modalParticipante.usuarioId?.correo || 'Sin correo'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {modalParticipante.usuarioId?.telefono && (
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-[#01C9F4]/10 flex items-center justify-center flex-shrink-0">
+                        <Phone className="text-[#01C9F4] w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-[#718096] font-semibold mb-1">Teléfono</p>
+                        <p className="text-sm text-[#2D3748] font-medium">
+                          {modalParticipante.usuarioId.telefono}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer del Modal */}
+              <div className="bg-[#F7FAFC] p-4 rounded-b-2xl border-t border-[#E2E8F0] flex justify-end">
+                <button
+                  onClick={() => setModalParticipante(null)}
+                  className="px-6 py-3 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-lg transition-all font-semibold shadow-md"
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Modales con fondo transparente */}
+        {/* Modales de Confirmación */}
         {modal && (
-          <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50 p-4">
-            <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full">
-              <div className="mb-6">
-                <h2 className="font-bold text-xl text-gray-800 mb-3">{modal.titulo}</h2>
-                <p className="text-gray-600 whitespace-pre-line">{modal.mensaje}</p>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+              {/* Header del Modal */}
+              <div className={`p-6 rounded-t-2xl text-white ${
+                modal.tipo === 'exito' ? 'bg-[#7AD107]' :
+                modal.tipo === 'peligro' ? 'bg-[#FE327B]' :
+                modal.tipo === 'advertencia' ? 'bg-[#FA6D00]' :
+                'bg-[#00B9F0]'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                    {modal.tipo === 'exito' ? (
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    ) : modal.tipo === 'peligro' ? (
+                      <AlertCircle className="w-6 h-6 text-white" />
+                    ) : modal.tipo === 'advertencia' ? (
+                      <AlertCircle className="w-6 h-6 text-white" />
+                    ) : (
+                      <Info className="w-6 h-6 text-white" />
+                    )}
+                  </div>
+                  <h2 className="text-2xl font-bold">{modal.titulo}</h2>
+                </div>
               </div>
 
-              {modal.mostrarNavegacion ? (
-                <div className="space-y-2">
-                  <button
-                    onClick={handleNavigarModulos}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold"
-                  >
-                    <BookOpen className="w-5 h-5" />
-                    Continuar a Módulos
-                  </button>
-                  <button
-                    onClick={handleNavigarInicio}
-                    className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-semibold"
-                  >
-                    <Home className="w-5 h-5" />
-                    Ir al Inicio
-                  </button>
-                </div>
-              ) : modal.accion ? (
-                <div className="flex gap-3">
+              {/* Contenido del Modal */}
+              <div className="p-6">
+                <p className="text-[#2D3748] text-base leading-relaxed whitespace-pre-line">
+                  {modal.mensaje}
+                </p>
+              </div>
+
+              {/* Footer del Modal */}
+              <div className="bg-[#F7FAFC] p-4 rounded-b-2xl border-t border-[#E2E8F0]">
+                {modal.mostrarNavegacion ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleNavigarModulos}
+                      className="w-full flex items-center justify-center gap-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white px-4 py-3 rounded-lg font-semibold transition-all shadow-md"
+                    >
+                      <BookOpen className="w-5 h-5 text-white" />
+                      Continuar a Módulos
+                    </button>
+                    <button
+                      onClick={handleNavigarInicio}
+                      className="w-full flex items-center justify-center gap-2 bg-[#E2E8F0] hover:bg-[#718096] text-[#2D3748] hover:text-white px-4 py-3 rounded-lg font-semibold transition-all"
+                    >
+                      <Home className="w-5 h-5" />
+                      Ir al Inicio
+                    </button>
+                  </div>
+                ) : modal.accion ? (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setModal(null)}
+                      className="flex-1 px-4 py-3 border-2 border-[#E2E8F0] rounded-lg font-semibold text-[#2D3748] hover:bg-[#F7FAFC] transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={modal.accion}
+                      className={`flex-1 px-4 py-3 rounded-lg font-semibold text-white transition-all shadow-md ${
+                        modal.tipo === 'peligro' ? 'bg-[#FE327B] hover:bg-[#FE327B]/90' : 
+                        modal.tipo === 'advertencia' ? 'bg-[#FA6D00] hover:bg-[#FA6D00]/90' :
+                        'bg-[#00B9F0] hover:bg-[#01C9F4]'
+                      }`}
+                    >
+                      Confirmar
+                    </button>
+                  </div>
+                ) : (
                   <button
                     onClick={() => setModal(null)}
-                    className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
+                    className="w-full px-4 py-3 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-lg font-semibold transition-all shadow-md"
                   >
-                    Cancelar
+                    Aceptar
                   </button>
-                  <button
-                    onClick={modal.accion}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-white ${
-                      modal.tipo === 'peligro' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                  >
-                    Confirmar
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setModal(null)}
-                  className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
-                >
-                  Aceptar
-                </button>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}

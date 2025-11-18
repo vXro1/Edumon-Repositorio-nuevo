@@ -3,10 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
-import { Plus, Edit2, LogOut, BookOpen, Trash2, X, Upload, Loader2, Users, User, Camera } from 'lucide-react';
+import { 
+  Plus, Edit2, LogOut, BookOpen, Trash2, X, Upload, Loader2, 
+  Users, User, Camera, CheckCircle2, AlertCircle, Save, 
+  Calendar, FileText, MessageSquare, Settings
+} from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-edumon.onrender.com/api';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://backend-edumon.onrender.com';
+
+import LoadingScreen from '@/components/LoadingScreen'; // Ajusta la ruta según tu estructura
+
 
 const ProfesorPage = () => {
   const router = useRouter();
@@ -19,6 +26,8 @@ const ProfesorPage = () => {
   const [cursoEditando, setCursoEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(null);
+  const [error, setError] = useState('');
+  const [exitoMensaje, setExitoMensaje] = useState('');
   const [formData, setFormData] = useState({ nombre: '', descripcion: '', imagen: null });
   const [perfilData, setPerfilData] = useState({ nombre: '', apellido: '', telefono: '', foto: null });
   const [preview, setPreview] = useState(null);
@@ -53,7 +62,6 @@ const ProfesorPage = () => {
       setProfesorNombre(nombre);
       setUsuarioData(userData);
       
-      // Cargar perfil completo del usuario
       fetchPerfil(token);
       fetchCursos(docenteId, token);
       
@@ -65,14 +73,20 @@ const ProfesorPage = () => {
     }
 
     return () => {
-      if (preview && preview.startsWith('blob:')) {
-        URL.revokeObjectURL(preview);
-      }
-      if (perfilPreview && perfilPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(perfilPreview);
-      }
+      if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+      if (perfilPreview && perfilPreview.startsWith('blob:')) URL.revokeObjectURL(perfilPreview);
     };
   }, [router]);
+
+  const mostrarError = (mensaje) => {
+    setError(mensaje);
+    setTimeout(() => setError(''), 5000);
+  };
+
+  const mostrarExito = (mensaje) => {
+    setExitoMensaje(mensaje);
+    setTimeout(() => setExitoMensaje(''), 3000);
+  };
 
   const fetchPerfil = async (token) => {
     try {
@@ -80,21 +94,15 @@ const ProfesorPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) {
-        throw new Error('Error al obtener perfil');
-      }
+      if (!res.ok) throw new Error('Error al obtener perfil');
 
       const data = await res.json();
       const usuario = data.usuario || data;
       
       setUsuarioData(usuario);
       setProfesorNombre(usuario.nombre || 'Profesor');
-      
-      // Actualizar localStorage
       localStorage.setItem('user', JSON.stringify(usuario));
-      if (usuario.nombre) {
-        localStorage.setItem('nombre', usuario.nombre);
-      }
+      if (usuario.nombre) localStorage.setItem('nombre', usuario.nombre);
       
     } catch (error) {
       console.error('Error cargando perfil:', error);
@@ -107,28 +115,26 @@ const ProfesorPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) {
-        throw new Error('Error al obtener cursos');
-      }
+      if (!res.ok) throw new Error('Error al obtener cursos');
 
       const data = await res.json();
       setGrados(data.cursos || []);
     } catch (error) {
       console.error('Error cargando cursos:', error);
-      alert('No se pudieron cargar los cursos.');
+      mostrarError('No se pudieron cargar los cursos');
     } finally {
       setLoading(false);
     }
   };
 
   const getImageUrl = (url) => {
-    if (!url) return 'https://static.wixstatic.com/media/1e4262_f8607b744443480ea6f88169e63b56c2~mv2.jpg/v1/fill/w_1000,h_540,al_c,q_85,usm_0.66_1.00_0.01/1e4262_f8607b744443480ea6f88169e63b56c2~mv2.jpg';
+    if (!url) return 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&h=400&fit=crop';
     if (url.startsWith('http')) return url;
     return `${BACKEND_URL}${url}`;
   };
 
   const getFotoPerfilUrl = (url) => {
-    if (!url) return `https://ui-avatars.com/api/?name=${encodeURIComponent(profesorNombre)}&background=4A90E2&color=fff&size=200`;
+    if (!url) return null;
     if (url.startsWith('http')) return url;
     return `${BACKEND_URL}${url}`;
   };
@@ -152,9 +158,7 @@ const ProfesorPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!cursoRes.ok) {
-        throw new Error('Error al obtener información del curso');
-      }
+      if (!cursoRes.ok) throw new Error('Error al obtener información del curso');
 
       const cursoData = await cursoRes.json();
       const curso = cursoData.curso || cursoData;
@@ -178,10 +182,7 @@ const ProfesorPage = () => {
         if (modulosRes.ok) {
           const modulosData = await modulosRes.json();
           const modulos = modulosData.modulos || modulosData;
-          
-          if (Array.isArray(modulos)) {
-            tieneModulos = modulos.length > 0;
-          }
+          if (Array.isArray(modulos)) tieneModulos = modulos.length > 0;
         }
       } catch (error) {
         console.error('Error al verificar módulos:', error);
@@ -201,7 +202,7 @@ const ProfesorPage = () => {
 
     } catch (error) {
       console.error('Error en validación:', error);
-      alert('Hubo un error al verificar el curso. Redirigiendo a registro de padres...');
+      mostrarError('Error al verificar el curso');
       router.push(`/profesor/cursos/crear/registropadres?cursoId=${cursoId}`);
     }
   };
@@ -234,9 +235,7 @@ const ProfesorPage = () => {
   };
 
   const handleCerrarModal = () => {
-    if (preview && preview.startsWith('blob:')) {
-      URL.revokeObjectURL(preview);
-    }
+    if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
     setModalEditar(false);
     setCursoEditando(null);
     setFormData({ nombre: '', descripcion: '', imagen: null });
@@ -245,9 +244,7 @@ const ProfesorPage = () => {
   };
 
   const handleCerrarModalPerfil = () => {
-    if (perfilPreview && perfilPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(perfilPreview);
-    }
+    if (perfilPreview && perfilPreview.startsWith('blob:')) URL.revokeObjectURL(perfilPreview);
     setModalPerfil(false);
     setPerfilData({ nombre: '', apellido: '', telefono: '', foto: null });
     setPerfilPreview(null);
@@ -269,13 +266,13 @@ const ProfesorPage = () => {
     if (file) {
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
-        alert('Por favor selecciona una imagen válida (JPG, PNG, GIF, WEBP)');
+        mostrarError('Por favor selecciona una imagen válida');
         e.target.value = '';
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen no debe superar los 5MB');
+        mostrarError('La imagen no debe superar los 5MB');
         e.target.value = '';
         return;
       }
@@ -283,9 +280,7 @@ const ProfesorPage = () => {
       setFormData((prev) => ({ ...prev, imagen: file }));
       setImagenCambiada(true);
       
-      if (preview && preview.startsWith('blob:')) {
-        URL.revokeObjectURL(preview);
-      }
+      if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
       setPreview(URL.createObjectURL(file));
     }
   };
@@ -295,13 +290,13 @@ const ProfesorPage = () => {
     if (file) {
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
-        alert('Por favor selecciona una imagen válida (JPG, PNG, GIF, WEBP)');
+        mostrarError('Por favor selecciona una imagen válida');
         e.target.value = '';
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen no debe superar los 5MB');
+        mostrarError('La imagen no debe superar los 5MB');
         e.target.value = '';
         return;
       }
@@ -309,26 +304,20 @@ const ProfesorPage = () => {
       setPerfilData((prev) => ({ ...prev, foto: file }));
       setFotoCambiada(true);
       
-      if (perfilPreview && perfilPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(perfilPreview);
-      }
+      if (perfilPreview && perfilPreview.startsWith('blob:')) URL.revokeObjectURL(perfilPreview);
       setPerfilPreview(URL.createObjectURL(file));
     }
   };
 
   const handleRemoveImage = () => {
-    if (preview && preview.startsWith('blob:')) {
-      URL.revokeObjectURL(preview);
-    }
+    if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
     setFormData((prev) => ({ ...prev, imagen: null }));
     setPreview(null);
     setImagenCambiada(true);
   };
 
   const handleRemoveFotoPerfil = () => {
-    if (perfilPreview && perfilPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(perfilPreview);
-    }
+    if (perfilPreview && perfilPreview.startsWith('blob:')) URL.revokeObjectURL(perfilPreview);
     setPerfilData((prev) => ({ ...prev, foto: null }));
     setPerfilPreview(null);
     setFotoCambiada(true);
@@ -336,7 +325,7 @@ const ProfesorPage = () => {
 
   const handleGuardarPerfil = async () => {
     if (!perfilData.nombre.trim()) {
-      alert("⚠️ El nombre es requerido");
+      mostrarError('El nombre es requerido');
       return;
     }
 
@@ -344,13 +333,12 @@ const ProfesorPage = () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("⚠️ Sesión expirada. Por favor inicia sesión nuevamente.");
+      mostrarError('Sesión expirada');
       router.push('/auth/login');
       return;
     }
 
     try {
-      // Actualizar datos básicos del usuario
       const updateData = {
         nombre: perfilData.nombre.trim(),
         apellido: perfilData.apellido.trim(),
@@ -374,39 +362,33 @@ const ProfesorPage = () => {
       const datosActualizados = await resUsuario.json();
       const usuarioActualizado = datosActualizados.usuario || datosActualizados;
 
-      // Si cambió la foto, actualizar la foto de perfil
       if (fotoCambiada && perfilData.foto instanceof File) {
         const formDataFoto = new FormData();
         formDataFoto.append('foto', perfilData.foto);
 
         const resFoto = await fetch(`${API_BASE_URL}/users/me/foto-perfil`, {
           method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
+          headers: { Authorization: `Bearer ${token}` },
           body: formDataFoto
         });
 
-        if (!resFoto.ok) {
-          console.error('Error al actualizar foto, pero datos guardados');
-        } else {
+        if (resFoto.ok) {
           const dataFoto = await resFoto.json();
           usuarioActualizado.fotoPerfilUrl = dataFoto.usuario?.fotoPerfilUrl || dataFoto.fotoPerfilUrl;
         }
       }
 
-      // Actualizar el estado local y localStorage
       setUsuarioData(usuarioActualizado);
       setProfesorNombre(usuarioActualizado.nombre);
       localStorage.setItem('user', JSON.stringify(usuarioActualizado));
       localStorage.setItem('nombre', usuarioActualizado.nombre);
 
-      alert("✅ Perfil actualizado correctamente");
+      mostrarExito('Perfil actualizado correctamente');
       handleCerrarModalPerfil();
 
     } catch (error) {
       console.error("Error al actualizar perfil:", error);
-      alert(`❌ ${error.message}`);
+      mostrarError(error.message);
     } finally {
       setGuardando(false);
     }
@@ -414,12 +396,12 @@ const ProfesorPage = () => {
 
   const handleGuardar = async () => {
     if (!formData.nombre.trim() || !formData.descripcion.trim()) {
-      alert("⚠️ El nombre y la descripción son requeridos");
+      mostrarError('El nombre y la descripción son requeridos');
       return;
     }
 
     if (!cursoEditando) {
-      alert("⚠️ No se ha seleccionado un curso para editar");
+      mostrarError('No se ha seleccionado un curso para editar');
       return;
     }
 
@@ -427,7 +409,7 @@ const ProfesorPage = () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("⚠️ Sesión expirada. Por favor inicia sesión nuevamente.");
+      mostrarError('Sesión expirada');
       router.push('/auth/login');
       return;
     }
@@ -443,9 +425,7 @@ const ProfesorPage = () => {
 
       const res = await fetch(`${API_BASE_URL}/cursos/${cursoEditando._id}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: dataToSend,
       });
 
@@ -455,12 +435,12 @@ const ProfesorPage = () => {
         if (res.status === 401) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          alert("⚠️ Sesión expirada. Por favor inicia sesión nuevamente.");
+          mostrarError('Sesión expirada');
           router.push('/auth/login');
           return;
         }
 
-        const errorMessage = errorData?.message || errorData?.error || `Error del servidor (Status: ${res.status})`;
+        const errorMessage = errorData?.message || errorData?.error || `Error del servidor`;
         throw new Error(errorMessage);
       }
 
@@ -480,12 +460,12 @@ const ProfesorPage = () => {
         )
       );
 
-      alert("✅ Curso actualizado correctamente");
+      mostrarExito('Curso actualizado correctamente');
       handleCerrarModal();
 
     } catch (error) {
       console.error("Error al actualizar curso:", error);
-      alert(`❌ ${error.message}`);
+      mostrarError(error.message);
     } finally {
       setGuardando(false);
     }
@@ -511,110 +491,137 @@ const ProfesorPage = () => {
       }
 
       setGrados((prev) => prev.filter((curso) => curso._id !== id));
-      alert('✅ Curso eliminado correctamente');
+      mostrarExito('Curso eliminado correctamente');
     } catch (error) {
       console.error('Error eliminando curso:', error);
-      alert(`❌ No se pudo eliminar el curso: ${error.message}`);
+      mostrarError(`No se pudo eliminar el curso: ${error.message}`);
     } finally {
       setEliminando(null);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col justify-center items-center h-screen bg-white">
-        <Loader2 className="animate-spin mb-4" size={48} style={{ color: 'var(--azul-cielo)' }} />
-        <p className="text-lg font-medium" style={{ color: 'var(--gris-oscuro)' }}>Cargando cursos...</p>
-      </div>
-    );
+    return <LoadingScreen mensaje="Cargando tus cursos..." />;
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8" style={{ backgroundColor: 'var(--gris-ultra-claro)' }}>
-      {/* Header */}
-      <header className="flex justify-between items-center flex-wrap gap-4 mb-8 bg-white shadow-sm p-6 rounded-2xl border" style={{ borderColor: 'var(--gris-claro)' }}>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={handleAbrirPerfil}
-            className="relative group"
-          >
-            <img 
-              src={getFotoPerfilUrl(usuarioData?.fotoPerfilUrl)} 
-              alt="Perfil"
-              className="w-16 h-16 rounded-full object-cover border-2 transition-all group-hover:border-4"
-              style={{ borderColor: 'var(--azul-cielo)' }}
-            />
-            <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Camera className="text-white" size={20} />
+    <div className="min-h-screen bg-white">
+      {/* Notificaciones flotantes */}
+      {error && (
+        <div className="fixed top-4 right-4 z-50 max-w-md animate-slide-in">
+          <div className="bg-white border-l-4 border-[#FA6D00] rounded-xl shadow-lg p-4 flex items-start gap-3">
+            <AlertCircle className="text-[#FA6D00] flex-shrink-0" size={20} />
+            <div className="flex-1">
+              <p className="text-[#2D3748] font-medium text-sm">{error}</p>
             </div>
-          </button>
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-1" style={{ color: 'var(--negro)' }}>
-              Hola, {profesorNombre}
-            </h1>
-            <p className="text-sm sm:text-base" style={{ color: 'var(--gris-medio)' }}>
-              Gestiona tus cursos y contenido educativo
-            </p>
+            <button onClick={() => setError('')} className="text-[#718096] hover:text-[#2D3748]">
+              <X size={18} />
+            </button>
           </div>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleAbrirPerfil}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
-            style={{ backgroundColor: 'var(--gris-medio)', color: 'white' }}
-            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-            onMouseLeave={(e) => e.target.style.opacity = '1'}
-          >
-            <User size={20} /> Mi Perfil
-          </button>
-          <button
-            onClick={handleCrearCurso}
-            className="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
-            style={{ backgroundColor: 'var(--azul-cielo)' }}
-            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-            onMouseLeave={(e) => e.target.style.opacity = '1'}
-          >
-            <Plus size={20} /> Nuevo Curso
-          </button>
-          <button
-            onClick={handleCerrarSesion}
-            className="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
-            style={{ backgroundColor: 'var(--rojo-error)' }}
-            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-            onMouseLeave={(e) => e.target.style.opacity = '1'}
-          >
-            <LogOut size={20} /> Salir
-          </button>
+      )}
+
+      {exitoMensaje && (
+        <div className="fixed top-4 right-4 z-50 max-w-md animate-slide-in">
+          <div className="bg-white border-l-4 border-[#7AD107] rounded-xl shadow-lg p-4 flex items-start gap-3">
+            <CheckCircle2 className="text-[#7AD107] flex-shrink-0" size={20} />
+            <div className="flex-1">
+              <p className="text-[#2D3748] font-medium text-sm">{exitoMensaje}</p>
+            </div>
+            <button onClick={() => setExitoMensaje('')} className="text-[#718096] hover:text-[#2D3748]">
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-[#E2E8F0] sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={handleAbrirPerfil}
+                className="relative group"
+              >
+                {getFotoPerfilUrl(usuarioData?.fotoPerfilUrl) ? (
+                  <img 
+                    src={getFotoPerfilUrl(usuarioData?.fotoPerfilUrl)} 
+                    alt="Perfil"
+                    className="w-16 h-16 rounded-full object-cover border-3 border-[#00B9F0] transition-all group-hover:border-[#01C9F4]"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white font-bold text-xl border-3 border-[#00B9F0]">
+                    {profesorNombre.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="text-white" size={20} />
+                </div>
+              </button>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-[#2D3748]">
+                  Hola, {profesorNombre}
+                </h1>
+                <p className="text-sm sm:text-base text-[#718096] mt-1">
+                  Gestiona tus cursos y contenido educativo
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={handleAbrirPerfil}
+                className="w-10 h-10 bg-[#718096] hover:bg-[#2D3748] rounded-lg transition-all flex items-center justify-center"
+                title="Mi Perfil"
+              >
+                <User size={20} className="text-white" />
+              </button>
+              <button
+                onClick={handleCrearCurso}
+                className="flex items-center gap-2 px-4 py-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-lg transition-all shadow-md hover:shadow-lg font-medium"
+              >
+                <Plus size={20} className="text-white" />
+                <span className="hidden sm:inline">Nuevo Curso</span>
+              </button>
+              <button
+                onClick={handleCerrarSesion}
+                className="w-10 h-10 bg-[#FA6D00] hover:bg-[#FA6D00]/90 rounded-lg transition-all flex items-center justify-center"
+                title="Cerrar Sesión"
+              >
+                <LogOut size={20} className="text-white" />
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Lista de cursos */}
-      <section>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--azul-cielo)' }}>
-            <BookOpen className="text-white" size={24} />
+          <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center">
+            <BookOpen className="text-white" size={20} />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--negro)' }}>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#2D3748]">
             Mis Cursos
-            <span className="ml-3 text-lg font-normal" style={{ color: 'var(--gris-medio)' }}>
-              ({grados.length})
-            </span>
           </h2>
+          <span className="bg-[#00B9F0]/10 text-[#00B9F0] px-3 py-1 rounded-full text-sm font-semibold border border-[#00B9F0]/20">
+            {grados.length}
+          </span>
         </div>
 
         {grados.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-sm border" style={{ borderColor: 'var(--gris-claro)' }}>
-            <BookOpen className="mx-auto mb-4" size={64} style={{ color: 'var(--gris-claro)' }} />
-            <p className="text-lg mb-2" style={{ color: 'var(--gris-medio)' }}>No tienes cursos registrados aún</p>
-            <p className="text-sm mb-6" style={{ color: 'var(--gris-medio)' }}>Comienza creando tu primer curso</p>
+          <div className="text-center py-20 bg-white rounded-2xl shadow-md border border-[#E2E8F0]">
+            <div className="w-20 h-20 rounded-full bg-[#E2E8F0] flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="text-[#718096]" size={40} />
+            </div>
+            <p className="text-xl font-medium text-[#2D3748] mb-2">No tienes cursos registrados</p>
+            <p className="text-sm text-[#718096] mb-6">Comienza creando tu primer curso</p>
             <button
               onClick={handleCrearCurso}
-              className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl transition font-medium"
-              style={{ backgroundColor: 'var(--azul-cielo)' }}
-              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-              onMouseLeave={(e) => e.target.style.opacity = '1'}
+              className="inline-flex items-center gap-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white px-6 py-3 rounded-lg transition-all shadow-md hover:shadow-lg font-medium"
             >
-              <Plus size={20} /> Crear Primer Curso
+              <Plus size={20} className="text-white" />
+              Crear Primer Curso
             </button>
           </div>
         ) : (
@@ -623,40 +630,37 @@ const ProfesorPage = () => {
               <div
                 key={curso._id}
                 onClick={() => handleClickCurso(curso._id)}
-                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border cursor-pointer"
-                style={{ borderColor: 'var(--gris-claro)' }}
+                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-[#E2E8F0] cursor-pointer group"
               >
                 <div className="relative h-48">
                   <img
                     src={getImageUrl(curso.fotoPortadaUrl)}
                     alt={curso.nombre}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
-                      e.target.src = 'https://static.wixstatic.com/media/1e4262_f8607b744443480ea6f88169e63b56c2~mv2.jpg/v1/fill/w_1000,h_540,al_c,q_85,usm_0.66_1.00_0.01/1e4262_f8607b744443480ea6f88169e63b56c2~mv2.jpg';
+                      e.target.src = 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&h=400&fit=crop';
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                   
                   <div className="absolute top-3 right-3 flex gap-2">
                     <button
                       onClick={(e) => handleEditar(e, curso)}
-                      className="bg-white/95 hover:bg-white w-10 h-10 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-110"
-                      style={{ color: 'var(--azul-cielo)' }}
+                      className="w-10 h-10 bg-white/95 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center"
                       title="Editar curso"
                     >
-                      <Edit2 size={18} />
+                      <Edit2 size={18} className="text-[#00B9F0]" />
                     </button>
                     <button
                       onClick={(e) => handleEliminar(e, curso._id)}
                       disabled={eliminando === curso._id}
-                      className="bg-white/95 hover:bg-white w-10 h-10 flex items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50"
-                      style={{ color: 'var(--rojo-error)' }}
+                      className="w-10 h-10 bg-white/95 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center disabled:opacity-50"
                       title="Eliminar curso"
                     >
                       {eliminando === curso._id ? (
-                        <Loader2 className="animate-spin" size={18} />
+                        <Loader2 className="animate-spin text-[#FA6D00]" size={18} />
                       ) : (
-                        <Trash2 size={18} />
+                        <Trash2 size={18} className="text-[#FA6D00]" />
                       )}
                     </button>
                   </div>
@@ -669,20 +673,19 @@ const ProfesorPage = () => {
                 </div>
 
                 <div className="p-5">
-                  <p className="text-sm mb-4 line-clamp-2 min-h-[40px]" style={{ color: 'var(--gris-medio)' }}>
+                  <p className="text-sm text-[#718096] mb-4 line-clamp-2 min-h-[40px]">
                     {curso.descripcion}
                   </p>
-                  <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: 'var(--gris-claro)' }}>
+                  <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
                     <div className="flex items-center gap-2">
-                      <Users size={16} style={{ color: 'var(--gris-medio)' }} />
-                      <span className="text-sm font-medium" style={{ color: 'var(--negro)' }}>
-                        {curso.participantes?.length || 0}
+                      <div className="w-8 h-8 rounded-full bg-[#00B9F0] flex items-center justify-center">
+                        <Users size={14} className="text-white" />
+                      </div>
+                      <span className="text-sm font-semibold text-[#2D3748]">
+                        {curso.participantes?.length || 0} participantes
                       </span>
                     </div>
-                    <span className="text-xs px-3 py-1 rounded-full font-medium" style={{ 
-                      backgroundColor: curso.estado === 'activo' ? 'var(--verde-lima)' : 'var(--gris-claro)',
-                      color: 'var(--blanco)'
-                    }}>
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#7AD107] text-white">
                       {curso.estado || 'activo'}
                     </span>
                   </div>
@@ -696,35 +699,39 @@ const ProfesorPage = () => {
       {/* Modal de Edición de Curso */}
       {modalEditar && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={handleCerrarModal}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--gris-claro)' }}>
-              <h3 className="text-2xl font-bold" style={{ color: 'var(--negro)' }}>
-                Editar Curso
-              </h3>
-              <button
-                onClick={handleCerrarModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-                disabled={guardando}
-              >
-                <X size={24} />
-              </button>
+            <div className="bg-[#00B9F0] p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <Edit2 size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Editar Curso</h3>
+                </div>
+                <button
+                  onClick={handleCerrarModal}
+                  className="w-8 h-8 hover:bg-white/20 rounded-lg transition-colors flex items-center justify-center"
+                  disabled={guardando}
+                >
+                  <X size={20} className="text-white" />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--negro)' }}>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                   Imagen de Portada
                 </label>
                 <div className="relative">
                   {preview ? (
-                    <div className="relative">
+                    <div className="relative group">
                       <img
                         src={preview}
                         alt="Preview"
@@ -733,27 +740,22 @@ const ProfesorPage = () => {
                       <button
                         onClick={handleRemoveImage}
                         disabled={guardando}
-                        className="absolute top-3 right-3 text-white p-2 rounded-full shadow-lg transition disabled:opacity-50"
-                        style={{ backgroundColor: 'var(--rojo-error)' }}
-                        onMouseEnter={(e) => !guardando && (e.target.style.opacity = '0.9')}
-                        onMouseLeave={(e) => !guardando && (e.target.style.opacity = '1')}
+                        className="absolute top-3 right-3 w-10 h-10 bg-[#FA6D00] hover:bg-[#FA6D00]/90 rounded-full shadow-lg transition flex items-center justify-center disabled:opacity-50"
                       >
-                        <X size={20} />
+                        <X size={20} className="text-white" />
                       </button>
                     </div>
                   ) : (
-                    <div className="w-full h-64 rounded-xl flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--gris-ultra-claro)', border: '2px dashed var(--gris-claro)' }}>
-                      <Upload size={48} style={{ color: 'var(--gris-medio)' }} />
-                      <p className="mt-2 text-sm" style={{ color: 'var(--gris-medio)' }}>
-                        Sin imagen de portada
-                      </p>
+                    <div className="w-full h-64 rounded-xl bg-[#F7FAFC] border-2 border-dashed border-[#E2E8F0] flex flex-col items-center justify-center">
+                      <Upload size={48} className="text-[#718096]" />
+                      <p className="mt-2 text-sm text-[#718096]">Sin imagen de portada</p>
                     </div>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--negro)' }}>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                   Cambiar Imagen (opcional)
                 </label>
                 <input
@@ -761,17 +763,16 @@ const ProfesorPage = () => {
                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={handleFileChange}
                   disabled={guardando}
-                  className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ color: 'var(--gris-oscuro)' }}
+                  className="block w-full text-sm text-[#2D3748] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#00B9F0] file:text-white hover:file:bg-[#01C9F4] file:cursor-pointer cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <p className="mt-2 text-xs" style={{ color: 'var(--gris-medio)' }}>
+                <p className="mt-2 text-xs text-[#718096]">
                   JPG, PNG, GIF o WEBP (máx. 5MB). Deja vacío para mantener la imagen actual.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--negro)' }}>
-                  Nombre del Curso <span style={{ color: 'var(--rojo-error)' }}>*</span>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  Nombre del Curso <span className="text-[#FA6D00]">*</span>
                 </label>
                 <input
                   name="nombre"
@@ -779,23 +780,17 @@ const ProfesorPage = () => {
                   onChange={handleInputChange}
                   placeholder="Ingresa el nombre del curso"
                   disabled={guardando}
-                  className="w-full border-2 p-3 rounded-xl outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ 
-                    borderColor: 'var(--gris-claro)',
-                    color: 'var(--negro)'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--azul-cielo)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--gris-claro)'}
+                  className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg outline-none transition disabled:opacity-50 disabled:cursor-not-allowed focus:border-[#00B9F0] text-[#2D3748]"
                   maxLength={100}
                 />
-                <p className="mt-1 text-xs text-right" style={{ color: 'var(--gris-medio)' }}>
+                <p className="mt-1 text-xs text-right text-[#718096]">
                   {formData.nombre.length}/100
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--negro)' }}>
-                  Descripción <span style={{ color: 'var(--rojo-error)' }}>*</span>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  Descripción <span className="text-[#FA6D00]">*</span>
                 </label>
                 <textarea
                   name="descripcion"
@@ -804,50 +799,38 @@ const ProfesorPage = () => {
                   placeholder="Describe el curso (objetivos, contenido, etc.)"
                   rows="5"
                   disabled={guardando}
-                  className="w-full border-2 p-3 rounded-xl outline-none resize-none transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ 
-                    borderColor: 'var(--gris-claro)',
-                    color: 'var(--negro)'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--azul-cielo)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--gris-claro)'}
+                  className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg outline-none resize-none transition disabled:opacity-50 disabled:cursor-not-allowed focus:border-[#00B9F0] text-[#2D3748]"
                   maxLength={500}
                 />
-                <p className="mt-1 text-xs text-right" style={{ color: 'var(--gris-medio)' }}>
+                <p className="mt-1 text-xs text-right text-[#718096]">
                   {formData.descripcion.length}/500
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-3 p-6 border-t" style={{ borderColor: 'var(--gris-claro)' }}>
+            <div className="bg-[#F7FAFC] p-4 rounded-b-2xl border-t border-[#E2E8F0] flex gap-3">
               <button
                 onClick={handleCerrarModal}
                 disabled={guardando}
-                className="flex-1 py-3 rounded-xl font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ 
-                  backgroundColor: 'var(--gris-claro)',
-                  color: 'var(--gris-oscuro)'
-                }}
-                onMouseEnter={(e) => !guardando && (e.target.style.backgroundColor = 'var(--gris-medio)')}
-                onMouseLeave={(e) => !guardando && (e.target.style.backgroundColor = 'var(--gris-claro)')}
+                className="flex-1 py-3 rounded-lg font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed bg-[#E2E8F0] text-[#2D3748] hover:bg-[#718096] hover:text-white"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleGuardar}
                 disabled={guardando || !formData.nombre.trim() || !formData.descripcion.trim()}
-                className="flex-1 text-white py-3 rounded-xl font-semibold transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: 'var(--verde-exito)' }}
-                onMouseEnter={(e) => !guardando && (e.target.style.opacity = '0.9')}
-                onMouseLeave={(e) => !guardando && (e.target.style.opacity = '1')}
+                className="flex-1 bg-[#7AD107] hover:bg-[#7AD107]/90 text-white py-3 rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {guardando ? (
                   <>
-                    <Loader2 className="animate-spin" size={18} />
-                    Guardando...
+                    <Loader2 className="animate-spin text-white" size={18} />
+                    <span>Guardando...</span>
                   </>
                 ) : (
-                  '✓ Guardar Cambios'
+                  <>
+                    <Save size={18} className="text-white" />
+                    <span>Guardar Cambios</span>
+                  </>
                 )}
               </button>
             </div>
@@ -858,45 +841,53 @@ const ProfesorPage = () => {
       {/* Modal de Perfil */}
       {modalPerfil && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           onClick={handleCerrarModalPerfil}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--gris-claro)' }}>
-              <h3 className="text-2xl font-bold" style={{ color: 'var(--negro)' }}>
-                Mi Perfil
-              </h3>
-              <button
-                onClick={handleCerrarModalPerfil}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-                disabled={guardando}
-              >
-                <X size={24} />
-              </button>
+            <div className="bg-[#00B9F0] p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <User size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Mi Perfil</h3>
+                </div>
+                <button
+                  onClick={handleCerrarModalPerfil}
+                  className="w-8 h-8 hover:bg-white/20 rounded-lg transition-colors flex items-center justify-center"
+                  disabled={guardando}
+                >
+                  <X size={20} className="text-white" />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-5">
               {/* Foto de Perfil */}
               <div className="flex flex-col items-center">
-                <div className="relative">
-                  <img
-                    src={perfilPreview || getFotoPerfilUrl(usuarioData?.fotoPerfilUrl)}
-                    alt="Foto de perfil"
-                    className="w-32 h-32 rounded-full object-cover border-4"
-                    style={{ borderColor: 'var(--azul-cielo)' }}
-                  />
+                <div className="relative group">
+                  {perfilPreview || getFotoPerfilUrl(usuarioData?.fotoPerfilUrl) ? (
+                    <img
+                      src={perfilPreview || getFotoPerfilUrl(usuarioData?.fotoPerfilUrl)}
+                      alt="Foto de perfil"
+                      className="w-32 h-32 rounded-full object-cover border-4 border-[#00B9F0]"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white font-bold text-4xl border-4 border-[#00B9F0]">
+                      {profesorNombre.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   {perfilPreview && fotoCambiada && (
                     <button
                       onClick={handleRemoveFotoPerfil}
                       disabled={guardando}
-                      className="absolute top-0 right-0 text-white p-2 rounded-full shadow-lg transition disabled:opacity-50"
-                      style={{ backgroundColor: 'var(--rojo-error)' }}
+                      className="absolute top-0 right-0 w-8 h-8 bg-[#FA6D00] hover:bg-[#FA6D00]/90 rounded-full shadow-lg transition disabled:opacity-50 flex items-center justify-center"
                     >
-                      <X size={16} />
+                      <X size={16} className="text-white" />
                     </button>
                   )}
                 </div>
@@ -908,35 +899,38 @@ const ProfesorPage = () => {
                     disabled={guardando}
                     className="hidden"
                   />
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white font-medium transition shadow-md hover:shadow-lg"
-                    style={{ backgroundColor: 'var(--azul-cielo)' }}
-                  >
-                    <Camera size={18} />
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00B9F0] hover:bg-[#01C9F4] text-white font-medium transition shadow-md hover:shadow-lg">
+                    <Camera size={18} className="text-white" />
                     Cambiar Foto
                   </span>
                 </label>
-                <p className="mt-2 text-xs" style={{ color: 'var(--gris-medio)' }}>
+                <p className="mt-2 text-xs text-[#718096]">
                   JPG, PNG, GIF o WEBP (máx. 5MB)
                 </p>
               </div>
 
               {/* Información del Usuario */}
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <p className="text-sm" style={{ color: 'var(--gris-medio)' }}>
-                  <strong>Correo:</strong> {usuarioData?.correo || 'No disponible'}
-                </p>
-                <p className="text-sm mt-2" style={{ color: 'var(--gris-medio)' }}>
-                  <strong>Cédula:</strong> {usuarioData?.cedula || 'No disponible'}
-                </p>
-                <p className="text-sm mt-2" style={{ color: 'var(--gris-medio)' }}>
-                  <strong>Rol:</strong> {usuarioData?.rol || 'No disponible'}
-                </p>
+              <div className="bg-[#F7FAFC] p-4 rounded-xl space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[#2D3748]">Correo:</span>
+                  <span className="text-sm text-[#718096]">{usuarioData?.correo || 'No disponible'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[#2D3748]">Cédula:</span>
+                  <span className="text-sm text-[#718096]">{usuarioData?.cedula || 'No disponible'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[#2D3748]">Rol:</span>
+                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-[#00B9F0] text-white">
+                    {usuarioData?.rol || 'No disponible'}
+                  </span>
+                </div>
               </div>
 
               {/* Campos Editables */}
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--negro)' }}>
-                  Nombre <span style={{ color: 'var(--rojo-error)' }}>*</span>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  Nombre <span className="text-[#FA6D00]">*</span>
                 </label>
                 <input
                   name="nombre"
@@ -944,19 +938,13 @@ const ProfesorPage = () => {
                   onChange={handlePerfilInputChange}
                   placeholder="Ingresa tu nombre"
                   disabled={guardando}
-                  className="w-full border-2 p-3 rounded-xl outline-none transition disabled:opacity-50"
-                  style={{ 
-                    borderColor: 'var(--gris-claro)',
-                    color: 'var(--negro)'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--azul-cielo)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--gris-claro)'}
+                  className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg outline-none transition disabled:opacity-50 focus:border-[#00B9F0] text-[#2D3748]"
                   maxLength={50}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--negro)' }}>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                   Apellido
                 </label>
                 <input
@@ -965,19 +953,13 @@ const ProfesorPage = () => {
                   onChange={handlePerfilInputChange}
                   placeholder="Ingresa tu apellido"
                   disabled={guardando}
-                  className="w-full border-2 p-3 rounded-xl outline-none transition disabled:opacity-50"
-                  style={{ 
-                    borderColor: 'var(--gris-claro)',
-                    color: 'var(--negro)'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--azul-cielo)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--gris-claro)'}
+                  className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg outline-none transition disabled:opacity-50 focus:border-[#00B9F0] text-[#2D3748]"
                   maxLength={50}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--negro)' }}>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                   Teléfono
                 </label>
                 <input
@@ -986,53 +968,73 @@ const ProfesorPage = () => {
                   onChange={handlePerfilInputChange}
                   placeholder="Ingresa tu teléfono"
                   disabled={guardando}
-                  className="w-full border-2 p-3 rounded-xl outline-none transition disabled:opacity-50"
-                  style={{ 
-                    borderColor: 'var(--gris-claro)',
-                    color: 'var(--negro)'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--azul-cielo)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--gris-claro)'}
+                  className="w-full border-2 border-[#E2E8F0] p-3 rounded-lg outline-none transition disabled:opacity-50 focus:border-[#00B9F0] text-[#2D3748]"
                   maxLength={15}
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 p-6 border-t" style={{ borderColor: 'var(--gris-claro)' }}>
+            <div className="bg-[#F7FAFC] p-4 rounded-b-2xl border-t border-[#E2E8F0] flex gap-3">
               <button
                 onClick={handleCerrarModalPerfil}
                 disabled={guardando}
-                className="flex-1 py-3 rounded-xl font-semibold transition shadow-md disabled:opacity-50"
-                style={{ 
-                  backgroundColor: 'var(--gris-claro)',
-                  color: 'var(--gris-oscuro)'
-                }}
-                onMouseEnter={(e) => !guardando && (e.target.style.backgroundColor = 'var(--gris-medio)')}
-                onMouseLeave={(e) => !guardando && (e.target.style.backgroundColor = 'var(--gris-claro)')}
+                className="flex-1 py-3 rounded-lg font-semibold transition shadow-md disabled:opacity-50 bg-[#E2E8F0] text-[#2D3748] hover:bg-[#718096] hover:text-white"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleGuardarPerfil}
                 disabled={guardando || !perfilData.nombre.trim()}
-                className="flex-1 text-white py-3 rounded-xl font-semibold transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ backgroundColor: 'var(--verde-exito)' }}
-                onMouseEnter={(e) => !guardando && (e.target.style.opacity = '0.9')}
-                onMouseLeave={(e) => !guardando && (e.target.style.opacity = '1')}
+                className="flex-1 bg-[#7AD107] hover:bg-[#7AD107]/90 text-white py-3 rounded-lg font-semibold transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {guardando ? (
                   <>
-                    <Loader2 className="animate-spin" size={18} />
-                    Guardando...
+                    <Loader2 className="animate-spin text-white" size={18} />
+                    <span>Guardando...</span>
                   </>
                 ) : (
-                  '✓ Guardar Cambios'
+                  <>
+                    <Save size={18} className="text-white" />
+                    <span>Guardar Cambios</span>
+                  </>
                 )}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes slide-in {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes scale-in {
+          from {
+            transform: scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+
+        .animate-slide-in {
+          animation: slide-in 0.3s ease-out;
+        }
+
+        .animate-scale-in {
+          animation: scale-in 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

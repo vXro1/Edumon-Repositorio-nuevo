@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  MessageCircle, 
-  Send, 
-  ThumbsUp, 
-  Edit, 
-  Trash2, 
+import {
+  MessageCircle,
+  Send,
+  ThumbsUp,
+  Edit,
+  Trash2,
   ArrowLeft,
   User,
   Clock,
@@ -19,10 +19,21 @@ import {
   Reply,
   X,
   Paperclip,
-  AlertCircle
+  AlertCircle,
+  Home,
+  BookOpen,
+  ClipboardList,
+  Sparkles,
+  Download,
+  ExternalLink,
+  Play
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-edumon.onrender.com/api';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://backend-edumon.onrender.com';
+
+import LoadingScreen from '@/components/LoadingScreen'; // Ajusta la ruta según tu estructura
+
 
 const ForoRespuestasPage = () => {
   const [foro, setForo] = useState(null);
@@ -32,18 +43,20 @@ const ForoRespuestasPage = () => {
   const [modalRespuesta, setModalRespuesta] = useState(false);
   const [mensajeSeleccionado, setMensajeSeleccionado] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(false);
-  
+
+  const [imagenExpandida, setImagenExpandida] = useState(null);
+  const [likesAnimando, setLikesAnimando] = useState({});
+
   const [contenido, setContenido] = useState('');
   const [archivos, setArchivos] = useState([]);
   const [previsualizaciones, setPrevisualizaciones] = useState([]);
   const [respuestaA, setRespuestaA] = useState(null);
-  
+
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [cursoId, setCursoId] = useState(null);
   const [foroId, setForoId] = useState(null);
 
   useEffect(() => {
-    // Obtener parámetros de la URL solo en el cliente
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const curso = searchParams.get('cursoId');
@@ -89,9 +102,9 @@ const ForoRespuestasPage = () => {
       const res = await fetch(`${API_BASE_URL}/foros/${foroId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (!res.ok) throw new Error('Error al cargar el foro');
-      
+
       const data = await res.json();
       setForo(data.foro);
     } catch (error) {
@@ -108,37 +121,48 @@ const ForoRespuestasPage = () => {
       const res = await fetch(`${API_BASE_URL}/mensajes-foro/foro/${foroId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (!res.ok) throw new Error('Error al cargar mensajes');
-      
+
       const data = await res.json();
-      
-      // Aplanar la estructura de mensajes con respuestas
+
       const mensajesAplanados = [];
       if (data.mensajes && Array.isArray(data.mensajes)) {
         data.mensajes.forEach(mensaje => {
-          // Agregar mensaje principal
+          // Normalizar el campo de usuario
+          if (mensaje.usuarioId) {
+            mensaje.usuarioId = {
+              ...mensaje.usuarioId,
+              nombre: mensaje.usuarioId.nombre || '',
+              apellido: mensaje.usuarioId.apellido || '',
+              avatar: mensaje.usuarioId.avatar || mensaje.usuarioId.fotoPerfilUrl || null,
+              rol: mensaje.usuarioId.rol || 'usuario'
+            };
+          }
+
+          // Normalizar likes - convertir likedBy array a likes array
+          mensaje.likes = Array.isArray(mensaje.likedBy) ? mensaje.likedBy : 
+                         Array.isArray(mensaje.likes) ? mensaje.likes : [];
+          
           mensajesAplanados.push({
             ...mensaje,
-            respuestas: undefined // Remover respuestas anidadas
+            respuestas: (mensaje.respuestas || []).map(resp => ({
+              ...resp,
+              // Normalizar también las respuestas
+              likes: Array.isArray(resp.likedBy) ? resp.likedBy : 
+                     Array.isArray(resp.likes) ? resp.likes : [],
+              usuarioId: resp.usuarioId ? {
+                ...resp.usuarioId,
+                nombre: resp.usuarioId.nombre || '',
+                apellido: resp.usuarioId.apellido || '',
+                avatar: resp.usuarioId.avatar || resp.usuarioId.fotoPerfilUrl || null,
+                rol: resp.usuarioId.rol || 'usuario'
+              } : resp.usuarioId
+            }))
           });
-          
-          // Agregar respuestas como mensajes individuales con referencia
-          if (mensaje.respuestas && Array.isArray(mensaje.respuestas)) {
-            mensaje.respuestas.forEach(respuesta => {
-              mensajesAplanados.push({
-                ...respuesta,
-                respuestaA: {
-                  _id: mensaje._id,
-                  contenido: mensaje.contenido,
-                  usuarioId: mensaje.usuarioId
-                }
-              });
-            });
-          }
         });
       }
-      
+
       setMensajes(mensajesAplanados);
     } catch (error) {
       console.error('Error:', error);
@@ -146,9 +170,33 @@ const ForoRespuestasPage = () => {
     }
   };
 
+  const getAvatarUrl = (usuario) => {
+    if (!usuario) return null;
+    
+    // Si tiene avatar
+    if (usuario.avatar) {
+      if (usuario.avatar.startsWith('http')) return usuario.avatar;
+      return `${BACKEND_URL}${usuario.avatar}`;
+    }
+    
+    // Si tiene fotoPerfilUrl (campo alternativo)
+    if (usuario.fotoPerfilUrl) {
+      if (usuario.fotoPerfilUrl.startsWith('http')) return usuario.fotoPerfilUrl;
+      return `${BACKEND_URL}${usuario.fotoPerfilUrl}`;
+    }
+    
+    return null;
+  };
+
+  const getArchivoUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${BACKEND_URL}${url}`;
+  };
+
   const handleArchivosChange = (e) => {
     const files = Array.from(e.target.files);
-    
+
     if (files.length + archivos.length > 5) {
       alert('Máximo 5 archivos permitidos');
       return;
@@ -206,7 +254,7 @@ const ForoRespuestasPage = () => {
 
   const enviarMensaje = async (e) => {
     e.preventDefault();
-    
+
     if (!contenido.trim()) {
       alert('Por favor escribe un mensaje');
       return;
@@ -235,7 +283,7 @@ const ForoRespuestasPage = () => {
         if (respuestaA) {
           formData.append('respuestaA', respuestaA._id);
         }
-        
+
         archivos.forEach(archivo => {
           formData.append('archivos', archivo);
         });
@@ -263,17 +311,84 @@ const ForoRespuestasPage = () => {
   const toggleLike = async (mensajeId) => {
     const token = localStorage.getItem('token');
     try {
+      console.log('🔄 Intentando dar like al mensaje:', mensajeId);
+      
+      // Activar animación
+      setLikesAnimando(prev => ({ ...prev, [mensajeId]: true }));
+      
       const res = await fetch(`${API_BASE_URL}/mensajes-foro/${mensajeId}/like`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (!res.ok) throw new Error('Error al dar like');
+      console.log('📡 Respuesta del servidor:', res.status, res.statusText);
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ Error del servidor:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { message: errorText || 'Error al dar like' };
+        }
+        
+        setLikesAnimando(prev => ({ ...prev, [mensajeId]: false }));
+        throw new Error(errorData.message || 'Error al dar like');
+      }
+
+      const data = await res.json();
+      console.log('✅ Like actualizado:', data);
+
+      // Actualizar el estado local inmediatamente para mejor UX
+      setMensajes(prevMensajes => 
+        prevMensajes.map(msg => {
+          if (msg._id === mensajeId) {
+            const yaLeDioLike = Array.isArray(msg.likes) && msg.likes.includes(usuarioActual?._id);
+            return {
+              ...msg,
+              likes: yaLeDioLike 
+                ? msg.likes.filter(id => id !== usuarioActual?._id)
+                : [...(msg.likes || []), usuarioActual?._id]
+            };
+          }
+          // También actualizar en respuestas
+          if (msg.respuestas) {
+            return {
+              ...msg,
+              respuestas: msg.respuestas.map(resp => {
+                if (resp._id === mensajeId) {
+                  const yaLeDioLike = Array.isArray(resp.likes) && resp.likes.includes(usuarioActual?._id);
+                  return {
+                    ...resp,
+                    likes: yaLeDioLike 
+                      ? resp.likes.filter(id => id !== usuarioActual?._id)
+                      : [...(resp.likes || []), usuarioActual?._id]
+                  };
+                }
+                return resp;
+              })
+            };
+          }
+          return msg;
+        })
+      );
+
+      // Recargar todos los mensajes del servidor
       await cargarMensajes();
+      
+      // Desactivar animación después de completarla
+      setTimeout(() => {
+        setLikesAnimando(prev => ({ ...prev, [mensajeId]: false }));
+      }, 600);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error completo:', error);
       alert(error.message);
+      setLikesAnimando(prev => ({ ...prev, [mensajeId]: false }));
     }
   };
 
@@ -306,165 +421,293 @@ const ForoRespuestasPage = () => {
     }
   };
 
-  const renderMensaje = (mensaje, esRespuesta = false) => {
-    const esAutor = usuarioActual?._id === mensaje.usuarioId?._id;
-    const tieneRespuestas = mensajes.some(m => m.respuestaA?._id === mensaje._id);
-    const respuestas = mensajes.filter(m => m.respuestaA?._id === mensaje._id);
+  const getRolBadgeColor = (rol) => {
+    switch (rol?.toLowerCase()) {
+      case 'docente':
+        return 'bg-[#FE327B]/10 text-[#FE327B] border border-[#FE327B]/20';
+      case 'padre':
+        return 'bg-[#7AD107]/10 text-[#7AD107] border border-[#7AD107]/20';
+      case 'administrador':
+        return 'bg-[#FA6D00]/10 text-[#FA6D00] border border-[#FA6D00]/20';
+      default:
+        return 'bg-[#E2E8F0] text-[#718096] border border-[#E2E8F0]';
+    }
+  };
+
+  const renderArchivosAdjuntos = (archivos) => {
+    if (!archivos || archivos.length === 0) return null;
 
     return (
-      <div key={mensaje._id} className={esRespuesta ? 'ml-8 mt-3' : 'mb-4'}>
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-start gap-3 flex-1">
-              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-                {mensaje.usuarioId?.fotoPerfilUrl ? (
-                  <img 
-                    src={mensaje.usuarioId.fotoPerfilUrl} 
-                    alt={mensaje.usuarioId.nombre}
-                    className="w-full h-full rounded-full object-cover"
+      <div className="mb-4 space-y-3">
+        <p className="text-sm font-bold text-[#2D3748] flex items-center gap-2">
+          <Paperclip size={16} />
+          Archivos adjuntos ({archivos.length})
+        </p>
+
+        <div className="grid grid-cols-1 gap-3">
+          {archivos.map((archivo, index) => {
+            const archivoUrl = getArchivoUrl(archivo.url);
+
+            if (archivo.tipo === "imagen") {
+              return (
+                <div key={index} className="group relative">
+                  <img
+                    src={archivoUrl}
+                    alt={archivo.nombre}
+                    className="w-full max-h-96 object-contain rounded-xl border-2 border-[#E2E8F0] cursor-pointer hover:border-[#00B9F0] transition-all"
+                    onClick={() => setImagenExpandida(archivoUrl)}
                   />
+
+                  <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => setImagenExpandida(archivoUrl)}
+                      className="p-2 bg-black/70 hover:bg-black/90 text-white rounded-lg backdrop-blur-sm transition-all"
+                      title="Expandir imagen"
+                    >
+                      <ExternalLink size={16} />
+                    </button>
+
+                    <a
+                      href={archivoUrl}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 bg-black/70 hover:bg-black/90 text-white rounded-lg backdrop-blur-sm transition-all"
+                      title="Descargar imagen"
+                    >
+                      <Download size={16} />
+                    </a>
+                  </div>
+
+                  <p className="text-xs text-[#718096] mt-2 truncate">{archivo.nombre}</p>
+                </div>
+              );
+            }
+
+            if (archivo.tipo === "video") {
+              return (
+                <div key={index} className="group relative">
+                  <video
+                    src={archivoUrl}
+                    controls
+                    className="w-full max-h-96 rounded-xl border-2 border-[#E2E8F0] bg-black"
+                    preload="metadata"
+                  >
+                    Tu navegador no soporta videos.
+                  </video>
+
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <a
+                      href={archivoUrl}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 bg-black/70 hover:bg-black/90 text-white rounded-lg backdrop-blur-sm transition-all"
+                      title="Descargar video"
+                    >
+                      <Download size={16} />
+                    </a>
+                  </div>
+
+                  <p className="text-xs text-[#718096] mt-2 truncate">{archivo.nombre}</p>
+                </div>
+              );
+            }
+
+            const IconoTipo = getIconoArchivo(archivo.tipo);
+            return (
+              <a
+                key={index}
+                href={archivoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 bg-gradient-to-r from-[#F7FAFC] to-[#EDF2F7] rounded-xl border-2 border-[#E2E8F0] hover:border-[#00B9F0] hover:shadow-md transition-all group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                  <IconoTipo size={24} />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#2D3748] truncate group-hover:text-[#00B9F0] transition-colors">
+                    {archivo.nombre}
+                  </p>
+
+                  <p className="text-xs text-[#718096] capitalize">
+                    {archivo.tipo === "pdf" ? "Documento PDF" : archivo.tipo}
+                  </p>
+                </div>
+
+                <ExternalLink
+                  className="text-[#718096] group-hover:text-[#00B9F0] transition-colors"
+                  size={20}
+                />
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderMensaje = (mensaje, esRespuesta = false) => {
+    const esAutor = usuarioActual?._id === mensaje.usuarioId?._id;
+    const tieneRespuestas = mensaje.respuestas && mensaje.respuestas.length > 0;
+    const avatarUrl = getAvatarUrl(mensaje.usuarioId);
+
+    return (
+      <div
+        key={mensaje._id}
+        className={`${esRespuesta ? 'ml-8 lg:ml-16' : ''} ${
+          esRespuesta ? 'border-l-4 border-[#00B9F0]/30 pl-6' : ''
+        }`}
+      >
+        <div className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] overflow-hidden hover:shadow-lg transition-all">
+          <div className="bg-gradient-to-r from-[#F7FAFC] to-[#EDF2F7] p-4 lg:p-6 border-b border-[#E2E8F0]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {avatarUrl ? (
+                  <div className="relative w-16 h-16">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#FF0080] via-[#7928CA] via-[#FF0080] via-[#FF8C00] to-[#FFD700] p-[3px] animate-rainbow">
+                      <div className="w-full h-full rounded-full bg-white p-[2px]">
+                        <img
+                          src={avatarUrl}
+                          alt={mensaje.usuarioId?.nombre}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <User size={20} />
+                  <div className="relative w-16 h-16">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#FF0080] via-[#7928CA] via-[#FF0080] via-[#FF8C00] to-[#FFD700] p-[3px] animate-rainbow">
+                      <div className="w-full h-full rounded-full bg-white p-[2px]">
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                          {mensaje.usuarioId?.nombre?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-gray-900">
-                    {mensaje.usuarioId?.nombre} {mensaje.usuarioId?.apellido}
-                  </span>
-                  {mensaje.usuarioId?.rol === 'docente' && (
-                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">
-                      Docente
+
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-[#2D3748] text-base">
+                      {mensaje.usuarioId?.nombre || 'Usuario'}
+                    </h3>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getRolBadgeColor(
+                        mensaje.usuarioId?.rol
+                      )}`}
+                    >
+                      {mensaje.usuarioId?.rol || 'Usuario'}
                     </span>
-                  )}
-                  {mensaje.usuarioId?.rol === 'padre' && (
-                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-medium">
-                      Padre
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-[#718096] mt-1">
+                    <Clock size={12} />
+                    <span>
+                      {new Date(mensaje.fechaCreacion).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Clock size={12} />
-                  {new Date(mensaje.fechaCreacion).toLocaleString('es-ES')}
-                  {mensaje.editado && (
-                    <span className="text-gray-400">(editado)</span>
-                  )}
+                  </div>
                 </div>
               </div>
+
+              {esAutor && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => abrirModalEdicion(mensaje)}
+                    className="w-9 h-9 bg-[#00B9F0]/10 hover:bg-[#00B9F0] text-[#00B9F0] hover:text-white rounded-lg transition-all flex items-center justify-center"
+                    title="Editar"
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => eliminarMensaje(mensaje._id)}
+                    className="w-9 h-9 bg-[#FA6D00]/10 hover:bg-[#FA6D00] text-[#FA6D00] hover:text-white rounded-lg transition-all flex items-center justify-center"
+                    title="Eliminar"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              )}
             </div>
-            
-            {esAutor && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => abrirModalEdicion(mensaje)}
-                  className="p-1.5 hover:bg-blue-50 text-blue-600 rounded"
-                  title="Editar"
-                >
-                  <Edit size={16} />
-                </button>
-                <button
-                  onClick={() => eliminarMensaje(mensaje._id)}
-                  className="p-1.5 hover:bg-red-50 text-red-600 rounded"
-                  title="Eliminar"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            )}
           </div>
 
-          {mensaje.respuestaA && (
-            <div className="mb-3 p-2 bg-gray-50 border-l-4 border-blue-400 rounded">
-              <p className="text-xs text-blue-700 font-medium mb-1">
-                Respondiendo a {mensaje.respuestaA.usuarioId?.nombre}
-              </p>
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {mensaje.respuestaA.contenido}
-              </p>
-            </div>
-          )}
+          <div className="p-4 lg:p-6">
+            <p className="text-[#2D3748] leading-relaxed whitespace-pre-wrap mb-4">
+              {mensaje.contenido}
+            </p>
 
-          <p className="text-gray-700 mb-3 whitespace-pre-wrap">{mensaje.contenido}</p>
+            {renderArchivosAdjuntos(mensaje.archivos)}
 
-          {mensaje.archivos && mensaje.archivos.length > 0 && (
-            <div className="mb-3 space-y-2">
-              {mensaje.archivos.map((archivo, index) => {
-                const IconoTipo = getIconoArchivo(archivo.tipo);
-                return (
-                  <a
-                    key={index}
-                    href={archivo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100"
-                  >
-                    <IconoTipo className="text-blue-600" size={18} />
-                    <span className="text-sm text-gray-700 flex-1 truncate">
-                      {archivo.nombre}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-            <button
-              onClick={() => toggleLike(mensaje._id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm ${
-                mensaje.likedBy?.some(id => id === usuarioActual?._id)
-                  ? 'bg-blue-100 text-blue-600'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <ThumbsUp size={14} />
-              <span>{mensaje.likes || 0}</span>
-            </button>
-            
-            {foro?.estado === 'abierto' && !esRespuesta && (
+            <div className="flex items-center gap-3 pt-4 border-t border-[#E2E8F0]">
               <button
-                onClick={() => abrirModalRespuesta(mensaje)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-600 rounded hover:bg-green-200 text-sm"
+                onClick={() => toggleLike(mensaje._id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  Array.isArray(mensaje.likes) && mensaje.likes.includes(usuarioActual?._id)
+                    ? 'bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white shadow-lg'
+                    : 'bg-[#E2E8F0] text-[#718096] hover:bg-gradient-to-r hover:from-[#00B9F0] hover:to-[#01C9F4] hover:text-white'
+                } ${likesAnimando[mensaje._id] ? 'animate-rainbow-pulse' : ''}`}
               >
-                <Reply size={14} />
-                <span>Responder</span>
+                <ThumbsUp 
+                  size={16} 
+                  className={likesAnimando[mensaje._id] ? 'animate-like-bounce' : ''}
+                />
+                <span>{Array.isArray(mensaje.likes) ? mensaje.likes.length : 0}</span>
               </button>
-            )}
 
-            {tieneRespuestas && (
-              <span className="text-sm text-gray-500 ml-auto">
-                {respuestas.length} {respuestas.length === 1 ? 'respuesta' : 'respuestas'}
-              </span>
-            )}
+              {foro?.estado === 'abierto' && (
+                <button
+                  onClick={() => abrirModalRespuesta(mensaje)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#E2E8F0] hover:bg-[#7AD107] text-[#718096] hover:text-white rounded-lg font-semibold transition-all"
+                >
+                  <Reply size={16} />
+                  Responder
+                </button>
+              )}
+
+              {tieneRespuestas && (
+                <span className="ml-auto text-sm text-[#718096] font-semibold">
+                  {mensaje.respuestas.length}{' '}
+                  {mensaje.respuestas.length === 1 ? 'respuesta' : 'respuestas'}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {respuestas.length > 0 && (
-          <div className="mt-3 space-y-3">
-            {respuestas.map(respuesta => renderMensaje(respuesta, true))}
+        {tieneRespuestas && (
+          <div className="mt-4 space-y-4">
+            {mensaje.respuestas.map(respuesta => renderMensaje(respuesta, true))}
           </div>
         )}
       </div>
     );
   };
 
+  const navegarA = (ruta) => {
+    if (typeof window !== 'undefined') {
+      window.location.href = `${ruta}?cursoId=${cursoId}`;
+    }
+  };
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700">Cargando foro...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen mensaje="Cargando foro..." />;
   }
 
   if (!foro) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
-          <p className="text-gray-700">Foro no encontrado</p>
+          <div className="w-20 h-20 rounded-full bg-[#FA6D00]/10 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="text-[#FA6D00]" size={48} />
+          </div>
+          <p className="text-[#2D3748] text-xl font-bold">Foro no encontrado</p>
         </div>
       </div>
     );
@@ -473,37 +716,78 @@ const ForoRespuestasPage = () => {
   const mensajesPrincipales = mensajes.filter(m => !m.respuestaA);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-2 mb-3">
-            <button
-              onClick={() => window.history.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-blue-600"
-            >
-              <ArrowLeft size={18} />
-              <span className="font-medium text-sm">Volver</span>
-            </button>
-          </div>
-          
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <MessageCircle className="text-blue-600" size={22} />
-                <h1 className="text-xl font-bold text-gray-900">{foro.titulo}</h1>
-              </div>
-              <p className="text-gray-600 mb-2">{foro.descripcion}</p>
-              
+    <div className="min-h-screen bg-white">
+      <div className="bg-white shadow-md border-b border-[#E2E8F0] sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.history.back()}
+                className="flex items-center gap-2 text-[#718096] hover:text-[#00B9F0] transition-colors group"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center text-white group-hover:bg-[#01C9F4] transition-all">
+                  <ArrowLeft size={18} />
+                </div>
+                <span className="font-semibold text-sm hidden sm:inline">Volver</span>
+              </button>
+              <div className="h-8 w-px bg-[#E2E8F0]"></div>
               <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${
-                  foro.estado === 'abierto'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {foro.estado === 'abierto' ? <Unlock size={12} /> : <Lock size={12} />}
+                <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center text-white">
+                  <MessageCircle size={18} />
+                </div>
+                <h1 className="text-base lg:text-lg font-bold text-[#2D3748]">Foro</h1>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => navegarA('/profesor/cursos/informacion')}
+                className="w-10 h-10 bg-[#E2E8F0] hover:bg-[#00B9F0] hover:text-white text-[#718096] rounded-lg transition-all flex items-center justify-center"
+                title="Información del curso"
+              >
+                <Home size={18} />
+              </button>
+              <button
+                onClick={() => navegarA('/profesor/cursos/crear/modulos')}
+                className="w-10 h-10 bg-[#E2E8F0] hover:bg-[#00B9F0] hover:text-white text-[#718096] rounded-lg transition-all flex items-center justify-center"
+                title="Módulos"
+              >
+                <BookOpen size={18} />
+              </button>
+              <button
+                onClick={() => navegarA('/profesor/cursos/crear/modulos/tareas')}
+                className="w-10 h-10 bg-[#E2E8F0] hover:bg-[#00B9F0] hover:text-white text-[#718096] rounded-lg transition-all flex items-center justify-center"
+                title="Tareas"
+              >
+                <ClipboardList size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] text-white shadow-lg">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
+          <div className="flex items-start justify-between gap-6 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <MessageCircle size={24} />
+                </div>
+                <h1 className="text-2xl lg:text-4xl font-bold">{foro.titulo}</h1>
+              </div>
+              <p className="text-white/95 text-base lg:text-lg mb-4 leading-relaxed">
+                {foro.descripcion}
+              </p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 ${foro.estado === 'abierto'
+                  ? 'bg-[#7AD107] text-white shadow-md'
+                  : 'bg-white/20 text-white backdrop-blur-sm'
+                  }`}>
+                  {foro.estado === 'abierto' ? <Unlock size={16} /> : <Lock size={16} />}
                   {foro.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-semibold">
                   {mensajes.length} {mensajes.length === 1 ? 'mensaje' : 'mensajes'}
                 </span>
               </div>
@@ -512,170 +796,269 @@ const ForoRespuestasPage = () => {
             {foro.estado === 'abierto' && (
               <button
                 onClick={() => abrirModalRespuesta()}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
+                className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-[#F7FAFC] text-[#00B9F0] rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
               >
-                <Send size={18} />
-                Nuevo Mensaje
+                <Send size={20} />
+                <span className="hidden sm:inline">Nuevo Mensaje</span>
               </button>
             )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 lg:px-6 py-8">
         {mensajesPrincipales.length === 0 ? (
-          <div className="bg-white rounded-lg shadow border border-gray-200 p-12 text-center">
-            <MessageCircle className="mx-auto text-gray-300 mb-4" size={48} />
-            <p className="text-gray-600 text-lg mb-2">
+          <div className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] p-12 lg:p-20 text-center">
+            <div className="w-24 h-24 rounded-full bg-[#E2E8F0] flex items-center justify-center mx-auto mb-6">
+              <MessageCircle className="text-[#718096]" size={48} />
+            </div>
+            <p className="text-[#2D3748] text-xl font-bold mb-3">
               No hay mensajes aún
             </p>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-[#718096] text-base mb-6">
               Sé el primero en participar en esta discusión
             </p>
             {foro.estado === 'abierto' && (
               <button
                 onClick={() => abrirModalRespuesta()}
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded font-medium"
+                className="inline-flex items-center gap-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
               >
-                <Send size={18} />
+                <Send size={20} />
                 Escribir Primer Mensaje
               </button>
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {mensajesPrincipales.map(mensaje => renderMensaje(mensaje))}
           </div>
         )}
       </div>
 
       {modalRespuesta && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-blue-600 text-white p-4 rounded-t-lg">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-[#00B9F0] to-[#01C9F4] text-white p-6 rounded-t-2xl z-10">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Send size={24} />
-                  <h2 className="text-xl font-bold">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    {modoEdicion ? <Edit size={20} /> : <Send size={20} />}
+                  </div>
+                  <h2 className="text-2xl font-bold">
                     {modoEdicion ? 'Editar Mensaje' : respuestaA ? 'Responder' : 'Nuevo Mensaje'}
                   </h2>
                 </div>
                 <button
                   onClick={cerrarModal}
-                  className="p-1.5 hover:bg-blue-700 rounded"
+                  className="w-10 h-10 hover:bg-white/20 rounded-lg transition-all flex items-center justify-center"
                 >
                   <X size={20} />
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
-              {respuestaA && (
-                <div className="p-3 bg-gray-50 border-l-4 border-blue-400 rounded">
-                  <p className="text-sm text-blue-700 font-medium mb-1">
-                    Respondiendo a {respuestaA.usuarioId?.nombre}:
-                  </p>
-                  <p className="text-sm text-gray-600 line-clamp-3">
-                    {respuestaA.contenido}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mensaje *
-                </label>
-                <textarea
-                  value={contenido}
-                  onChange={(e) => setContenido(e.target.value)}
-                  placeholder="Escribe tu mensaje aquí..."
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  maxLength={1500}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {contenido.length}/1500 caracteres
-                </p>
+            {enviando ? (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 border-4 border-[#00B9F0] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-[#2D3748] font-semibold text-lg">Enviando mensaje...</p>
               </div>
-
-              {!modoEdicion && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Archivos Adjuntos (Máximo 5)
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded p-6 text-center hover:border-blue-400">
-                    <input
-                      type="file"
-                      id="archivos-mensaje"
-                      multiple
-                      accept="image/*,video/*,application/pdf"
-                      onChange={handleArchivosChange}
-                      className="hidden"
-                      disabled={archivos.length >= 5}
-                    />
-                    <label
-                      htmlFor="archivos-mensaje"
-                      className={`cursor-pointer ${archivos.length >= 5 ? 'opacity-50' : ''}`}
-                    >
-                      <Paperclip className="mx-auto text-gray-400 mb-2" size={40} />
-                      <p className="text-gray-600 font-medium mb-1">
-                        {archivos.length >= 5 
-                          ? 'Límite de archivos alcanzado' 
-                          : 'Adjuntar archivos'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Imágenes, videos y PDFs hasta 10MB
-                      </p>
-                    </label>
+            ) : (
+              <div className="p-6 space-y-6">
+                {respuestaA && (
+                  <div className="p-4 bg-[#00B9F0]/5 border-l-4 border-[#00B9F0] rounded-lg">
+                    <p className="text-sm text-[#00B9F0] font-bold mb-2 flex items-center gap-2">
+                      <Reply size={14} />
+                      Respondiendo a {respuestaA.usuarioId?.nombre}:
+                    </p>
+                    <p className="text-sm text-[#718096] line-clamp-3">
+                      {respuestaA.contenido}
+                    </p>
                   </div>
+                )}
 
-                  {previsualizaciones.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {previsualizaciones.map((prev, index) => {
-                        const IconoTipo = getIconoArchivo(prev.tipo);
-                        return (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
-                          >
-                            <div className="flex items-center gap-2">
-                              <IconoTipo className="text-blue-600" size={18} />
-                              <span className="text-sm text-gray-700 truncate max-w-xs">
-                                {prev.nombre}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => eliminarArchivo(index)}
-                              className="p-1 hover:bg-red-100 text-red-600 rounded"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                <div>
+                  <label className="block text-sm font-bold text-[#2D3748] mb-2">
+                    Mensaje *
+                  </label>
+                  <textarea
+                    value={contenido}
+                    onChange={(e) => setContenido(e.target.value)}
+                    placeholder="Escribe tu mensaje aquí..."
+                    rows={6}
+                    className="w-full px-4 py-3 border-2 border-[#E2E8F0] rounded-xl focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] resize-none transition-all"
+                    maxLength={1500}
+                  />
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-xs text-[#718096]">
+                      {contenido.length}/1500 caracteres
+                    </p>
+                    {contenido.length > 1400 && (
+                      <p className="text-xs text-[#FA6D00] font-semibold">
+                        ¡Cerca del límite!
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
 
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={cerrarModal}
-                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded font-medium"
-                  disabled={enviando}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={enviarMensaje}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium disabled:opacity-50"
-                  disabled={enviando || !contenido.trim()}
-                >
-                  {enviando ? 'Enviando...' : modoEdicion ? 'Actualizar' : 'Enviar'}
-                </button>
+                {!modoEdicion && (
+                  <div>
+                    <label className="block text-sm font-bold text-[#2D3748] mb-2">
+                      Archivos Adjuntos (Máximo 5)
+                    </label>
+                    <div className="border-2 border-dashed border-[#E2E8F0] rounded-xl p-8 text-center hover:border-[#00B9F0] transition-all bg-[#F7FAFC]">
+                      <input
+                        type="file"
+                        id="archivos-mensaje"
+                        multiple
+                        accept="image/*,video/*,application/pdf"
+                        onChange={handleArchivosChange}
+                        className="hidden"
+                        disabled={archivos.length >= 5}
+                      />
+                      <label
+                        htmlFor="archivos-mensaje"
+                        className={`cursor-pointer ${archivos.length >= 5 ? 'opacity-50' : ''}`}
+                      >
+                        <div className="w-16 h-16 rounded-full bg-[#00B9F0]/10 flex items-center justify-center mx-auto mb-3">
+                          <Paperclip className="text-[#00B9F0]" size={32} />
+                        </div>
+                        <p className="text-[#2D3748] font-bold mb-1">
+                          {archivos.length >= 5
+                            ? 'Límite de archivos alcanzado'
+                            : 'Adjuntar archivos'}
+                        </p>
+                        <p className="text-xs text-[#718096]">
+                          Imágenes, videos y PDFs hasta 10MB
+                        </p>
+                      </label>
+                    </div>
+
+                    {previsualizaciones.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        <p className="text-sm font-bold text-[#2D3748]">
+                          Archivos seleccionados ({previsualizaciones.length}/5)
+                        </p>
+                        <div className="grid grid-cols-1 gap-3">
+                          {previsualizaciones.map((prev, index) => {
+                            if (prev.tipo === 'imagen') {
+                              return (
+                                <div key={index} className="relative group">
+                                  <img
+                                    src={prev.url}
+                                    alt={prev.nombre}
+                                    className="w-full max-h-48 object-contain rounded-xl border-2 border-[#E2E8F0]"
+                                  />
+                                  <button
+                                    onClick={() => eliminarArchivo(index)}
+                                    className="absolute top-2 right-2 w-8 h-8 bg-[#FA6D00] hover:bg-[#FA6D00]/90 text-white rounded-lg transition-all flex items-center justify-center shadow-lg"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                  <p className="text-xs text-[#718096] mt-2 truncate">{prev.nombre}</p>
+                                </div>
+                              );
+                            }
+
+                            if (prev.tipo === 'video') {
+                              return (
+                                <div key={index} className="relative group">
+                                  <video
+                                    src={prev.url}
+                                    className="w-full max-h-48 rounded-xl border-2 border-[#E2E8F0] bg-black"
+                                    controls
+                                  />
+                                  <button
+                                    onClick={() => eliminarArchivo(index)}
+                                    className="absolute top-2 right-2 w-8 h-8 bg-[#FA6D00] hover:bg-[#FA6D00]/90 text-white rounded-lg transition-all flex items-center justify-center shadow-lg"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                  <p className="text-xs text-[#718096] mt-2 truncate">{prev.nombre}</p>
+                                </div>
+                              );
+                            }
+
+                            const IconoTipo = getIconoArchivo(prev.tipo);
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-4 bg-gradient-to-r from-[#F7FAFC] to-[#EDF2F7] rounded-xl border-2 border-[#E2E8F0]"
+                              >
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white flex-shrink-0 shadow-md">
+                                    <IconoTipo size={24} />
+                                  </div>
+                                  <span className="text-sm text-[#2D3748] font-medium truncate">
+                                    {prev.nombre}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => eliminarArchivo(index)}
+                                  className="w-9 h-9 hover:bg-[#FA6D00]/10 text-[#FA6D00] rounded-lg transition-all flex items-center justify-center flex-shrink-0"
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4 border-t border-[#E2E8F0]">
+                  <button
+                    onClick={cerrarModal}
+                    className="flex-1 px-6 py-3 bg-[#E2E8F0] hover:bg-[#718096] text-[#2D3748] hover:text-white rounded-xl font-bold transition-all"
+                    disabled={enviando}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={enviarMensaje}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-[#00B9F0] to-[#01C9F4] hover:from-[#01C9F4] hover:to-[#00B9F0] text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
+                    disabled={enviando || !contenido.trim()}
+                  >
+                    {enviando ? 'Enviando...' : modoEdicion ? 'Actualizar' : 'Enviar'}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
+        </div>
+      )}
+
+      {imagenExpandida && (
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+          onClick={() => setImagenExpandida(null)}
+        >
+          <button
+            onClick={() => setImagenExpandida(null)}
+            className="absolute top-4 right-4 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all flex items-center justify-center backdrop-blur-sm"
+          >
+            <X size={24} />
+          </button>
+
+          <img
+            src={imagenExpandida}
+            alt="Imagen expandida"
+            className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <a
+            href={imagenExpandida}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-4 right-4 px-6 py-3 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Download size={20} />
+            Descargar
+          </a>
         </div>
       )}
     </div>

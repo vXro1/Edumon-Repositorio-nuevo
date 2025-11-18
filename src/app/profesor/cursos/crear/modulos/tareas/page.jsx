@@ -15,16 +15,31 @@ import {
   AlertCircle,
   CheckCircle,
   FileText,
-  ClipboardList
+  ClipboardList,
+  Home,
+  Eye,
+  Link as LinkIcon,
+  File,
+  Image as ImageIcon,
+  FileVideo,
+  Download,
+  Plus,
+  Paperclip,
+  Target,
+  Clock,
+  UserCheck
 } from 'lucide-react';
 
+import LoadingScreen from '@/components/LoadingScreen';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-edumon.onrender.com/api';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://backend-edumon.onrender.com';
 
 const CrearTareaPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cursoId = searchParams.get('cursoId');
-  const tareaId = searchParams.get('tareaId'); // Para edición
+  const tareaId = searchParams.get('tareaId');
 
   // Estados del formulario
   const [formData, setFormData] = useState({
@@ -50,6 +65,10 @@ const CrearTareaPage = () => {
   const [enlaces, setEnlaces] = useState([]);
   const [nuevoEnlace, setNuevoEnlace] = useState({ url: '', nombre: '', descripcion: '' });
 
+  // Estados de previsualizaciones
+  const [previsualizaciones, setPrevisualizaciones] = useState([]);
+  const [archivoPrevisualizar, setArchivoPrevisualizar] = useState(null);
+
   // Estados de UI
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,7 +78,7 @@ const CrearTareaPage = () => {
   // Cargar datos iniciales
   useEffect(() => {
     if (!cursoId) {
-      setError('❌ No se especificó un curso');
+      setError('No se especificó un curso');
       router.push('/profesor');
       return;
     }
@@ -92,7 +111,40 @@ const CrearTareaPage = () => {
       const cursoData = await cursoRes.json();
       const cursoCompleto = cursoData.curso || cursoData;
       setCurso(cursoCompleto);
-      setParticipantes(cursoCompleto.participantes || []);
+
+      // Cargar participantes con fotos
+      try {
+        const participantesRes = await fetch(`${API_BASE_URL}/cursos/${cursoId}/participantes`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (participantesRes.ok) {
+          const participantesData = await participantesRes.json();
+          const participantesFormateados = participantesData.participantes || participantesData;
+          
+          const participantesMapeados = participantesFormateados.map(p => ({
+            _id: p._id,
+            etiqueta: p.etiqueta,
+            usuarioId: {
+              _id: p._id,
+              nombre: p.nombre,
+              apellido: p.apellido,
+              correo: p.correo,
+              telefono: p.telefono,
+              rol: p.rol,
+              estado: p.estado,
+              fotoPerfilUrl: p.fotoPerfilUrl
+            }
+          }));
+
+          setParticipantes(participantesMapeados);
+        } else {
+          setParticipantes(cursoCompleto.participantes || []);
+        }
+      } catch (error) {
+        console.error('Error cargando participantes:', error);
+        setParticipantes(cursoCompleto.participantes || []);
+      }
 
       // 2. Cargar módulos del curso
       const modulosRes = await fetch(`${API_BASE_URL}/modulos?cursoId=${cursoId}&limit=100`, {
@@ -125,31 +177,33 @@ const CrearTareaPage = () => {
             etiquetas: tareaData.etiquetas || []
           });
 
-          // Cargar archivos adjuntos existentes
           if (tareaData.archivosAdjuntos) {
-            const archivosExistentes = tareaData.archivosAdjuntos.filter(a => a.tipo === 'archivo');
             const enlacesExistentes = tareaData.archivosAdjuntos.filter(a => a.tipo === 'enlace');
             setEnlaces(enlacesExistentes);
           }
         }
       } else {
-        // Establecer cursoId en el formulario para nuevas tareas
         setFormData(prev => ({ ...prev, cursoId }));
       }
 
     } catch (error) {
       console.error('Error cargando datos:', error);
-      setError('❌ ' + error.message);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAvatarUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${BACKEND_URL}${url}`;
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Si cambia a "todos", limpiar participantes seleccionados
     if (name === 'asignacionTipo' && value === 'todos') {
       setFormData(prev => ({ ...prev, participantesSeleccionados: [] }));
     }
@@ -168,23 +222,43 @@ const CrearTareaPage = () => {
   const handleArchivosChange = (e) => {
     const files = Array.from(e.target.files);
     setArchivos(prev => [...prev, ...files]);
+
+    // Generar previsualizaciones
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPrevisualizaciones(prev => [...prev, {
+          file: file,
+          url: reader.result,
+          tipo: file.type
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const eliminarArchivo = (index) => {
     setArchivos(prev => prev.filter((_, i) => i !== index));
+    setPrevisualizaciones(prev => prev.filter((_, i) => i !== index));
   };
 
   const agregarEnlace = () => {
     if (!nuevoEnlace.url) {
-      alert('❌ Debes ingresar una URL');
+      alert('Debes ingresar una URL');
       return;
     }
-    setEnlaces(prev => [...prev, { ...nuevoEnlace }]);
+    setEnlaces(prev => [...prev, { ...nuevoEnlace, tipo: 'enlace' }]);
     setNuevoEnlace({ url: '', nombre: '', descripcion: '' });
   };
 
   const eliminarEnlace = (index) => {
     setEnlaces(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getFileIcon = (type) => {
+    if (type.startsWith('image/')) return <ImageIcon size={18} className="text-[#00B9F0]" />;
+    if (type.startsWith('video/')) return <FileVideo size={18} className="text-[#FE327B]" />;
+    return <File size={18} className="text-[#718096]" />;
   };
 
   const handleSubmit = async (e) => {
@@ -195,7 +269,6 @@ const CrearTareaPage = () => {
 
     const token = localStorage.getItem('token');
 
-    // Función para decodificar el token JWT y obtener el userId
     const getUserIdFromToken = (token) => {
       try {
         const base64Url = token.split('.')[1];
@@ -214,7 +287,7 @@ const CrearTareaPage = () => {
     const userId = getUserIdFromToken(token);
 
     if (!userId) {
-      setError('❌ No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.');
+      setError('No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.');
       setSubmitting(false);
       return;
     }
@@ -234,10 +307,8 @@ const CrearTareaPage = () => {
         throw new Error('Debes seleccionar al menos un participante');
       }
 
-      // Crear FormData para enviar archivos
       const formDataToSend = new FormData();
       
-      // Datos básicos
       formDataToSend.append('titulo', formData.titulo.trim());
       formDataToSend.append('descripcion', formData.descripcion.trim());
       formDataToSend.append('fechaEntrega', new Date(formData.fechaEntrega).toISOString());
@@ -249,22 +320,18 @@ const CrearTareaPage = () => {
       formDataToSend.append('asignacionTipo', formData.asignacionTipo);
       formDataToSend.append('estado', 'publicada');
 
-      // Participantes seleccionados (como array individual)
       formData.participantesSeleccionados.forEach(participanteId => {
         formDataToSend.append('participantesSeleccionados[]', participanteId);
       });
 
-      // Etiquetas (como array individual)
       formData.etiquetas.forEach(etiqueta => {
         formDataToSend.append('etiquetas[]', etiqueta);
       });
 
-      // Archivos
       archivos.forEach(archivo => {
         formDataToSend.append('archivos', archivo);
       });
 
-      // Enlaces
       if (enlaces.length > 0) {
         formDataToSend.append('enlaces', JSON.stringify(enlaces));
       }
@@ -279,7 +346,6 @@ const CrearTareaPage = () => {
         method,
         headers: {
           'Authorization': `Bearer ${token}`
-          // NO incluir 'Content-Type', el navegador lo establece automáticamente con boundary
         },
         body: formDataToSend
       });
@@ -287,7 +353,6 @@ const CrearTareaPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        // Mostrar errores de validación si existen
         if (data.errors && Array.isArray(data.errors)) {
           const erroresTexto = data.errors.map(err => err.msg || err.message).join(', ');
           throw new Error(erroresTexto);
@@ -295,7 +360,7 @@ const CrearTareaPage = () => {
         throw new Error(data.message || 'Error al guardar la tarea');
       }
 
-      setSuccess(`✅ Tarea ${tareaId ? 'actualizada' : 'creada'} exitosamente`);
+      setSuccess(`Tarea ${tareaId ? 'actualizada' : 'creada'} exitosamente`);
       
       setTimeout(() => {
         router.push(`/profesor/cursos/informacion?cursoId=${cursoId}`);
@@ -303,57 +368,75 @@ const CrearTareaPage = () => {
 
     } catch (error) {
       console.error('Error:', error);
-      setError('❌ ' + error.message);
+      setError(error.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700 font-medium">Cargando formulario...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen mensaje="Cargando formulario de tarea..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-white shadow-md border-b-2 border-indigo-100">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-white shadow-sm border-b border-[#E2E8F0] sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.back()}
-                className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition-all"
+                className="flex items-center gap-2 text-[#718096] hover:text-[#00B9F0] transition-colors"
               >
-                <ArrowLeft size={20} />
-                <span className="font-semibold">Volver</span>
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center text-white hover:bg-[#01C9F4] transition-colors">
+                  <ArrowLeft size={18} />
+                </div>
+                <span className="font-semibold text-sm hidden sm:inline">Volver</span>
               </button>
-              <div className="h-6 w-px bg-indigo-200"></div>
-              <ClipboardList className="text-indigo-600" size={24} />
-              <h1 className="text-xl font-bold text-gray-800">
-                {tareaId ? 'Editar Tarea' : 'Crear Nueva Tarea'}
-              </h1>
+              <div className="h-6 w-px bg-[#E2E8F0]"></div>
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center text-white">
+                  <ClipboardList size={18} />
+                </div>
+                <h1 className="text-base sm:text-lg font-bold text-[#2D3748]">
+                  {tareaId ? 'Editar Tarea' : 'Crear Nueva Tarea'}
+                </h1>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => router.push('/profesor')}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#E2E8F0] hover:bg-[#718096] text-[#2D3748] hover:text-white rounded-lg transition-all text-sm font-medium"
+              >
+                <Home size={16} />
+                <span className="hidden sm:inline">Inicio</span>
+              </button>
+              <button
+                onClick={() => router.push(`/profesor/cursos/informacion?cursoId=${cursoId}`)}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-lg transition-all text-sm font-medium"
+              >
+                <BookOpen size={16} />
+                <span className="hidden sm:inline">Ver Curso</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Contenido */}
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Información del curso */}
         {curso && (
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5 mb-6">
-            <div className="flex items-center gap-3">
-              <BookOpen className="text-indigo-600" size={24} />
-              <div>
-                <p className="text-sm text-gray-600">Curso:</p>
-                <p className="font-bold text-gray-800 text-lg">{curso.nombre}</p>
+          <div className="bg-white rounded-xl shadow-md border border-[#E2E8F0] p-5 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-[#00B9F0] flex items-center justify-center text-white flex-shrink-0">
+                <BookOpen size={20} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-[#718096] mb-1">Curso:</p>
+                <p className="font-bold text-[#2D3748] text-lg truncate">{curso.nombre}</p>
               </div>
             </div>
           </div>
@@ -361,19 +444,23 @@ const CrearTareaPage = () => {
 
         {/* Mensajes */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="text-red-500" size={20} />
-              <p className="text-red-700 font-medium">{error}</p>
+          <div className="bg-[#FA6D00]/10 border-l-4 border-[#FA6D00] p-4 mb-6 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#FA6D00] flex items-center justify-center text-white flex-shrink-0">
+                <AlertCircle size={20} />
+              </div>
+              <p className="text-[#FA6D00] font-medium">{error}</p>
             </div>
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-lg">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="text-green-500" size={20} />
-              <p className="text-green-700 font-medium">{success}</p>
+          <div className="bg-[#7AD107]/10 border-l-4 border-[#7AD107] p-4 mb-6 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#7AD107] flex items-center justify-center text-white flex-shrink-0">
+                <CheckCircle size={20} />
+              </div>
+              <p className="text-[#7AD107] font-medium">{success}</p>
             </div>
           </div>
         )}
@@ -381,15 +468,17 @@ const CrearTareaPage = () => {
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Información básica */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <FileText className="text-indigo-600" size={20} />
-              Información Básica
-            </h3>
+          <div className="bg-white rounded-xl shadow-md border border-[#E2E8F0] p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center text-white">
+                <FileText size={20} />
+              </div>
+              <h3 className="text-lg font-bold text-[#2D3748]">Información Básica</h3>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                   Título de la tarea *
                 </label>
                 <input
@@ -397,14 +486,14 @@ const CrearTareaPage = () => {
                   name="titulo"
                   value={formData.titulo}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748] transition-all"
                   placeholder="Ej: Ensayo sobre la Revolución Industrial"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                   Descripción
                 </label>
                 <textarea
@@ -412,15 +501,18 @@ const CrearTareaPage = () => {
                   value={formData.descripcion}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748] transition-all resize-none"
                   placeholder="Describe los objetivos y requisitos de la tarea..."
                 />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Fecha de entrega *
+                  <label className="block text-sm font-semibold text-[#2D3748] mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} className="text-[#00B9F0]" />
+                      Fecha de entrega *
+                    </div>
                   </label>
                   <input
                     type="date"
@@ -428,41 +520,44 @@ const CrearTareaPage = () => {
                     value={formData.fechaEntrega}
                     onChange={handleInputChange}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748] transition-all"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-[#2D3748] mb-2">
                     Tipo de entrega *
                   </label>
                   <select
                     name="tipoEntrega"
                     value={formData.tipoEntrega}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748] transition-all"
                     required
                   >
-                    <option value="archivo">Archivo</option>
-                    <option value="texto">Texto</option>
-                    <option value="multimedia">Multimedia</option>
-                    <option value="enlace">Enlace</option>
-                    <option value="presencial">Presencial</option>
-                    <option value="grupal">Grupal</option>
+                    <option value="archivo">📄 Archivo</option>
+                    <option value="texto">📝 Texto</option>
+                    <option value="multimedia">🎬 Multimedia</option>
+                    <option value="enlace">🔗 Enlace</option>
+                    <option value="presencial">👥 Presencial</option>
+                    <option value="grupal">👨‍👩‍👧‍👦 Grupal</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Módulo *
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={16} className="text-[#FE327B]" />
+                    Módulo *
+                  </div>
                 </label>
                 <select
                   name="moduloId"
                   value={formData.moduloId}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748] transition-all"
                   required
                 >
                   <option value="">Selecciona un módulo</option>
@@ -475,15 +570,18 @@ const CrearTareaPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Criterios de evaluación
+                <label className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  <div className="flex items-center gap-2">
+                    <Target size={16} className="text-[#7AD107]" />
+                    Criterios de evaluación
+                  </div>
                 </label>
                 <textarea
                   name="criterios"
                   value={formData.criterios}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748] transition-all resize-none"
                   placeholder="Describe cómo se evaluará esta tarea..."
                 />
               </div>
@@ -491,156 +589,308 @@ const CrearTareaPage = () => {
           </div>
 
           {/* Asignación */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Users className="text-indigo-600" size={20} />
-              Asignación de Participantes
-            </h3>
+          <div className="bg-white rounded-xl shadow-md border border-[#E2E8F0] p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center text-white">
+                <Users size={20} />
+              </div>
+              <h3 className="text-lg font-bold text-[#2D3748]">Asignación de Participantes</h3>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-[#2D3748] mb-3">
                   Tipo de asignación
                 </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <label className="flex items-center gap-3 p-4 border-2 border-[#E2E8F0] rounded-lg cursor-pointer hover:border-[#00B9F0] transition-all flex-1">
                     <input
                       type="radio"
                       name="asignacionTipo"
                       value="todos"
                       checked={formData.asignacionTipo === 'todos'}
                       onChange={handleInputChange}
-                      className="w-4 h-4 text-indigo-600"
+                      className="w-5 h-5 text-[#00B9F0] focus:ring-[#00B9F0]"
                     />
-                    <span className="text-gray-700">Todos los participantes</span>
+                    <div className="flex-1">
+                      <p className="font-semibold text-[#2D3748]">Todos los participantes</p>
+                      <p className="text-xs text-[#718096]">Asignar a todos del curso</p>
+                    </div>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex items-center gap-3 p-4 border-2 border-[#E2E8F0] rounded-lg cursor-pointer hover:border-[#00B9F0] transition-all flex-1">
                     <input
                       type="radio"
                       name="asignacionTipo"
                       value="seleccionados"
                       checked={formData.asignacionTipo === 'seleccionados'}
                       onChange={handleInputChange}
-                      className="w-4 h-4 text-indigo-600"
+                      className="w-5 h-5 text-[#00B9F0] focus:ring-[#00B9F0]"
                     />
-                    <span className="text-gray-700">Seleccionar específicos</span>
+                    <div className="flex-1">
+                      <p className="font-semibold text-[#2D3748]">Seleccionar específicos</p>
+                      <p className="text-xs text-[#718096]">Elegir participantes</p>
+                    </div>
                   </label>
                 </div>
               </div>
 
               {formData.asignacionTipo === 'seleccionados' && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Selecciona participantes *
-                  </label>
-                  <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-2">
-                    {participantes.map(participante => {
-                      const participanteId = participante.usuarioId?._id || participante.usuarioId || participante._id;
-                      return (
-                      <label
-                        key={participanteId}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={formData.participantesSeleccionados.includes(participanteId)}
-                          onChange={() => handleParticipanteToggle(participanteId)}
-                          className="w-4 h-4 text-indigo-600 rounded"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-800">
-                            {participante.usuarioId?.nombre} {participante.usuarioId?.apellido}
-                          </p>
-                          <p className="text-xs text-gray-600">{participante.usuarioId?.correo}</p>
-                        </div>
-                      </label>
-                      );
-                    })}
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-semibold text-[#2D3748] flex items-center gap-2">
+                      <UserCheck size={16} className="text-[#00B9F0]" />
+                      Selecciona participantes *
+                    </label>
+                    <span className="text-sm text-[#718096] bg-[#E2E8F0] px-3 py-1 rounded-full font-medium">
+                      {formData.participantesSeleccionados.length} seleccionados
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Seleccionados: {formData.participantesSeleccionados.length}
-                  </p>
+                  <div className="max-h-80 overflow-y-auto border border-[#E2E8F0] rounded-lg">
+                    {participantes.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <Users className="mx-auto text-[#718096] mb-3" size={32} />
+                        <p className="text-[#718096]">No hay participantes disponibles</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-[#E2E8F0]">
+                        {participantes.map(participante => {
+                          const participanteId = participante.usuarioId?._id || participante.usuarioId || participante._id;
+                          const usuario = participante.usuarioId;
+                          const avatarUrl = getAvatarUrl(usuario?.fotoPerfilUrl);
+                          const isSelected = formData.participantesSeleccionados.includes(participanteId);
+
+                          return (
+                            <label
+                              key={participanteId}
+                              className={`flex items-center gap-4 p-4 cursor-pointer transition-all ${
+                                isSelected ? 'bg-[#00B9F0]/5' : 'hover:bg-[#F7FAFC]'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleParticipanteToggle(participanteId)}
+                                className="w-5 h-5 text-[#00B9F0] rounded focus:ring-[#00B9F0] border-[#E2E8F0]"
+                              />
+                              
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={usuario?.nombre}
+                                  className="w-12 h-12 rounded-full object-cover border-2 border-[#E2E8F0]"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              
+                              <div
+                                className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00B9F0] to-[#01C9F4] flex items-center justify-center text-white font-bold text-lg"
+                                style={{ display: avatarUrl ? 'none' : 'flex' }}
+                              >
+                                {(usuario?.nombre?.[0] || 'U').toUpperCase()}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-[#2D3748] truncate">
+                                  {usuario?.nombre || 'Sin nombre'} {usuario?.apellido || ''}
+                                </p>
+                                <p className="text-sm text-[#718096] truncate">{usuario?.correo || 'Sin correo'}</p>
+                              </div>
+
+                              <span className={`text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap ${
+                                participante.etiqueta === 'docente' 
+                                  ? 'bg-[#FE327B]/10 text-[#FE327B]'
+                                  : 'bg-[#7AD107]/10 text-[#7AD107]'
+                              }`}>
+                                {participante.etiqueta || usuario?.rol || 'Sin rol'}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
           {/* Archivos adjuntos */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Upload className="text-indigo-600" size={20} />
-              Archivos Adjuntos
-            </h3>
+          <div className="bg-white rounded-xl shadow-md border border-[#E2E8F0] p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center text-white">
+                <Paperclip size={20} />
+              </div>
+              <h3 className="text-lg font-bold text-[#2D3748]">Archivos Adjuntos</h3>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Subir archivos */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Subir archivos
+                <label className="block text-sm font-semibold text-[#2D3748] mb-3">
+                  <div className="flex items-center gap-2">
+                    <Upload size={16} className="text-[#00B9F0]" />
+                    Subir archivos
+                  </div>
                 </label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleArchivosChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-                {archivos.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {archivos.map((archivo, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-700">{archivo.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => eliminarArchivo(index)}
-                          className="text-red-600 hover:text-red-700"
+                <div className="relative">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleArchivosChange}
+                    className="hidden"
+                    id="file-upload"
+                    accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-[#E2E8F0] rounded-lg cursor-pointer hover:border-[#00B9F0] hover:bg-[#00B9F0]/5 transition-all"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-[#00B9F0]/10 flex items-center justify-center mb-4">
+                      <Upload className="text-[#00B9F0]" size={24} />
+                    </div>
+                    <p className="text-[#2D3748] font-semibold mb-1">Haz clic para subir archivos</p>
+                    <p className="text-sm text-[#718096]">Imágenes, videos, PDFs y documentos</p>
+                  </label>
+                </div>
+
+                {/* Lista de archivos subidos con previsualización */}
+                {previsualizaciones.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-[#2D3748]">Archivos subidos:</p>
+                      <span className="text-xs text-[#718096] bg-[#E2E8F0] px-3 py-1 rounded-full">
+                        {previsualizaciones.length} archivo{previsualizaciones.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {previsualizaciones.map((prev, index) => (
+                        <div
+                          key={index}
+                          className="relative group bg-[#F7FAFC] border border-[#E2E8F0] rounded-lg p-3 hover:shadow-md transition-all"
                         >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-3">
+                            {/* Previsualización de imagen o video */}
+                            {prev.tipo.startsWith('image/') ? (
+                              <div 
+                                className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity border-2 border-[#00B9F0]"
+                                onClick={() => setArchivoPrevisualizar(prev)}
+                                title="Click para ver en grande"
+                              >
+                                <img
+                                  src={prev.url}
+                                  alt="Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : prev.tipo.startsWith('video/') ? (
+                              <div 
+                                className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity border-2 border-[#FE327B]"
+                                onClick={() => setArchivoPrevisualizar(prev)}
+                                title="Click para ver video"
+                              >
+                                <video
+                                  src={prev.url}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 rounded-lg bg-[#00B9F0]/10 flex items-center justify-center flex-shrink-0 border border-[#E2E8F0]">
+                                {getFileIcon(prev.tipo)}
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-[#2D3748] text-sm truncate">
+                                {prev.file.name}
+                              </p>
+                              <p className="text-xs text-[#718096]">
+                                {(prev.file.size / 1024).toFixed(1)} KB
+                              </p>
+                              {(prev.tipo.startsWith('image/') || prev.tipo.startsWith('video/')) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setArchivoPrevisualizar(prev)}
+                                  className="mt-1 text-xs text-[#00B9F0] hover:text-[#01C9F4] font-medium flex items-center gap-1"
+                                >
+                                  <Eye size={12} />
+                                  Ver completo
+                                </button>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => eliminarArchivo(index)}
+                              className="w-8 h-8 rounded-lg bg-[#FA6D00] hover:bg-[#FA6D00]/90 text-white flex items-center justify-center transition-all flex-shrink-0"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
+              {/* Agregar enlaces */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Agregar enlaces
+                <label className="block text-sm font-semibold text-[#2D3748] mb-3">
+                  <div className="flex items-center gap-2">
+                    <LinkIcon size={16} className="text-[#01C9F4]" />
+                    Agregar enlaces externos
+                  </div>
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-3 p-4 bg-[#F7FAFC] rounded-lg border border-[#E2E8F0]">
                   <input
                     type="url"
                     value={nuevoEnlace.url}
                     onChange={(e) => setNuevoEnlace({ ...nuevoEnlace, url: e.target.value })}
-                    placeholder="URL del enlace"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder="https://ejemplo.com"
+                    className="w-full px-4 py-2.5 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748]"
                   />
                   <input
                     type="text"
                     value={nuevoEnlace.nombre}
                     onChange={(e) => setNuevoEnlace({ ...nuevoEnlace, nombre: e.target.value })}
                     placeholder="Nombre del enlace"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2.5 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#00B9F0] focus:border-transparent text-[#2D3748]"
                   />
                   <button
                     type="button"
                     onClick={agregarEnlace}
-                    className="w-full px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#01C9F4] hover:bg-[#00B9F0] text-white rounded-lg transition-all font-medium"
                   >
+                    <Plus size={18} />
                     Agregar enlace
                   </button>
                 </div>
 
+                {/* Lista de enlaces agregados */}
                 {enlaces.length > 0 && (
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-4 space-y-2">
                     {enlaces.map((enlace, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">{enlace.nombre || 'Sin nombre'}</p>
-                          <p className="text-xs text-gray-600">{enlace.url}</p>
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-4 bg-[#01C9F4]/5 border border-[#01C9F4]/20 rounded-lg"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-[#01C9F4] flex items-center justify-center text-white flex-shrink-0">
+                          <ExternalLink size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#2D3748] text-sm truncate">
+                            {enlace.nombre || 'Sin nombre'}
+                          </p>
+                          <p className="text-xs text-[#718096] truncate">{enlace.url}</p>
                         </div>
                         <button
                           type="button"
                           onClick={() => eliminarEnlace(index)}
-                          className="text-red-600 hover:text-red-700"
+                          className="w-8 h-8 rounded-lg bg-[#FA6D00] hover:bg-[#FA6D00]/90 text-white flex items-center justify-center transition-all flex-shrink-0"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -652,35 +902,101 @@ const CrearTareaPage = () => {
             </div>
           </div>
 
-          {/* Botones */}
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save size={20} />
-                  {tareaId ? 'Actualizar Tarea' : 'Crear Tarea'}
-                </>
-              )}
-            </button>
+          {/* Botones de acción */}
+          <div className="bg-white rounded-xl shadow-md border border-[#E2E8F0] p-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#E2E8F0] hover:bg-[#718096] text-[#2D3748] hover:text-white rounded-lg transition-all font-semibold"
+              >
+                <X size={20} />
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-lg transition-all font-semibold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save size={20} />
+                    {tareaId ? 'Actualizar Tarea' : 'Crear Tarea'}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
+
+      {/* Modal de previsualización de archivos */}
+      {archivoPrevisualizar && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setArchivoPrevisualizar(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header del Modal */}
+            <div className="bg-[#00B9F0] text-white p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <Eye size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Vista Previa</h2>
+                    <p className="text-sm text-white/90 truncate max-w-md">{archivoPrevisualizar.file.name}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setArchivoPrevisualizar(null)}
+                  className="w-10 h-10 hover:bg-white/20 rounded-lg transition-all flex items-center justify-center"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-6 max-h-[70vh] overflow-auto">
+              {archivoPrevisualizar.tipo.startsWith('image/') ? (
+                <img
+                  src={archivoPrevisualizar.url}
+                  alt="Preview"
+                  className="w-full h-auto rounded-lg"
+                />
+              ) : archivoPrevisualizar.tipo.startsWith('video/') ? (
+                <video
+                  src={archivoPrevisualizar.url}
+                  controls
+                  className="w-full h-auto rounded-lg"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-20 h-20 rounded-full bg-[#E2E8F0] flex items-center justify-center mb-4">
+                    {getFileIcon(archivoPrevisualizar.tipo)}
+                  </div>
+                  <p className="text-[#718096] mb-2">No se puede previsualizar este tipo de archivo</p>
+                  <p className="text-sm text-[#718096]">{archivoPrevisualizar.file.name}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="bg-[#F7FAFC] p-4 border-t border-[#E2E8F0] flex justify-end">
+              <button
+                onClick={() => setArchivoPrevisualizar(null)}
+                className="px-6 py-2.5 bg-[#00B9F0] hover:bg-[#01C9F4] text-white rounded-lg transition-all font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

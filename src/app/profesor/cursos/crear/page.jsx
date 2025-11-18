@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
-import { ArrowLeft, Upload, X, BookOpen, Home, Save, Image as ImageIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, BookOpen, Home, Save, Image as ImageIcon, AlertCircle, Info } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-edumon.onrender.com/api';
+
+// Componente de Loading Screen
+import LoadingScreen from '@/components/LoadingScreen'; // Ajusta la ruta según tu estructura
 
 const CrearCursoPage = () => {
   const router = useRouter();
@@ -20,6 +23,7 @@ const CrearCursoPage = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [errors, setErrors] = useState({});
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [mensajeCarga, setMensajeCarga] = useState('Procesando...');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -32,13 +36,11 @@ const CrearCursoPage = () => {
 
     try {
       const decoded = jwtDecode(token);
-      console.log('🔍 Token decodificado:', decoded);
       
       let userData = null;
       if (userStr) {
         try {
           userData = JSON.parse(userStr);
-          console.log('👤 User desde localStorage:', userData);
         } catch (e) {
           console.error('Error parseando user:', e);
         }
@@ -49,27 +51,20 @@ const CrearCursoPage = () => {
       
       const rol = decoded.rol || decoded.role || userData?.rol || userData?.role;
       
-      console.log('👤 ID del usuario:', id);
-      console.log('🎭 Rol del usuario:', rol);
-      
       if (rol !== 'docente' && rol !== 'administrador') {
-        console.error('❌ Rol no autorizado:', rol);
         alert(`No tienes permisos para crear cursos. Tu rol actual es: "${rol}"`);
         router.push('/profesor');
         return;
       }
       
       if (!id) {
-        console.error('❌ No se pudo obtener el ID del usuario');
         alert('Error: No se pudo obtener tu identificación de usuario');
         router.push('/auth/login');
         return;
       }
       
-      console.log('✅ Permisos verificados correctamente');
-      
     } catch (error) {
-      console.error('❌ Error decodificando token:', error);
+      console.error('Error decodificando token:', error);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       router.push('/auth/login');
@@ -118,12 +113,6 @@ const CrearCursoPage = () => {
       return;
     }
 
-    console.log('📁 Archivo seleccionado:', {
-      nombre: file.name,
-      tipo: file.type,
-      tamaño: `${(file.size / 1024).toFixed(2)} KB`
-    });
-
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type.toLowerCase())) {
       setErrors((prev) => ({ 
@@ -151,8 +140,6 @@ const CrearCursoPage = () => {
     setFormData((prev) => ({ ...prev, imagen: file }));
     setPreview(URL.createObjectURL(file));
     setErrors((prev) => ({ ...prev, imagen: '' }));
-    
-    console.log('✅ Imagen cargada correctamente');
   };
 
   const handleRemoveImage = () => {
@@ -164,36 +151,24 @@ const CrearCursoPage = () => {
     setImageLoaded(false);
     const fileInput = document.getElementById('imagen-input');
     if (fileInput) fileInput.value = '';
-    console.log('🗑️ Imagen eliminada');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log('🚀 ==================== INICIANDO CREACIÓN DE CURSO ====================');
-
     if (!validateForm()) {
-      console.log('❌ Formulario inválido');
       return;
     }
 
     if (!docenteId) {
-      console.error('❌ docenteId vacío');
       alert('❌ Error: No se pudo obtener el ID del docente. Por favor, inicia sesión nuevamente.');
       router.push('/auth/login');
       return;
     }
 
-    console.log('✅ Validaciones pasadas');
-    console.log('📋 Datos del formulario:', {
-      nombre: formData.nombre,
-      descripcion: formData.descripcion.substring(0, 50) + '...',
-      docenteId: docenteId,
-      tieneImagen: !!formData.imagen
-    });
-
     setLoading(true);
     setUploadProgress(10);
+    setMensajeCarga('Preparando información...');
 
     try {
       const token = localStorage.getItem('token');
@@ -204,10 +179,8 @@ const CrearCursoPage = () => {
         return;
       }
 
-      const decodedToken = jwtDecode(token);
-      console.log('🔐 Token válido para:', decodedToken.nombre || decodedToken.email);
-
       setUploadProgress(20);
+      setMensajeCarga('Validando datos...');
 
       const formDataToSend = new FormData();
       formDataToSend.append('nombre', formData.nombre.trim());
@@ -216,23 +189,10 @@ const CrearCursoPage = () => {
 
       if (formData.imagen) {
         formDataToSend.append('fotoPortada', formData.imagen, formData.imagen.name);
-        console.log('📷 Imagen incluida en el FormData');
-      } else {
-        console.log('📝 Creando curso sin imagen');
-      }
-
-      console.log('📤 Contenido del FormData:');
-      for (let pair of formDataToSend.entries()) {
-        if (pair[1] instanceof File) {
-          console.log(`  ✓ ${pair[0]}: [File] ${pair[1].name} (${pair[1].type}, ${(pair[1].size / 1024).toFixed(2)} KB)`);
-        } else {
-          console.log(`  ✓ ${pair[0]}: "${pair[1]}"`);
-        }
       }
 
       setUploadProgress(40);
-
-      console.log('📡 Enviando petición a:', `${API_BASE_URL}/cursos`);
+      setMensajeCarga('Subiendo al servidor...');
       
       const res = await fetch(`${API_BASE_URL}/cursos`, {
         method: 'POST',
@@ -243,34 +203,22 @@ const CrearCursoPage = () => {
       });
 
       setUploadProgress(60);
-
-      console.log('📡 Respuesta del servidor:', {
-        status: res.status,
-        statusText: res.statusText,
-        ok: res.ok
-      });
+      setMensajeCarga('Procesando respuesta...');
 
       const textResponse = await res.text();
-      console.log('📄 Respuesta raw:', textResponse);
 
       setUploadProgress(75);
 
       let data;
       try {
         data = textResponse ? JSON.parse(textResponse) : {};
-        console.log('📥 Datos parseados:', data);
       } catch (parseError) {
-        console.error('❌ Error parseando respuesta:', parseError);
         throw new Error(`Respuesta inválida del servidor: ${textResponse.substring(0, 100)}`);
       }
 
       setUploadProgress(85);
 
       if (!res.ok) {
-        console.error('❌ ERROR DEL SERVIDOR:');
-        console.error('  Status:', res.status);
-        console.error('  Data:', data);
-
         if (res.status === 401 || res.status === 403) {
           alert('❌ Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
           localStorage.removeItem('token');
@@ -313,23 +261,19 @@ const CrearCursoPage = () => {
       }
 
       setUploadProgress(100);
-      console.log('✅ ¡CURSO CREADO EXITOSAMENTE!');
-      console.log('📦 Curso creado:', data.curso);
-      console.log('========================================================');
+      setMensajeCarga('¡Curso creado exitosamente!');
       
       if (preview) {
         URL.revokeObjectURL(preview);
       }
       
-      alert('✅ ¡Curso creado exitosamente!');
-      router.push('/profesor');
+      setTimeout(() => {
+        alert('✅ ¡Curso creado exitosamente!');
+        router.push('/profesor');
+      }, 500);
       
     } catch (error) {
-      console.error('❌ ==================== ERROR FATAL ====================');
-      console.error('Tipo:', error.name);
-      console.error('Mensaje:', error.message);
-      console.error('Stack:', error.stack);
-      console.error('========================================================');
+      console.error('Error fatal:', error);
       
       let mensajeUsuario = 'Error desconocido al crear el curso';
       
@@ -361,109 +305,68 @@ const CrearCursoPage = () => {
     router.push('/profesor');
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Modal de progreso - Transparente */}
-      {loading && uploadProgress > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform scale-100 animate-in fade-in zoom-in duration-200">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Creando tu curso
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Por favor espera mientras guardamos la información...
-              </p>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm font-medium text-gray-700">
-                  <span>Progreso</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {uploadProgress < 30 && 'Preparando información...'}
-                  {uploadProgress >= 30 && uploadProgress < 70 && 'Subiendo datos al servidor...'}
-                  {uploadProgress >= 70 && uploadProgress < 100 && 'Finalizando creación...'}
-                  {uploadProgress === 100 && '¡Completado!'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+  if (loading) {
+    return <LoadingScreen mensaje={mensajeCarga} progress={uploadProgress} />;
+  }
 
+  return (
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-white shadow-md border-b border-gray-200">
+      <div className="bg-white shadow-sm border-b border-[#E2E8F0] sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
               <button
                 onClick={handleVolver}
-                disabled={loading}
-                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors group disabled:opacity-50"
+                className="flex items-center gap-2 text-[#718096] hover:text-[#00B9F0] transition-colors"
               >
-                <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                <span className="font-medium hidden sm:inline">Volver</span>
-              </button>
-              <div className="h-6 w-px bg-gray-300 hidden sm:block"></div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-xl shadow-lg">
-                  <BookOpen className="text-white" size={20} />
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center text-white hover:bg-[#01C9F4] transition-colors">
+                  <ArrowLeft size={18} className="text-white" />
                 </div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Crear Nuevo Curso</h1>
+                <span className="font-semibold text-sm hidden sm:inline">Volver</span>
+              </button>
+              <div className="h-6 w-px bg-[#E2E8F0]"></div>
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-[#00B9F0] flex items-center justify-center">
+                  <BookOpen size={18} className="text-white" />
+                </div>
+                <h1 className="text-base sm:text-lg font-bold text-[#2D3748]">Crear Nuevo Curso</h1>
               </div>
             </div>
+
             <button
               onClick={() => router.push('/profesor')}
-              disabled={loading}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#E2E8F0] hover:bg-[#718096] text-[#2D3748] hover:text-white rounded-lg transition-all text-sm font-medium"
             >
-              <Home size={18} />
-              <span className="hidden sm:inline text-sm">Inicio</span>
+              <div className="w-5 h-5 flex items-center justify-center">
+                <Home size={16} />
+              </div>
+              <span className="hidden sm:inline">Inicio</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Formulario */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        <div className="bg-white rounded-2xl shadow-md border border-[#E2E8F0] overflow-hidden">
           <form onSubmit={handleSubmit}>
-            <div className="p-4 sm:p-8">
-              {/* Debug info */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
-                  <p className="font-mono"><strong>DocenteId:</strong> {docenteId || 'No establecido'}</p>
-                  <p className="font-mono"><strong>API URL:</strong> {API_BASE_URL}</p>
-                  <p className="font-mono"><strong>Tiene imagen:</strong> {formData.imagen ? `Sí (${formData.imagen.name})` : 'No'}</p>
-                </div>
-              )}
-
+            <div className="p-6 sm:p-8 space-y-6">
               {/* Imagen de portada */}
-              <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-3">
-                  Imagen de Portada <span className="text-gray-400 font-normal">(opcional)</span>
+              <div>
+                <label className="block text-sm font-semibold text-[#2D3748] mb-3">
+                  Imagen de Portada <span className="text-[#718096] font-normal">(opcional)</span>
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden hover:border-blue-400 transition-all duration-300 bg-gradient-to-br from-gray-50 to-blue-50/30">
+                <div className="border-2 border-dashed border-[#E2E8F0] rounded-xl overflow-hidden hover:border-[#00B9F0] transition-all duration-300 bg-[#F7FAFC]">
                   {preview ? (
                     <div className="relative group">
-                      {/* Skeleton/Loading state mientras carga la imagen */}
                       {!imageLoaded && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 animate-pulse flex items-center justify-center">
-                          <Loader2 className="w-12 h-12 text-gray-400 animate-spin" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#E2E8F0] via-[#F7FAFC] to-[#E2E8F0] animate-pulse flex items-center justify-center">
+                          <div className="w-12 h-12 border-4 border-[#00B9F0] border-t-transparent rounded-full animate-spin"></div>
                         </div>
                       )}
                       
-                      {/* Contenedor de imagen con aspect ratio */}
-                      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}> {/* 16:9 aspect ratio */}
+                      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                         <img
                           src={preview}
                           alt="Vista previa"
@@ -474,36 +377,33 @@ const CrearCursoPage = () => {
                         />
                       </div>
                       
-                      {/* Overlay con botones */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
                         <button
                           type="button"
                           onClick={handleRemoveImage}
-                          disabled={loading}
-                          className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg shadow-xl transition-all flex items-center gap-2 transform hover:scale-105 disabled:opacity-50"
+                          className="bg-[#FE327B] hover:bg-[#FE327B]/90 text-white px-6 py-3 rounded-lg shadow-lg transition-all flex items-center gap-2 transform hover:scale-105 font-semibold"
                         >
-                          <X size={20} />
+                          <X size={18} className="text-white" />
                           Eliminar imagen
                         </button>
                       </div>
                       
-                      {/* Badge con nombre del archivo */}
                       {imageLoaded && (
-                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-gray-700 text-xs px-3 py-2 rounded-full shadow-lg flex items-center gap-2 max-w-[calc(100%-24px)]">
+                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-[#2D3748] text-xs px-3 py-2 rounded-full shadow-lg flex items-center gap-2 max-w-[calc(100%-24px)]">
                           <ImageIcon size={14} className="flex-shrink-0" />
                           <span className="truncate">{formData.imagen?.name}</span>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="p-8 sm:p-12 text-center">
-                      <div className="inline-block p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl mb-4 shadow-inner">
-                        <ImageIcon className="text-blue-500" size={48} />
+                    <div className="p-12 text-center">
+                      <div className="inline-block p-4 bg-[#00B9F0]/10 rounded-2xl mb-4">
+                        <ImageIcon className="text-[#00B9F0]" size={48} />
                       </div>
-                      <p className="text-base text-gray-700 mb-2 font-medium">
+                      <p className="text-base text-[#2D3748] mb-2 font-semibold">
                         Selecciona una imagen para tu curso
                       </p>
-                      <p className="text-sm text-gray-500 mb-4">
+                      <p className="text-sm text-[#718096] mb-4">
                         JPG, PNG, GIF o WEBP - Máximo 5MB
                       </p>
                       <input
@@ -511,21 +411,20 @@ const CrearCursoPage = () => {
                         type="file"
                         accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                         onChange={handleFileChange}
-                        disabled={loading}
                         className="hidden"
                       />
                       <label
                         htmlFor="imagen-input"
-                        className={`inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl cursor-pointer transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className="inline-flex items-center gap-2 bg-[#00B9F0] hover:bg-[#01C9F4] text-white px-6 py-3 rounded-xl cursor-pointer transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold"
                       >
-                        <Upload size={18} />
+                        <Upload size={18} className="text-white" />
                         Elegir archivo
                       </label>
                     </div>
                   )}
                 </div>
                 {errors.imagen && (
-                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1 animate-in slide-in-from-top-2">
+                  <p className="text-[#FE327B] text-sm mt-2 flex items-center gap-1">
                     <AlertCircle size={16} />
                     {errors.imagen}
                   </p>
@@ -533,9 +432,9 @@ const CrearCursoPage = () => {
               </div>
 
               {/* Nombre del curso */}
-              <div className="mb-6">
-                <label htmlFor="nombre" className="block text-sm font-bold text-gray-700 mb-2">
-                  Nombre del Curso <span className="text-red-500">*</span>
+              <div>
+                <label htmlFor="nombre" className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  Nombre del Curso <span className="text-[#FE327B]">*</span>
                 </label>
                 <input
                   id="nombre"
@@ -543,25 +442,24 @@ const CrearCursoPage = () => {
                   type="text"
                   value={formData.nombre}
                   onChange={handleInputChange}
-                  disabled={loading}
                   placeholder="Ej: Curso 11, Matemáticas Avanzadas..."
                   maxLength={100}
                   className={`w-full border-2 ${
-                    errors.nombre ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                    errors.nombre ? 'border-[#FE327B]' : 'border-[#E2E8F0]'
+                  } rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] transition-all`}
                 />
                 <div className="flex justify-between mt-2">
                   {errors.nombre ? (
-                    <p className="text-red-500 text-sm flex items-center gap-1 animate-in slide-in-from-top-2">
-                      <AlertCircle size={16} />
+                    <p className="text-[#FE327B] text-xs flex items-center gap-1">
+                      <AlertCircle size={12} />
                       {errors.nombre}
                     </p>
                   ) : (
-                    <p className="text-gray-500 text-sm">Mínimo 2 caracteres</p>
+                    <p className="text-[#718096] text-xs">Mínimo 2 caracteres</p>
                   )}
-                  <p className={`text-sm font-medium transition-colors ${
-                    formData.nombre.length > 90 ? 'text-orange-500' : 
-                    formData.nombre.length > 0 ? 'text-blue-600' : 'text-gray-400'
+                  <p className={`text-xs font-medium ${
+                    formData.nombre.length > 90 ? 'text-[#FA6D00]' : 
+                    formData.nombre.length > 0 ? 'text-[#00B9F0]' : 'text-[#718096]'
                   }`}>
                     {formData.nombre.length}/100
                   </p>
@@ -569,35 +467,34 @@ const CrearCursoPage = () => {
               </div>
 
               {/* Descripción */}
-              <div className="mb-6">
-                <label htmlFor="descripcion" className="block text-sm font-bold text-gray-700 mb-2">
-                  Descripción <span className="text-red-500">*</span>
+              <div>
+                <label htmlFor="descripcion" className="block text-sm font-semibold text-[#2D3748] mb-2">
+                  Descripción <span className="text-[#FE327B]">*</span>
                 </label>
                 <textarea
                   id="descripcion"
                   name="descripcion"
                   value={formData.descripcion}
                   onChange={handleInputChange}
-                  disabled={loading}
                   placeholder="Describe el contenido, objetivos y temas principales del curso..."
                   rows="5"
                   maxLength={500}
                   className={`w-full border-2 ${
-                    errors.descripcion ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:border-transparent resize-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                    errors.descripcion ? 'border-[#FE327B]' : 'border-[#E2E8F0]'
+                  } rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#00B9F0] focus:border-[#00B9F0] resize-none transition-all`}
                 />
                 <div className="flex justify-between mt-2">
                   {errors.descripcion ? (
-                    <p className="text-red-500 text-sm flex items-center gap-1 animate-in slide-in-from-top-2">
-                      <AlertCircle size={16} />
+                    <p className="text-[#FE327B] text-xs flex items-center gap-1">
+                      <AlertCircle size={12} />
                       {errors.descripcion}
                     </p>
                   ) : (
-                    <p className="text-gray-500 text-sm">Mínimo 10 caracteres</p>
+                    <p className="text-[#718096] text-xs">Mínimo 10 caracteres</p>
                   )}
-                  <p className={`text-sm font-medium transition-colors ${
-                    formData.descripcion.length > 450 ? 'text-orange-500' : 
-                    formData.descripcion.length > 0 ? 'text-blue-600' : 'text-gray-400'
+                  <p className={`text-xs font-medium ${
+                    formData.descripcion.length > 450 ? 'text-[#FA6D00]' : 
+                    formData.descripcion.length > 0 ? 'text-[#00B9F0]' : 'text-[#718096]'
                   }`}>
                     {formData.descripcion.length}/500
                   </p>
@@ -606,22 +503,21 @@ const CrearCursoPage = () => {
             </div>
 
             {/* Footer */}
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-8 py-5 border-t border-gray-200">
+            <div className="bg-[#F7FAFC] px-6 sm:px-8 py-5 border-t border-[#E2E8F0]">
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
                   onClick={handleVolver}
-                  disabled={loading}
-                  className="flex-1 bg-white border-2 border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-700 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
+                  className="flex-1 bg-white border-2 border-[#E2E8F0] hover:bg-[#F7FAFC] hover:border-[#718096] text-[#2D3748] py-3 rounded-xl font-semibold transition-all shadow-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !docenteId}
-                  className="flex-1 sm:flex-[2] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  disabled={!docenteId}
+                  className="flex-1 sm:flex-[2] bg-[#00B9F0] hover:bg-[#01C9F4] text-white py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                 >
-                  <Save size={20} />
+                  <Save size={20} className="text-white" />
                   Guardar Curso
                 </button>
               </div>
@@ -630,14 +526,16 @@ const CrearCursoPage = () => {
         </div>
 
         {/* Información adicional */}
-        <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 sm:p-5 shadow-sm">
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 text-2xl">💡</div>
+        <div className="mt-6 bg-[#00B9F0]/5 border border-[#00B9F0]/20 rounded-xl p-5">
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-full bg-[#00B9F0] flex items-center justify-center flex-shrink-0">
+              <Info className="text-white" size={20} />
+            </div>
             <div>
-              <p className="text-sm font-semibold text-blue-900 mb-1">
+              <p className="text-sm font-semibold text-[#2D3748] mb-1">
                 Consejo importante
               </p>
-              <p className="text-sm text-blue-800 leading-relaxed">
+              <p className="text-sm text-[#718096] leading-relaxed">
                 Después de crear el curso, podrás agregar módulos, lecciones y gestionar participantes desde el panel principal. La imagen de portada es opcional y puede ser agregada después.
               </p>
             </div>
