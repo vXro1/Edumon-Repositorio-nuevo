@@ -1,191 +1,131 @@
-import React from 'react';
-import { GraduationCap } from 'lucide-react';
+// components/LoadingScreen.jsx
+import React from "react";
+import { motion } from "framer-motion";
 
-/**
- * Componente de carga reutilizable con diseño consistente
- * 
- * @param {Object} props
- * @param {string} props.mensaje - Mensaje principal (default: "Cargando...")
- * @param {string} props.submensaje - Mensaje secundario (default: "Por favor espera un momento")
- * @param {boolean} props.fullScreen - Si debe ocupar toda la pantalla (default: true)
- * @param {string} props.size - Tamaño del spinner: 'sm', 'md', 'lg' (default: 'md')
- * 
- * @example
- * // Uso básico - pantalla completa
- * <LoadingScreen />
- * 
- * @example
- * // Con mensajes personalizados
- * <LoadingScreen 
- *   mensaje="Cargando curso..." 
- *   submensaje="Obteniendo información actualizada" 
- * />
- * 
- * @example
- * // Como indicador inline (no pantalla completa)
- * <LoadingScreen 
- *   fullScreen={false}
- *   size="sm"
- *   mensaje="Procesando..."
- * />
- */
-const LoadingScreen = ({ 
-  mensaje = "Cargando...", 
-  submensaje = "Por favor espera un momento",
-  fullScreen = true,
-  size = "md"
-}) => {
-  // Tamaños del spinner según el prop size
-  const sizeClasses = {
-    sm: {
-      spinner: "h-12 w-12 border-3",
-      icon: 20,
-      messageText: "text-sm",
-      submessageText: "text-xs"
-    },
-    md: {
-      spinner: "h-20 w-20 border-4",
-      icon: 32,
-      messageText: "text-lg",
-      submessageText: "text-sm"
-    },
-    lg: {
-      spinner: "h-28 w-28 border-5",
-      icon: 44,
-      messageText: "text-xl",
-      submessageText: "text-base"
-    }
-  };
-
-  const selectedSize = sizeClasses[size] || sizeClasses.md;
-
-  const containerClass = fullScreen 
-    ? "min-h-screen flex items-center justify-center bg-white" 
-    : "flex items-center justify-center py-12";
+export default function LoadingScreen({
+  mensaje = "Cargando",
+  submensaje = "Preparando tu experiencia educativa",
+}) {
+  const orbitalColors = ["#7AD107", "#FE327B", "#FF8A33"];
+  const dotColors = ["#00B9F0", "#7AD107", "#FE327B"];
 
   return (
-    <div className={containerClass}>
-      <div className="text-center">
-        <div className="relative mb-6">
-          <div 
-            className={`animate-spin rounded-full ${selectedSize.spinner} border-gray-200 border-t-[#00B9F0] mx-auto`}
-          ></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <GraduationCap className="text-[#00B9F0]" size={selectedSize.icon} />
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="flex flex-col items-center text-center p-8">
+        
+        {/* 🔵 Contenedor principal animado */}
+        <div className="relative flex items-center justify-center" style={{ width: 140, height: 140 }}>
+
+          {/* 🔄 Anillo giratorio con gradiente */}
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              width: 140,
+              height: 140,
+              borderRadius: "100%",
+              background: `conic-gradient(#00B9F0,#7AD107,#FE327B,#FF8A33,#00B9F0)`,
+              WebkitMask:
+                "radial-gradient(farthest-side, transparent calc(100% - 6px), black 0)",
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+          />
+
+          {/* ✨ Resplandor pulsante */}
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              width: 110,
+              height: 110,
+              background: "rgba(0,185,240,0.15)",
+            }}
+            animate={{
+              scale: [0.95, 1.1, 0.95],
+              opacity: [0.4, 0.7, 0.4],
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          />
+
+          {/* 🟣 Logo con pulsación */}
+          <motion.div
+            className="absolute bg-white rounded-full shadow-xl flex items-center justify-center overflow-hidden"
+            style={{ width: 90, height: 90 }}
+            animate={{ scale: [0.95, 1.05, 0.95] }}
+            transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "radial-gradient(circle, rgba(0,185,240,0.1), white)",
+              }}
+            >
+              <img
+                src="/img/edumon.png"   // ← TU RUTA EXACTA
+                alt="Logo Edumon"
+                style={{
+                  width: 60,
+                  height: 60,
+                  objectFit: "contain",
+                  pointerEvents: "none",
+                }}
+                draggable={false}
+              />
+            </div>
+          </motion.div>
+
+          {/* 🟢 Puntos orbitales animados */}
+          {orbitalColors.map((color, index) => (
+            <motion.div
+              key={index}
+              className="absolute"
+              style={{ width: 140, height: 140 }}
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 3 + index * 0.5,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            >
+              <div
+                className="w-3 h-3 rounded-full shadow-md"
+                style={{
+                  backgroundColor: color,
+                  position: "absolute",
+                  top: -5,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                }}
+              />
+            </motion.div>
+          ))}
         </div>
-        <p className={`text-[#2D3748] font-semibold ${selectedSize.messageText}`}>
-          {mensaje}
-        </p>
-        {submensaje && (
-          <p className={`text-[#718096] ${selectedSize.submessageText} mt-2`}>
-            {submensaje}
-          </p>
-        )}
+
+        {/* 🔵 Puntos inferiores animados */}
+        <div className="mt-10 flex items-center gap-3">
+          {dotColors.map((color, index) => (
+            <motion.div
+              key={index}
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: color }}
+              animate={{ scale: [1, 1.4, 1] }}
+              transition={{
+                repeat: Infinity,
+                duration: 0.6,
+                delay: index * 0.2,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </div>
+
+        {/* 🔵 Mensajes */}
+        <p className="text-[#00B9F0] mt-8 text-xl font-bold">{mensaje}</p>
+        <p className="text-gray-500 mt-2 text-sm font-medium">{submensaje}</p>
       </div>
     </div>
   );
-};
-
-export default LoadingScreen;
-
-/**
- * Variantes adicionales del componente
- */
-
-// Loading Inline - Para usar dentro de botones o pequeños espacios
-export const LoadingInline = ({ size = 16, color = "#00B9F0" }) => (
-  <div className="inline-flex items-center justify-center">
-    <svg
-      className="animate-spin"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke={color}
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill={color}
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
-  </div>
-);
-
-// Loading Dots - Animación de puntos
-export const LoadingDots = ({ color = "#00B9F0" }) => (
-  <div className="flex items-center gap-1">
-    <div
-      className="w-2 h-2 rounded-full animate-bounce"
-      style={{ 
-        backgroundColor: color,
-        animationDelay: '0ms' 
-      }}
-    />
-    <div
-      className="w-2 h-2 rounded-full animate-bounce"
-      style={{ 
-        backgroundColor: color,
-        animationDelay: '150ms' 
-      }}
-    />
-    <div
-      className="w-2 h-2 rounded-full animate-bounce"
-      style={{ 
-        backgroundColor: color,
-        animationDelay: '300ms' 
-      }}
-    />
-  </div>
-);
-
-// Loading Skeleton - Para cards y contenido
-export const LoadingSkeleton = ({ 
-  width = "100%", 
-  height = "20px",
-  className = "" 
-}) => (
-  <div 
-    className={`animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded ${className}`}
-    style={{ width, height }}
-  />
-);
-
-// Loading Card - Skeleton para tarjetas completas
-export const LoadingCard = () => (
-  <div className="bg-white rounded-xl shadow-md border border-[#E2E8F0] p-6 animate-pulse">
-    <div className="flex items-center gap-4 mb-4">
-      <div className="w-14 h-14 rounded-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
-      <div className="flex-1 space-y-2">
-        <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded w-3/4" />
-        <div className="h-3 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded w-1/2" />
-      </div>
-    </div>
-    <div className="space-y-2">
-      <div className="h-3 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded w-full" />
-      <div className="h-3 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded w-5/6" />
-    </div>
-  </div>
-);
-
-// Loading Overlay - Para mostrar sobre contenido existente
-export const LoadingOverlay = ({ mensaje = "Procesando..." }) => (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4">
-      <LoadingScreen 
-        fullScreen={false}
-        mensaje={mensaje}
-        submensaje=""
-      />
-    </div>
-  </div>
-);
+}

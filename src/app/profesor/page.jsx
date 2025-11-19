@@ -12,7 +12,7 @@ import {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-edumon.onrender.com/api';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://backend-edumon.onrender.com';
 
-import LoadingScreen from '@/components/LoadingScreen'; // Ajusta la ruta según tu estructura
+import LoadingScreen from '@/components/LoadingScreen'; 
 
 
 const ProfesorPage = () => {
