@@ -1,0 +1,28 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic:
+        - img
+      - generic [ref=e8]: Edumon
+    - paragraph [ref=e9]: Plataforma Educativa
+  - article [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - heading "Iniciar sesión" [level=1] [ref=e14]
+        - paragraph [ref=e15]: Accede con tu teléfono y contraseña
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Teléfono
+          - generic [ref=e19]:
+            - generic: "+57"
+            - textbox "Teléfono" [active] [ref=e20]:
+              - /placeholder: "3001234567"
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]: Contraseña
+            - textbox "Tu contraseña" [ref=e25]
+          - button [ref=e26]:
+            - img
+        - button "Iniciar sesión" [ref=e29]
+      - link "¿Olvidaste tu contraseña?" [ref=e31] [cursor=pointer]:
+        - /url: /forgot-password

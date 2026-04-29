@@ -1,0 +1,1 @@
+// RUTA EDUMON WEB/src/components/feedback/ErrorState.jsx

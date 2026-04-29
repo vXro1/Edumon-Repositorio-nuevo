@@ -1,0 +1,684 @@
+// src/features/usuarios/pages/UsuariosPage.jsx
+// ROL: Administrador / Superadmin — gestión de usuarios
+import { useState, useEffect, useCallback } from "react";
+import {
+  Plus, Search, Users, Edit2, Trash2, X,
+  Loader2, RefreshCw, ChevronLeft, ChevronRight,
+  CheckCircle2, AlertCircle, Filter, Eye,
+  UserCheck, Phone, Mail, Hash, Calendar,
+  Clock, Shield, UserX,
+} from "lucide-react";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { usersGetAll, usersGetById, usersCreate, usersUpdate, usersDelete, institucionesGetMine } from "@/lib/apiClient";
+import Modal from "@/components/ui/Modal";
+
+/* ── Roles config ─────────────────────────────────────────────── */
+const ROL_META = {
+  superadmin:    { label: "Super Admin",   color: "#F87171", bg: "rgba(248,113,113,0.12)" },
+  administrador: { label: "Administrador", color: "#60A5FA", bg: "rgba(96,165,250,0.12)"  },
+  docente:       { label: "Docente",       color: "#34D399", bg: "rgba(52,211,153,0.12)"  },
+  // Backend stores and returns "padre" — alias "padre/tutor" for display
+  "padre":       { label: "Padre/Tutor",   color: "#FBBF24", bg: "rgba(251,191,36,0.12)"  },
+  "padre/tutor": { label: "Padre/Tutor",   color: "#FBBF24", bg: "rgba(251,191,36,0.12)"  },
+};
+
+// Options shown in the select — use backend role values
+const ROL_LABELS = [
+  { value: "administrador", label: "Administrador" },
+  { value: "docente",       label: "Docente" },
+  { value: "padre",         label: "Padre/Tutor" },
+];
+
+/* ── Micro-components ─────────────────────────────────────────── */
+function RolBadge({ rol }) {
+  const m = ROL_META[rol] ?? { label: rol, color: "#94A3B8", bg: "rgba(148,163,184,0.12)" };
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: m.bg, color: m.color }}>
+      {m.label}
+    </span>
+  );
+}
+
+function EstadoBadge({ estado }) {
+  const ok = estado === "activo";
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: ok ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)", color: ok ? "#16A34A" : "#DC2626" }}>
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor" }} />
+      {ok ? "Activo" : "Suspendido"}
+    </span>
+  );
+}
+
+function Toast({ msg, type }) {
+  if (!msg) return null;
+  const ok = type === "success";
+  return (
+    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 600, background: ok ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.12)", color: ok ? "#16A34A" : "#DC2626", border: `1px solid ${ok ? "rgba(22,163,74,0.25)" : "rgba(220,38,38,0.25)"}`, borderRadius: 12, padding: "12px 18px", fontSize: 13, fontWeight: 600, maxWidth: 340, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
+      {ok ? <CheckCircle2 style={{ width: 15, height: 15 }} /> : <AlertCircle style={{ width: 15, height: 15 }} />}
+      {msg}
+    </div>
+  );
+}
+
+function Sk({ h = 14, w = "100%", r = 6 }) {
+  return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
+}
+
+function FieldGroup({ label, children }) {
+  return (
+    <div>
+      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function StyledInput({ value, onChange, placeholder, type = "text", required = false, disabled = false }) {
+  const [f, setF] = useState(false);
+  return (
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required} disabled={disabled}
+      onFocus={() => setF(true)} onBlur={() => setF(false)}
+      style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "#0C6AC4" : "var(--color-border)"}`, outline: "none", background: disabled ? "var(--color-bg)" : "var(--color-surface)", color: "var(--color-text)", boxShadow: f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none", transition: "border-color 150ms, box-shadow 150ms", cursor: disabled ? "not-allowed" : "text" }} />
+  );
+}
+
+function StyledSelect({ value, onChange, children, disabled = false }) {
+  const [f, setF] = useState(false);
+  return (
+    <select value={value} onChange={onChange} disabled={disabled} onFocus={() => setF(true)} onBlur={() => setF(false)}
+      style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "#0C6AC4" : "var(--color-border)"}`, outline: "none", background: disabled ? "var(--color-bg)" : "var(--color-surface)", color: "var(--color-text)", cursor: disabled ? "not-allowed" : "pointer", transition: "border-color 150ms" }}>
+      {children}
+    </select>
+  );
+}
+
+/* Avatar with photo support */
+function UserAvatar({ user, size = 36 }) {
+  const [imgError, setImgError] = useState(false);
+  const hasPhoto = user?.fotoPerfilUrl && !imgError;
+  const initials = `${user?.nombre?.[0] ?? ""}${user?.apellido?.[0] ?? ""}`.toUpperCase() || "U";
+  const fontSize = size < 40 ? 12 : size < 60 ? 15 : 20;
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.9)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+      {hasPhoto ? (
+        <img src={user.fotoPerfilUrl} alt={user.nombre} onError={() => setImgError(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : (
+        <span style={{ fontSize, fontWeight: 700, color: "white" }}>{initials}</span>
+      )}
+    </div>
+  );
+}
+
+/* Detail info row */
+function InfoRow({ icon: Icon, label, value, color = "#0C6AC4" }) {
+  if (!value) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--color-border)" }}>
+      <div style={{ width: 30, height: 30, borderRadius: 8, background: `rgba(12,106,196,0.08)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon style={{ width: 13, height: 13, color }} />
+      </div>
+      <div>
+        <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>{label}</p>
+        <p style={{ fontSize: 13.5, fontWeight: 500, color: "var(--color-text)", margin: "2px 0 0" }}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function formatDate(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+/* ── Constants ────────────────────────────────────────────────── */
+const INIT = { nombre: "", apellido: "", cedula: "", correo: "", telefono: "", rol: "docente" };
+// Maps frontend display role to the value the backend validator accepts
+const toApiRol = (rol) => rol === "padre/tutor" ? "padre" : rol;
+const LIMIT = 15;
+
+// Ensures phone is in +57XXXXXXXXXX format; leaves untouched if can't normalize
+const normalizarTelefono = (t) => {
+  if (!t) return t;
+  const digits = t.replace(/\D/g, "");
+  if (digits.startsWith("57") && digits.length === 12) return `+${digits}`;
+  if (digits.length === 10) return `+57${digits}`;
+  return t;
+};
+
+/* ══════════════════════════════════════════════════════════════
+   Main page
+   ══════════════════════════════════════════════════════════════ */
+export default function UsuariosPage() {
+  const { user: me } = useAuth();
+  const isSuperadmin = me?.rol === "superadmin";
+
+  const [users,        setUsers]      = useState([]);
+  const [pagination,   setPag]        = useState({ currentPage: 1, totalPages: 1, totalUsers: 0 });
+  const [loading,      setLoading]    = useState(true);
+  const [page,         setPage]       = useState(1);
+  const [search,       setSearch]     = useState("");
+  const [rolFilter,    setRolF]       = useState("");
+  const [estadoFilter, setEstadoF]    = useState("");
+  const [toast,        setToast]      = useState({ msg: "", type: "success" });
+  const [saving,       setSaving]     = useState(false);
+  const [form,         setForm]       = useState(INIT);
+  const [institucionId, setInstitucionId] = useState(() => me?.institucionId ?? null);
+
+  // Modal states
+  const [showCreate,   setShowCreate]   = useState(false);
+  const [editTarget,   setEditTarget]   = useState(null);
+  const [delTarget,    setDelTarget]    = useState(null);   // suspend
+  const [activTarget,  setActivTarget]  = useState(null);  // activate
+  const [viewTarget,   setViewTarget]   = useState(null);  // detail view
+  const [viewLoading,  setViewLoading]  = useState(false);
+  const [viewDetail,   setViewDetail]   = useState(null);  // full user data
+
+  const notify = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast({ msg: "", type: "success" }), 3500);
+  };
+
+  // Fetch institution ID for the current admin (needed to create users via POST /users)
+  useEffect(() => {
+    if (me?.institucionId) {
+      setInstitucionId(me.institucionId);
+      return;
+    }
+    if (!isSuperadmin) {
+      institucionesGetMine()
+        .then((res) => {
+          const id = res.institucion?._id ?? res._id ?? res.institucion?.id ?? null;
+          if (id) setInstitucionId(id);
+        })
+        .catch(() => {});
+    }
+  }, [me, isSuperadmin]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { page, limit: LIMIT };
+      if (rolFilter)   params.rol    = rolFilter;
+      if (estadoFilter) params.estado = estadoFilter;
+      const res = await usersGetAll(params);
+      setUsers(res.users ?? []);
+      setPag(res.pagination ?? { currentPage: 1, totalPages: 1, totalUsers: res.users?.length ?? 0 });
+    } catch {
+      notify("Error al cargar usuarios", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, rolFilter, estadoFilter]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Reset page on filter change
+  useEffect(() => { setPage(1); }, [rolFilter, estadoFilter]);
+
+  // Local search
+  const filtered = users.filter((u) => {
+    const q = search.toLowerCase();
+    return !q || u.nombre?.toLowerCase().includes(q) || u.apellido?.toLowerCase().includes(q) || u.correo?.toLowerCase().includes(q) || u.cedula?.includes(q) || u.telefono?.includes(q);
+  });
+
+  const f = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+
+  /* ── View detail ── */
+  const openView = async (u) => {
+    setViewTarget(u);
+    setViewDetail(null);
+    setViewLoading(true);
+    try {
+      const res = await usersGetById(u._id);
+      setViewDetail(res.user ?? res);
+    } catch {
+      setViewDetail(u); // fallback to list data
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  /* ── Create ── */
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const rolApi = toApiRol(form.rol);
+      // Password: cedula + "Aa" always satisfies complexity (upper, lower, digit)
+      const body = {
+        nombre:     form.nombre.trim(),
+        apellido:   form.apellido.trim(),
+        cedula:     form.cedula.trim(),
+        correo:     form.correo.trim(),
+        rol:        rolApi,
+        contraseña: form.cedula.trim() + "Aa",
+      };
+      if (form.telefono) body.telefono = normalizarTelefono(form.telefono);
+      if (rolApi !== "superadmin" && institucionId) body.institucionId = institucionId;
+      await usersCreate(body);
+      notify("Usuario creado correctamente");
+      setShowCreate(false);
+      setForm(INIT);
+      load();
+    } catch (err) {
+      notify(err.message || "Error al crear usuario", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Edit ── */
+  const openEdit = (u) => {
+    setEditTarget(u);
+    setForm({ nombre: u.nombre ?? "", apellido: u.apellido ?? "", cedula: u.cedula ?? "", correo: u.correo ?? "", telefono: u.telefono ?? "", contrasena: "", rol: u.rol ?? "docente" });
+  };
+
+  const handleEdit = async (e) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setSaving(true);
+    try {
+      const body = { nombre: form.nombre.trim(), apellido: form.apellido.trim(), cedula: form.cedula.trim(), correo: form.correo.trim(), rol: toApiRol(form.rol) };
+      if (form.telefono) body.telefono = normalizarTelefono(form.telefono);
+      await usersUpdate(editTarget._id, body);
+      notify("Usuario actualizado");
+      setEditTarget(null);
+      // Update view detail if open
+      if (viewTarget?._id === editTarget._id) setViewDetail((d) => d ? { ...d, ...body } : d);
+      load();
+    } catch (err) {
+      notify(err.message || "Error al actualizar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Suspend ── */
+  const handleSuspend = async () => {
+    if (!delTarget) return;
+    setSaving(true);
+    try {
+      await usersDelete(delTarget._id);
+      notify("Usuario suspendido");
+      setDelTarget(null);
+      load();
+    } catch (err) {
+      notify(err.message || "Error al suspender", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Activate (revert suspend) ── */
+  const handleActivate = async () => {
+    if (!activTarget) return;
+    setSaving(true);
+    try {
+      await usersUpdate(activTarget._id, { estado: "activo" });
+      notify("Usuario activado correctamente");
+      setActivTarget(null);
+      load();
+    } catch (err) {
+      notify(err.message || "Error al activar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const d = viewDetail ?? viewTarget;
+
+  /* ── Render ── */
+  return (
+    <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <Toast msg={toast.msg} type={toast.type} />
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99,102,241,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Users style={{ width: 18, height: 18, color: "#6366F1" }} />
+            </div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>Usuarios</h1>
+          </div>
+          <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
+            {pagination.totalUsers} usuarios registrados
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={load} title="Actualizar" style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-text-muted)" }}>
+            <RefreshCw style={{ width: 15, height: 15 }} />
+          </button>
+          <button onClick={() => { setForm(INIT); setShowCreate(true); }} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 10, border: "none", background: "#0C6AC4", color: "white", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#0A58A8"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#0C6AC4"; }}>
+            <Plus style={{ width: 16, height: 16 }} /> Nuevo usuario
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <Search style={{ width: 16, height: 16, color: "var(--color-text-muted)", flexShrink: 0 }} />
+        <input type="search" placeholder="Buscar por nombre, correo, cédula o teléfono..." value={search} onChange={e => setSearch(e.target.value)}
+          style={{ flex: 1, minWidth: 200, border: "none", outline: "none", fontSize: 13.5, color: "var(--color-text)", background: "transparent" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <Filter style={{ width: 14, height: 14, color: "var(--color-text-muted)" }} />
+          <select value={rolFilter} onChange={e => setRolF(e.target.value)}
+            style={{ border: "1px solid var(--color-border)", borderRadius: 8, padding: "5px 10px", fontSize: 12.5, background: "var(--color-surface)", color: "var(--color-text)", cursor: "pointer", outline: "none" }}>
+            <option value="">Todos los roles</option>
+            {ROL_LABELS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </select>
+          <select value={estadoFilter} onChange={e => setEstadoF(e.target.value)}
+            style={{ border: "1px solid var(--color-border)", borderRadius: 8, padding: "5px 10px", fontSize: 12.5, background: "var(--color-surface)", color: "var(--color-text)", cursor: "pointer", outline: "none" }}>
+            <option value="">Todos los estados</option>
+            <option value="activo">Activos</option>
+            <option value="suspendido">Suspendidos</option>
+          </select>
+        </div>
+        {(search || rolFilter || estadoFilter) && (
+          <button onClick={() => { setSearch(""); setRolF(""); setEstadoF(""); }} style={{ color: "var(--color-text-muted)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+            <X style={{ width: 13, height: 13 }} /> Limpiar
+          </button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "2px solid var(--color-border)", background: "var(--color-bg)" }}>
+                {["Usuario", "Contacto", "Cédula", "Rol", "Estado", "Acciones"].map(h => (
+                  <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                [0,1,2,3,4,5].map(i => (
+                  <tr key={i} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                    {[0,1,2,3,4,5].map(j => (
+                      <td key={j} style={{ padding: "13px 16px" }}><Sk h={14} w={j === 5 ? 90 : "75%"} /></td>
+                    ))}
+                  </tr>
+                ))
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>
+                    <div style={{ padding: "48px 24px", textAlign: "center" }}>
+                      <Users style={{ width: 32, height: 32, color: "var(--color-text-muted)", margin: "0 auto 10px" }} />
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-muted)" }}>Sin usuarios</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(u => (
+                  <UserRow
+                    key={u._id}
+                    user={u}
+                    onView={() => openView(u)}
+                    onEdit={() => openEdit(u)}
+                    onSuspend={() => setDelTarget(u)}
+                    onActivate={() => setActivTarget(u)}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {!loading && pagination.totalPages > 1 && (
+          <div style={{ padding: "12px 16px", borderTop: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>Página {page} de {pagination.totalPages} · {pagination.totalUsers} usuarios</span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <PagBtn onClick={() => setPage(p => p - 1)} disabled={page <= 1}><ChevronLeft style={{ width: 15, height: 15 }} /></PagBtn>
+              <PagBtn onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}><ChevronRight style={{ width: 15, height: 15 }} /></PagBtn>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ══ CREATE MODAL ══ */}
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Nuevo usuario" size="md">
+        <form onSubmit={handleCreate}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldGroup label="Nombre *"><StyledInput value={form.nombre} onChange={f("nombre")} placeholder="Juan" required /></FieldGroup>
+            <FieldGroup label="Apellido *"><StyledInput value={form.apellido} onChange={f("apellido")} placeholder="Pérez" required /></FieldGroup>
+            <FieldGroup label="Cédula *"><StyledInput value={form.cedula} onChange={f("cedula")} placeholder="12345678" required /></FieldGroup>
+            <FieldGroup label="Teléfono"><StyledInput value={form.telefono} onChange={f("telefono")} placeholder="3001234567 (+57 se agrega automáticamente)" /></FieldGroup>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <FieldGroup label="Correo *"><StyledInput value={form.correo} onChange={f("correo")} type="email" placeholder="usuario@correo.com" required /></FieldGroup>
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <FieldGroup label="Rol *">
+                <StyledSelect value={form.rol} onChange={f("rol")}>
+                  {ROL_LABELS.filter(r => isSuperadmin || r.value !== "superadmin").map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </StyledSelect>
+              </FieldGroup>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, padding: "10px 12px", borderRadius: 9, background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.15)" }}>
+            <Hash style={{ width: 13, height: 13, color: "#0C6AC4", flexShrink: 0 }} />
+            <p style={{ fontSize: 12.5, color: "#0C6AC4", margin: 0 }}>
+              Contraseña inicial: <strong>cédula + "Aa"</strong> (ej: {form.cedula || "12345678"}<strong>Aa</strong>). El usuario debe cambiarla al ingresar.
+            </p>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+            <BtnCancel onClick={() => setShowCreate(false)} />
+            <BtnSave saving={saving}>{saving ? "Creando..." : "Crear usuario"}</BtnSave>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ══ EDIT MODAL ══ */}
+      <Modal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} title={`Editar usuario`} description={`${editTarget?.nombre ?? ""} ${editTarget?.apellido ?? ""}`} size="md">
+        <form onSubmit={handleEdit}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldGroup label="Nombre *"><StyledInput value={form.nombre} onChange={f("nombre")} placeholder="Juan" required /></FieldGroup>
+            <FieldGroup label="Apellido *"><StyledInput value={form.apellido} onChange={f("apellido")} placeholder="Pérez" required /></FieldGroup>
+            <FieldGroup label="Cédula">
+              <StyledInput value={form.cedula} onChange={f("cedula")} placeholder="12345678" />
+            </FieldGroup>
+            <FieldGroup label="Teléfono"><StyledInput value={form.telefono} onChange={f("telefono")} placeholder="3001234567 (+57 se agrega automáticamente)" /></FieldGroup>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <FieldGroup label="Correo *"><StyledInput value={form.correo} onChange={f("correo")} type="email" placeholder="usuario@correo.com" required /></FieldGroup>
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <FieldGroup label="Rol *">
+                <StyledSelect value={form.rol} onChange={f("rol")}>
+                  {ROL_LABELS.filter(r => isSuperadmin || r.value !== "superadmin").map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </StyledSelect>
+              </FieldGroup>
+            </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
+            <BtnCancel onClick={() => setEditTarget(null)} />
+            <BtnSave saving={saving}>{saving ? "Guardando..." : "Guardar cambios"}</BtnSave>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ══ VIEW DETAIL MODAL ══ */}
+      <Modal isOpen={Boolean(viewTarget)} onClose={() => { setViewTarget(null); setViewDetail(null); }} title="Detalle de usuario" size="md">
+        {viewLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[0,1,2,3,4,5].map(i => <Sk key={i} h={44} r={8} />)}
+          </div>
+        ) : d ? (
+          <>
+            {/* Avatar + name */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "4px 0 16px", borderBottom: "1px solid var(--color-border)", marginBottom: 4 }}>
+              <UserAvatar user={d} size={64} />
+              <div>
+                <p style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>{d.nombre} {d.apellido}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                  <RolBadge rol={d.rol} />
+                  <EstadoBadge estado={d.estado} />
+                </div>
+              </div>
+            </div>
+
+            {/* Photo preview */}
+            {d.fotoPerfilUrl && (
+              <div style={{ marginBottom: 4 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Foto de perfil</p>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <img src={d.fotoPerfilUrl} alt="Foto de perfil" style={{ width: 80, height: 80, borderRadius: 12, objectFit: "cover", border: "2px solid var(--color-border)" }} />
+                  <a href={d.fotoPerfilUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: "#0C6AC4", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Eye style={{ width: 13, height: 13 }} /> Ver imagen completa
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Info rows */}
+            <InfoRow icon={Mail}     label="Correo"           value={d.correo} />
+            <InfoRow icon={Phone}    label="Teléfono"         value={d.telefono} />
+            <InfoRow icon={Hash}     label="Cédula"           value={d.cedula} />
+            <InfoRow icon={Shield}   label="Rol"              value={ROL_META[d.rol]?.label ?? d.rol} />
+            <InfoRow icon={Calendar} label="Registro"         value={formatDate(d.fechaRegistro ?? d.createdAt)} />
+            <InfoRow icon={Clock}    label="Último acceso"    value={formatDate(d.ultimoAcceso)} />
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 10, marginTop: 18, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => { setViewTarget(null); openEdit(d); }}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-text)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                <Edit2 style={{ width: 13, height: 13 }} /> Editar
+              </button>
+              {d.estado === "activo" ? (
+                <button onClick={() => { setViewTarget(null); setDelTarget(d); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "none", background: "rgba(220,38,38,0.1)", color: "#DC2626", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  <UserX style={{ width: 13, height: 13 }} /> Suspender
+                </button>
+              ) : (
+                <button onClick={() => { setViewTarget(null); setActivTarget(d); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "none", background: "rgba(22,163,74,0.1)", color: "#16A34A", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  <UserCheck style={{ width: 13, height: 13 }} /> Activar
+                </button>
+              )}
+            </div>
+          </>
+        ) : null}
+      </Modal>
+
+      {/* ══ SUSPEND CONFIRM ══ */}
+      <Modal isOpen={Boolean(delTarget)} onClose={() => setDelTarget(null)} title="Suspender usuario" size="sm">
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, padding: "12px 14px", borderRadius: 10, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.15)" }}>
+          <UserAvatar user={delTarget} size={40} />
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{delTarget?.nombre} {delTarget?.apellido}</p>
+            <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0 }}>{delTarget?.correo}</p>
+          </div>
+        </div>
+        <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", marginBottom: 20 }}>
+          El usuario <strong style={{ color: "var(--color-text)" }}>no podrá iniciar sesión</strong> mientras esté suspendido. Podrás reactivarlo en cualquier momento.
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <BtnCancel onClick={() => setDelTarget(null)} />
+          <button onClick={handleSuspend} disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#fca5a5" : "#DC2626", color: "white", fontSize: 13.5, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            {saving && <Loader2 style={{ width: 14, height: 14, animation: "edu-spin 0.6s linear infinite" }} />}
+            {saving ? "Suspendiendo..." : "Suspender"}
+          </button>
+        </div>
+      </Modal>
+
+      {/* ══ ACTIVATE CONFIRM ══ */}
+      <Modal isOpen={Boolean(activTarget)} onClose={() => setActivTarget(null)} title="Activar usuario" size="sm">
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, padding: "12px 14px", borderRadius: 10, background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.2)" }}>
+          <UserAvatar user={activTarget} size={40} />
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{activTarget?.nombre} {activTarget?.apellido}</p>
+            <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0 }}>{activTarget?.correo}</p>
+          </div>
+        </div>
+        <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", marginBottom: 20 }}>
+          El usuario podrá <strong style={{ color: "var(--color-text)" }}>volver a iniciar sesión</strong> normalmente.
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <BtnCancel onClick={() => setActivTarget(null)} />
+          <button onClick={handleActivate} disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#86efac" : "#16A34A", color: "white", fontSize: 13.5, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            {saving && <Loader2 style={{ width: 14, height: 14, animation: "edu-spin 0.6s linear infinite" }} />}
+            {saving ? "Activando..." : "Activar usuario"}
+          </button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+/* ── Sub-components ───────────────────────────────────────────── */
+function UserRow({ user: u, onView, onEdit, onSuspend, onActivate }) {
+  const [hov, setHov] = useState(false);
+  const suspended = u.estado !== "activo";
+  return (
+    <tr onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ borderBottom: "1px solid var(--color-border)", background: hov ? "var(--color-bg)" : "var(--color-surface)", transition: "background 150ms" }}>
+      <td style={{ padding: "12px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <UserAvatar user={u} size={34} />
+          <div>
+            <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>{u.nombre} {u.apellido}</p>
+            {u.ultimoAcceso && <p style={{ fontSize: 11, color: "var(--color-text-muted)", margin: 0 }}>Últ. acceso: {new Date(u.ultimoAcceso).toLocaleDateString("es-CO")}</p>}
+          </div>
+        </div>
+      </td>
+      <td style={{ padding: "12px 16px" }}>
+        <p style={{ fontSize: 13, color: "var(--color-text)", margin: 0 }}>{u.correo ?? "—"}</p>
+        {u.telefono && <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", margin: 0 }}>{u.telefono}</p>}
+      </td>
+      <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--color-text-muted)" }}>{u.cedula ?? "—"}</td>
+      <td style={{ padding: "12px 16px" }}><RolBadge rol={u.rol} /></td>
+      <td style={{ padding: "12px 16px" }}><EstadoBadge estado={u.estado} /></td>
+      <td style={{ padding: "12px 16px" }}>
+        <div style={{ display: "flex", gap: 5 }}>
+          <ActionIconBtn icon={Eye}       title="Ver detalles"  color="#6366F1" bg="rgba(99,102,241,0.08)"  onClick={onView} />
+          <ActionIconBtn icon={Edit2}     title="Editar"        color="#0C6AC4" bg="rgba(12,106,196,0.08)"  onClick={onEdit} />
+          {suspended
+            ? <ActionIconBtn icon={UserCheck} title="Activar"   color="#16A34A" bg="rgba(22,163,74,0.08)"  onClick={onActivate} />
+            : <ActionIconBtn icon={UserX}     title="Suspender" color="#DC2626" bg="rgba(220,38,38,0.08)"  onClick={onSuspend} />
+          }
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function PagBtn({ onClick, disabled, children }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-text-muted)", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {children}
+    </button>
+  );
+}
+
+function ActionIconBtn({ icon: Icon, title, color, bg, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={onClick} title={title} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${hov ? color : "var(--color-border)"}`, background: hov ? bg : "var(--color-surface)", color: hov ? color : "var(--color-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 150ms" }}>
+      <Icon style={{ width: 14, height: 14 }} />
+    </button>
+  );
+}
+
+function BtnCancel({ onClick }) {
+  return (
+    <button type="button" onClick={onClick} style={{ padding: "9px 18px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-text)", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}>
+      Cancelar
+    </button>
+  );
+}
+
+function BtnSave({ children, saving, ...props }) {
+  return (
+    <button type="submit" disabled={saving} {...props} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#6ba4d8" : "#0C6AC4", color: "white", fontSize: 13.5, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+      {saving && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
+      {children}
+    </button>
+  );
+}
