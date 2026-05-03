@@ -1,9 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
@@ -27,8 +26,8 @@ module.exports = {
         info: '#4299E1',
       },
       boxShadow: {
-        neum: '8px 8px 15px #d1d9e6, -8px -8px 15px #ffffff', // sombra neumórfica
-        neumInset: 'inset 8px 8px 15px #d1d9e6, inset -8px -8px 15px #ffffff', // inset
+        neum: '8px 8px 15px #d1d9e6, -8px -8px 15px #ffffff',
+        neumInset: 'inset 8px 8px 15px #d1d9e6, inset -8px -8px 15px #ffffff',
       },
       borderRadius: {
         neum: '1rem',
@@ -37,4 +36,4 @@ module.exports = {
     },
   },
   plugins: [],
-}
+};
