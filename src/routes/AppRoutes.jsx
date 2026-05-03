@@ -44,7 +44,7 @@ import NotificacionesPage from "../features/notificaciones/pages/NotificacionesP
 import { ProtectedRoute, PublicOnlyRoute, RoleRedirect } from "./ProtectedRoute";
 
 // Layouts
-import MainLayout from "../layouts/MainLayout";
+import MainLayout from "../components/layout/MainLayout";
 
 export default function AppRoutes() {
   return (
