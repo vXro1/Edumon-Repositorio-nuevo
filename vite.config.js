@@ -20,4 +20,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'vendor.react';
+            return 'vendor';
+          }
+          if (id.includes('src/features/cursos')) return 'feature.cursos';
+          if (id.includes('src/features/tareas')) return 'feature.tareas';
+          if (id.includes('src/features/foros')) return 'feature.foros';
+        }
+      }
+    }
+  }
 })

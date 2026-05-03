@@ -1,105 +1,162 @@
 // src/features/auth/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { authService } from "../services/authService";
-import { registerLogoutCallback } from "../../../lib/apiClient";
+import React, {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 
-const AuthContext = createContext(null);
+import { authService } from "../../../services/authService";
+import { registerLogoutCallback } from "../../../services/core/apiClient";
 
-/*
- * Guard global: evita que el callback de 401 se ejecute múltiples veces
- * si hay varios requests en vuelo que fallan simultáneamente.
+export const AuthContext = createContext(null);
+
+/**
+ * Evita múltiples ejecuciones simultáneas del logout por 401
  */
 let _handling401 = false;
 
 export const AuthProvider = ({ children }) => {
-  const [user,    setUser]    = useState(null);
-  const [token,   setToken]   = useState(() => authService.getToken());
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => authService.getToken());
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!token && !!user;
 
-  /* ── Logout manual ── */
-  const logout = useCallback(async () => {
-    await authService.logout();
-    setToken(null);
-    setUser(null);
-    // Limpieza de caché al cerrar sesión intencionalmente
-    authService.clearAllCache();
+  /**
+   * Limpieza centralizada
+   */
+  const clearAll = useCallback(() => {
+    try {
+      authService.clearAllCache?.();
+    } catch {}
+
+    try {
+      localStorage.removeItem("token");
+    } catch {}
+
+    try {
+      sessionStorage.clear();
+    } catch {}
   }, []);
 
-  /* ── Login ── */
-  const login = useCallback(async (credentials) => {
-    const data = await authService.login(credentials);
-    setToken(data.token);
-    setUser(data.user);
-    return data;
-  }, []);
-
-  /* ── Callback 401: sesión expirada desde cualquier request ──
-   *
-   * Usa window.location.replace en lugar de React Router para:
-   *   1. Cortar todos los requests en vuelo de inmediato (nueva página)
-   *   2. Limpiar toda la memoria de React sin race conditions
-   *   3. El parámetro ?expired=1 le indica al login que muestre el aviso
+  /**
+   * Logout global por 401 (desde apiClient)
    */
   useEffect(() => {
-    _handling401 = false; // reset al montar/remontar
+    _handling401 = false;
 
     registerLogoutCallback(() => {
       if (_handling401) return;
       _handling401 = true;
 
-      authService.clearAllCache();
+      clearAll();
 
-      // Hard redirect — más robusto que navigate() de React Router
-      // porque aborta requests en vuelo y resetea el árbol de React
+      setToken(null);
+      setUser(null);
+
       window.location.replace("/login?expired=1");
     });
-  }, []);
 
-  /* ── Verificación inicial de sesión ──
-   *
-   * El flag `ignore` previene el doble-seteo de estado que ocurre en
-   * React StrictMode (development), donde los efectos corren dos veces.
+    // auto-logout by token expiration (check every 60s)
+    const interval = setInterval(() => {
+      const t = authService.getToken();
+      if (t && authService.isTokenExpired?.(t)) {
+        // single-run: trigger redirect and cleanup
+        if (!_handling401) {
+          _handling401 = true;
+          try { authService.clearAllCache?.(); } catch {}
+          window.location.replace('/login?expired=1');
+        }
+      }
+    }, 60 * 1000);
+
+    return () => { clearInterval(interval); };
+  }, [clearAll]);
+
+  /**
+   * Inicialización de sesión
    */
   useEffect(() => {
-    let ignore = false;
+    let mounted = true;
 
-    const initAuth = async () => {
+    const init = async () => {
       const savedToken = authService.getToken();
 
       if (!savedToken) {
-        if (!ignore) setLoading(false);
+        if (mounted) setLoading(false);
         return;
       }
 
       try {
         const profile = await authService.getProfile();
-        if (!ignore) {
+
+        if (mounted) {
           setUser(profile.user ?? profile);
           setToken(savedToken);
         }
       } catch {
-        // Token inválido o expirado: limpia sin redirigir
-        // (el usuario ya está en la app, ProtectedRoute lo mandará al login)
-        if (!ignore) {
-          authService.clearAllCache();
-          setToken(null);
+        clearAll();
+
+        if (mounted) {
           setUser(null);
+          setToken(null);
         }
       } finally {
-        if (!ignore) setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    initAuth();
+    init();
 
-    return () => { ignore = true; };
+    return () => {
+      mounted = false;
+    };
+  }, [clearAll]);
+
+  /**
+   * LOGIN
+   */
+  const login = useCallback(async (credentials) => {
+    const data = await authService.login(credentials);
+
+    if (data?.token) {
+      // authService is responsible for persisting token; context keeps in-memory state
+      setToken(data.token);
+      setUser(data.user ?? null);
+    }
+
+    return data;
   }, []);
 
+  /**
+   * LOGOUT manual
+   */
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch {}
+
+    clearAll();
+
+    setToken(null);
+    setUser(null);
+  }, [clearAll]);
+
+  /**
+   * Memo del contexto (evita rerenders innecesarios)
+   */
   const value = useMemo(
-    () => ({ user, token, isAuthenticated, loading, login, logout }),
-    [user, token, isAuthenticated, loading, login, logout]
+    () => ({
+      user,
+      token,
+      loading,
+      isAuthenticated,
+      login,
+      logout
+    }),
+    [user, token, loading, isAuthenticated, login, logout]
   );
 
   return (
@@ -109,8 +166,17 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+/**
+ * Hook seguro
+ */
 export const useAuthContext = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuthContext debe usarse dentro de <AuthProvider>");
+  const ctx = React.useContext(AuthContext);
+
+  if (!ctx) {
+    throw new Error(
+      "useAuthContext debe usarse dentro de <AuthProvider>"
+    );
+  }
+
   return ctx;
 };
