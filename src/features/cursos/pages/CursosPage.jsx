@@ -14,6 +14,9 @@ import {
 } from "@/lib/apiClient";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useSearch } from "@/context/SearchContext";
+import { normalizeCurso, normalizeUser } from "@/lib/normalizers";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { humanizeError } from "@/utils/humanizeError";
 
 const LIMIT = 12;
 
@@ -221,7 +224,7 @@ export default function CursosPage() {
       const res = isDocente
         ? await cursosGetMine({ page, limit: LIMIT })
         : await cursosGetAll({ page, limit: LIMIT });
-      setCursos(res.cursos ?? res.data ?? []);
+      setCursos((res.cursos ?? res.data ?? []).map(normalizeCurso));
       setTotal(res.pagination?.total ?? res.cursos?.length ?? 0);
     } catch { notify("Error al cargar cursos", "error"); }
     finally { setLoading(false); }
@@ -245,7 +248,7 @@ export default function CursosPage() {
   useEffect(() => {
     if (!user || isDocente) return;
     usersGetAll({ rol: "docente", limit: 100 })
-      .then(r => setDocentes(r.users ?? []))
+      .then(r => setDocentes((r.users ?? []).map(normalizeUser)))
       .catch(() => {});
   }, [user, isDocente]);
 
@@ -253,7 +256,7 @@ export default function CursosPage() {
     setPartsLoading(true);
     try {
       const res = await cursosGetParticipantes(id, { limit: 100 });
-      setParts(res.participantes ?? res.data ?? []);
+      setParts((res.participantes ?? res.data ?? []).map(p => ({ ...p, usuario: normalizeUser(p.usuario ?? p) })));
     } catch { notify("Error al cargar participantes", "error"); }
     finally { setPartsLoading(false); }
   }, []);
@@ -289,7 +292,7 @@ export default function CursosPage() {
       setCreateForm({ nombre: "", descripcion: "", docenteId: "" });
       setCreateCoverFile(null);
       load();
-    } catch (err) { notify(err.message || "Error al crear curso", "error"); }
+    } catch (err) { notify(humanizeError(err, "Error al crear curso"), "error"); }
     finally { setSaving(false); }
   };
 
@@ -313,7 +316,7 @@ export default function CursosPage() {
       setEditOpen(false);
       setEditCoverFile(null);
       load();
-    } catch (err) { notify(err.message || "Error al actualizar", "error"); }
+    } catch (err) { notify(humanizeError(err, "Error al actualizar"), "error"); }
     finally { setSaving(false); }
   };
 
@@ -325,7 +328,7 @@ export default function CursosPage() {
       notify("Curso archivado");
       setArchiveOpen(false);
       load();
-    } catch (err) { notify(err.message || "Error al archivar", "error"); }
+    } catch (err) { notify(humanizeError(err, "Error al archivar"), "error"); }
     finally { setSaving(false); }
   };
 
@@ -340,7 +343,7 @@ export default function CursosPage() {
       await cursosRemoveParticipante(selected._id, userId);
       notify("Participante eliminado");
       loadParts(selected._id);
-    } catch (err) { notify(err.message || "Error al eliminar", "error"); }
+    } catch (err) { notify(humanizeError(err, "Error al eliminar"), "error"); }
   };
 
   const handleAddPart = async (e) => {
@@ -356,7 +359,7 @@ export default function CursosPage() {
       setAddPartOpen(false);
       setAddForm({ nombre: "", apellido: "", cedula: "", telefono: "" });
       loadParts(selected._id);
-    } catch (err) { notify(err.message || "Error al agregar", "error"); }
+    } catch (err) { notify(humanizeError(err, "Error al agregar participante"), "error"); }
     finally { setSaving(false); }
   };
 
@@ -456,7 +459,7 @@ export default function CursosPage() {
                       </div>
                     </td>
                     <td style={{ padding: "13px 16px", fontSize: 13, color: "var(--color-text-muted)" }}>
-                      {c.docente ? `${c.docente.nombre} ${c.docente.apellido}` : "—"}
+                      {c.docente ? `${c.docente.nombre} ${c.docente.apellido}`.trim() || "—" : "—"}
                     </td>
                     <td style={{ padding: "13px 16px", fontSize: 13, color: "var(--color-text-muted)" }}>
                       {c.participantes?.length ?? c.totalParticipantes ?? "—"}
@@ -687,15 +690,7 @@ export default function CursosPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: "50%",
-                      background: esDocente ? "rgba(12,106,196,0.1)" : "rgba(99,102,241,0.1)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 13, fontWeight: 700,
-                      color: esDocente ? "#0C6AC4" : "#6366F1",
-                    }}>
-                      {u.nombre?.[0]?.toUpperCase() ?? "?"}
-                    </div>
+                    <UserAvatar user={u} size={36} />
                     <div>
                       <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>
                         {u.nombre} {u.apellido}

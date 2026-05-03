@@ -13,6 +13,11 @@ import {
   cursosGetParticipantes, cursosAddParticipante, cursosRemoveParticipante, cursosAddParticipantesCsv,
 } from "@/lib/apiClient";
 import Modal from "@/components/ui/Modal";
+import { normalizeCurso, normalizeUser } from "@/lib/normalizers";
+import UserAvatar from "@/components/ui/UserAvatar";
+import useUserStore from "@/store/useUserStore";
+import { humanizeError } from "@/utils/humanizeError";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 function Toast({ msg, type }) {
   if (!msg) return null;
@@ -53,6 +58,7 @@ const TABS = ["Módulos", "Participantes"];
 export default function CursoDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const setUsers = useUserStore((s) => s.setUsers);
 
   const [curso,   setCurso]   = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +103,7 @@ export default function CursoDetallePage() {
     (async () => {
       try {
         const data = await cursosGetById(id);
-        const c = data.curso ?? data;
+        const c = normalizeCurso(data.curso ?? data);
         setCurso(c);
         setCursoForm({ nombre: c.nombre ?? "", descripcion: c.descripcion ?? "" });
       } catch {
@@ -126,13 +132,18 @@ export default function CursoDetallePage() {
     setParticLoad(true);
     try {
       const data = await cursosGetParticipantes(id, { limit: 50 });
-      setPartic(data.participantes ?? data.users ?? data ?? []);
+      const normalized = (data.participantes ?? data.users ?? []).map(p => ({
+        ...p,
+        usuario: normalizeUser(p.usuario ?? p),
+      }));
+      setPartic(normalized);
+      setUsers(normalized.map(p => p.usuario));
     } catch {
       notify("Error al cargar participantes", "error");
     } finally {
       setParticLoad(false);
     }
-  }, [id]);
+  }, [id, setUsers]);
 
   useEffect(() => { if (tab === 0) loadModulos(); }, [tab, loadModulos]);
   useEffect(() => { if (tab === 1) loadPartic();  }, [tab, loadPartic]);
@@ -148,7 +159,7 @@ export default function CursoDetallePage() {
       setModForm({ titulo: "", descripcion: "" });
       loadModulos();
     } catch (err) {
-      notify(err.message || "Error al crear módulo", "error");
+      notify(humanizeError(err, "Error al crear módulo"), "error");
     } finally {
       setSavingMod(false);
     }
@@ -163,7 +174,7 @@ export default function CursoDetallePage() {
       setShowModEdit(false);
       loadModulos();
     } catch (err) {
-      notify(err.message || "Error al actualizar módulo", "error");
+      notify(humanizeError(err, "Error al actualizar módulo"), "error");
     } finally {
       setSavingMod(false);
     }
@@ -186,7 +197,7 @@ export default function CursoDetallePage() {
       }
       loadModulos();
     } catch (err) {
-      notify(err.message || "Error", "error");
+      notify(humanizeError(err, "Ocurrió un error"), "error");
     }
   };
 
@@ -197,14 +208,14 @@ export default function CursoDetallePage() {
     try {
       await cursosAddParticipante(id, {
         ...particForm,
-        telefono: normalizarTelefono(particForm.telefono),
+        telefono: normalizePhone(particForm.telefono),
       });
       notify("Participante agregado");
       setShowAddPartic(false);
       setParticForm({ nombre: "", apellido: "", cedula: "", telefono: "" });
       loadPartic();
     } catch (err) {
-      notify(err.message || "Error al agregar participante", "error");
+      notify(humanizeError(err, "Error al agregar participante"), "error");
     } finally {
       setSavingPartic(false);
     }
@@ -217,7 +228,7 @@ export default function CursoDetallePage() {
       notify("Participante eliminado");
       loadPartic();
     } catch (err) {
-      notify(err.message || "Error al eliminar", "error");
+      notify(humanizeError(err, "Error al eliminar"), "error");
     }
   };
 
@@ -232,7 +243,7 @@ export default function CursoDetallePage() {
       notify(`Importación: ${res.exitosos ?? 0} exitosos`);
       if ((res.exitosos ?? 0) > 0) loadPartic();
     } catch (err) {
-      notify(err.message || "Error en importación", "error");
+      notify(humanizeError(err, "Error en importación"), "error");
     } finally {
       setCsvLoading(false);
     }
@@ -248,13 +259,12 @@ export default function CursoDetallePage() {
       fd.append("descripcion", cursoForm.descripcion);
       if (coverFile) fd.append("fotoPortada", coverFile);
       const data = await cursosUpdate(id, fd);
-      const updated = data.curso ?? data;
-      setCurso(updated);
+      setCurso(normalizeCurso(data.curso ?? data));
       notify("Curso actualizado");
       setShowEditCurso(false);
       setCoverFile(null);
     } catch (err) {
-      notify(err.message || "Error al actualizar curso", "error");
+      notify(humanizeError(err, "Error al actualizar curso"), "error");
     } finally {
       setSavingCurso(false);
     }
@@ -415,9 +425,7 @@ export default function CursoDetallePage() {
                       <tr key={u._id ?? p._id} style={{ borderBottom: "1px solid var(--color-border)" }}>
                         <td style={{ padding: "11px 16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#0C6AC4", flexShrink: 0 }}>
-                              {(u.nombre?.[0] ?? "P").toUpperCase()}
-                            </div>
+                            <UserAvatar user={u} size={30} />
                             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{u.nombre} {u.apellido}</span>
                           </div>
                         </td>
@@ -585,10 +593,3 @@ function ModuloCard({ mod, idx, onEdit, onToggle }) {
   );
 }
 
-function normalizarTelefono(t) {
-  if (!t) return t;
-  const digits = t.replace(/\D/g, "");
-  if (digits.startsWith("57") && digits.length === 12) return `+${digits}`;
-  if (digits.length === 10) return `+57${digits}`;
-  return t;
-}
