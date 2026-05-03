@@ -1,5 +1,5 @@
 // src/components/ui/Modal.jsx
-import { useEffect, useLayoutEffect, useRef, useId } from "react";
+import { useEffect, useLayoutEffect, useRef, useId, useCallback } from "react";
 import { X } from "lucide-react";
 
 /*
@@ -37,9 +37,11 @@ export default function Modal({
   size = "md",
   closeOnOverlay = true,
 }) {
-  const panelRef    = useRef(null);
-  const titleId     = useId();
-  const maxWidth    = MAX_WIDTHS[size] ?? MAX_WIDTHS.md;
+  const panelRef         = useRef(null);
+  const overlayRef       = useRef(null);
+  const mouseDownTarget  = useRef(null);
+  const titleId          = useId();
+  const maxWidth         = MAX_WIDTHS[size] ?? MAX_WIDTHS.md;
 
   /*
    * onCloseRef — mantiene la referencia más reciente de onClose sin que el
@@ -92,13 +94,28 @@ export default function Modal({
     };
   }, [isOpen]); // ← SOLO isOpen. onClose va por ref para no re-ejecutar el efecto.
 
+  // Track where the mousedown started so text-selection drags from the panel
+  // to the overlay don't accidentally close the modal.
+  const handleOverlayMouseDown = useCallback((e) => {
+    mouseDownTarget.current = e.target;
+  }, []);
+
+  const handleOverlayClick = useCallback((e) => {
+    if (closeOnOverlay && mouseDownTarget.current === overlayRef.current) {
+      onClose();
+    }
+    mouseDownTarget.current = null;
+  }, [closeOnOverlay, onClose]);
+
   if (!isOpen) return null;
 
   return (
     /* ── Overlay ─────────────────────────────────────────────── */
     <div
+      ref={overlayRef}
       aria-hidden={!isOpen}
-      onClick={() => closeOnOverlay && onClose()}
+      onMouseDown={handleOverlayMouseDown}
+      onClick={handleOverlayClick}
       style={{
         position: "fixed",
         inset: 0,

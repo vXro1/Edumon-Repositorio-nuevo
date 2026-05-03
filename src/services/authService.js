@@ -1,8 +1,7 @@
 // src/services/authService.js
 // Central authService (single source of truth for auth logic)
 import { apiFetch, setTokenProvider } from './core/apiClient';
-import jwt_decode from 'jwt-decode';
-
+import { jwtDecode } from "jwt-decode";
 const TOKEN_KEY = 'token';
 
 export const authService = {

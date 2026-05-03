@@ -7,7 +7,9 @@ import {
   ExternalLink, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { tareasGetById, entregasGetByTarea, entregasCalificar } from "@/lib/apiClient";
+import { normalizeTarea, normalizeEntrega } from "@/lib/normalizers";
 import Modal from "@/components/ui/Modal";
+import { humanizeError } from "@/utils/humanizeError";
 
 function Toast({ msg, type }) {
   if (!msg) return null;
@@ -72,8 +74,8 @@ export default function EntregasPage() {
         tareasGetById(id),
         entregasGetByTarea(id, { limit: 100 }),
       ]);
-      setTarea(tareaData.tarea ?? tareaData);
-      setEntregas(entregasData.entregas ?? []);
+      setTarea(normalizeTarea(tareaData.tarea ?? tareaData));
+      setEntregas((entregasData.entregas ?? []).map(normalizeEntrega));
       if (entregasData.estadisticas) setStats(entregasData.estadisticas);
     } catch {
       notify("Error al cargar entregas", "error");
@@ -107,7 +109,7 @@ export default function EntregasPage() {
       setShowCal(false);
       load();
     } catch (err) {
-      notify(err.message || "Error al calificar", "error");
+      notify(humanizeError(err, "Error al calificar"), "error");
     } finally {
       setSaving(false);
     }
@@ -176,7 +178,7 @@ export default function EntregasPage() {
           <form onSubmit={handleCalificar}>
             <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "12px 14px", marginBottom: 16 }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
-                {calTarget.padre?.nombre ?? ""} {calTarget.padre?.apellido ?? ""}
+                {calTarget.padre.nombre} {calTarget.padre.apellido}
               </p>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
                 Enviada: {new Date(calTarget.fechaEnvio ?? calTarget.createdAt).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -231,7 +233,7 @@ export default function EntregasPage() {
 function EntregaCard({ entrega: e, onCalificar }) {
   const [expanded, setExpanded] = useState(false);
   const estadoCfg = ESTADO_CFG[e.estado] ?? ESTADO_CFG.enviada;
-  const padreNombre = e.padre ? `${e.padre.nombre ?? ""} ${e.padre.apellido ?? ""}`.trim() : "Padre desconocido";
+  const padreNombre = `${e.padre.nombre} ${e.padre.apellido}`.trim() || "Sin nombre";
   const fecha = e.fechaEnvio ?? e.createdAt;
   const adjuntos = e.archivos ?? e.adjuntos ?? [];
 

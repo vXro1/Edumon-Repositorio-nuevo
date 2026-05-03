@@ -9,6 +9,7 @@ import React, {
 
 import { authService } from "../../../services/authService";
 import { registerLogoutCallback } from "../../../services/core/apiClient";
+import { normalizeUser } from "@/lib/normalizers";
 
 export const AuthContext = createContext(null);
 
@@ -93,7 +94,7 @@ export const AuthProvider = ({ children }) => {
         const profile = await authService.getProfile();
 
         if (mounted) {
-          setUser(profile.user ?? profile);
+          setUser(normalizeUser(profile.user ?? profile));
           setToken(savedToken);
         }
       } catch {
@@ -124,7 +125,7 @@ export const AuthProvider = ({ children }) => {
     if (data?.token) {
       // authService is responsible for persisting token; context keeps in-memory state
       setToken(data.token);
-      setUser(data.user ?? null);
+      setUser(normalizeUser(data.user ?? null));
     }
 
     return data;

@@ -6,6 +6,7 @@ import { authService } from "../services/authService";
 import { ResetPasswordForm } from "../../../components/forms/ResetPasswordForm";
 import { AuthLayout } from "../../../components/layout/AuthLayout";
 import { Card } from "../../../components/ui/index";
+import { humanizeError } from "../../../utils/humanizeError";
 
 export const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export const ResetPasswordPage = () => {
       await authService.resetPassword({ correo, codigo, contrasenaNueva });
       setSuccess(true);
     } catch (err) {
-      setError(err.message || "Ocurrió un error. Intenta de nuevo.");
+      setError(humanizeError(err, "Ocurrió un error. Intenta de nuevo."));
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import { ForgotPasswordForm } from "../../../components/forms/ForgotPasswordForm";
 import { AuthLayout } from "../../../components/layout/AuthLayout";
+import { humanizeError } from "../../../utils/humanizeError";
 import { Card } from "../../../components/ui/index";
 
 export const ForgotPasswordPage = () => {
@@ -27,7 +28,7 @@ export const ForgotPasswordPage = () => {
     } catch (err) {
       // El backend siempre responde 200 por seguridad,
       // pero si hay error de red u otro, lo mostramos
-      setError(err.message || "Ocurrió un error. Intenta de nuevo.");
+      setError(humanizeError(err, "Ocurrió un error. Intenta de nuevo."));
     } finally {
       setLoading(false);
     }

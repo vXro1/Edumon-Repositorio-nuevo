@@ -12,6 +12,8 @@ import {
   entregasGetMineByTarea, entregasCreate, entregasUpdate, entregasEnviar,
 } from "@/lib/apiClient";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { normalizeTarea, normalizeEntrega } from "@/lib/normalizers";
+import { humanizeError } from "@/utils/humanizeError";
 
 const ESTADO_ENTREGA = {
   borrador:  { label: "Borrador",   color: "#6B7280", bg: "rgba(107,114,128,0.10)" },
@@ -86,7 +88,8 @@ function TareaCard({ tarea, user }) {
     setLoadingE(true);
     try {
       const res = await entregasGetMineByTarea(tarea._id);
-      const e = res.entrega ?? res.entregas?.[0] ?? null;
+      const raw = res.entrega ?? res.entregas?.[0] ?? null;
+      const e = normalizeEntrega(raw);
       setEntrega(e);
       if (e) setTexto(e.textoRespuesta ?? "");
     } catch { /* puede no existir */ }
@@ -117,7 +120,7 @@ function TareaCard({ tarea, user }) {
       setArchivos([]);
       loadEntrega();
     } catch (err) {
-      notify(err.message || "Error al guardar", "error");
+      notify(humanizeError(err, "Error al guardar"), "error");
     } finally {
       setSaving(false);
     }
@@ -131,7 +134,7 @@ function TareaCard({ tarea, user }) {
       notify("Entrega enviada exitosamente");
       loadEntrega();
     } catch (err) {
-      notify(err.message || "Error al enviar", "error");
+      notify(humanizeError(err, "Error al enviar entrega"), "error");
     } finally {
       setSaving(false);
     }
@@ -413,7 +416,7 @@ export default function FamiliaEntregasPage() {
     setApiError(false);
     try {
       const res = await tareasGetAll({ limit: 100 });
-      let lista = res?.tareas ?? res?.data ?? [];
+      let lista = (res?.tareas ?? res?.data ?? []).map(normalizeTarea);
       if (tareaIdParam) {
         lista = [
           ...lista.filter(t => t._id === tareaIdParam),

@@ -10,6 +10,8 @@ import {
   cursosGetMine, eventosGetAll, eventosCreate, eventosUpdate, eventosDelete,
 } from "@/lib/apiClient";
 import Modal from "@/components/ui/Modal";
+import { normalizeCurso } from "@/lib/normalizers";
+import { humanizeError } from "@/utils/humanizeError";
 
 // ── helpers ─────────────────────────────────────────────────────
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -111,7 +113,7 @@ export default function EventosPage() {
   };
 
   useEffect(() => {
-    cursosGetMine({ limit: 50 }).then(d => setCursos(d.cursos ?? [])).catch(() => {});
+    cursosGetMine({ limit: 50 }).then(d => setCursos((d.cursos ?? []).map(normalizeCurso))).catch(() => {});
   }, []);
 
   const load = useCallback(async () => {
@@ -219,7 +221,7 @@ export default function EventosPage() {
       setShowForm(false);
       load();
     } catch (err) {
-      notify(err.message || "Error al guardar evento", "error");
+      notify(humanizeError(err, "Error al guardar evento"), "error");
     } finally {
       setSaving(false);
     }
@@ -234,7 +236,7 @@ export default function EventosPage() {
       setDeletingId(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al eliminar", "error");
+      notify(humanizeError(err, "Error al eliminar"), "error");
     } finally {
       setDeleting(false);
     }

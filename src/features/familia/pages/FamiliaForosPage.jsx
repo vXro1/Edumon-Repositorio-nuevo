@@ -12,9 +12,10 @@ import {
   mensajesForoGetByForo, mensajesForoCreate, mensajesForoToggleLike,
 } from "@/lib/apiClient";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-
-const AVATAR_COLORS = ["#0C6AC4","#6366F1","#16A34A","#D97706","#7C3AED","#0284C7"];
-const avatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
+import { normalizeCurso, normalizeMensaje } from "@/lib/normalizers";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { humanizeError } from "@/utils/humanizeError";
+import useUserStore from "@/store/useUserStore";
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
@@ -46,6 +47,7 @@ function Toast({ msg, type }) {
 // ── ForoDetalle (vista inline del foro) ──────────────────────
 function ForoDetalle({ foroId, onBack }) {
   const { user } = useAuth();
+  const setUsers = useUserStore((s) => s.setUsers);
   const [foro,     setForo]     = useState(null);
   const [mensajes, setMensajes] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -70,13 +72,21 @@ function ForoDetalle({ foroId, onBack }) {
         mensajesForoGetByForo(foroId),
       ]);
       setForo(foroRes.foro ?? foroRes);
-      setMensajes(mensajesRes.mensajes ?? []);
+      const normalized = (mensajesRes.mensajes ?? []).map(normalizeMensaje);
+      setMensajes(normalized);
+      // Seed all unique message authors into the global user cache
+      const autores = [];
+      normalized.forEach(m => {
+        if (m.autor?._id) autores.push(m.autor);
+        (m.respuestas ?? []).forEach(r => { if (r.autor?._id) autores.push(r.autor); });
+      });
+      setUsers(autores);
     } catch {
       notify("Error al cargar el foro", "error");
     } finally {
       setLoading(false);
     }
-  }, [foroId]);
+  }, [foroId, setUsers]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -96,7 +106,7 @@ function ForoDetalle({ foroId, onBack }) {
       notify("Mensaje enviado");
       load();
     } catch (err) {
-      notify(err.message || "Error al enviar", "error");
+      notify(humanizeError(err, "Error al enviar mensaje"), "error");
     } finally {
       setSending(false);
     }
@@ -112,8 +122,6 @@ function ForoDetalle({ foroId, onBack }) {
   function MensajeCard({ msg, isReply = false }) {
     if (!msg) return null;
     const name = `${msg.autor?.nombre ?? ""} ${msg.autor?.apellido ?? ""}`.trim() || "Usuario";
-    const initial = (name[0]?.toUpperCase()) ?? "?";
-    const bg = avatarColor(name);
     const isMe = msg.autor?._id === (user?._id ?? user?.id);
 
     return (
@@ -121,13 +129,7 @@ function ForoDetalle({ foroId, onBack }) {
         display: "flex", gap: 10, marginBottom: isReply ? 8 : 16,
         paddingLeft: isReply ? 32 : 0,
       }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-          background: bg, display: "flex", alignItems: "center",
-          justifyContent: "center", fontSize: 13, fontWeight: 700, color: "white",
-        }}>
-          {initial}
-        </div>
+        <UserAvatar user={msg.autor} size={32} />
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{name}</span>
@@ -406,7 +408,7 @@ export default function FamiliaForosPage() {
     (async () => {
       try {
         const res = await cursosGetMine({ limit: 50 });
-        const lista = res.cursos ?? [];
+        const lista = (res.cursos ?? []).map(normalizeCurso);
         setCursos(lista);
         const forosMap = {};
         await Promise.all(lista.map(async (c) => {

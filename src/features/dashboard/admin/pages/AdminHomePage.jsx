@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Users, BookOpen, Building2, Plus, ChevronRight,
   UserCheck, Bell, Calendar, GraduationCap, Shield,
-  Activity, ArrowUpRight, Clock,
+  ArrowUpRight, Clock,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
@@ -13,6 +13,8 @@ import {
   institucionesGetMine, eventosGetHoy,
   notificacionesGetConteoNoLeidas,
 } from "@/lib/apiClient";
+import { normalizeCurso } from "@/lib/normalizers";
+import { humanizeError } from "@/utils/humanizeError";
 
 /* ── Shared micro-components ─────────────────────────────────── */
 function Skeleton({ h = 20, w = "100%", r = 8 }) {
@@ -102,32 +104,25 @@ function SectionHeader({ title, action }) {
   );
 }
 
-function WelcomeBanner({ user, subtitle }) {
+function WelcomeBanner({ subtitle }) {
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
   return (
     <div style={{
       borderRadius: 18,
       background: "linear-gradient(135deg, #0C6AC4 0%, #1E3A6E 60%, #0F172A 100%)",
-      padding: "28px 32px", display: "flex", alignItems: "center", gap: 20,
+      padding: "24px 32px", display: "flex", alignItems: "center", gap: 20,
       marginBottom: 28, position: "relative", overflow: "hidden",
     }}>
       <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
       <div style={{ position: "absolute", right: 60, bottom: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
-      <div style={{
-        width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-        background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 22, fontWeight: 800, color: "white",
-      }}>
-        {user?.nombre?.[0]?.toUpperCase() ?? "A"}
-      </div>
       <div style={{ color: "white", position: "relative" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 4 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
           {subtitle}
         </p>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
-          Bienvenido, {user?.nombre} {user?.apellido}
+          {saludo}
         </h1>
-        <p style={{ fontSize: 13, opacity: 0.65, marginTop: 4 }}>{user?.correo}</p>
       </div>
     </div>
   );
@@ -166,7 +161,7 @@ function SuperadminDashboard({ user }) {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <WelcomeBanner user={user} subtitle="Superadministrador — Vista global" />
+      <WelcomeBanner subtitle="Superadministrador — Vista global" />
 
       {/* Stats */}
       <section style={{ marginBottom: 28 }}>
@@ -271,7 +266,7 @@ function AdminDashboard({ user }) {
           notificacionesGetConteoNoLeidas(),
         ]);
         setInst(instRes.institucion ?? instRes);
-        setCursos(cursosRes.cursos?.slice(0, 5) ?? []);
+        setCursos((cursosRes.cursos?.slice(0, 5) ?? []).map(normalizeCurso));
         setEventos((eventosRes.eventos ?? []).slice(0, 4));
         setStats({
           cursos:     cursosRes.pagination?.total ?? cursosRes.cursos?.length ?? 0,
@@ -289,7 +284,6 @@ function AdminDashboard({ user }) {
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       <WelcomeBanner
-        user={user}
         subtitle={`Administrador${inst?.nombre ? ` · ${inst.nombre}` : ""}`}
       />
 

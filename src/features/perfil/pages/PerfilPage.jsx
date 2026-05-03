@@ -10,6 +10,10 @@ import {
   usersGetDefaultPhotos, authChangePassword,
 } from "@/lib/apiClient";
 import Modal from "@/components/ui/Modal";
+import UserAvatar from "@/components/ui/UserAvatar";
+import getRoleStyle from "@/utils/getRoleStyle";
+import useUserStore from "@/store/useUserStore";
+import { humanizeError } from "@/utils/humanizeError";
 
 function Toast({ msg, type }) {
   if (!msg) return null;
@@ -68,21 +72,9 @@ function PassInput({ value, onChange, placeholder, required, label }) {
   );
 }
 
-const ROL_LABELS = {
-  superadmin:    "Super Administrador",
-  administrador: "Administrador",
-  docente:       "Docente",
-  padre:         "Padre / Tutor",
-};
-
-const ROL_COLORS = {
-  superadmin:    { color: "#F87171", bg: "rgba(248,113,113,0.12)" },
-  administrador: { color: "#60A5FA", bg: "rgba(96,165,250,0.12)" },
-  docente:       { color: "#34D399", bg: "rgba(52,211,153,0.12)" },
-  padre:         { color: "#FBBF24", bg: "rgba(251,191,36,0.12)" },
-};
 
 export default function PerfilPage() {
+  const setUser = useUserStore((s) => s.setUser);
   const [profile,  setProfile]  = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState({ msg: "", type: "success" });
@@ -105,10 +97,14 @@ export default function PerfilPage() {
 
   useEffect(() => {
     usersGetMyProfile()
-      .then(d => setProfile(d.usuario ?? d.user ?? d))
+      .then(d => {
+        const u = d.usuario ?? d.user ?? d;
+        setProfile(u);
+        setUser(u);
+      })
       .catch(() => notify("Error al cargar perfil", "error"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [setUser]);
 
   const handleUploadPhoto = async (file) => {
     if (!file) return;
@@ -121,7 +117,7 @@ export default function PerfilPage() {
       notify("Foto actualizada correctamente");
       setShowPhotoModal(false);
     } catch (err) {
-      notify(err.message || "Error al subir foto", "error");
+      notify(humanizeError(err, "Error al subir foto"), "error");
     } finally {
       setUploadingPhoto(false);
     }
@@ -137,7 +133,7 @@ export default function PerfilPage() {
       notify("Avatar actualizado");
       setShowPhotoModal(false);
     } catch (err) {
-      notify(err.message || "Error al actualizar avatar", "error");
+      notify(humanizeError(err, "Error al actualizar foto de perfil"), "error");
     } finally {
       setUploadingPhoto(false);
     }
@@ -171,13 +167,13 @@ export default function PerfilPage() {
       notify("Contraseña actualizada correctamente");
       setPassForm({ actual: "", nueva: "", confirmar: "" });
     } catch (err) {
-      notify(err.message || "Error al cambiar contraseña", "error");
+      notify(humanizeError(err, "Error al cambiar contraseña"), "error");
     } finally {
       setSavingPass(false);
     }
   };
 
-  const rolCfg = profile ? (ROL_COLORS[profile.rol] ?? { color: "#94A3B8", bg: "rgba(148,163,184,0.12)" }) : null;
+  const rolCfg = profile ? getRoleStyle(profile.rol) : null;
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto" }}>
@@ -203,17 +199,7 @@ export default function PerfilPage() {
             <div style={{ display: "flex", alignItems: "flex-start", gap: 22, flexWrap: "wrap" }}>
               {/* Avatar */}
               <div style={{ position: "relative", flexShrink: 0 }}>
-                {profile?.fotoPerfilUrl ? (
-                  <img
-                    src={profile.fotoPerfilUrl}
-                    alt="Avatar"
-                    style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--color-border)" }}
-                  />
-                ) : (
-                  <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, color: "white" }}>
-                    {profile?.nombre?.[0]?.toUpperCase() ?? "U"}
-                  </div>
-                )}
+                <UserAvatar user={profile} size={80} style={{ border: "3px solid var(--color-border)" }} />
                 <button
                   onClick={openPhotoModal}
                   title="Cambiar foto"
@@ -231,7 +217,7 @@ export default function PerfilPage() {
                   </h2>
                   {rolCfg && (
                     <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: rolCfg.bg, color: rolCfg.color }}>
-                      {ROL_LABELS[profile.rol] ?? profile.rol}
+                      {rolCfg.label}
                     </span>
                   )}
                 </div>

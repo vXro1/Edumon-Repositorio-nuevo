@@ -9,6 +9,7 @@ import {
   perfilesGetAll, perfilesCreate, perfilesUpdate,
   perfilesDelete, perfilesSeleccionar,
 } from "@/lib/apiClient";
+import { humanizeError } from "@/utils/humanizeError";
 
 // Colores de avatar predefinidos (se guardan como avatarUrl = color hex)
 const AVATAR_COLORS = [
@@ -315,7 +316,7 @@ export default function FamiliaPerfilesPage() {
       setForm({ nombre: "", avatarUrl: "" });
       load();
     } catch (err) {
-      notify(err.message || "Error al crear perfil", "error");
+      notify(humanizeError(err, "Error al crear perfil"), "error");
     } finally {
       setSaving(false);
     }
@@ -332,7 +333,7 @@ export default function FamiliaPerfilesPage() {
       setTarget(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al actualizar perfil", "error");
+      notify(humanizeError(err, "Error al actualizar perfil"), "error");
     } finally {
       setSaving(false);
     }
@@ -348,7 +349,7 @@ export default function FamiliaPerfilesPage() {
       setTarget(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al eliminar perfil", "error");
+      notify(humanizeError(err, "Error al eliminar perfil"), "error");
     } finally {
       setSaving(false);
     }
@@ -363,7 +364,7 @@ export default function FamiliaPerfilesPage() {
         notify(`Perfil "${perfil.nombre}" seleccionado`);
       }
     } catch (err) {
-      notify(err.message || "Error al seleccionar perfil", "error");
+      notify(humanizeError(err, "Error al seleccionar perfil"), "error");
     }
   };
 

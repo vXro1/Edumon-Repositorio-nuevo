@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { cursosGetMine, eventosGetHoy } from "@/lib/apiClient";
 import letrasImg from "@/assets/img/letras.png";
+import { normalizeCurso } from "@/lib/normalizers";
 
 // ── Course accent colors ─────────────────────────────────────
 const CARD_COLORS = [
@@ -248,12 +249,15 @@ export default function PadreHomePage() {
           cursosGetMine({ limit: 6 }),
           eventosGetHoy(),
         ]);
-        setCursos(cursosRes.cursos    ?? []);
+        setCursos((cursosRes.cursos    ?? []).map(normalizeCurso));
         setEventos(eventosRes.eventos ?? []);
       } catch { /* silencioso */ }
       finally  { setLoading(false); }
     })();
   }, []);
+
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -262,7 +266,7 @@ export default function PadreHomePage() {
       <div style={{
         borderRadius: 18,
         background: "linear-gradient(135deg, #0C6AC4 0%, #1E3A6E 60%, #0F172A 100%)",
-        padding: "26px 32px",
+        padding: "24px 32px",
         display: "flex", alignItems: "center", gap: 20,
         marginBottom: 28,
         position: "relative", overflow: "hidden",
@@ -272,22 +276,13 @@ export default function PadreHomePage() {
           width: 160, height: 160, borderRadius: "50%",
           background: "rgba(255,255,255,0.04)",
         }} />
-        <div style={{
-          width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-          background: "rgba(255,255,255,0.15)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20, fontWeight: 800, color: "white",
-        }}>
-          {user?.nombre?.[0]?.toUpperCase() ?? "P"}
-        </div>
         <div style={{ color: "white", position: "relative" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 4 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
             Padre / Tutor
           </p>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
-            Bienvenido, {user?.nombre} {user?.apellido}
+            {saludo}
           </h1>
-          <p style={{ fontSize: 13, opacity: 0.65, marginTop: 4 }}>{user?.correo}</p>
         </div>
       </div>
 

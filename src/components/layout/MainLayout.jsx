@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useSearch } from "../../context/SearchContext";
+import UserAvatar from "../ui/UserAvatar";
+import useUserPresence from "../../hooks/useUserPresence";
 
 // ── Icon registry ────────────────────────────────────────────
 const ICON_MAP = {
@@ -209,13 +211,15 @@ function NavItem({ item, collapsed, onClick }) {
 export const MainLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Registers the current user as online for the session duration
+  useUserPresence(user?._id);
   const { query, results, isOpen, setIsOpen, handleSearch, clearSearch } = useSearch();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
   const groups = NAV_GROUPS[user?.rol] ?? [];
   const roleMeta = ROLE_META[user?.rol] ?? { label: user?.rol, color: "#94A3B8", bg: "rgba(148,163,184,0.14)" };
-  const initial = user?.nombre?.[0]?.toUpperCase() ?? "U";
   const sidebarW = collapsed ? 72 : 260;
 
   return (
@@ -375,17 +379,12 @@ export const MainLayout = () => {
         }}>
           {collapsed ? (
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <div
-                title={`${user?.nombre} ${user?.apellido}`}
-                style={{
-                  width: 36, height: 36, borderRadius: "50%",
-                  background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 13, fontWeight: 700, color: "white", cursor: "default",
-                }}
-              >
-                {initial}
-              </div>
+              <UserAvatar
+                user={user}
+                size={36}
+                title="Ver mi perfil"
+                onClick={() => navigate("/perfil")}
+              />
             </div>
           ) : (
             <div style={{
@@ -393,31 +392,39 @@ export const MainLayout = () => {
               padding: "8px 10px", borderRadius: 10,
               background: "rgba(255,255,255,0.04)",
             }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, fontWeight: 700, color: "white",
-              }}>
-                {initial}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <UserAvatar
+                user={user}
+                size={36}
+                title="Ver mi perfil"
+                onClick={() => navigate("/perfil")}
+              />
+              <button
+                onClick={() => navigate("/perfil")}
+                title="Ver mi perfil"
+                style={{
+                  flex: 1, minWidth: 0, background: "none", border: "none",
+                  cursor: "pointer", textAlign: "left", padding: 0,
+                }}
+              >
                 <p style={{
                   fontSize: 13, fontWeight: 600, color: "#F1F5F9",
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  margin: 0,
                 }}>
                   {user?.nombre} {user?.apellido}
                 </p>
                 <p style={{
                   fontSize: 11, color: "#64748B",
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  margin: 0,
                 }}>
                   {user?.correo}
                 </p>
-              </div>
+              </button>
               <button
                 onClick={logout}
                 title="Cerrar sesión"
+                aria-label="Cerrar sesión"
                 style={{
                   color: "#475569", background: "none", border: "none",
                   cursor: "pointer", padding: 6, borderRadius: 8,
@@ -462,6 +469,7 @@ export const MainLayout = () => {
           <button
             className="lg:hidden"
             onClick={() => setDrawerOpen(true)}
+            aria-label="Abrir menú de navegación"
             style={{
               color: "var(--color-text-muted)", background: "none", border: "none",
               cursor: "pointer", padding: 7, borderRadius: 9,
@@ -611,6 +619,8 @@ export const MainLayout = () => {
 
           {/* Notifications */}
           <button
+            onClick={() => navigate("/notificaciones")}
+            aria-label="Notificaciones"
             style={{
               position: "relative", background: "none", border: "none",
               cursor: "pointer", padding: 8, borderRadius: 10,
@@ -633,35 +643,32 @@ export const MainLayout = () => {
           {/* Divider */}
           <div style={{ width: 1, height: 28, background: "var(--color-border)" }} />
 
-          {/* User pill */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 9,
-            padding: "4px 10px 4px 4px", borderRadius: 99,
-            cursor: "default",
-            border: "1px solid var(--color-border, rgba(0,0,0,0.08))",
-            background: "var(--color-surface)",
-            transition: "background 150ms",
-          }}
+          {/* User pill → /perfil */}
+          <button
+            onClick={() => navigate("/perfil")}
+            title="Ver mi perfil"
+            aria-label={`Perfil de ${user?.nombre ?? "usuario"}`}
+            style={{
+              display: "flex", alignItems: "center", gap: 9,
+              padding: "4px 10px 4px 4px", borderRadius: 99,
+              cursor: "pointer",
+              border: "1px solid var(--color-border, rgba(0,0,0,0.08))",
+              background: "var(--color-surface)",
+              transition: "background 150ms",
+            }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-bg, #F1F5F9)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "var(--color-surface)"; }}
           >
-            <div style={{
-              width: 30, height: 30, borderRadius: "50%",
-              background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 12, fontWeight: 700, color: "white", flexShrink: 0,
-            }}>
-              {initial}
-            </div>
+            <UserAvatar user={user} size={30} />
             <div className="hidden sm:block" style={{ lineHeight: 1.2 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", whiteSpace: "nowrap", margin: 0 }}>
                 {user?.nombre}
               </p>
-              <p style={{ fontSize: 11, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: 11, color: "var(--color-text-muted)", whiteSpace: "nowrap", margin: 0 }}>
                 {roleMeta.label}
               </p>
             </div>
-          </div>
+          </button>
         </header>
 
         {/* Page content ────────────────────────────────── */}

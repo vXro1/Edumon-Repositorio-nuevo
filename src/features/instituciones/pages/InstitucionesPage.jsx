@@ -11,6 +11,9 @@ import {
   usersGetById,
 } from "@/lib/apiClient";
 import Modal from "@/components/ui/Modal";
+import { normalizeUser } from "@/lib/normalizers";
+import { humanizeError } from "@/utils/humanizeError";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 // ── Toast ─────────────────────────────────────────────────────
 function Toast({ msg, type }) {
@@ -178,13 +181,6 @@ const INIT_FORM = {
 };
 const INIT_EDIT = { nombre: "", direccion: "", telefono: "", correo: "" };
 
-// Ensures phone is in +57XXXXXXXXXX format so DB lookup matches the login form
-const normalizarTelefono = (t) => {
-  if (!t) return t;
-  const digits = t.replace(/\D/g, "");
-  if (digits.startsWith("57") && digits.length === 12) return `+${digits}`;
-  if (digits.length === 10) return `+57${digits}`;
-  return t;
 };
 
 function fmtDate(str) {
@@ -249,7 +245,7 @@ export default function InstitucionesPage() {
       setLoadingAdmin(true);
       try {
         const res = await usersGetById(typeof inst.adminId === "object" ? inst.adminId._id : inst.adminId);
-        setDetailAdmin(res.user ?? res);
+        setDetailAdmin(normalizeUser(res.user ?? res));
       } catch {
         // admin info optional — silently fail
       } finally {
@@ -268,8 +264,8 @@ export default function InstitucionesPage() {
       // Normalize phones so DB stores +57XXXXXXXXXX — matching what the login form sends
       const payload = {
         ...form,
-        telefono:      normalizarTelefono(form.telefono),
-        adminTelefono: normalizarTelefono(form.adminTelefono),
+        telefono:      normalizePhone(form.telefono),
+        adminTelefono: normalizePhone(form.adminTelefono),
       };
       await institucionesCreate(payload);
       notify("Institución creada correctamente");
@@ -277,7 +273,7 @@ export default function InstitucionesPage() {
       setForm(INIT_FORM);
       load();
     } catch (err) {
-      notify(err.message || "Error al crear institución", "error");
+      notify(humanizeError(err, "Error al crear institución"), "error");
     } finally {
       setSaving(false);
     }
@@ -304,7 +300,7 @@ export default function InstitucionesPage() {
       setEditTarget(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al actualizar", "error");
+      notify(humanizeError(err, "Error al actualizar institución"), "error");
     } finally {
       setSaving(false);
     }
@@ -313,9 +309,9 @@ export default function InstitucionesPage() {
   const f  = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
   const ef = (key) => (e) => setEditForm((p) => ({ ...p, [key]: e.target.value }));
 
-  // Admin from populated field or detailAdmin fetch
+  // Admin from populated field or detailAdmin fetch — always normalized
   const adminData = detailAdmin ||
-    (detailInst?.adminId && typeof detailInst.adminId === "object" ? detailInst.adminId : null);
+    (detailInst?.adminId && typeof detailInst.adminId === "object" ? normalizeUser(detailInst.adminId) : null);
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>

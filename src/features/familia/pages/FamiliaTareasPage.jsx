@@ -7,6 +7,7 @@ import {
   Calendar, Clock, BookOpen, CheckCircle2, XCircle,
 } from "lucide-react";
 import { tareasGetAll, cursosGetMine } from "@/lib/apiClient";
+import { normalizeTarea } from "@/lib/normalizers";
 
 const ESTADO_META = {
   abierta:  { label: "Abierta",   color: "#16A34A", bg: "rgba(22,163,74,0.10)" },
@@ -118,7 +119,7 @@ export default function FamiliaTareasPage() {
     setApiError(false);
     try {
       const res = await tareasGetAll({ limit: 100 });
-      setTareas(res?.tareas ?? res?.data ?? []);
+      setTareas((res?.tareas ?? res?.data ?? []).map(normalizeTarea));
     } catch {
       setApiError(true);
     } finally {

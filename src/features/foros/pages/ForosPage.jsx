@@ -11,6 +11,8 @@ import {
   forosCambiarEstado, forosDelete,
 } from "@/lib/apiClient";
 import Modal from "@/components/ui/Modal";
+import { normalizeCurso } from "@/lib/normalizers";
+import { humanizeError } from "@/utils/humanizeError";
 
 function Toast({ msg, type }) {
   if (!msg) return null;
@@ -74,7 +76,7 @@ export default function ForosPage() {
 
   useEffect(() => {
     cursosGetMine({ limit: 50 }).then(d => {
-      const list = d.cursos ?? [];
+      const list = (d.cursos ?? []).map(normalizeCurso);
       setCursos(list);
       if (list.length > 0) setCursoSel(list[0]._id);
     }).catch(() => {});
@@ -112,7 +114,7 @@ export default function ForosPage() {
       setArchivos([]);
       load();
     } catch (err) {
-      notify(err.message || "Error al crear foro", "error");
+      notify(humanizeError(err, "Error al crear foro"), "error");
     } finally {
       setSaving(false);
     }
@@ -125,7 +127,7 @@ export default function ForosPage() {
       notify(`Foro ${nuevoEstado}`);
       load();
     } catch (err) {
-      notify(err.message || "Error al cambiar estado", "error");
+      notify(humanizeError(err, "Error al cambiar estado"), "error");
     }
   };
 
@@ -138,7 +140,7 @@ export default function ForosPage() {
       setDeletingId(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al eliminar", "error");
+      notify(humanizeError(err, "Error al eliminar"), "error");
     } finally {
       setDeleting(false);
     }

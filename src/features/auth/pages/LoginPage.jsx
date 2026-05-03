@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { LoginForm } from "../../../components/forms/LoginForm";
 import { AuthLayout } from "../../../components/layout/AuthLayout";
 import { Card } from "../../../components/ui/index";
+import { humanizeError } from "../../../utils/humanizeError";
 
 const ROLE_REDIRECTS = {
   superadmin:    "/admin",
@@ -40,7 +41,7 @@ export const LoginPage = () => {
         state: { loginSuccess: true, nombre: data.user?.nombre, rol },
       });
     } catch (err) {
-      setError(err.message || "Credenciales incorrectas. Verifica e intenta de nuevo.");
+      setError(humanizeError(err, "Credenciales incorrectas. Verifica e intenta de nuevo."));
     } finally {
       setLoading(false);
     }

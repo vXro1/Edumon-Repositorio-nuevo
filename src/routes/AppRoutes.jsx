@@ -19,7 +19,7 @@ import DocentesPage       from "../features/docentes/pages/DocentesPage";
 
 // Cursos
 import CursosPage         from "../features/cursos/pages/CursosPage";
-import CursoDetallePage   from "../features/cursos/pages/CursoDetallePage";
+import CursoHubPage       from "../features/cursos/pages/CursoHubPage.refinal";
 
 // Docente feature views
 import TareasPage      from "../features/tareas/pages/TareasPage";
@@ -197,7 +197,7 @@ export default function AppRoutes() {
           {/* Padre puede ver detalle del curso (solo lectura) */}
           <Route path="/cursos/:id" element={
             <ProtectedRoute allowedRoles={["administrador", "superadmin", "docente", "padre", "padre/tutor"]}>
-              <CursoDetallePage />
+              <CursoHubPage />
             </ProtectedRoute>
           } />
 

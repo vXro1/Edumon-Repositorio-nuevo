@@ -9,8 +9,12 @@ import {
   Clock, Shield, UserX,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { normalizeUser } from "@/lib/normalizers";
 import { usersGetAll, usersGetById, usersCreate, usersUpdate, usersDelete, institucionesGetMine } from "@/lib/apiClient";
 import Modal from "@/components/ui/Modal";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { humanizeError } from "@/utils/humanizeError";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 /* ── Roles config ─────────────────────────────────────────────── */
 const ROL_META = {
@@ -92,22 +96,6 @@ function StyledSelect({ value, onChange, children, disabled = false }) {
   );
 }
 
-/* Avatar with photo support */
-function UserAvatar({ user, size = 36 }) {
-  const [imgError, setImgError] = useState(false);
-  const hasPhoto = user?.fotoPerfilUrl && !imgError;
-  const initials = `${user?.nombre?.[0] ?? ""}${user?.apellido?.[0] ?? ""}`.toUpperCase() || "U";
-  const fontSize = size < 40 ? 12 : size < 60 ? 15 : 20;
-  return (
-    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, overflow: "hidden", background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.9)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
-      {hasPhoto ? (
-        <img src={user.fotoPerfilUrl} alt={user.nombre} onError={() => setImgError(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      ) : (
-        <span style={{ fontSize, fontWeight: 700, color: "white" }}>{initials}</span>
-      )}
-    </div>
-  );
-}
 
 /* Detail info row */
 function InfoRow({ icon: Icon, label, value, color = "#0C6AC4" }) {
@@ -136,14 +124,6 @@ const INIT = { nombre: "", apellido: "", cedula: "", correo: "", telefono: "", r
 const toApiRol = (rol) => rol === "padre/tutor" ? "padre" : rol;
 const LIMIT = 15;
 
-// Ensures phone is in +57XXXXXXXXXX format; leaves untouched if can't normalize
-const normalizarTelefono = (t) => {
-  if (!t) return t;
-  const digits = t.replace(/\D/g, "");
-  if (digits.startsWith("57") && digits.length === 12) return `+${digits}`;
-  if (digits.length === 10) return `+57${digits}`;
-  return t;
-};
 
 /* ══════════════════════════════════════════════════════════════
    Main page
@@ -201,8 +181,9 @@ export default function UsuariosPage() {
       if (rolFilter)   params.rol    = rolFilter;
       if (estadoFilter) params.estado = estadoFilter;
       const res = await usersGetAll(params);
-      setUsers(res.users ?? []);
-      setPag(res.pagination ?? { currentPage: 1, totalPages: 1, totalUsers: res.users?.length ?? 0 });
+      const list = Array.isArray(res) ? res : (res.users ?? []);
+      setUsers(list.map((u) => normalizeUser(u)));
+      setPag(res.pagination ?? { currentPage: 1, totalPages: 1, totalUsers: list.length });
     } catch {
       notify("Error al cargar usuarios", "error");
     } finally {
@@ -230,9 +211,9 @@ export default function UsuariosPage() {
     setViewLoading(true);
     try {
       const res = await usersGetById(u._id);
-      setViewDetail(res.user ?? res);
+      setViewDetail(normalizeUser(res.user ?? res));
     } catch {
-      setViewDetail(u); // fallback to list data
+      setViewDetail(normalizeUser(u)); // fallback to list data
     } finally {
       setViewLoading(false);
     }
@@ -253,7 +234,7 @@ export default function UsuariosPage() {
         rol:        rolApi,
         contraseña: form.cedula.trim() + "Aa",
       };
-      if (form.telefono) body.telefono = normalizarTelefono(form.telefono);
+      if (form.telefono) body.telefono = normalizePhone(form.telefono);
       if (rolApi !== "superadmin" && institucionId) body.institucionId = institucionId;
       await usersCreate(body);
       notify("Usuario creado correctamente");
@@ -261,7 +242,7 @@ export default function UsuariosPage() {
       setForm(INIT);
       load();
     } catch (err) {
-      notify(err.message || "Error al crear usuario", "error");
+      notify(humanizeError(err, "Error al crear usuario"), "error");
     } finally {
       setSaving(false);
     }
@@ -279,7 +260,7 @@ export default function UsuariosPage() {
     setSaving(true);
     try {
       const body = { nombre: form.nombre.trim(), apellido: form.apellido.trim(), cedula: form.cedula.trim(), correo: form.correo.trim(), rol: toApiRol(form.rol) };
-      if (form.telefono) body.telefono = normalizarTelefono(form.telefono);
+      if (form.telefono) body.telefono = normalizePhone(form.telefono);
       await usersUpdate(editTarget._id, body);
       notify("Usuario actualizado");
       setEditTarget(null);
@@ -287,7 +268,7 @@ export default function UsuariosPage() {
       if (viewTarget?._id === editTarget._id) setViewDetail((d) => d ? { ...d, ...body } : d);
       load();
     } catch (err) {
-      notify(err.message || "Error al actualizar", "error");
+      notify(humanizeError(err, "Error al actualizar"), "error");
     } finally {
       setSaving(false);
     }
@@ -303,7 +284,7 @@ export default function UsuariosPage() {
       setDelTarget(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al suspender", "error");
+      notify(humanizeError(err, "Error al suspender usuario"), "error");
     } finally {
       setSaving(false);
     }
@@ -319,7 +300,7 @@ export default function UsuariosPage() {
       setActivTarget(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al activar", "error");
+      notify(humanizeError(err, "Error al activar usuario"), "error");
     } finally {
       setSaving(false);
     }

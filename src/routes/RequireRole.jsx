@@ -2,7 +2,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthContext } from '../features/auth/context/AuthContext';
-import { normalizeRole } from '../roleMatrix';
+import { normalizeRole } from '../security/roleMatrix';
 
 export const RequireRole = ({ roles = [] }) => {
   const { user, loading } = useAuthContext();

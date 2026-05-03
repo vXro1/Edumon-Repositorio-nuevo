@@ -11,6 +11,10 @@ import {
   mensajesForoGetByForo, mensajesForoCreate, mensajesForoToggleLike,
 } from "@/lib/apiClient";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { normalizeMensaje } from "@/lib/normalizers";
+import UserAvatar from "@/components/ui/UserAvatar";
+import useUserStore from "@/store/useUserStore";
+import { humanizeError } from "@/utils/humanizeError";
 
 function Toast({ msg, type }) {
   if (!msg) return null;
@@ -31,13 +35,12 @@ function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
 }
 
-const AVATAR_COLORS = ["#0C6AC4","#6366F1","#16A34A","#D97706","#7C3AED","#0284C7"];
-const avatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
 
 export default function ForoDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const setUsers = useUserStore((s) => s.setUsers);
 
   const [foro,      setForo]      = useState(null);
   const [mensajes,  setMensajes]  = useState([]);
@@ -65,13 +68,21 @@ export default function ForoDetallePage() {
         mensajesForoGetByForo(id),
       ]);
       setForo(foroData.foro ?? foroData);
-      setMensajes(mensajesData.mensajes ?? []);
+      const normalized = (mensajesData.mensajes ?? []).map(normalizeMensaje);
+      setMensajes(normalized);
+      // Seed all unique message authors into the global user cache
+      const autores = [];
+      normalized.forEach(m => {
+        if (m.autor?._id) autores.push(m.autor);
+        (m.respuestas ?? []).forEach(r => { if (r.autor?._id) autores.push(r.autor); });
+      });
+      setUsers(autores);
     } catch {
       notify("Error al cargar el foro", "error");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, setUsers]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -83,7 +94,7 @@ export default function ForoDetallePage() {
       setForo(p => ({ ...p, estado: nuevoEstado }));
       notify(`Foro ${nuevoEstado}`);
     } catch (err) {
-      notify(err.message || "Error al cambiar estado", "error");
+      notify(humanizeError(err, "Error al cambiar estado"), "error");
     }
   };
 
@@ -103,7 +114,7 @@ export default function ForoDetallePage() {
       setReplyTo(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al enviar mensaje", "error");
+      notify(humanizeError(err, "Error al enviar mensaje"), "error");
     } finally {
       setSending(false);
     }
@@ -251,8 +262,7 @@ export default function ForoDetallePage() {
 }
 
 function MensajeCard({ mensaje, currentUserId, onLike, onReply, onLikeReply }) {
-  const autorNombre = mensaje.autor ? `${mensaje.autor.nombre ?? ""} ${mensaje.autor.apellido ?? ""}`.trim() : "Anónimo";
-  const ac = avatarColor(autorNombre);
+  const autorNombre = `${mensaje.autor.nombre} ${mensaje.autor.apellido}`.trim() || "Sin nombre";
   const liked = mensaje.yaLeDioLike;
   const likeCount = mensaje.likes?.length ?? 0;
   const adjuntos = mensaje.archivos ?? [];
@@ -263,9 +273,7 @@ function MensajeCard({ mensaje, currentUserId, onLike, onReply, onLikeReply }) {
       <div style={{ padding: "14px 18px" }}>
         {/* Author row */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", background: ac, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "white", flexShrink: 0 }}>
-            {autorNombre[0]?.toUpperCase() ?? "?"}
-          </div>
+          <UserAvatar user={mensaje.autor} size={34} />
           <div>
             <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{autorNombre}</p>
             <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", margin: 0 }}>{fecha}</p>
@@ -313,8 +321,7 @@ function MensajeCard({ mensaje, currentUserId, onLike, onReply, onLikeReply }) {
 }
 
 function RespuestaCard({ respuesta: r, onLike }) {
-  const autorNombre = r.autor ? `${r.autor.nombre ?? ""} ${r.autor.apellido ?? ""}`.trim() : "Anónimo";
-  const ac = avatarColor(autorNombre);
+  const autorNombre = `${r.autor.nombre} ${r.autor.apellido}`.trim() || "Sin nombre";
   const liked = r.yaLeDioLike;
   const likeCount = r.likes?.length ?? 0;
   const fecha = r.createdAt ? new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
@@ -324,9 +331,7 @@ function RespuestaCard({ respuesta: r, onLike }) {
       <div style={{ width: 2, background: "var(--color-border)", borderRadius: 99, flexShrink: 0, marginLeft: 4 }} />
       <div style={{ flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <div style={{ width: 26, height: 26, borderRadius: "50%", background: ac, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "white", flexShrink: 0 }}>
-            {autorNombre[0]?.toUpperCase() ?? "?"}
-          </div>
+          <UserAvatar user={r.autor} size={26} />
           <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{autorNombre}</p>
           <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", margin: 0 }}>{fecha}</p>
         </div>

@@ -9,6 +9,11 @@ import {
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usersGetAll, institucionesCreateDocente, institucionesCreateDocentesCsv } from "@/lib/apiClient";
 import Modal from "@/components/ui/Modal";
+import { normalizeUser } from "@/lib/normalizers";
+import UserAvatar from "@/components/ui/UserAvatar";
+import useUserStore from "@/store/useUserStore";
+import { humanizeError } from "@/utils/humanizeError";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 function Toast({ msg, type }) {
   if (!msg) return null;
@@ -54,17 +59,13 @@ function StyledInput({ value, onChange, placeholder, type = "text", required = f
   );
 }
 
-const normalizarTelefono = (t) => {
-  if (!t) return t;
-  const digits = t.replace(/\D/g, "");
-  if (digits.startsWith("57") && digits.length === 12) return `+${digits}`;
-  if (digits.length === 10) return `+57${digits}`;
-  return t;
+
 };
 
 const INIT = { nombre: "", apellido: "", cedula: "", telefono: "", correo: "" };
 
 export default function DocentesPage() {
+  const setUsers = useUserStore((s) => s.setUsers);
   const [docentes, setDocentes] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState("");
@@ -92,14 +93,16 @@ export default function DocentesPage() {
     setLoading(true);
     try {
       const res = await usersGetAll({ rol: "docente", page, limit: 15 });
-      setDocentes(res.users ?? []);
+      const normalized = (res.users ?? []).map(normalizeUser);
+      setDocentes(normalized);
       setTotal(res.pagination?.totalUsers ?? res.users?.length ?? 0);
+      setUsers(normalized);
     } catch {
       notify("Error al cargar docentes", "error");
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, setUsers]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -116,14 +119,14 @@ export default function DocentesPage() {
     try {
       await institucionesCreateDocente({
         ...form,
-        telefono: normalizarTelefono(form.telefono),
+        telefono: normalizePhone(form.telefono),
       });
       notify("Docente registrado correctamente");
       setShowCreate(false);
       setForm(INIT);
       load();
     } catch (err) {
-      notify(err.message || "Error al registrar docente", "error");
+      notify(humanizeError(err, "Error al registrar docente"), "error");
     } finally {
       setSaving(false);
     }
@@ -140,7 +143,7 @@ export default function DocentesPage() {
       notify(`Importación completada: ${res.exitosos} exitosos`);
       if (res.exitosos > 0) load();
     } catch (err) {
-      notify(err.message || "Error en la importación", "error");
+      notify(humanizeError(err, "Error en la importación"), "error");
     } finally {
       setCsvLoading(false);
     }
@@ -332,9 +335,7 @@ function DocenteRow({ docente: d }) {
     <tr onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ borderBottom: "1px solid var(--color-border)", background: hov ? "var(--color-bg)" : "var(--color-surface)", transition: "background 150ms" }}>
       <td style={{ padding: "12px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(22,163,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#16A34A", flexShrink: 0 }}>
-            {d.nombre?.[0]?.toUpperCase() ?? "D"}
-          </div>
+          <UserAvatar user={d} size={32} />
           <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>{d.nombre} {d.apellido}</p>
         </div>
       </td>

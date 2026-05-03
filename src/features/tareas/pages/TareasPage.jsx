@@ -12,7 +12,9 @@ import {
 } from "@/lib/apiClient";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useSearch } from "@/context/SearchContext";
+import { normalizeCurso, normalizeTarea } from "@/lib/normalizers";
 import Modal from "@/components/ui/Modal";
+import { humanizeError } from "@/utils/humanizeError";
 
 function Toast({ msg, type }) {
   if (!msg) return null;
@@ -114,7 +116,7 @@ export default function TareasPage() {
 
   // Load cursos for filter/create
   useEffect(() => {
-    cursosGetMine({ limit: 50 }).then(d => setCursos(d.cursos ?? [])).catch(() => {});
+    cursosGetMine({ limit: 50 }).then(d => setCursos((d.cursos ?? []).map(normalizeCurso))).catch(() => {});
   }, []);
 
   // Load módulos when course changes in form
@@ -131,7 +133,7 @@ export default function TareasPage() {
       if (filterCurso)  params.cursoId = filterCurso;
       if (filterEstado) params.estado  = filterEstado;
       const data = await tareasGetAll(params);
-      setTareas(data.tareas ?? []);
+      setTareas((data.tareas ?? []).map(normalizeTarea));
     } catch {
       notify("Error al cargar tareas", "error");
     } finally {
@@ -204,7 +206,7 @@ export default function TareasPage() {
       setArchivos([]);
       load();
     } catch (err) {
-      notify(err.message || "Error al crear tarea", "error");
+      notify(humanizeError(err, "Error al crear tarea"), "error");
     } finally {
       setSaving(false);
     }
@@ -217,7 +219,7 @@ export default function TareasPage() {
       notify("Tarea cerrada");
       load();
     } catch (err) {
-      notify(err.message || "Error al cerrar tarea", "error");
+      notify(humanizeError(err, "Error al cerrar tarea"), "error");
     }
   };
 
@@ -230,7 +232,7 @@ export default function TareasPage() {
       setDeletingId(null);
       load();
     } catch (err) {
-      notify(err.message || "Error al eliminar", "error");
+      notify(humanizeError(err, "Error al eliminar"), "error");
     } finally {
       setDeleting(false);
     }

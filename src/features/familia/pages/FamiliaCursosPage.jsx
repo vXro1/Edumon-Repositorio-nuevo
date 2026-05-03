@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cursosGetMine } from "@/lib/apiClient";
 import letrasImg from "@/assets/img/letras.png";
+import { normalizeCurso } from "@/lib/normalizers";
 
 const CARD_COLORS = [
   { strip: "#0C6AC4", icon: "#1D4ED8", bg: "#EFF6FF" },
@@ -133,7 +134,7 @@ export default function FamiliaCursosPage() {
     setApiError(false);
     try {
       const res = await cursosGetMine({ limit: 50 });
-      setCursos(res?.cursos ?? []);
+      setCursos((res?.cursos ?? []).map(normalizeCurso));
     } catch {
       setApiError(true);
     } finally {

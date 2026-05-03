@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { institucionesGetMine, cursosGetAll, usersGetAll } from "@/lib/apiClient";
+import { humanizeError } from "@/utils/humanizeError";
 
 function Sk({ h = 16, w = "100%", r = 7 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
@@ -65,7 +66,7 @@ export default function MiInstitucionPage() {
         const res = await institucionesGetMine();
         setInst(res.institucion ?? res);
       } catch (err) {
-        setError(err.message || "No se pudo cargar la institución");
+        setError(humanizeError(err, "No se pudo cargar la institución"));
       } finally {
         setLoading(false);
       }
