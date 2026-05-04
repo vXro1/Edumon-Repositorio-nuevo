@@ -1,6 +1,6 @@
 // src/features/cursos/pages/AgregarParticipanteModal.refactor.jsx
 import React, { useState } from 'react';
-import Modal from '@/components/ui/Modal';
+import { Modal, Button, Input } from '@/components';
 import { cursosAddParticipante } from '@/lib/apiClient';
 import { normalizePhone } from '@/utils/normalizePhone';
 import { humanizeError } from '@/utils/humanizeError';
@@ -24,13 +24,13 @@ export default function AgregarParticipanteModal({ open, onClose, onAdded }) {
   return (
     <Modal open={!!open} onClose={onClose} title="Agregar participante">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input placeholder="Nombre" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} />
-        <input placeholder="Apellido" value={form.apellido} onChange={e => setForm(f => ({ ...f, apellido: e.target.value }))} />
-        <input placeholder="Cédula" value={form.cedula} onChange={e => setForm(f => ({ ...f, cedula: e.target.value }))} />
-        <input placeholder="Teléfono" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} />
+        <Input placeholder="Nombre" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} />
+        <Input placeholder="Apellido" value={form.apellido} onChange={e => setForm(f => ({ ...f, apellido: e.target.value }))} />
+        <Input placeholder="Cédula" value={form.cedula} onChange={e => setForm(f => ({ ...f, cedula: e.target.value }))} />
+        <Input placeholder="Teléfono" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} />
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onClose}>Cancelar</button>
-          <button type="submit" disabled={saving} style={{ background: '#0C6AC4', color: 'white', border: 'none', padding: '8px 12px', borderRadius: 8 }}>{saving ? 'Agregando...' : 'Agregar'}</button>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Agregando...' : 'Agregar'}</Button>
         </div>
       </form>
     </Modal>

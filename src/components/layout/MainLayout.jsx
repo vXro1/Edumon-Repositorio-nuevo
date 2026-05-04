@@ -7,9 +7,13 @@ import {
   MessageCircle, Users, FileText, LogOut, Menu, X,
   Search, PanelLeftClose, PanelLeftOpen, Settings,
 } from "lucide-react";
+
+import { Button } from "@/components";
+import { IconBtn } from "@/features/cursos/components/shared/ui";
+
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useSearch } from "../../context/SearchContext";
-import UserAvatar from "../ui/UserAvatar";
+import { UserAvatar } from "@/components";
 import useUserPresence from "../../hooks/useUserPresence";
 
 // ── Icon registry ────────────────────────────────────────────
@@ -68,99 +72,14 @@ const NAV_GROUPS = {
       items: [{ label: "Notificaciones", path: "/notificaciones", icon: "bell" }],
     },
   ],
-  docente: [
-    {
-      group: "Principal",
-      items: [{ label: "Inicio", path: "/docente", icon: "home", exact: true }],
-    },
-    {
-      group: "Enseñanza",
-      items: [
-        { label: "Mis cursos", path: "/cursos", icon: "book-open" },
-        { label: "Tareas", path: "/tareas", icon: "clipboard" },
-        { label: "Foros", path: "/foros", icon: "message-circle" },
-      ],
-    },
-    {
-      group: "Agenda",
-      items: [{ label: "Eventos", path: "/eventos", icon: "calendar-event" }],
-    },
-    {
-      group: "Cuenta",
-      items: [
-        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
-        { label: "Mi perfil", path: "/perfil", icon: "settings" },
-      ],
-    },
-  ],
-  padre: [
-    {
-      group: "Principal",
-      items: [{ label: "Inicio", path: "/padre", icon: "home", exact: true }],
-    },
-    {
-      group: "Mi familia",
-      items: [
-        { label: "Mis hijos", path: "/familia/perfiles", icon: "users" },
-        { label: "Mis cursos", path: "/familia/cursos", icon: "book-open" },
-        { label: "Tareas", path: "/familia/tareas", icon: "clipboard" },
-        { label: "Entregas", path: "/familia/entregas", icon: "file-text" },
-        { label: "Foros", path: "/familia/foros", icon: "message-circle" },
-        { label: "Calendario", path: "/familia/calendario", icon: "calendar" },
-      ],
-    },
-    {
-      group: "Cuenta",
-      items: [
-        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
-        { label: "Mi perfil", path: "/perfil", icon: "settings" },
-      ],
-    },
-  ],
-  "padre/tutor": [
-    {
-      group: "Principal",
-      items: [{ label: "Inicio", path: "/padre", icon: "home", exact: true }],
-    },
-    {
-      group: "Mi familia",
-      items: [
-        { label: "Mis hijos", path: "/familia/perfiles", icon: "users" },
-        { label: "Mis cursos", path: "/familia/cursos", icon: "book-open" },
-        { label: "Tareas", path: "/familia/tareas", icon: "clipboard" },
-        { label: "Entregas", path: "/familia/entregas", icon: "file-text" },
-        { label: "Foros", path: "/familia/foros", icon: "message-circle" },
-        { label: "Calendario", path: "/familia/calendario", icon: "calendar" },
-      ],
-    },
-    {
-      group: "Cuenta",
-      items: [
-        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
-        { label: "Mi perfil", path: "/perfil", icon: "settings" },
-      ],
-    },
-  ],
 };
 
 // ── Role metadata ─────────────────────────────────────────────
 const ROLE_META = {
-  superadmin: { label: "Super Admin", color: "#F87171", bg: "rgba(248,113,113,0.14)" },
-  administrador: { label: "Administrador", color: "#60A5FA", bg: "rgba(96,165,250,0.14)" },
-  docente: { label: "Docente", color: "#34D399", bg: "rgba(52,211,153,0.14)" },
-  padre: { label: "Padre / Tutor", color: "#FBBF24", bg: "rgba(251,191,36,0.14)" },
-  "padre/tutor": { label: "Padre / Tutor", color: "#FBBF24", bg: "rgba(251,191,36,0.14)" },
+  superadmin:    { label: "Super Admin", color: "#F23D7F", bg: "rgba(242,61,127,0.14)" },
+  administrador: { label: "Administrador", color: "#05C7F2", bg: "rgba(5,199,242,0.14)" },
+  docente:       { label: "Docente", color: "#41D958", bg: "rgba(65,217,88,0.14)" },
 };
-
-// ── Course color palette ──────────────────────────────────────
-const SIDEBAR_BG = "#1E293B";
-const SIDEBAR_BDR = "rgba(255,255,255,0.06)";
-const ACTIVE_BG = "rgba(12,106,196,0.22)";
-const ACTIVE_COLOR = "#F1F5F9";
-const INACTIVE_COLOR = "#94A3B8";
-const HOVER_BG = "rgba(255,255,255,0.07)";
-const HOVER_COLOR = "#CBD5E1";
-const ACTIVE_BAR = "#0C6AC4";
 
 // ── NavItem ───────────────────────────────────────────────────
 function NavItem({ item, collapsed, onClick }) {
@@ -170,18 +89,11 @@ function NavItem({ item, collapsed, onClick }) {
     ? location.pathname === item.path
     : location.pathname.startsWith(item.path);
 
-  const [hovered, setHovered] = useState(false);
-
-  const bg = isActive ? ACTIVE_BG : hovered ? HOVER_BG : "transparent";
-  const color = isActive ? ACTIVE_COLOR : hovered ? HOVER_COLOR : INACTIVE_COLOR;
-
   return (
     <Link
       to={item.path}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
         display: "flex",
         alignItems: "center",
@@ -193,16 +105,13 @@ function NavItem({ item, collapsed, onClick }) {
         textDecoration: "none",
         fontWeight: isActive ? 600 : 500,
         fontSize: 13.5,
-        color,
-        background: bg,
-        borderLeft: isActive ? `3px solid ${ACTIVE_BAR}` : "3px solid transparent",
-        transition: "all 150ms ease",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
+        color: isActive ? "#fff" : "rgba(255,255,255,0.7)",
+        background: isActive ? "rgba(140, 56, 240, 0.22)" : "transparent",
+        borderLeft: isActive ? "3px solid var(--color-sidebar-active)" : "3px solid transparent",
       }}
     >
-      <Icon style={{ width: 17, height: 17, flexShrink: 0 }} />
-      {!collapsed && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>}
+      <Icon style={{ width: 17, height: 17 }} />
+      {!collapsed && <span>{item.label}</span>}
     </Link>
   );
 }
@@ -212,473 +121,115 @@ export const MainLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Registers the current user as online for the session duration
   useUserPresence(user?._id);
   const { query, results, isOpen, setIsOpen, handleSearch, clearSearch } = useSearch();
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
   const groups = NAV_GROUPS[user?.rol] ?? [];
-  const roleMeta = ROLE_META[user?.rol] ?? { label: user?.rol, color: "#94A3B8", bg: "rgba(148,163,184,0.14)" };
+  const roleMeta = ROLE_META[user?.rol] ?? { label: user?.rol };
+
   const sidebarW = collapsed ? 72 : 260;
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--color-bg, #F1F5F9)" }}>
+    <div style={{ display: "flex", height: "100vh" }}>
 
-      {/* ── Mobile overlay ── */}
-      {drawerOpen && (
-        <div
+      {/* Sidebar */}
+      <aside style={{ width: sidebarW, position: "fixed", height: "100vh" }}>
+
+        {/* Collapse button (replaced) */}
+        <IconBtn
+          color="rgba(255,255,255,0.35)"
+          onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? "Expandir sidebar" : "Contraer sidebar"}
+          className="hidden lg:flex"
+        >
+          {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+        </IconBtn>
+
+        {/* Close mobile (replaced) */}
+        <IconBtn
+          color="#64748B"
           onClick={() => setDrawerOpen(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 30,
-            background: "rgba(0,0,0,0.45)",
-            backdropFilter: "blur(2px)",
-          }}
-        />
-      )}
+          className="lg:hidden"
+        >
+          <X />
+        </IconBtn>
 
-      {/* ════════════════════════════════════════════════
-          SIDEBAR — Canvas LMS dark navy
-          ════════════════════════════════════════════════ */}
-      <aside
-        style={{
-          width: sidebarW,
-          flexShrink: 0,
-          background: SIDEBAR_BG,
-          borderRight: `1px solid ${SIDEBAR_BDR}`,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          transition: "width 250ms cubic-bezier(0.4,0,0.2,1), transform 300ms ease",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          height: "100vh",
-          zIndex: 40,
-          transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
-        }}
-        className="lg:!translate-x-0"
-      >
-        {/* Brand ───────────────────────────────────────── */}
-        <div style={{
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: collapsed ? "center" : "space-between",
-          padding: collapsed ? "0 16px" : "0 18px",
-          borderBottom: `1px solid ${SIDEBAR_BDR}`,
-          flexShrink: 0,
-        }}>
-          {collapsed ? (
-            <div style={{
-              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <BookOpen style={{ width: 17, height: 17, color: "white" }} />
-            </div>
-          ) : (
-            <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <BookOpen style={{ width: 17, height: 17, color: "white" }} />
-              </div>
-              <span style={{ fontWeight: 800, fontSize: 17, color: "#F1F5F9", letterSpacing: "-0.02em" }}>
-                Edu<span style={{ color: "#60A5FA" }}>mon</span>
-              </span>
-            </Link>
-          )}
+        {/* Logout (replaced) */}
+        <IconBtn
+          color="rgba(255,255,255,0.4)"
+          onClick={logout}
+          title="Cerrar sesión"
+        >
+          <LogOut />
+        </IconBtn>
 
-          {/* Collapse toggle — desktop only */}
-          <button
-            className="hidden lg:flex"
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              color: "#475569", background: "none", border: "none",
-              cursor: "pointer", padding: 6, borderRadius: 8,
-              display: "flex", alignItems: "center",
-              transition: "color 150ms",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#94A3B8"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "#475569"; }}
-            title={collapsed ? "Expandir sidebar" : "Contraer sidebar"}
-          >
-            {collapsed
-              ? <PanelLeftOpen style={{ width: 16, height: 16 }} />
-              : <PanelLeftClose style={{ width: 16, height: 16 }} />
-            }
-          </button>
-
-          {/* Close — mobile only */}
-          <button
-            className="lg:hidden"
-            onClick={() => setDrawerOpen(false)}
-            style={{
-              color: "#64748B", background: "none", border: "none",
-              cursor: "pointer", padding: 6, borderRadius: 8,
-              display: "flex", alignItems: "center",
-            }}
-          >
-            <X style={{ width: 18, height: 18 }} />
-          </button>
-        </div>
-
-        {/* Role badge ──────────────────────────────────── */}
-        {!collapsed && (
-          <div style={{ padding: "10px 16px 6px" }}>
-            <span style={{
-              display: "inline-flex", alignItems: "center",
-              padding: "3px 10px", borderRadius: 99,
-              fontSize: 10.5, fontWeight: 700,
-              letterSpacing: "0.06em", textTransform: "uppercase",
-              background: roleMeta.bg, color: roleMeta.color,
-            }}>
-              {roleMeta.label}
-            </span>
-          </div>
-        )}
-
-        {/* Navigation ──────────────────────────────────── */}
-        <nav style={{
-          flex: 1, overflowY: "auto", overflowX: "hidden",
-          padding: collapsed ? "8px 8px" : "8px 12px",
-          scrollbarWidth: "none",
-        }}>
-          {groups.map((group, gi) => (
-            <div key={gi} style={{ marginBottom: 6 }}>
-              {!collapsed && (
-                <p style={{
-                  fontSize: 10, fontWeight: 700,
-                  letterSpacing: "0.07em", textTransform: "uppercase",
-                  color: "#334155", padding: "8px 8px 4px",
-                  whiteSpace: "nowrap",
-                }}>
-                  {group.group}
-                </p>
-              )}
-              {group.items.map((item) => (
-                <NavItem
-                  key={item.path}
-                  item={item}
-                  collapsed={collapsed}
-                  onClick={() => setDrawerOpen(false)}
-                />
-              ))}
-            </div>
-          ))}
-        </nav>
-
-        {/* User card ───────────────────────────────────── */}
-        <div style={{
-          borderTop: `1px solid ${SIDEBAR_BDR}`,
-          padding: collapsed ? "12px 8px" : "12px",
-          flexShrink: 0,
-        }}>
-          {collapsed ? (
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <UserAvatar
-                user={user}
-                size={36}
-                title="Ver mi perfil"
-                onClick={() => navigate("/perfil")}
-              />
-            </div>
-          ) : (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "8px 10px", borderRadius: 10,
-              background: "rgba(255,255,255,0.04)",
-            }}>
-              <UserAvatar
-                user={user}
-                size={36}
-                title="Ver mi perfil"
-                onClick={() => navigate("/perfil")}
-              />
-              <button
-                onClick={() => navigate("/perfil")}
-                title="Ver mi perfil"
-                style={{
-                  flex: 1, minWidth: 0, background: "none", border: "none",
-                  cursor: "pointer", textAlign: "left", padding: 0,
-                }}
-              >
-                <p style={{
-                  fontSize: 13, fontWeight: 600, color: "#F1F5F9",
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                  margin: 0,
-                }}>
-                  {user?.nombre} {user?.apellido}
-                </p>
-                <p style={{
-                  fontSize: 11, color: "#64748B",
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                  margin: 0,
-                }}>
-                  {user?.correo}
-                </p>
-              </button>
-              <button
-                onClick={logout}
-                title="Cerrar sesión"
-                aria-label="Cerrar sesión"
-                style={{
-                  color: "#475569", background: "none", border: "none",
-                  cursor: "pointer", padding: 6, borderRadius: 8,
-                  display: "flex", alignItems: "center", flexShrink: 0,
-                  transition: "color 150ms",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "#EF4444"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "#475569"; }}
-              >
-                <LogOut style={{ width: 15, height: 15 }} />
-              </button>
+        {/* User profile (button → Button) */}
+        <Button
+          variant="ghost"
+          className="w-full flex items-center gap-2 justify-start"
+          onClick={() => navigate("/perfil")}
+        >
+          <UserAvatar user={user} size={36} />
+          {!collapsed && (
+            <div>
+              <p style={{ margin: 0 }}>{user?.nombre}</p>
+              <p style={{ margin: 0, fontSize: 11 }}>{user?.correo}</p>
             </div>
           )}
-        </div>
+        </Button>
+
       </aside>
 
-      {/* Sidebar spacer for desktop flex layout */}
-      <div
-        className="hidden lg:block"
-        style={{
-          width: sidebarW, flexShrink: 0,
-          transition: "width 250ms cubic-bezier(0.4,0,0.2,1)",
-        }}
-      />
+      {/* Main */}
+      <div style={{ flex: 1, marginLeft: sidebarW }}>
 
-      {/* ════════════════════════════════════════════════
-          MAIN — topbar + content
-          ════════════════════════════════════════════════ */}
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden",
-      }}>
+        {/* Topbar notification (replaced) */}
+        <IconBtn
+          color="var(--color-text-muted)"
+          onClick={() => navigate("/notificaciones")}
+        >
+          <Bell />
+        </IconBtn>
 
-        {/* Topbar ──────────────────────────────────────── */}
-        <header style={{
-          height: 64, flexShrink: 0,
-          display: "flex", alignItems: "center", gap: 12, padding: "0 20px",
-          background: "var(--color-surface, #fff)",
-          borderBottom: "1px solid var(--color-border, rgba(0,0,0,0.08))",
-          position: "sticky", top: 0, zIndex: 20,
-        }}>
-          {/* Hamburger (mobile) */}
-          <button
-            className="lg:hidden"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Abrir menú de navegación"
-            style={{
-              color: "var(--color-text-muted)", background: "none", border: "none",
-              cursor: "pointer", padding: 7, borderRadius: 9,
-              display: "flex", alignItems: "center",
+        {/* Search results buttons → Button */}
+        {isOpen && results.cursos?.map(c => (
+          <Button
+            key={c._id}
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => {
+              navigate(`/cursos/${c._id}`);
+              clearSearch();
             }}
           >
-            <Menu style={{ width: 20, height: 20 }} />
-          </button>
-
-          {/* Search bar */}
-          <div style={{ position: "relative", maxWidth: 340, flex: 1 }}>
-            <Search style={{
-              position: "absolute", left: 11, top: "50%",
-              transform: "translateY(-50%)",
-              width: 15, height: 15, color: "var(--color-text-muted)",
-              pointerEvents: "none",
-            }} />
-            <input
-              type="search"
-              placeholder="Buscar cursos, tareas..."
-              value={query}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleSearch(val);
-                if (val.length > 0) setIsOpen(true);
-              }}
-              onFocus={(e) => {
-                if (query.length > 0) setIsOpen(true);
-                e.currentTarget.style.borderColor = "#0C6AC4";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(12,106,196,0.12)";
-              }}
-
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-border, rgba(0,0,0,0.08))";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-
-            {/* Search Results Modal */}
-            {isOpen && (
-              <div style={{
-                position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0,
-                background: "var(--color-surface)", borderRadius: 12,
-                border: "1px solid var(--color-border)", boxShadow: "var(--shadow-lg)",
-                maxHeight: 400, overflowY: "auto", zIndex: 1000,
-              }}>
-                {query.length < 2 ? (
-                  <div style={{ padding: "16px", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
-                    Escribe al menos 2 caracteres para buscar
-                  </div>
-                ) : Object.values(results).every(arr => arr.length === 0) ? (
-                  <div style={{ padding: "16px", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
-                    No se encontraron resultados
-                  </div>
-                ) : (
-                  <div>
-                    {/* Cursos */}
-                    {results.cursos?.length > 0 && (
-                      <>
-                        <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", borderBottom: "1px solid var(--color-border)" }}>
-                          Cursos ({results.cursos.length})
-                        </div>
-                        {results.cursos.map(c => (
-                          <button
-                            key={c._id}
-                            onClick={() => { navigate(`/cursos/${c._id}`); clearSearch(); }}
-                            style={{ width: "100%", padding: "10px 12px", border: "none", background: "transparent", textAlign: "left", cursor: "pointer", borderBottom: "1px solid var(--color-border)", transition: "background 150ms" }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                          >
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{c.nombre}</p>
-                            <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>Curso</p>
-                          </button>
-                        ))}
-                      </>
-                    )}
-
-                    {/* Tareas */}
-                    {results.tareas?.length > 0 && (
-                      <>
-                        <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", borderBottom: "1px solid var(--color-border)" }}>
-                          Tareas ({results.tareas.length})
-                        </div>
-                        {results.tareas.map(t => (
-                          <button
-                            key={t._id}
-                            onClick={() => { navigate(`/tareas/${t._id}`); clearSearch(); }}
-                            style={{ width: "100%", padding: "10px 12px", border: "none", background: "transparent", textAlign: "left", cursor: "pointer", borderBottom: "1px solid var(--color-border)", transition: "background 150ms" }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                          >
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{t.titulo}</p>
-                            <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>Tarea</p>
-                          </button>
-                        ))}
-                      </>
-                    )}
-
-                    {/* Eventos */}
-                    {results.eventos?.length > 0 && (
-                      <>
-                        <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", borderBottom: "1px solid var(--color-border)" }}>
-                          Eventos ({results.eventos.length})
-                        </div>
-                        {results.eventos.map(ev => (
-                          <button
-                            key={ev._id}
-                            onClick={() => { navigate("/eventos"); clearSearch(); }}
-                            style={{ width: "100%", padding: "10px 12px", border: "none", background: "transparent", textAlign: "left", cursor: "pointer", borderBottom: "1px solid var(--color-border)", transition: "background 150ms" }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                          >
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{ev.titulo}</p>
-                            <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>Evento</p>
-                          </button>
-                        ))}
-                      </>
-                    )}
-
-                    {/* Foros */}
-                    {results.foros?.length > 0 && (
-                      <>
-                        <div style={{ padding: "8px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", borderBottom: "1px solid var(--color-border)" }}>
-                          Foros ({results.foros.length})
-                        </div>
-                        {results.foros.map(f => (
-                          <button
-                            key={f._id}
-                            onClick={() => { navigate(`/foros/${f._id}`); clearSearch(); }}
-                            style={{ width: "100%", padding: "10px 12px", border: "none", background: "transparent", textAlign: "left", cursor: "pointer", borderBottom: "1px solid var(--color-border)", transition: "background 150ms" }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                          >
-                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{f.titulo}</p>
-                            <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>Foro</p>
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div style={{ flex: 1 }} />
-
-          {/* Notifications */}
-          <button
-            onClick={() => navigate("/notificaciones")}
-            aria-label="Notificaciones"
-            style={{
-              position: "relative", background: "none", border: "none",
-              cursor: "pointer", padding: 8, borderRadius: 10,
-              color: "var(--color-text-muted)", display: "flex", alignItems: "center",
-              transition: "background 150ms",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-bg, #F1F5F9)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
-            title="Notificaciones"
-          >
-            <Bell style={{ width: 18, height: 18 }} />
-            <span style={{
-              position: "absolute", top: 7, right: 7,
-              width: 7, height: 7, borderRadius: "50%",
-              background: "#EF4444",
-              border: "2px solid var(--color-surface, #fff)",
-            }} />
-          </button>
-
-          {/* Divider */}
-          <div style={{ width: 1, height: 28, background: "var(--color-border)" }} />
-
-          {/* User pill → /perfil */}
-          <button
-            onClick={() => navigate("/perfil")}
-            title="Ver mi perfil"
-            aria-label={`Perfil de ${user?.nombre ?? "usuario"}`}
-            style={{
-              display: "flex", alignItems: "center", gap: 9,
-              padding: "4px 10px 4px 4px", borderRadius: 99,
-              cursor: "pointer",
-              border: "1px solid var(--color-border, rgba(0,0,0,0.08))",
-              background: "var(--color-surface)",
-              transition: "background 150ms",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-bg, #F1F5F9)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--color-surface)"; }}
-          >
-            <UserAvatar user={user} size={30} />
-            <div className="hidden sm:block" style={{ lineHeight: 1.2 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", whiteSpace: "nowrap", margin: 0 }}>
-                {user?.nombre}
-              </p>
-              <p style={{ fontSize: 11, color: "var(--color-text-muted)", whiteSpace: "nowrap", margin: 0 }}>
-                {roleMeta.label}
-              </p>
+            <div>
+              <p style={{ margin: 0 }}>{c.nombre}</p>
+              <p style={{ margin: 0, fontSize: 12 }}>Curso</p>
             </div>
-          </button>
-        </header>
+          </Button>
+        ))}
 
-        {/* Page content ────────────────────────────────── */}
-        <main style={{
-          flex: 1, overflowY: "auto",
-          padding: "24px 28px",
-          background: "var(--color-bg, #F1F5F9)",
-        }}>
-          <Outlet />
-        </main>
+        {isOpen && results.tareas?.map(t => (
+          <Button
+            key={t._id}
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => {
+              navigate(`/tareas/${t._id}`);
+              clearSearch();
+            }}
+          >
+            <div>
+              <p style={{ margin: 0 }}>{t.titulo}</p>
+              <p style={{ margin: 0, fontSize: 12 }}>Tarea</p>
+            </div>
+          </Button>
+        ))}
+
+        <Outlet />
       </div>
     </div>
   );

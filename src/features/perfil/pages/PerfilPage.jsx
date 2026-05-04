@@ -1,34 +1,22 @@
-// src/features/perfil/pages/PerfilPage.jsx
 import { useState, useEffect, useRef } from "react";
+
 import {
   User, Camera, Lock, CheckCircle2, AlertCircle,
   Loader2, Eye, EyeOff, Mail, Phone, CreditCard,
   Building2, Shield,
 } from "lucide-react";
+
 import {
-  usersGetMyProfile, usersUpdateMyPhoto,
-  usersGetDefaultPhotos, authChangePassword,
+  usersGetMyProfile,
+  usersUpdateMyPhoto,
+  usersGetDefaultPhotos,
+  authChangePassword,
 } from "@/lib/apiClient";
-import Modal from "@/components/ui/Modal";
-import UserAvatar from "@/components/ui/UserAvatar";
+
+import { Modal, Toast, UserAvatar } from "@/components";
 import getRoleStyle from "@/utils/getRoleStyle";
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
-
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const cfg = {
-    success: { bg: "rgba(22,163,74,0.12)", color: "#16A34A", border: "rgba(22,163,74,0.25)" },
-    error:   { bg: "rgba(220,38,38,0.12)", color: "#DC2626", border: "rgba(220,38,38,0.25)" },
-  };
-  const { bg, color, border } = cfg[type] || cfg.success;
-  return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 600, background: bg, color, border: `1px solid ${border}`, borderRadius: 12, padding: "12px 18px", fontSize: 13, fontWeight: 600, maxWidth: 360, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
-      {type === "success" ? <CheckCircle2 style={{ width: 15, height: 15, flexShrink: 0 }} /> : <AlertCircle style={{ width: 15, height: 15, flexShrink: 0 }} />}
-      {msg}
-    </div>
-  );
-}
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;

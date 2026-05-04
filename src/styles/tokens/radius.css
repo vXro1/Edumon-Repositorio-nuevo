@@ -1,0 +1,13 @@
+/* ═══════════════════════════════════════════════════════════════
+   EDUMON DESIGN SYSTEM — Border Radius Tokens
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --radius-xs:   0.25rem;   /*  4px — tight elements (badges, tags) */
+  --radius-sm:   0.5rem;    /*  8px — small cards, inline elements  */
+  --radius-md:   0.75rem;   /* 12px — inputs, buttons, small cards  */
+  --radius-lg:   1rem;      /* 16px — cards, panels                  */
+  --radius-xl:   1.5rem;    /* 24px — modals, large cards            */
+  --radius-2xl:  2rem;      /* 32px — hero sections, large panels    */
+  --radius-3xl:  2.5rem;    /* 40px — pill containers                */
+  --radius-full: 9999px;    /*  ∞   — circles, pill badges           */
+}

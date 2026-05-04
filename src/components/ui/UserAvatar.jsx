@@ -1,24 +1,25 @@
+//ruta: src/components/ui/UserAvatar.jsx
 import { memo, useMemo, useState } from "react";
 import useUserStore from "@/store/useUserStore";
 
 const PALETTE = [
-  "#0C6AC4",
-  "#6366F1",
-  "#16A34A",
-  "#D97706",
-  "#7C3AED",
-  "#0284C7",
-  "#EC4899",
-  "#F43F5E",
+  "#8C38F0",
+  "#F23D7F",
+  "#05C7F2",
+  "#41D958",
+  "#FCBD00",
+  "#A057F2",
+  "#F45194",
+  "#25CEF5",
 ];
 
 const ROLE_BORDER = {
-  docente:    "#0C6AC4",
-  estudiante: "#16A34A",
-  familia:    "#D97706",
-  padre:      "#D97706",
-  admin:      "#7C3AED",
-  administrador: "#7C3AED",
+  docente:       "#8C38F0",
+  estudiante:    "#41D958",
+  familia:       "#FCBD00",
+  padre:         "#FCBD00",
+  admin:         "#F23D7F",
+  administrador: "#F23D7F",
 };
 
 function hash(str = "") {

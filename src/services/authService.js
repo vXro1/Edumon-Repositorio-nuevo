@@ -1,7 +1,8 @@
 // src/services/authService.js
-// Central authService (single source of truth for auth logic)
+// FIX: jwt_decode → jwtDecode (nombre correcto del import)
 import { apiFetch, setTokenProvider } from './core/apiClient';
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from "jwt-decode";   // ← nombre correcto
+
 const TOKEN_KEY = 'token';
 
 export const authService = {
@@ -28,9 +29,8 @@ export const authService = {
   logout: async () => {
     try {
       await apiFetch('/auth/logout', { method: 'POST' });
-    } catch (e) {
-      // ignore
-    } finally {
+    } catch {}
+    finally {
       authService.clearAllCache();
     }
   },
@@ -52,13 +52,14 @@ export const authService = {
 
   resetPassword: async (body) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
 
-  // JWT helpers
+  // ─── JWT helpers ──────────────────────────────────────────────────────────
+
   getTokenPayload: (token) => {
     const t = token ?? authService.getToken();
     if (!t) return null;
     try {
-      return jwt_decode(t);
-    } catch (e) {
+      return jwtDecode(t);   // ← FIX: era jwt_decode (ReferenceError silencioso)
+    } catch {
       return null;
     }
   },
@@ -66,13 +67,11 @@ export const authService = {
   isTokenExpired: (token) => {
     const payload = authService.getTokenPayload(token);
     if (!payload) return true;
-    // exp is in seconds since epoch
     if (typeof payload.exp !== 'number') return true;
     const now = Math.floor(Date.now() / 1000);
-    return payload.exp <= now;
+    // Margen de gracia de 30 segundos para evitar falsos positivos por latencia de red
+    return payload.exp <= now + 30;
   }
 };
 
-// register token provider so apiClient doesn't need to read localStorage
-try { setTokenProvider(() => authService.getToken()); } catch (e) { /* ignore in environments where module init order differs */ }
-
+try { setTokenProvider(() => authService.getToken()); } catch {}

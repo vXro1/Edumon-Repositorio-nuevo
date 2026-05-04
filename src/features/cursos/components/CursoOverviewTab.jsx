@@ -1,6 +1,5 @@
 // src/features/cursos/pages/CursoOverviewTab.refactor.jsx
 import React from 'react';
-
 export default function CursoOverviewTab({ curso }) {
   return (
     <section style={{ background: 'var(--color-surface)', padding: 18, borderRadius: 12, border: '1px solid var(--color-border)' }}>

@@ -1,0 +1,207 @@
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON — TOASTS / NOTIFICATIONS
+   Slide desde la derecha. Animacion CSS pura. Sin JS para el estilo.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── KEYFRAMES propios del toast ──────────────────────────────────────── */
+
+@keyframes edu-toast-enter {
+  0%   { opacity: 0; transform: translateX(calc(100% + var(--space-6))); }
+  60%  { transform: translateX(-6px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes edu-toast-exit {
+  0%   { opacity: 1; transform: translateX(0); max-height: 120px; margin-bottom: var(--space-3); }
+  100% { opacity: 0; transform: translateX(calc(100% + var(--space-6))); max-height: 0; margin-bottom: 0; }
+}
+
+/* ── CONTENEDOR FIJO ──────────────────────────────────────────────────── */
+/* Se posiciona bottom-right. Apilado de abajo hacia arriba. */
+.toast-viewport {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3);
+  max-width: 22rem;
+  width: calc(100vw - var(--space-12));
+  pointer-events: none;
+}
+
+/* ── BASE TOAST ───────────────────────────────────────────────────────── */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1.5px solid var(--color-border);
+  pointer-events: all;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+  animation: edu-toast-enter 0.35s var(--transition-spring) both;
+
+  /* Barra de progreso de auto-dismiss en el borde inferior */
+  isolation: isolate;
+}
+
+/* Barra de progreso inferior */
+.toast::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--color-border);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  transform-origin: left;
+}
+
+/* ── ICONO ────────────────────────────────────────────────────────────── */
+.toast-icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-base);
+}
+
+/* ── CONTENIDO ────────────────────────────────────────────────────────── */
+.toast-content {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.125rem;
+}
+
+.toast-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  line-height: var(--leading-snug);
+}
+
+.toast-message {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+  line-height: var(--leading-relaxed);
+}
+
+/* ── BOTON CERRAR ─────────────────────────────────────────────────────── */
+.toast-close {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-subtle);
+  transition:
+    background var(--transition-fast),
+    color      var(--transition-fast);
+  padding: 0;
+  margin-top: 0.125rem;
+}
+.toast-close:hover {
+  background: var(--color-surface-3);
+  color: var(--color-text);
+}
+
+/* ── VARIANTE: SUCCESS ────────────────────────────────────────────────── */
+.toast-success {
+  border-color: var(--color-success-light);
+  border-left: 4px solid var(--color-success);
+}
+.toast-success .toast-icon {
+  background: var(--color-success-light);
+  color: var(--color-success-hover);
+}
+.toast-success::after {
+  background: var(--color-success-light);
+}
+
+/* ── VARIANTE: ERROR ──────────────────────────────────────────────────── */
+.toast-error {
+  border-color: var(--color-error-light);
+  border-left: 4px solid var(--color-error);
+}
+.toast-error .toast-icon {
+  background: var(--color-error-light);
+  color: var(--color-error-hover);
+}
+.toast-error::after {
+  background: var(--color-error-light);
+}
+
+/* ── VARIANTE: WARNING ────────────────────────────────────────────────── */
+.toast-warning {
+  border-color: var(--color-warning-light);
+  border-left: 4px solid var(--color-warning);
+}
+.toast-warning .toast-icon {
+  background: var(--color-warning-light);
+  color: var(--color-warning-hover);
+}
+.toast-warning::after {
+  background: var(--color-warning-light);
+}
+
+/* ── VARIANTE: INFO ───────────────────────────────────────────────────── */
+.toast-info {
+  border-color: var(--color-accent-light);
+  border-left: 4px solid var(--color-accent);
+}
+.toast-info .toast-icon {
+  background: var(--color-accent-light);
+  color: var(--color-accent-hover);
+}
+.toast-info::after {
+  background: var(--color-accent-light);
+}
+
+/* ── SALIDA ───────────────────────────────────────────────────────────── */
+/* Agrega esta clase via JS para animar la salida */
+.toast-exiting {
+  animation: edu-toast-exit 0.30s ease forwards;
+  pointer-events: none;
+}
+
+/* ── PROGRESO AUTO-DISMISS ────────────────────────────────────────────── */
+/* Usa CSS custom property --toast-duration para controlar la duracion */
+@keyframes edu-toast-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+.toast-has-progress::after {
+  background: currentColor;
+  opacity: 0.20;
+  transform-origin: left;
+  animation: edu-toast-progress var(--toast-duration, 5s) linear forwards;
+}
+
+/* ── RESPONSIVO ───────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .toast-viewport {
+    bottom: var(--space-4);
+    right: var(--space-4);
+    left: var(--space-4);
+    max-width: none;
+    width: auto;
+  }
+}

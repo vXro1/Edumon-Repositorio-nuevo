@@ -2,38 +2,47 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, BookOpen, Users, Edit2, Upload, Plus, Trash2,
-  RefreshCw, Loader2, CheckCircle2, AlertCircle, X, Eye, EyeOff,
-  GraduationCap, FileText, MoreHorizontal,
+  ArrowLeft,
+  BookOpen,
+  Users,
+  Edit2,
+  Upload,
+  Plus,
+  Trash2,
+  RefreshCw,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  FileText,
+  MoreHorizontal,
 } from "lucide-react";
+
 import letrasImg from "@/assets/img/letras.png";
+
 import {
-  cursosGetById, cursosUpdate,
-  modulosGetByCurso, modulosCreate, modulosUpdate, modulosDelete, modulosRestore,
-  cursosGetParticipantes, cursosAddParticipante, cursosRemoveParticipante, cursosAddParticipantesCsv,
+  cursosGetById,
+  cursosUpdate,
+  modulosGetByCurso,
+  modulosCreate,
+  modulosUpdate,
+  modulosDelete,
+  modulosRestore,
+  cursosGetParticipantes,
+  cursosAddParticipante,
+  cursosRemoveParticipante,
+  cursosAddParticipantesCsv,
 } from "@/lib/apiClient";
-import Modal from "@/components/ui/Modal";
+
+import { Modal, Toast, UserAvatar } from "@/components";
+
 import { normalizeCurso, normalizeUser } from "@/lib/normalizers";
-import UserAvatar from "@/components/ui/UserAvatar";
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
 import { normalizePhone } from "@/utils/normalizePhone";
-
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const cfg = {
-    success: { bg: "rgba(22,163,74,0.12)", color: "#16A34A", border: "rgba(22,163,74,0.25)" },
-    error:   { bg: "rgba(220,38,38,0.12)",  color: "#DC2626", border: "rgba(220,38,38,0.25)" },
-  };
-  const { bg, color, border } = cfg[type] || cfg.success;
-  return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 600, background: bg, color, border: `1px solid ${border}`, borderRadius: 12, padding: "12px 18px", fontSize: 13, fontWeight: 600, maxWidth: 360, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
-      {type === "success" ? <CheckCircle2 style={{ width: 15, height: 15, flexShrink: 0 }} /> : <AlertCircle style={{ width: 15, height: 15, flexShrink: 0 }} />}
-      {msg}
-    </div>
-  );
-}
-
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
 }

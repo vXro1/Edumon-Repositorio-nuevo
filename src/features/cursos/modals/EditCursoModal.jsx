@@ -1,6 +1,6 @@
 // src/features/cursos/pages/EditCursoModal.refactor.jsx
 import React, { useState } from 'react';
-import Modal from '@/components/ui/Modal';
+import { Modal, Button, Input } from '@/components';
 import { cursosUpdate } from '@/lib/apiClient';
 import { humanizeError } from '@/utils/humanizeError';
 
@@ -28,11 +28,32 @@ export default function EditCursoModal({ open, curso, onClose, onSaved }) {
   return (
     <Modal open={!!open} onClose={onClose} title="Editar curso">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label>Nombre<input value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} /></label>
-        <label>Descripción<textarea value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} /></label>
+        <label>
+          Nombre
+          <Input 
+            value={form.nombre} 
+            onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} 
+          />
+        </label>
+        <label>
+          Descripción
+          <textarea 
+            value={form.descripcion} 
+            onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} 
+            style={{
+              width: '100%',
+              minHeight: 100,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: '1px solid var(--color-border)',
+              fontFamily: 'inherit',
+              fontSize: 14,
+            }}
+          />
+        </label>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onClose}>Cancelar</button>
-          <button type="submit" disabled={saving} style={{ background: '#0C6AC4', color: 'white', border: 'none', padding: '8px 12px', borderRadius: 8 }}>{saving ? 'Guardando...' : 'Guardar'}</button>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
         </div>
       </form>
     </Modal>

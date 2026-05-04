@@ -2,31 +2,27 @@
 import { useState } from "react";
 import { useNavigate, useLocation, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { LoginForm } from "../../../components/forms/LoginForm";
-import { AuthLayout } from "../../../components/layout/AuthLayout";
-import { Card } from "../../../components/ui/index";
 import { humanizeError } from "../../../utils/humanizeError";
+import { LoginForm, AuthLayout, Card, Button } from "@/components";
 
 const ROLE_REDIRECTS = {
   superadmin:    "/admin",
   administrador: "/admin",
   docente:       "/docente",
   padre:         "/padre",
-  "padre/tutor": "/padre",  // alias de compatibilidad
+  "padre/tutor": "/padre",
 };
 
 export const LoginPage = () => {
-  const { login }  = useAuth();
-  const navigate   = useNavigate();
-  const location   = useLocation();
+  const { login }      = useAuth();
+  const navigate       = useNavigate();
+  const location       = useLocation();
   const [searchParams] = useSearchParams();
 
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
-  // Si viene de un 401 automático, mostrar aviso de sesión expirada
   const sessionExpired = searchParams.get("expired") === "1";
-
   const from = location.state?.from?.pathname || "/";
 
   const handleLogin = async (credentials) => {
@@ -49,7 +45,6 @@ export const LoginPage = () => {
 
   return (
     <>
-      {/* Overlay de carga durante el submit */}
       {loading && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 100,
@@ -69,7 +64,6 @@ export const LoginPage = () => {
 
       <AuthLayout>
         <Card>
-          {/* Aviso de sesión expirada */}
           {sessionExpired && (
             <div style={{
               display: "flex", alignItems: "flex-start", gap: 10,
@@ -90,21 +84,19 @@ export const LoginPage = () => {
 
           <div className="mb-7">
             <h1 className="text-2xl font-bold text-slate-800">Iniciar sesión</h1>
-            <p className="mt-1 text-sm text-slate-400">
-              Accede con tu teléfono y contraseña
-            </p>
+            <p className="mt-1 text-sm text-slate-400">Accede con tu teléfono y contraseña</p>
           </div>
 
           <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
 
           <div className="mt-6 text-center">
-            <Link
-              to="/forgot-password"
-              className="text-sm font-medium hover:underline"
-              style={{ color: "#0C6AC4" }}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/forgot-password")}
             >
               ¿Olvidaste tu contraseña?
-            </Link>
+            </Button>
           </div>
         </Card>
       </AuthLayout>

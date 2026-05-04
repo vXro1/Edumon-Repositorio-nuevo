@@ -1,33 +1,77 @@
 // src/features/cursos/pages/CursoHubPage.jsx
 // Central LMS hub for a single course — 6-tab dashboard
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
 import {
-  ArrowLeft, BookOpen, Users, ClipboardList, MessageCircle,
-  FileText, Layers, Edit2, Plus, Trash2, Lock, Unlock,
-  ChevronDown, ChevronRight, Clock, Star, Globe, X,
-  CheckCircle2, AlertCircle, Loader2, UserPlus, BarChart2,
-  Calendar, GraduationCap, Send, RefreshCw, Paperclip,
+  ArrowLeft,
+  BookOpen,
+  Users,
+  ClipboardList,
+  MessageCircle,
+  FileText,
+  Layers,
+  Edit2,
+  Plus,
+  Trash2,
+  Lock,
+  Unlock,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Star,
+  Globe,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  UserPlus,
+  BarChart2,
+  Calendar,
+  GraduationCap,
+  Send,
+  RefreshCw,
+  Paperclip,
   ExternalLink,
 } from "lucide-react";
+
 import letrasImg from "@/assets/img/letras.png";
+
 import {
-  cursosGetById, cursosUpdate,
-  modulosGetByCurso, modulosCreate, modulosUpdate, modulosDelete,
+  cursosGetById,
+  cursosUpdate,
+  modulosGetByCurso,
+  modulosCreate,
+  modulosUpdate,
+  modulosDelete,
   tareasGetAll,
-  forosGetByCurso, forosCreate, forosCambiarEstado, forosDelete,
-  cursosGetParticipantes, cursosAddParticipante, cursosRemoveParticipante,
-  entregasGetByTarea, entregasCalificar,
+  forosGetByCurso,
+  forosCreate,
+  forosCambiarEstado,
+  forosDelete,
+  cursosGetParticipantes,
+  cursosAddParticipante,
+  cursosRemoveParticipante,
+  entregasGetByTarea,
+  entregasCalificar,
 } from "@/lib/apiClient";
+
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { normalizeCurso, normalizeTarea, normalizeUser, normalizeEntrega } from "@/lib/normalizers";
-import UserAvatar from "@/components/ui/UserAvatar";
-import Modal from "@/components/ui/Modal";
+
+import {
+  normalizeCurso,
+  normalizeTarea,
+  normalizeUser,
+  normalizeEntrega,
+} from "@/lib/normalizers";
+
+import { UserAvatar, Modal, Toast } from "@/components";
+
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
 import { normalizePhone } from "@/utils/normalizePhone";
 import getRoleStyle from "@/utils/getRoleStyle";
-
 // ── Constants ────────────────────────────────────────────────────
 const DEFAULT_IMAGE = letrasImg;
 
@@ -47,27 +91,6 @@ const TABS = [
 ];
 
 // ── Micro-components ─────────────────────────────────────────────
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const ok = type !== "error";
-  return (
-    <div style={{
-      position: "fixed", bottom: 24, right: 24, zIndex: 9999,
-      display: "flex", alignItems: "center", gap: 9,
-      padding: "11px 18px", borderRadius: 12,
-      background: ok ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.12)",
-      border: `1px solid ${ok ? "rgba(22,163,74,0.25)" : "rgba(220,38,38,0.25)"}`,
-      color: ok ? "#16A34A" : "#DC2626",
-      fontSize: 13.5, fontWeight: 600,
-      boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-      animation: "edu-modal-in 0.25s ease both",
-    }}>
-      {ok ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-      {msg}
-    </div>
-  );
-}
-
 function Sk({ h = 16, w = "100%", r = 8, mb = 0 }) {
   return (
     <div className="animate-pulse" style={{

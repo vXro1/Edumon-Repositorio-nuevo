@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { normalizeTarea, normalizeEntrega } from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
+import { Toast } from "@/components";
 
 const ESTADO_ENTREGA = {
   borrador:  { label: "Borrador",   color: "#6B7280", bg: "rgba(107,114,128,0.10)" },
@@ -24,29 +25,6 @@ const ESTADO_ENTREGA = {
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
-}
-
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const cfg = {
-    success: { bg: "rgba(22,163,74,0.12)", color: "#16A34A", border: "rgba(22,163,74,0.25)" },
-    error:   { bg: "rgba(220,38,38,0.12)",  color: "#DC2626", border: "rgba(220,38,38,0.25)" },
-  };
-  const { bg, color, border } = cfg[type] || cfg.success;
-  return (
-    <div style={{
-      position: "fixed", bottom: 24, right: 24, zIndex: 600,
-      background: bg, color, border: `1px solid ${border}`,
-      borderRadius: 12, padding: "12px 18px", fontSize: 13, fontWeight: 600,
-      maxWidth: 360, boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-      display: "flex", alignItems: "center", gap: 8,
-    }}>
-      {type === "success"
-        ? <CheckCircle2 style={{ width: 15, height: 15, flexShrink: 0 }} />
-        : <AlertCircle style={{ width: 15, height: 15, flexShrink: 0 }} />}
-      {msg}
-    </div>
-  );
 }
 
 function EstadoBadge({ estado }) {

@@ -1,1 +1,0 @@
-// RUTA EDUMON WEB/src/components/feedback/EmptyState.jsx

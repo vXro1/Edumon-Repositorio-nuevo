@@ -1,33 +1,24 @@
-// src/features/foros/pages/ForosPage.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   MessageCircle, Plus, RefreshCw, Loader2, CheckCircle2,
   AlertCircle, Lock, Unlock, Trash2, ChevronRight, BookOpen,
   Globe, EyeOff,
 } from "lucide-react";
+
 import {
-  cursosGetMine, forosGetByCurso, forosCreate,
-  forosCambiarEstado, forosDelete,
+  cursosGetMine,
+  forosGetByCurso,
+  forosCreate,
+  forosCambiarEstado,
+  forosDelete,
 } from "@/lib/apiClient";
-import Modal from "@/components/ui/Modal";
+
+import { Modal, Toast, Button } from "@/components";
+import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { normalizeCurso } from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
-
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const cfg = {
-    success: { bg: "rgba(22,163,74,0.12)", color: "#16A34A", border: "rgba(22,163,74,0.25)" },
-    error:   { bg: "rgba(220,38,38,0.12)",  color: "#DC2626", border: "rgba(220,38,38,0.25)" },
-  };
-  const { bg, color, border } = cfg[type] || cfg.success;
-  return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 600, background: bg, color, border: `1px solid ${border}`, borderRadius: 12, padding: "12px 18px", fontSize: 13, fontWeight: 600, maxWidth: 360, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
-      {type === "success" ? <CheckCircle2 style={{ width: 15, height: 15, flexShrink: 0 }} /> : <AlertCircle style={{ width: 15, height: 15, flexShrink: 0 }} />}
-      {msg}
-    </div>
-  );
-}
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
@@ -164,16 +155,19 @@ export default function ForosPage() {
           <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>{foros.length} foro{foros.length !== 1 ? "s" : ""} en este curso</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={load} title="Actualizar" style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-text-muted)" }}>
+          {/* Botón solo ícono → IconBtn */}
+          <IconBtn color="var(--color-text-muted)" onClick={load} title="Actualizar">
             <RefreshCw style={{ width: 15, height: 15 }} />
-          </button>
-          <button
+          </IconBtn>
+
+          {/* Botón de acción con texto → Button primary */}
+          <Button
+            variant="primary"
             onClick={() => { setForm(INIT_FORM); setArchivos([]); setShowCreate(true); }}
             disabled={!cursoSel}
-            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 10, border: "none", background: cursoSel ? "#0C6AC4" : "#94A3B8", color: "white", fontWeight: 600, fontSize: 13.5, cursor: cursoSel ? "pointer" : "not-allowed" }}
           >
             <Plus style={{ width: 16, height: 16 }} /> Nuevo foro
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -247,11 +241,16 @@ export default function ForosPage() {
             </FieldGroup>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
-            <button type="button" onClick={() => setShowCreate(false)} style={{ padding: "9px 18px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-text)", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}>Cancelar</button>
-            <button type="submit" disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#6ba4d8" : "#0C6AC4", color: "white", fontSize: 13.5, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Cancelar → Button outline */}
+            <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
+              Cancelar
+            </Button>
+
+            {/* Submit con spinner → Button primary */}
+            <Button type="submit" variant="primary" disabled={saving}>
               {saving && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
               Crear foro
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
@@ -262,11 +261,16 @@ export default function ForosPage() {
           Se eliminarán permanentemente el foro y todos sus mensajes. ¿Continuar?
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={() => setShowDelete(false)} style={{ padding: "9px 18px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-text)", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}>Cancelar</button>
-          <button onClick={handleDelete} disabled={deleting} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: deleting ? "#ef9999" : "#DC2626", color: "white", fontSize: 13.5, fontWeight: 600, cursor: deleting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Cancelar → Button outline */}
+          <Button variant="outline" onClick={() => setShowDelete(false)}>
+            Cancelar
+          </Button>
+
+          {/* Eliminar con spinner → Button danger */}
+          <Button variant="danger" onClick={handleDelete} disabled={deleting}>
             {deleting && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
             Eliminar
-          </button>
+          </Button>
         </div>
       </Modal>
     </div>
@@ -274,11 +278,16 @@ export default function ForosPage() {
 }
 
 function ForoCard({ foro, onOpen, onToggle, onDelete }) {
+  // useState(hov) se mantiene porque controla estilos del <div> contenedor, no de un botón
   const [hov, setHov] = useState(false);
   const abierto = foro.estado === "abierto";
 
   return (
-    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ background: "var(--color-surface)", borderRadius: 16, border: `1px solid ${hov ? "rgba(99,102,241,0.25)" : "var(--color-border)"}`, boxShadow: hov ? "var(--shadow-md)" : "var(--shadow-card)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, transition: "all 180ms" }}>
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{ background: "var(--color-surface)", borderRadius: 16, border: `1px solid ${hov ? "rgba(99,102,241,0.25)" : "var(--color-border)"}`, boxShadow: hov ? "var(--shadow-md)" : "var(--shadow-card)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, transition: "all 180ms" }}
+    >
       <div style={{ width: 42, height: 42, borderRadius: 12, background: abierto ? "rgba(99,102,241,0.10)" : "rgba(148,163,184,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <MessageCircle style={{ width: 19, height: 19, color: abierto ? "#6366F1" : "#94A3B8" }} />
       </div>
@@ -303,16 +312,21 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        <button onClick={onToggle} title={abierto ? "Cerrar foro" : "Abrir foro"} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 9, border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)" }}>
+        {/* Toggle estado → Button outline sm (texto + ícono, variante fija) */}
+        <Button variant="outline" size="sm" onClick={onToggle} title={abierto ? "Cerrar foro" : "Abrir foro"}>
           {abierto ? <Lock style={{ width: 12, height: 12 }} /> : <Unlock style={{ width: 12, height: 12 }} />}
           {abierto ? "Cerrar" : "Abrir"}
-        </button>
-        <button onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 9, border: "none", background: "rgba(99,102,241,0.10)", color: "#6366F1", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+        </Button>
+
+        {/* Ver foro → Button ghost sm */}
+        <Button variant="ghost" size="sm" onClick={onOpen}>
           Ver foro <ChevronRight style={{ width: 13, height: 13 }} />
-        </button>
-        <button onClick={onDelete} title="Eliminar" style={{ padding: "7px 9px", borderRadius: 9, border: "none", background: "rgba(220,38,38,0.08)", cursor: "pointer", display: "flex", alignItems: "center", color: "#DC2626" }}>
+        </Button>
+
+        {/* Solo ícono Trash → IconBtn */}
+        <IconBtn color="#DC2626" onClick={onDelete} title="Eliminar">
           <Trash2 style={{ width: 13, height: 13 }} />
-        </button>
+        </IconBtn>
       </div>
     </div>
   );

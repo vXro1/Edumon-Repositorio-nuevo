@@ -3,25 +3,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookOpen, FileText, Calendar, Bell,
-  ChevronRight, Users, Clock, ArrowUpRight,
+  ChevronRight, Users, Clock,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { cursosGetMine, eventosGetHoy } from "@/lib/apiClient";
-import letrasImg from "@/assets/img/letras.png";
 import { normalizeCurso } from "@/lib/normalizers";
+import CursoCard from "@/features/cursos/components/CursoCard";
+import { Button } from "@/components";
 
-// ── Course accent colors ─────────────────────────────────────
-const CARD_COLORS = [
-  { strip: "#0C6AC4", icon: "#1D4ED8", bg: "#EFF6FF" },
-  { strip: "#16A34A", icon: "#166534", bg: "#F0FDF4" },
-  { strip: "#7C3AED", icon: "#5B21B6", bg: "#FAF5FF" },
-  { strip: "#EA580C", icon: "#9A3412", bg: "#FFF7ED" },
-  { strip: "#0284C7", icon: "#075985", bg: "#F0F9FF" },
-  { strip: "#D97706", icon: "#92400E", bg: "#FFFBEB" },
-];
-const cc = (i) => CARD_COLORS[i % CARD_COLORS.length];
-
-// ── Skeleton ─────────────────────────────────────────────────
 function Skeleton({ h = 16, w = "100%", r = 7 }) {
   return (
     <div
@@ -31,7 +20,6 @@ function Skeleton({ h = 16, w = "100%", r = 7 }) {
   );
 }
 
-// ── Stat card ─────────────────────────────────────────────────
 function StatCard({ value, label, icon: Icon, color, bg, loading }) {
   return (
     <div
@@ -42,19 +30,10 @@ function StatCard({ value, label, icon: Icon, color, bg, loading }) {
         alignItems: "flex-start", gap: 14,
         transition: "box-shadow 200ms, transform 200ms",
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-md)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-card)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-card)"; e.currentTarget.style.transform = "translateY(0)"; }}
     >
-      <div style={{
-        width: 42, height: 42, borderRadius: 11, flexShrink: 0,
-        background: bg, display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
+      <div style={{ width: 42, height: 42, borderRadius: 11, flexShrink: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Icon style={{ width: 18, height: 18, color }} />
       </div>
       <div>
@@ -65,9 +44,7 @@ function StatCard({ value, label, icon: Icon, color, bg, loading }) {
           </>
         ) : (
           <>
-            <p style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text)", lineHeight: 1, margin: 0 }}>
-              {value}
-            </p>
+            <p style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text)", lineHeight: 1, margin: 0 }}>{value}</p>
             <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 4 }}>{label}</p>
           </>
         )}
@@ -76,98 +53,14 @@ function StatCard({ value, label, icon: Icon, color, bg, loading }) {
   );
 }
 
-// ── Course card ───────────────────────────────────────────────
-function CourseCard({ curso, idx, onClick }) {
-  const [hov, setHov] = useState(false);
-  const c = cc(idx);
-  const coverSrc = curso.fotoPortada || letrasImg;
-
-  return (
-    <article
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        background: "var(--color-surface)", borderRadius: 16,
-        border: `1px solid ${hov ? "#BFDBFE" : "var(--color-border)"}`,
-        boxShadow: hov ? "var(--shadow-md)" : "var(--shadow-card)",
-        cursor: "pointer",
-        transition: "all 200ms ease",
-        transform: hov ? "translateY(-3px)" : "translateY(0)",
-        overflow: "hidden",
-      }}
-    >
-      {/* Cover image: backend photo or letras.png fallback */}
-      <div style={{
-        height: 100, overflow: "hidden",
-        background: c.bg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <img
-          src={coverSrc}
-          alt={curso.nombre ?? "Curso"}
-          onError={e => { e.target.onerror = null; e.target.src = letrasImg; e.target.style.objectFit = "contain"; e.target.style.padding = "12px"; e.target.style.opacity = "0.5"; }}
-          style={{
-            width: "100%", height: "100%",
-            objectFit: curso.fotoPortada ? "cover" : "contain",
-            opacity: curso.fotoPortada ? 1 : 0.5,
-            padding: curso.fotoPortada ? 0 : 12,
-          }}
-        />
-      </div>
-      <div style={{ padding: "14px 18px" }}>
-        <h3 style={{
-          fontSize: 14, fontWeight: 700, color: "var(--color-text)",
-          lineHeight: 1.35, margin: 0,
-          display: "-webkit-box", WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical", overflow: "hidden",
-        }}>
-          {curso.nombre}
-        </h3>
-        {curso.descripcion && (
-          <p style={{
-            fontSize: 12, color: "var(--color-text-muted)", marginTop: 6,
-            display: "-webkit-box", WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical", overflow: "hidden",
-          }}>
-            {curso.descripcion}
-          </p>
-        )}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          marginTop: 14, paddingTop: 12,
-          borderTop: "1px solid var(--color-border)",
-        }}>
-          <span style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-            Ver detalle
-          </span>
-          <ArrowUpRight style={{ width: 14, height: 14, color: c.strip }} />
-        </div>
-      </div>
-    </article>
-  );
-}
-
-// ── Event item ────────────────────────────────────────────────
 function EventItem({ evento }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "12px 16px",
-      borderBottom: "1px solid var(--color-border)",
-    }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-        background: "rgba(12,106,196,0.10)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--color-border)" }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Calendar style={{ width: 15, height: 15, color: "#0C6AC4" }} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          fontSize: 13.5, fontWeight: 600, color: "var(--color-text)",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0,
-        }}>
+        <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0 }}>
           {evento.titulo}
         </p>
         <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
@@ -179,61 +72,47 @@ function EventItem({ evento }) {
   );
 }
 
-// ── Section header ────────────────────────────────────────────
+// ✅ SectionHeader — usa Button variant="ghost"
 function SectionHeader({ title, action }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
       <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{title}</h2>
       {action && (
-        <button
-          onClick={action.onClick}
-          style={{
-            display: "flex", alignItems: "center", gap: 4,
-            fontSize: 12.5, fontWeight: 600, color: "#0C6AC4",
-            background: "none", border: "none", cursor: "pointer",
-          }}
-        >
+        <Button variant="ghost" size="sm" onClick={action.onClick} style={{ color: "#0C6AC4", gap: 4 }}>
           {action.label} <ChevronRight style={{ width: 14, height: 14 }} />
-        </button>
+        </Button>
       )}
     </div>
   );
 }
 
-// ── Quick button ──────────────────────────────────────────────
+// ✅ QuickBtn — eliminado useState(hov), usa Button variant="custom"
 function QuickBtn({ icon: Icon, label, desc, color, bg, onClick }) {
-  const [hov, setHov] = useState(false);
   return (
-    <button
+    <Button
+      variant="custom"
       onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "14px 16px", borderRadius: 12,
         border: "1px solid var(--color-border)",
-        background: hov ? "var(--color-bg)" : "var(--color-surface)",
-        cursor: "pointer", textAlign: "left",
-        transition: "all 150ms",
-        boxShadow: hov ? "var(--shadow-sm)" : "none",
-        transform: hov ? "translateY(-1px)" : "none",
+        background: "var(--color-surface)",
+        textAlign: "left", width: "100%", height: "auto",
+        justifyContent: "flex-start",
       }}
     >
-      <div style={{
-        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-        background: bg, display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
+      <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Icon style={{ width: 17, height: 17, color }} />
       </div>
       <div style={{ textAlign: "left" }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>{label}</p>
         <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 1 }}>{desc}</p>
       </div>
-    </button>
+    </Button>
   );
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 export default function PadreHomePage() {
   const { user }  = useAuth();
   const navigate  = useNavigate();
@@ -256,108 +135,62 @@ export default function PadreHomePage() {
     })();
   }, []);
 
-  const hora = new Date().getHours();
+  const hora   = new Date().getHours();
   const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
-      {/* ── Welcome banner ─────────────────────────────── */}
+      {/* Welcome banner */}
       <div style={{
         borderRadius: 18,
         background: "linear-gradient(135deg, #0C6AC4 0%, #1E3A6E 60%, #0F172A 100%)",
-        padding: "24px 32px",
-        display: "flex", alignItems: "center", gap: 20,
-        marginBottom: 28,
-        position: "relative", overflow: "hidden",
+        padding: "24px 32px", display: "flex", alignItems: "center", gap: 20,
+        marginBottom: 28, position: "relative", overflow: "hidden",
       }}>
-        <div style={{
-          position: "absolute", right: -30, top: -30,
-          width: 160, height: 160, borderRadius: "50%",
-          background: "rgba(255,255,255,0.04)",
-        }} />
+        <div style={{ position: "absolute", right: -30, top: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
         <div style={{ color: "white", position: "relative" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
             Padre / Tutor
           </p>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
-            {saludo}
+            {saludo}{user?.nombre ? `, ${user.nombre}` : ""}
           </h1>
         </div>
       </div>
 
-      {/* ── Stats ──────────────────────────────────────── */}
+      {/* Stats */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader title="Resumen" />
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: 14,
-        }}>
-          <StatCard
-            value={cursos.length} label="Cursos activos"
-            icon={BookOpen} color="#0C6AC4" bg="rgba(12,106,196,0.10)"
-            loading={loading}
-          />
-          <StatCard
-            value={eventos.length} label="Eventos hoy"
-            icon={Calendar} color="#16A34A" bg="rgba(22,163,74,0.10)"
-            loading={loading}
-          />
-          <StatCard
-            value="—" label="Notificaciones"
-            icon={Bell} color="#D97706" bg="rgba(217,119,6,0.10)"
-            loading={false}
-          />
-          <StatCard
-            value="—" label="Entregas pendientes"
-            icon={FileText} color="#6366F1" bg="rgba(99,102,241,0.10)"
-            loading={false}
-          />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
+          <StatCard value={cursos.length}  label="Cursos activos"      icon={BookOpen} color="#0C6AC4" bg="rgba(12,106,196,0.10)" loading={loading} />
+          <StatCard value={eventos.length} label="Eventos hoy"         icon={Calendar} color="#16A34A" bg="rgba(22,163,74,0.10)"  loading={loading} />
+          <StatCard value="—"              label="Notificaciones"      icon={Bell}     color="#D97706" bg="rgba(217,119,6,0.10)"  loading={false} />
+          <StatCard value="—"              label="Entregas pendientes" icon={FileText} color="#6366F1" bg="rgba(99,102,241,0.10)" loading={false} />
         </div>
       </section>
 
-      {/* ── Quick actions ──────────────────────────────── */}
+      {/* Quick actions */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader title="Acciones rápidas" />
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: 12,
-        }}>
-          <QuickBtn
-            icon={Users} label="Mis hijos" desc="Ver perfiles familiares"
-            color="#0C6AC4" bg="rgba(12,106,196,0.10)"
-            onClick={() => navigate("/familia/perfiles")}
-          />
-          <QuickBtn
-            icon={FileText} label="Ver entregas" desc="Revisión de tareas"
-            color="#16A34A" bg="rgba(22,163,74,0.10)"
-            onClick={() => navigate("/familia/entregas")}
-          />
-          <QuickBtn
-            icon={Bell} label="Notificaciones" desc="Avisos y mensajes"
-            color="#D97706" bg="rgba(217,119,6,0.10)"
-            onClick={() => navigate("/notificaciones")}
-          />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+          <QuickBtn icon={Users}    label="Mis hijos"       desc="Ver perfiles familiares" color="#0C6AC4" bg="rgba(12,106,196,0.10)" onClick={() => navigate("/familia/perfiles")} />
+          <QuickBtn icon={FileText} label="Ver entregas"    desc="Revisión de tareas"      color="#16A34A" bg="rgba(22,163,74,0.10)"  onClick={() => navigate("/familia/entregas")} />
+          <QuickBtn icon={Bell}     label="Notificaciones"  desc="Avisos y mensajes"       color="#D97706" bg="rgba(217,119,6,0.10)"  onClick={() => navigate("/notificaciones")} />
         </div>
       </section>
 
-      {/* ── Courses ────────────────────────────────────── */}
+      {/* Courses */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader
           title="Cursos de mis hijos"
           action={{ label: "Ver perfiles", onClick: () => navigate("/familia/perfiles") }}
         />
         {loading ? (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: 14,
-          }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
             {[0, 1, 2].map((i) => (
               <div key={i} style={{ background: "var(--color-surface)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--color-border)" }}>
-                <div style={{ height: 5, background: "var(--color-border)" }} />
+                <div style={{ height: 4, background: "var(--color-border)" }} />
                 <div style={{ padding: 16 }}>
                   <Skeleton h={40} w={40} r={10} />
                   <div style={{ marginTop: 12 }}><Skeleton h={14} w="80%" r={5} /></div>
@@ -370,45 +203,33 @@ export default function PadreHomePage() {
           <div style={{
             background: "var(--color-surface)", borderRadius: 16,
             border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-            padding: "44px 24px",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+            padding: "44px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
           }}>
             <BookOpen style={{ width: 28, height: 28, color: "var(--color-text-muted)" }} />
             <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-muted)", margin: 0 }}>
               Aún no estás inscrito en ningún curso
             </p>
-            <p style={{ fontSize: 12.5, color: "var(--color-text-subtle)", margin: 0 }}>
+            <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", margin: 0, opacity: 0.7 }}>
               Contacta al docente o administrador para que te agreguen.
             </p>
           </div>
         ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: 14,
-          }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
             {cursos.map((c, i) => (
-              <CourseCard
-                key={c._id} curso={c} idx={i}
-                onClick={() => navigate(`/cursos/${c._id}`)}
-              />
+              <CursoCard key={c._id} curso={c} role="padre" idx={i} showCover={true} coverSrc={c.fotoPortada || null} />
             ))}
           </div>
         )}
       </section>
 
-      {/* ── Events today ───────────────────────────────── */}
+      {/* Events today */}
       {!loading && eventos.length > 0 && (
         <section>
           <SectionHeader
             title="Eventos de hoy"
-            action={{ label: "Ver calendario", onClick: () => navigate("/eventos") }}
+            action={{ label: "Ver calendario", onClick: () => navigate("/familia/calendario") }}
           />
-          <div style={{
-            background: "var(--color-surface)", borderRadius: 16,
-            border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-            overflow: "hidden",
-          }}>
+          <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
             {eventos.map((ev) => <EventItem key={ev._id} evento={ev} />)}
           </div>
         </section>

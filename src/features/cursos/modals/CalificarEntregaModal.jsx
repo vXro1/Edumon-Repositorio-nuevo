@@ -1,6 +1,6 @@
 // src/features/cursos/pages/CalificarEntregaModal.refactor.jsx
 import React, { useState } from 'react';
-import Modal from '@/components/ui/Modal';
+import { Modal, Button, Input } from '@/components';
 import { entregasCalificar } from '@/lib/apiClient';
 import { humanizeError } from '@/utils/humanizeError';
 
@@ -27,11 +27,36 @@ export default function CalificarEntregaModal({ open, entrega, onClose, onSaved 
   return (
     <Modal open={!!open} onClose={onClose} title={entrega ? `Calificar: ${entrega.usuario?.nombre || 'Desconocido'}` : 'Calificar entrega'}>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label>Nota<input value={nota} onChange={e => setNota(e.target.value)} type="number" min="0" max="10" step="0.1"/></label>
-        <label>Comentario<textarea value={comentario} onChange={e => setComentario(e.target.value)} /></label>
+        <label>
+          Nota
+          <Input 
+            value={nota} 
+            onChange={e => setNota(e.target.value)} 
+            type="number" 
+            min="0" 
+            max="10" 
+            step="0.1"
+          />
+        </label>
+        <label>
+          Comentario
+          <textarea 
+            value={comentario} 
+            onChange={e => setComentario(e.target.value)} 
+            style={{
+              width: '100%',
+              minHeight: 100,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: '1px solid var(--color-border)',
+              fontFamily: 'inherit',
+              fontSize: 14,
+            }}
+          />
+        </label>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button type="button" onClick={onClose}>Cancelar</button>
-          <button type="submit" disabled={saving} style={{ background: '#16A34A', color: 'white', border: 'none', padding: '8px 12px', borderRadius: 8 }}>{saving ? 'Guardando...' : 'Guardar'}</button>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
         </div>
       </form>
     </Modal>

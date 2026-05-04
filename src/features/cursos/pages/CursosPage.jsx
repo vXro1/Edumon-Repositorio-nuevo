@@ -1,23 +1,44 @@
 // src/features/cursos/pages/CursosPage.jsx
 // ROL: Administrador / Docente — gestión de cursos
+
 import { useState, useEffect, useCallback, useRef } from "react";
+
 import {
-  Layers, Plus, Search, Edit2, Archive, Users, ChevronLeft,
-  ChevronRight, AlertCircle, UserPlus, UserMinus, Upload,
+  Layers,
+  Plus,
+  Search,
+  Edit2,
+  Archive,
+  Users,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  UserPlus,
+  UserMinus,
+  Upload,
 } from "lucide-react";
+
 import letrasImg from "@/assets/img/letras.png";
-import Modal from "@/components/ui/Modal";
+
+import { Modal, Button, UserAvatar, Toast } from "@/components";
+
 import {
-  cursosGetAll, cursosGetMine, cursosCreate, cursosUpdate, cursosDelete,
-  cursosGetParticipantes, cursosAddParticipante, cursosRemoveParticipante,
+  cursosGetAll,
+  cursosGetMine,
+  cursosCreate,
+  cursosUpdate,
+  cursosDelete,
+  cursosGetParticipantes,
+  cursosAddParticipante,
+  cursosRemoveParticipante,
   usersGetAll,
 } from "@/lib/apiClient";
+
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useSearch } from "@/context/SearchContext";
-import { normalizeCurso, normalizeUser } from "@/lib/normalizers";
-import UserAvatar from "@/components/ui/UserAvatar";
-import { humanizeError } from "@/utils/humanizeError";
 
+import { normalizeCurso, normalizeUser } from "@/lib/normalizers";
+import { humanizeError } from "@/utils/humanizeError";
 const LIMIT = 12;
 
 const CARD_COLORS = [
@@ -31,21 +52,6 @@ const ESTADO_META = {
 };
 
 /* ── Micro-components ─────────────────────────────────────────── */
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const bg = type === "error" ? "#DC2626" : type === "info" ? "#0C6AC4" : "#16A34A";
-  return (
-    <div style={{
-      position: "fixed", bottom: 24, right: 24, zIndex: 200,
-      background: bg, color: "white", padding: "12px 20px",
-      borderRadius: 10, fontSize: 13.5, fontWeight: 600,
-      boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
-    }}>
-      {msg}
-    </div>
-  );
-}
-
 function Sk({ h = 16, w = "100%", r = 7 }) {
   return (
     <div className="animate-pulse" style={{
@@ -129,39 +135,6 @@ function StSelect({ children, ...props }) {
     >
       {children}
     </select>
-  );
-}
-
-function BtnPrimary({ children, onClick, type = "button", disabled }) {
-  return (
-    <button
-      type={type} onClick={onClick} disabled={disabled}
-      style={{
-        background: disabled ? "var(--color-border)" : "#0C6AC4",
-        color: "white", border: "none", padding: "9px 20px", borderRadius: 8,
-        fontSize: 13.5, fontWeight: 700, cursor: disabled ? "not-allowed" : "pointer",
-        transition: "background 0.15s",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function BtnOutline({ children, onClick, danger }) {
-  return (
-    <button
-      type="button" onClick={onClick}
-      style={{
-        background: "transparent",
-        color: danger ? "#DC2626" : "var(--color-text-muted)",
-        border: `1.5px solid ${danger ? "rgba(220,38,38,0.3)" : "var(--color-border)"}`,
-        padding: "9px 20px", borderRadius: 8,
-        fontSize: 13.5, fontWeight: 600, cursor: "pointer",
-      }}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -379,16 +352,13 @@ export default function CursosPage() {
             <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", margin: 0 }}>{total} cursos en total</p>
           </div>
         </div>
-        <button
+        <Button
+          variant="primary"
           onClick={() => setCreateOpen(true)}
-          style={{
-            display: "flex", alignItems: "center", gap: 7,
-            background: "#0C6AC4", color: "white", border: "none",
-            padding: "9px 18px", borderRadius: 9, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-          }}
+          style={{ display: "flex", alignItems: "center", gap: 7 }}
         >
           <Plus style={{ width: 15, height: 15 }} /> Nuevo curso
-        </button>
+        </Button>
       </div>
 
       {/* Search */}
@@ -469,24 +439,33 @@ export default function CursosPage() {
                     </td>
                     <td style={{ padding: "13px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <button
-                          title="Participantes" onClick={() => openParts(c)}
-                          style={{ background: "rgba(12,106,196,0.1)", border: "none", borderRadius: 7, padding: 7, cursor: "pointer", display: "flex" }}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Participantes"
+                          aria-label="Ver participantes"
+                          onClick={() => openParts(c)}
                         >
                           <Users style={{ width: 14, height: 14, color: "#0C6AC4" }} />
-                        </button>
-                        <button
-                          title="Editar" onClick={() => openEdit(c)}
-                          style={{ background: "rgba(99,102,241,0.1)", border: "none", borderRadius: 7, padding: 7, cursor: "pointer", display: "flex" }}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Editar"
+                          aria-label="Editar curso"
+                          onClick={() => openEdit(c)}
                         >
                           <Edit2 style={{ width: 14, height: 14, color: "#6366F1" }} />
-                        </button>
-                        <button
-                          title="Archivar" onClick={() => openArchive(c)}
-                          style={{ background: "rgba(217,119,6,0.1)", border: "none", borderRadius: 7, padding: 7, cursor: "pointer", display: "flex" }}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Archivar"
+                          aria-label="Archivar curso"
+                          onClick={() => openArchive(c)}
                         >
                           <Archive style={{ width: 14, height: 14, color: "#D97706" }} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -503,18 +482,24 @@ export default function CursosPage() {
               Página {page} de {totalPages}
             </span>
             <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                style={{ background: "none", border: "1.5px solid var(--color-border)", borderRadius: 7, padding: "5px 10px", cursor: page === 1 ? "not-allowed" : "pointer", display: "flex" }}
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Página anterior"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
               >
                 <ChevronLeft style={{ width: 14, height: 14 }} />
-              </button>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                style={{ background: "none", border: "1.5px solid var(--color-border)", borderRadius: 7, padding: "5px 10px", cursor: page === totalPages ? "not-allowed" : "pointer", display: "flex" }}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Página siguiente"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
               >
                 <ChevronRight style={{ width: 14, height: 14 }} />
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -557,15 +542,15 @@ export default function CursosPage() {
             <input ref={createCoverRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => setCreateCoverFile(e.target.files[0] ?? null)} />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button type="button" onClick={() => createCoverRef.current?.click()}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 14px", borderRadius: 8, border: "1.5px dashed var(--color-border)",
-                  background: "transparent", cursor: "pointer", fontSize: 12.5, color: "var(--color-text-muted)",
-                }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => createCoverRef.current?.click()}
+                style={{ display: "flex", alignItems: "center", gap: 6 }}
+              >
                 <Upload style={{ width: 13, height: 13 }} />
                 {createCoverFile ? createCoverFile.name : "Subir imagen"}
-              </button>
+              </Button>
               {createCoverFile && (
                 <img src={URL.createObjectURL(createCoverFile)} alt="preview"
                   style={{ width: 40, height: 40, borderRadius: 7, objectFit: "cover", border: "1px solid var(--color-border)" }} />
@@ -573,8 +558,8 @@ export default function CursosPage() {
             </div>
           </Field>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
-            <BtnOutline onClick={() => setCreateOpen(false)}>Cancelar</BtnOutline>
-            <BtnPrimary type="submit" disabled={saving}>{saving ? "Creando..." : "Crear curso"}</BtnPrimary>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit" disabled={saving}>{saving ? "Creando..." : "Crear curso"}</Button>
           </div>
         </form>
       </Modal>
@@ -600,15 +585,15 @@ export default function CursosPage() {
             <input ref={editCoverRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => setEditCoverFile(e.target.files[0] ?? null)} />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button type="button" onClick={() => editCoverRef.current?.click()}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 14px", borderRadius: 8, border: "1.5px dashed var(--color-border)",
-                  background: "transparent", cursor: "pointer", fontSize: 12.5, color: "var(--color-text-muted)",
-                }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => editCoverRef.current?.click()}
+                style={{ display: "flex", alignItems: "center", gap: 6 }}
+              >
                 <Upload style={{ width: 13, height: 13 }} />
                 {editCoverFile ? editCoverFile.name : selected?.fotoPortada ? "Cambiar imagen" : "Subir imagen"}
-              </button>
+              </Button>
               {(editCoverFile || selected?.fotoPortada) && (
                 <img
                   src={editCoverFile ? URL.createObjectURL(editCoverFile) : (selected?.fotoPortada || letrasImg)}
@@ -619,8 +604,8 @@ export default function CursosPage() {
             </div>
           </Field>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
-            <BtnOutline onClick={() => setEditOpen(false)}>Cancelar</BtnOutline>
-            <BtnPrimary type="submit" disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</BtnPrimary>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit" disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
           </div>
         </form>
       </Modal>
@@ -632,17 +617,10 @@ export default function CursosPage() {
           El curso quedará inactivo pero sus datos se conservarán.
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <BtnOutline onClick={() => setArchiveOpen(false)}>Cancelar</BtnOutline>
-          <button
-            onClick={handleArchive} disabled={saving}
-            style={{
-              background: saving ? "var(--color-border)" : "#D97706",
-              color: "white", border: "none", padding: "9px 20px", borderRadius: 8,
-              fontSize: 13.5, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer",
-            }}
-          >
+          <Button variant="ghost" onClick={() => setArchiveOpen(false)}>Cancelar</Button>
+          <Button variant="danger" onClick={handleArchive} disabled={saving}>
             {saving ? "Archivando..." : "Archivar"}
-          </button>
+          </Button>
         </div>
       </Modal>
 
@@ -654,16 +632,13 @@ export default function CursosPage() {
         size="lg"
       >
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-          <button
+          <Button
+            variant="primary"
             onClick={() => setAddPartOpen(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 7,
-              background: "#0C6AC4", color: "white", border: "none",
-              padding: "8px 16px", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-            }}
+            style={{ display: "flex", alignItems: "center", gap: 7 }}
           >
             <UserPlus style={{ width: 14, height: 14 }} /> Agregar participante
-          </button>
+          </Button>
         </div>
 
         {partsLoading ? (
@@ -701,13 +676,15 @@ export default function CursosPage() {
                     </div>
                   </div>
                   {!esDocente && (
-                    <button
-                      onClick={() => handleRemovePart(u._id ?? p._id)}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Eliminar participante"
                       title="Eliminar participante"
-                      style={{ background: "rgba(220,38,38,0.1)", border: "none", borderRadius: 7, padding: 6, cursor: "pointer", display: "flex" }}
+                      onClick={() => handleRemovePart(u._id ?? p._id)}
                     >
                       <UserMinus style={{ width: 14, height: 14, color: "#DC2626" }} />
-                    </button>
+                    </Button>
                   )}
                 </div>
               );
@@ -737,8 +714,8 @@ export default function CursosPage() {
             Si el padre no existe, se creará con contraseña igual a su cédula.
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-            <BtnOutline onClick={() => setAddPartOpen(false)}>Cancelar</BtnOutline>
-            <BtnPrimary type="submit" disabled={saving}>{saving ? "Agregando..." : "Agregar"}</BtnPrimary>
+            <Button variant="ghost" onClick={() => setAddPartOpen(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit" disabled={saving}>{saving ? "Agregando..." : "Agregar"}</Button>
           </div>
         </form>
       </Modal>

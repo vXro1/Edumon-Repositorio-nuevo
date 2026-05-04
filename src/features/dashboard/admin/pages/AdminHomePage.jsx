@@ -1,11 +1,10 @@
 // src/features/dashboard/admin/pages/AdminHomePage.jsx
-// Renderiza vistas completamente distintas según el rol: superadmin vs administrador
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users, BookOpen, Building2, Plus, ChevronRight,
   UserCheck, Bell, Calendar, GraduationCap, Shield,
-  ArrowUpRight, Clock,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
@@ -14,7 +13,7 @@ import {
   notificacionesGetConteoNoLeidas,
 } from "@/lib/apiClient";
 import { normalizeCurso } from "@/lib/normalizers";
-import { humanizeError } from "@/utils/humanizeError";
+import { Button } from "@/components";
 
 /* ── Shared micro-components ─────────────────────────────────── */
 function Skeleton({ h = 20, w = "100%", r = 8 }) {
@@ -59,20 +58,19 @@ function StatCard({ label, value, icon: Icon, color, bg, loading, sub }) {
   );
 }
 
+// ✅ ActionBtn — eliminado useState(hov), usa Button variant="custom"
 function ActionBtn({ icon: Icon, label, desc, color, bg, onClick }) {
-  const [hov, setHov] = useState(false);
   return (
-    <button
+    <Button
+      variant="custom"
       onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
       style={{
         display: "flex", alignItems: "center", gap: 12,
-        padding: "14px 16px", borderRadius: 12, border: "1px solid var(--color-border)",
-        background: hov ? "var(--color-bg)" : "var(--color-surface)",
-        cursor: "pointer", textAlign: "left", transition: "all 150ms",
-        boxShadow: hov ? "var(--shadow-sm)" : "none",
-        transform: hov ? "translateY(-1px)" : "none",
+        padding: "14px 16px", borderRadius: 12,
+        border: "1px solid var(--color-border)",
+        background: "var(--color-surface)",
+        textAlign: "left", width: "100%", height: "auto",
+        justifyContent: "flex-start",
       }}
     >
       <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -80,25 +78,26 @@ function ActionBtn({ icon: Icon, label, desc, color, bg, onClick }) {
       </div>
       <div>
         <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>{label}</p>
-        <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 1, margin: 0 }}>{desc}</p>
+        <p style={{ fontSize: 11, color: "var(--color-text-muted)", margin: 0 }}>{desc}</p>
       </div>
-    </button>
+    </Button>
   );
 }
 
+// ✅ SectionHeader — eliminado onMouseEnter/Leave, usa Button variant="ghost"
 function SectionHeader({ title, action }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
       <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{title}</h2>
       {action && (
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={action.onClick}
-          style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12.5, fontWeight: 600, color: "#0C6AC4", background: "none", border: "none", cursor: "pointer" }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = "0.7")}
-          onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+          style={{ color: "#0C6AC4", gap: 4 }}
         >
           {action.label} <ChevronRight style={{ width: 14, height: 14 }} />
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -129,10 +128,9 @@ function WelcomeBanner({ subtitle }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   VISTA SUPERADMIN — Gestión global del sistema
-   APIs: GET /instituciones  ·  GET /users
+   VISTA SUPERADMIN
    ══════════════════════════════════════════════════════════════ */
-function SuperadminDashboard({ user }) {
+function SuperadminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats,   setStats]   = useState({ instituciones: 0, usuarios: 0, admins: 0, docentes: 0 });
@@ -163,29 +161,26 @@ function SuperadminDashboard({ user }) {
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       <WelcomeBanner subtitle="Superadministrador — Vista global" />
 
-      {/* Stats */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader title="Resumen del sistema" />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
-          <StatCard label="Instituciones activas" value={stats.instituciones} icon={Building2} color="#0C6AC4" bg="rgba(12,106,196,0.10)" loading={loading} />
-          <StatCard label="Usuarios totales"       value={stats.usuarios}     icon={Users}     color="#6366F1" bg="rgba(99,102,241,0.10)"  loading={loading} />
-          <StatCard label="Administradores"        value={stats.admins}       icon={Shield}    color="#D97706" bg="rgba(217,119,6,0.10)"   loading={loading} />
-          <StatCard label="Docentes registrados"   value={stats.docentes}     icon={GraduationCap} color="#16A34A" bg="rgba(22,163,74,0.10)" loading={loading} />
+          <StatCard label="Instituciones activas" value={stats.instituciones} icon={Building2}    color="#0C6AC4" bg="rgba(12,106,196,0.10)" loading={loading} />
+          <StatCard label="Usuarios totales"       value={stats.usuarios}     icon={Users}         color="#6366F1" bg="rgba(99,102,241,0.10)" loading={loading} />
+          <StatCard label="Administradores"        value={stats.admins}       icon={Shield}        color="#D97706" bg="rgba(217,119,6,0.10)"  loading={loading} />
+          <StatCard label="Docentes registrados"   value={stats.docentes}     icon={GraduationCap} color="#16A34A" bg="rgba(22,163,74,0.10)"  loading={loading} />
         </div>
       </section>
 
-      {/* Quick actions */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader title="Acciones rápidas" />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-          <ActionBtn icon={Plus}      label="Nueva institución" desc="Crear institución + admin" color="#0C6AC4" bg="rgba(12,106,196,0.10)" onClick={() => navigate("/instituciones")} />
-          <ActionBtn icon={Building2} label="Ver instituciones" desc="Listado y edición"          color="#6366F1" bg="rgba(99,102,241,0.10)" onClick={() => navigate("/instituciones")} />
-          <ActionBtn icon={Users}     label="Gestionar usuarios" desc="Tabla global de usuarios"  color="#D97706" bg="rgba(217,119,6,0.10)"  onClick={() => navigate("/usuarios")} />
-          <ActionBtn icon={Bell}      label="Notificaciones"    desc="Bandeja del sistema"         color="#16A34A" bg="rgba(22,163,74,0.10)"  onClick={() => navigate("/notificaciones")} />
+          <ActionBtn icon={Plus}      label="Nueva institución"  desc="Crear institución + admin" color="#0C6AC4" bg="rgba(12,106,196,0.10)" onClick={() => navigate("/instituciones")} />
+          <ActionBtn icon={Building2} label="Ver instituciones"  desc="Listado y edición"          color="#6366F1" bg="rgba(99,102,241,0.10)" onClick={() => navigate("/instituciones")} />
+          <ActionBtn icon={Users}     label="Gestionar usuarios" desc="Tabla global de usuarios"   color="#D97706" bg="rgba(217,119,6,0.10)"  onClick={() => navigate("/usuarios")} />
+          <ActionBtn icon={Bell}      label="Notificaciones"     desc="Bandeja del sistema"         color="#16A34A" bg="rgba(22,163,74,0.10)"  onClick={() => navigate("/notificaciones")} />
         </div>
       </section>
 
-      {/* Institutions list */}
       <section>
         <SectionHeader title="Instituciones recientes" action={{ label: "Ver todas", onClick: () => navigate("/instituciones") }} />
         <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
@@ -210,7 +205,7 @@ function SuperadminDashboard({ user }) {
               return (
                 <div
                   key={inst._id}
-                  style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderBottom: "1px solid var(--color-border)", transition: "background 150ms", cursor: "default" }}
+                  style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderBottom: "1px solid var(--color-border)", transition: "background 150ms" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "var(--color-bg)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
@@ -226,10 +221,7 @@ function SuperadminDashboard({ user }) {
                       {inst.direccion ? ` · ${inst.direccion}` : ""}
                     </p>
                   </div>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 99,
-                    background: "rgba(22,163,74,0.1)", color: "#16A34A",
-                  }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 99, background: "rgba(22,163,74,0.1)", color: "#16A34A" }}>
                     Activa
                   </span>
                 </div>
@@ -243,17 +235,15 @@ function SuperadminDashboard({ user }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   VISTA ADMINISTRADOR — Gestión de la institución propia
-   APIs: GET /instituciones/mi-institucion · GET /cursos
-         GET /eventos/hoy · GET /notificaciones/conteo-no-leidas
+   VISTA ADMINISTRADOR
    ══════════════════════════════════════════════════════════════ */
-function AdminDashboard({ user }) {
+function AdminDashboard() {
   const navigate = useNavigate();
-  const [loading,     setLoading]     = useState(true);
-  const [inst,        setInst]        = useState(null);
-  const [stats,       setStats]       = useState({ cursos: 0, docentes: 0, eventosHoy: 0, notifs: 0 });
-  const [cursos,      setCursos]      = useState([]);
-  const [eventos,     setEventos]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [inst,    setInst]    = useState(null);
+  const [stats,   setStats]   = useState({ cursos: 0, docentes: 0, eventosHoy: 0, notifs: 0 });
+  const [cursos,  setCursos]  = useState([]);
+  const [eventos, setEventos] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -283,40 +273,29 @@ function AdminDashboard({ user }) {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <WelcomeBanner
-        subtitle={`Administrador${inst?.nombre ? ` · ${inst.nombre}` : ""}`}
-      />
+      <WelcomeBanner subtitle={`Administrador${inst?.nombre ? ` · ${inst.nombre}` : ""}`} />
 
-      {/* Stats */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader title="Resumen de la institución" />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
-          <StatCard label="Cursos activos"       value={stats.cursos}     icon={BookOpen}      color="#0C6AC4" bg="rgba(12,106,196,0.10)" loading={loading} />
-          <StatCard label="Docentes asignados"   value={stats.docentes}   icon={GraduationCap} color="#16A34A" bg="rgba(22,163,74,0.10)"  loading={loading} />
-          <StatCard label="Eventos hoy"          value={stats.eventosHoy} icon={Calendar}      color="#6366F1" bg="rgba(99,102,241,0.10)" loading={loading} />
-          <StatCard
-            label="Notificaciones nuevas" value={stats.notifs}
-            icon={Bell} color="#D97706" bg="rgba(217,119,6,0.10)" loading={loading}
-            sub={stats.notifs > 0 ? "Sin leer" : "Todo al día"}
-          />
+          <StatCard label="Cursos activos"         value={stats.cursos}     icon={BookOpen}      color="#0C6AC4" bg="rgba(12,106,196,0.10)" loading={loading} />
+          <StatCard label="Docentes asignados"     value={stats.docentes}   icon={GraduationCap} color="#16A34A" bg="rgba(22,163,74,0.10)"  loading={loading} />
+          <StatCard label="Eventos hoy"            value={stats.eventosHoy} icon={Calendar}      color="#6366F1" bg="rgba(99,102,241,0.10)" loading={loading} />
+          <StatCard label="Notificaciones nuevas"  value={stats.notifs}     icon={Bell}          color="#D97706" bg="rgba(217,119,6,0.10)"  loading={loading} sub={stats.notifs > 0 ? "Sin leer" : "Todo al día"} />
         </div>
       </section>
 
-      {/* Quick actions */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader title="Acciones rápidas" />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-          <ActionBtn icon={Plus}         label="Nuevo curso"       desc="Crear y asignar docente"  color="#0C6AC4" bg="rgba(12,106,196,0.10)" onClick={() => navigate("/cursos")} />
-          <ActionBtn icon={UserCheck}    label="Gestionar docentes" desc="Registrar o importar CSV" color="#16A34A" bg="rgba(22,163,74,0.10)"  onClick={() => navigate("/docentes")} />
-          <ActionBtn icon={Users}        label="Usuarios"          desc="Ver todos los usuarios"    color="#6366F1" bg="rgba(99,102,241,0.10)" onClick={() => navigate("/usuarios")} />
-          <ActionBtn icon={Building2}    label="Mi institución"    desc="Datos y configuración"     color="#D97706" bg="rgba(217,119,6,0.10)"  onClick={() => navigate("/institucion")} />
+          <ActionBtn icon={Plus}      label="Nuevo curso"        desc="Crear y asignar docente"  color="#0C6AC4" bg="rgba(12,106,196,0.10)" onClick={() => navigate("/cursos")} />
+          <ActionBtn icon={UserCheck} label="Gestionar docentes" desc="Registrar o importar CSV" color="#16A34A" bg="rgba(22,163,74,0.10)"  onClick={() => navigate("/docentes")} />
+          <ActionBtn icon={Users}     label="Usuarios"           desc="Ver todos los usuarios"   color="#6366F1" bg="rgba(99,102,241,0.10)" onClick={() => navigate("/usuarios")} />
+          <ActionBtn icon={Building2} label="Mi institución"     desc="Datos y configuración"    color="#D97706" bg="rgba(217,119,6,0.10)"  onClick={() => navigate("/institucion")} />
         </div>
       </section>
 
-      {/* Two-column: courses + events */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 20 }}>
-
-        {/* Recent courses */}
         <section>
           <SectionHeader title="Cursos recientes" action={{ label: "Ver todos", onClick: () => navigate("/cursos") }} />
           <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
@@ -365,7 +344,6 @@ function AdminDashboard({ user }) {
           </div>
         </section>
 
-        {/* Today's events */}
         <section>
           <SectionHeader title="Eventos de hoy" action={{ label: "Ver calendario", onClick: () => navigate("/notificaciones") }} />
           <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
@@ -388,10 +366,7 @@ function AdminDashboard({ user }) {
                 const CAT_COLORS = { institucional: "#0C6AC4", escuela_padres: "#6366F1", academico: "#16A34A" };
                 const cc = CAT_COLORS[ev.categoria] ?? "#8B5CF6";
                 return (
-                  <div
-                    key={ev._id}
-                    style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--color-border)" }}
-                  >
+                  <div key={ev._id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--color-border)" }}>
                     <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: `${cc}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Calendar style={{ width: 14, height: 14, color: cc }} />
                     </div>
@@ -416,15 +391,9 @@ function AdminDashboard({ user }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   Entry point — decide qué vista mostrar según el rol
-   ══════════════════════════════════════════════════════════════ */
+/* ── Entry point ─────────────────────────────────────────────── */
 export default function AdminHomePage() {
   const { user } = useAuth();
-
-  if (user?.rol === "superadmin") {
-    return <SuperadminDashboard user={user} />;
-  }
-
+  if (user?.rol === "superadmin") return <SuperadminDashboard user={user} />;
   return <AdminDashboard user={user} />;
 }

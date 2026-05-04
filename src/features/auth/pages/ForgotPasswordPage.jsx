@@ -6,10 +6,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
-import { ForgotPasswordForm } from "../../../components/forms/ForgotPasswordForm";
-import { AuthLayout } from "../../../components/layout/AuthLayout";
 import { humanizeError } from "../../../utils/humanizeError";
-import { Card } from "../../../components/ui/index";
+import { ForgotPasswordForm, AuthLayout, Card, Button } from "@/components";
 
 export const ForgotPasswordPage = () => {
   const [loading, setLoading] = useState(false);
@@ -26,8 +24,6 @@ export const ForgotPasswordPage = () => {
       setEmailSent(correo);
       setSent(true);
     } catch (err) {
-      // El backend siempre responde 200 por seguridad,
-      // pero si hay error de red u otro, lo mostramos
       setError(humanizeError(err, "Ocurrió un error. Intenta de nuevo."));
     } finally {
       setLoading(false);
@@ -52,14 +48,18 @@ export const ForgotPasswordPage = () => {
                 recibirás un código de recuperación en los próximos minutos.
               </p>
             </div>
-            <button
+            <Button
+              variant="primary"
+              size="md"
+              className="w-full"
               onClick={() => navigate("/reset-password", { state: { correo: emailSent } })}
-              className="w-full rounded-xl bg-teal-600 py-3 text-sm font-semibold text-white hover:bg-teal-700 transition-colors"
             >
               Tengo mi código → Continuar
-            </button>
-            <Link to="/login" className="text-sm text-slate-400 hover:text-slate-600">
-              Volver al inicio de sesión
+            </Button>
+            <Link to="/login">
+              <Button variant="ghost" size="sm">
+                Volver al inicio de sesión
+              </Button>
             </Link>
           </div>
         </Card>
@@ -79,15 +79,14 @@ export const ForgotPasswordPage = () => {
 
         <ForgotPasswordForm onSubmit={handleSubmit} loading={loading} error={error} />
 
-        <div className="mt-6 text-center">
-          <Link
-            to="/login"
-            className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Volver al inicio de sesión
+        <div className="mt-6 flex items-center justify-center">
+          <Link to="/login">
+            <Button variant="ghost" size="sm" className="flex items-center gap-1">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver al inicio de sesión
+            </Button>
           </Link>
         </div>
       </Card>

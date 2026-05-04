@@ -1,6 +1,5 @@
 // src/features/cursos/pages/CursoModulosTab.refactor.jsx
 import React from 'react';
-
 export default function CursoModulosTab({ curso, data = [], reload }) {
   return (
     <div>

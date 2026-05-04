@@ -1,8 +1,6 @@
-// src/routes/ProtectedRoute.jsx
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthContext } from "../features/auth/context/AuthContext";
-import LoadingScreen from "../components/feedback/LoadingScreen";
-
+import { LoadingScreen } from "@/components";
 export const ROLE_HOME = {
   superadmin:    "/admin",
   administrador: "/admin",

@@ -1,36 +1,42 @@
 // src/features/tareas/pages/TareasPage.jsx
+
+/* ─────────────────────────────
+   IMPORTS
+───────────────────────────── */
+
+// React
 import { useState, useEffect, useCallback, useRef } from "react";
+
+// Router
 import { useNavigate } from "react-router-dom";
+
+// Icons
 import {
   ClipboardList, Plus, Search, X, RefreshCw, Loader2,
-  CheckCircle2, AlertCircle, Calendar, BookOpen, Users,
-  Lock, Trash2, ChevronRight, Paperclip,
+  Calendar, BookOpen, Lock, Trash2, ChevronRight, Paperclip,
 } from "lucide-react";
+
+// API
 import {
-  cursosGetMine, cursosGetParticipantes, tareasGetAll, tareasCreate, tareasCerrar, tareasDelete,
+  cursosGetMine,
+  cursosGetParticipantes,
+  tareasGetAll,
+  tareasCreate,
+  tareasCerrar,
+  tareasDelete,
   modulosGetByCurso,
 } from "@/lib/apiClient";
+
+// Hooks & Context
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useSearch } from "@/context/SearchContext";
+
+// Utils
 import { normalizeCurso, normalizeTarea } from "@/lib/normalizers";
-import Modal from "@/components/ui/Modal";
 import { humanizeError } from "@/utils/humanizeError";
 
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const cfg = {
-    success: { bg: "rgba(22,163,74,0.12)", color: "#16A34A", border: "rgba(22,163,74,0.25)" },
-    error:   { bg: "rgba(220,38,38,0.12)",  color: "#DC2626", border: "rgba(220,38,38,0.25)" },
-  };
-  const { bg, color, border } = cfg[type] || cfg.success;
-  return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 600, background: bg, color, border: `1px solid ${border}`, borderRadius: 12, padding: "12px 18px", fontSize: 13, fontWeight: 600, maxWidth: 360, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
-      {type === "success" ? <CheckCircle2 style={{ width: 15, height: 15, flexShrink: 0 }} /> : <AlertCircle style={{ width: 15, height: 15, flexShrink: 0 }} />}
-      {msg}
-    </div>
-  );
-}
-
+// UI
+import { Toast ,Modal} from "@/components";
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
 }
@@ -426,54 +432,131 @@ export default function TareasPage() {
     </div>
   );
 }
-
 function TareaCard({ tarea: t, onVerEntregas, onCerrar, onDelete }) {
   const [hov, setHov] = useState(false);
+
   const estadoCfg = ESTADO_CFG[t.estado] ?? ESTADO_CFG.activa;
   const asigCfg   = ASIG_CFG[t.asignacionTipo] ?? ASIG_CFG.todos;
-  const cursoNombre = t.curso?.nombre ?? (typeof t.cursoId === 'object' ? t.cursoId?.nombre : t.cursoId) ?? "—";
-  const modNombre   = t.modulo?.titulo ?? null;
+
+  const cursoNombre =
+    t.curso?.nombre ??
+    (typeof t.cursoId === "object" ? t.cursoId?.nombre : t.cursoId) ??
+    "—";
+
+  const modNombre = t.modulo?.titulo ?? null;
 
   const fechaVenc = t.fechaEntrega ? new Date(t.fechaEntrega) : null;
-  const fechaStr  = fechaVenc ? fechaVenc.toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
+
+  const fechaStr = fechaVenc
+    ? fechaVenc.toLocaleDateString("es", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   return (
-    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ background: "var(--color-surface)", borderRadius: 16, border: `1px solid ${hov ? "rgba(12,106,196,0.20)" : "var(--color-border)"}`, boxShadow: hov ? "var(--shadow-md)" : "var(--shadow-card)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, transition: "all 180ms" }}>
-      <div style={{ width: 40, height: 40, borderRadius: 11, background: "rgba(99,102,241,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: "var(--color-surface)",
+        borderRadius: 16,
+        border: `1px solid ${
+          hov ? "rgba(12,106,196,0.20)" : "var(--color-border)"
+        }`,
+        boxShadow: hov ? "var(--shadow-md)" : "var(--shadow-card)",
+        padding: "16px 20px",
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        transition: "all 180ms",
+      }}
+    >
+      {/* Icon */}
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 11,
+          background: "rgba(99,102,241,0.10)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <ClipboardList style={{ width: 18, height: 18, color: "#6366F1" }} />
       </div>
 
+      {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <p style={{ fontSize: 14.5, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{t.titulo}</p>
-          <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: estadoCfg.bg, color: estadoCfg.color }}>{estadoCfg.label}</span>
-          <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: "rgba(99,102,241,0.08)", color: asigCfg.color }}>{asigCfg.label}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 5, flexWrap: "wrap" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--color-text-muted)" }}>
-            <BookOpen style={{ width: 11, height: 11 }} /> {cursoNombre}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <p style={{ fontWeight: 700, margin: 0 }}>{t.titulo}</p>
+
+          <span
+            style={{
+              padding: "2px 9px",
+              borderRadius: 99,
+              background: estadoCfg.bg,
+              color: estadoCfg.color,
+              fontSize: 10.5,
+              fontWeight: 700,
+            }}
+          >
+            {estadoCfg.label}
           </span>
-          {modNombre && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--color-text-muted)" }}>· {modNombre}</span>}
-          {fechaStr && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--color-text-muted)" }}>
-            <Calendar style={{ width: 11, height: 11 }} /> Vence: {fechaStr}
-          </span>}
-          {(t.adjuntos?.length ?? 0) > 0 && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--color-text-muted)" }}>
-            <Paperclip style={{ width: 11, height: 11 }} /> {t.adjuntos.length} adjunto{t.adjuntos.length > 1 ? "s" : ""}
-          </span>}
+
+          <span
+            style={{
+              padding: "2px 9px",
+              borderRadius: 99,
+              background: "rgba(99,102,241,0.08)",
+              color: asigCfg.color,
+              fontSize: 10.5,
+              fontWeight: 700,
+            }}
+          >
+            {asigCfg.label}
+          </span>
+        </div>
+
+        <div style={{ display: "flex", gap: 14, marginTop: 5, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12 }}>
+            <BookOpen size={11} /> {cursoNombre}
+          </span>
+
+          {modNombre && <span style={{ fontSize: 12 }}>· {modNombre}</span>}
+
+          {fechaStr && (
+            <span style={{ fontSize: 12 }}>
+              <Calendar size={11} /> Vence: {fechaStr}
+            </span>
+          )}
+
+          {(t.adjuntos?.length ?? 0) > 0 && (
+            <span style={{ fontSize: 12 }}>
+              <Paperclip size={11} /> {t.adjuntos.length} archivo(s)
+            </span>
+          )}
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        <button onClick={onVerEntregas} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, border: "1.5px solid #0C6AC4", background: "transparent", color: "#0C6AC4", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
-          Entregas <ChevronRight style={{ width: 13, height: 13 }} />
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={onVerEntregas}>
+          Entregas <ChevronRight size={14} />
         </button>
+
         {t.estado === "activa" && (
-          <button onClick={onCerrar} title="Cerrar tarea" style={{ padding: "7px 12px", borderRadius: 9, border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)" }}>
-            <Lock style={{ width: 13, height: 13 }} /> Cerrar
+          <button onClick={onCerrar}>
+            <Lock size={14} /> Cerrar
           </button>
         )}
-        <button onClick={onDelete} title="Eliminar tarea" style={{ padding: "7px 10px", borderRadius: 9, border: "none", background: "rgba(220,38,38,0.08)", cursor: "pointer", display: "flex", alignItems: "center", color: "#DC2626" }}>
-          <Trash2 style={{ width: 14, height: 14 }} />
+
+        <button onClick={onDelete}>
+          <Trash2 size={14} />
         </button>
       </div>
     </div>

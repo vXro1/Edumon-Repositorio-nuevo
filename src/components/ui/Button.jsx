@@ -1,71 +1,63 @@
-// src/components/ui/Button.jsx
-
-const SIZE = {
-  sm: "px-3 py-1.5 text-xs gap-1.5",
-  md: "px-5 py-2.5 text-sm gap-2",
-  lg: "px-7 py-3.5 text-base gap-2.5",
+const VARIANT = {
+  primary:         "btn btn-primary",
+  secondary:       "btn btn-secondary",
+  ghost:           "btn btn-ghost",
+  "ghost-primary": "btn btn-ghost-primary",
+  danger:          "btn btn-danger",
+  success:         "btn btn-success",
+  warning:         "btn btn-warning",
+  outline:         "btn btn-outline",
+  "outline-neutral": "btn btn-outline-neutral",
+  soft:            "btn btn-soft",
+  gradient:        "btn btn-gradient",
+  link:            "btn btn-link",
 };
 
-const BASE =
-  "relative inline-flex items-center justify-center font-semibold rounded-xl " +
-  "transition-all duration-200 select-none " +
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +
-  "focus-visible:ring-[color:var(--color-primary)] " +
-  "active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
+const SIZE = {
+  xs: "btn-xs",
+  sm: "btn-sm",
+  md: "",
+  lg: "btn-lg",
+  xl: "btn-xl",
+};
 
-export default function EdumonButton({
+export default function Button({
   children,
   onClick,
   type = "button",
   variant = "primary",
   size = "md",
   disabled = false,
+  loading = false,
+  fullWidth = false,
+  leftIcon,
+  rightIcon,
   className = "",
+  ...rest
 }) {
-  const sizeClass = SIZE[size] ?? SIZE.md;
+  const classes = [
+    VARIANT[variant] ?? "btn btn-primary",
+    SIZE[size] ?? "",
+    fullWidth ? "btn-full" : "",
+    loading   ? "btn-loading" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  if (variant === "secondary") {
-    return (
-      <button
-        type={type}
-        onClick={onClick}
-        disabled={disabled}
-        aria-disabled={disabled}
-        className={`${BASE} ${sizeClass} border-2 border-[color:var(--color-primary)] text-[color:var(--color-primary)] bg-transparent hover:bg-[color:var(--color-primary)] hover:text-white ${className}`}
-      >
-        {children}
-      </button>
-    );
-  }
-
-  if (variant === "ghost") {
-    return (
-      <button
-        type={type}
-        onClick={onClick}
-        disabled={disabled}
-        aria-disabled={disabled}
-        className={`${BASE} ${sizeClass} bg-transparent text-[color:var(--color-text)] border border-[color:var(--color-border)] hover:bg-black/5 ${className}`}
-      >
-        {children}
-      </button>
-    );
-  }
-
-  // primary (default) — full gradient fill
   return (
     <button
       type={type}
       onClick={onClick}
-      disabled={disabled}
-      aria-disabled={disabled}
-      className={`${BASE} ${sizeClass} text-white hover:brightness-110 ${className}`}
-      style={{
-        background: "var(--gradient-brand)",
-        boxShadow: "var(--shadow-primary)",
-      }}
+      disabled={disabled || loading}
+      aria-busy={loading}
+      aria-disabled={disabled || loading}
+      className={classes}
+      {...rest}
     >
-      {children}
+      {leftIcon && <span className="btn-icon-left">{leftIcon}</span>}
+      <span className="btn-text">{children}</span>
+      {rightIcon && <span className="btn-icon-right">{rightIcon}</span>}
     </button>
   );
 }

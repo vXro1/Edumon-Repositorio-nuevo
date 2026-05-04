@@ -1,0 +1,11 @@
+/* ─── ACCESIBILIDAD ─── */
+.edu-focus:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* ─── SELECCIÓN DE TEXTO ─── */
+::selection {
+  background: rgba(140, 56, 240, 0.18);
+  color: var(--color-text);
+}

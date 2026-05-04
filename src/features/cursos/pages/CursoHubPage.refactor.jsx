@@ -1,19 +1,23 @@
 // src/features/cursos/pages/CursoHubPage.refactor.jsx
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import CursoHeader from './CursoHeader.refactor.jsx';
-import CursoTabs from './CursoTabs.refactor.jsx';
-import CursoOverviewTab from './CursoOverviewTab.refactor.jsx';
-import CursoModulosTab from './CursoModulosTab.refactor.jsx';
-import CursoTareasTab from './CursoTareasTab.refactor.jsx';
-import CursoForosTab from './CursoForosTab.refactor.jsx';
-import CursoParticipantesTab from './CursoParticipantesTab.refactor.jsx';
-import CursoEntregasTab from './CursoEntregasTab.refactor.jsx';
-import EditCursoModal from './EditCursoModal.refactor.jsx';
-import CalificarEntregaModal from './CalificarEntregaModal.refactor.jsx';
-import AgregarParticipanteModal from './AgregarParticipanteModal.refactor.jsx';
-import useCursoHub from './useCursoHub.refactor.js';
 
+import React from "react";
+import { useParams } from "react-router-dom";
+
+import CursoHeader from "./CursoHeader.refactor.jsx";
+import CursoTabs from "./CursoTabs.refactor.jsx";
+
+import CursoOverviewTab from "./CursoOverviewTab.refactor.jsx";
+import CursoModulosTab from "./CursoModulosTab.refactor.jsx";
+import CursoTareasTab from "./CursoTareasTab.refactor.jsx";
+import CursoForosTab from "./CursoForosTab.refactor.jsx";
+import CursoParticipantesTab from "./CursoParticipantesTab.refactor.jsx";
+import CursoEntregasTab from "./CursoEntregasTab.refactor.jsx";
+
+import EditCursoModal from "./EditCursoModal.refactor.jsx";
+import CalificarEntregaModal from "./CalificarEntregaModal.refactor.jsx";
+import AgregarParticipanteModal from "./AgregarParticipanteModal.refactor.jsx";
+
+import useCursoHub from "./useCursoHub.refactor";
 export default function CursoHubPageRefactor() {
   const { id } = useParams();
   const {

@@ -1,6 +1,5 @@
-// src/features/usuarios/pages/UsuariosPage.jsx
-// ROL: Administrador / Superadmin — gestión de usuarios
 import { useState, useEffect, useCallback } from "react";
+
 import {
   Plus, Search, Users, Edit2, Trash2, X,
   Loader2, RefreshCw, ChevronLeft, ChevronRight,
@@ -8,14 +7,23 @@ import {
   UserCheck, Phone, Mail, Hash, Calendar,
   Clock, Shield, UserX,
 } from "lucide-react";
+
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { normalizeUser } from "@/lib/normalizers";
-import { usersGetAll, usersGetById, usersCreate, usersUpdate, usersDelete, institucionesGetMine } from "@/lib/apiClient";
-import Modal from "@/components/ui/Modal";
-import UserAvatar from "@/components/ui/UserAvatar";
+
+import {
+  usersGetAll,
+  usersGetById,
+  usersCreate,
+  usersUpdate,
+  usersDelete,
+  institucionesGetMine,
+} from "@/lib/apiClient";
+
+import { Modal, Toast, UserAvatar } from "@/components";
+
 import { humanizeError } from "@/utils/humanizeError";
 import { normalizePhone } from "@/utils/normalizePhone";
-
 /* ── Roles config ─────────────────────────────────────────────── */
 const ROL_META = {
   superadmin:    { label: "Super Admin",   color: "#F87171", bg: "rgba(248,113,113,0.12)" },
@@ -50,17 +58,6 @@ function EstadoBadge({ estado }) {
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor" }} />
       {ok ? "Activo" : "Suspendido"}
     </span>
-  );
-}
-
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const ok = type === "success";
-  return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 600, background: ok ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.12)", color: ok ? "#16A34A" : "#DC2626", border: `1px solid ${ok ? "rgba(22,163,74,0.25)" : "rgba(220,38,38,0.25)"}`, borderRadius: 12, padding: "12px 18px", fontSize: 13, fontWeight: 600, maxWidth: 340, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
-      {ok ? <CheckCircle2 style={{ width: 15, height: 15 }} /> : <AlertCircle style={{ width: 15, height: 15 }} />}
-      {msg}
-    </div>
   );
 }
 

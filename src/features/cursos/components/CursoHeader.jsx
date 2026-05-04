@@ -1,6 +1,6 @@
 // src/features/cursos/pages/CursoHeader.refactor.jsx
 import React from 'react';
-import UserAvatar from '@/components/ui/UserAvatar';
+import { UserAvatar } from '@/components';
 import { useNavigate } from 'react-router-dom';
 
 export default function CursoHeader({ curso, onEdit }) {
