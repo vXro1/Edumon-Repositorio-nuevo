@@ -5,33 +5,38 @@ import { modulosGetByCurso, modulosCreate, modulosUpdate, modulosDelete } from "
 import { Button, Input, Modal, Badge, Toast, CsvUploadModal } from "@/components";
 import { Sk, EmptyState, Field, StTextarea, InfoBlock, IconBtn } from "../shared/ui";
 import { makeNotify } from "../shared/helpers";
+import {
+  descargarPlantillaModulosCSV,
+  parsearCsvModulos,
+  CSV_COLUMNAS_MODULOS,
+} from "@/components/ui/ModulosCsvTemplate";
+
 export default function ModulosTab({ cursoId, canManage }) {
-  const [modulos, setModulos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [modulos, setModulos]     = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [csvOpen, setCsvOpen] = useState(false);
+  const [csvOpen, setCsvOpen]     = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
-  const [form, setForm] = useState({ titulo: "", descripcion: "" });
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState({ msg: "", type: "success" });
+  const [form, setForm]           = useState({ titulo: "", descripcion: "" });
+  const [saving, setSaving]       = useState(false);
+  const [toast, setToast]         = useState({ msg: "", type: "success" });
   const notify = makeNotify(setToast);
 
+  // ── Carga ─────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await modulosGetByCurso(cursoId);
       setModulos(res.modulos ?? res.data ?? res ?? []);
-    } catch {
-      setModulos([]);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setModulos([]); }
+    finally { setLoading(false); }
   }, [cursoId]);
 
   useEffect(() => { load(); }, [load]);
 
+  // ── CRUD individual ───────────────────────────────────────────────────────
   const openCreate = () => {
     setEditTarget(null);
     setForm({ titulo: "", descripcion: "" });
@@ -60,46 +65,71 @@ export default function ModulosTab({ cursoId, canManage }) {
       }
       setModalOpen(false);
       load();
-    } catch {
-      notify("Error al guardar", "error");
-    } finally {
-      setSaving(false);
-    }
+    } catch { notify("Error al guardar", "error"); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
     if (!confirm("¿Eliminar este módulo?")) return;
-    try {
-      await modulosDelete(id);
-      notify("Módulo eliminado");
-      load();
-    } catch {
-      notify("Error al eliminar", "error");
-    }
+    try { await modulosDelete(id); notify("Módulo eliminado"); load(); }
+    catch { notify("Error al eliminar", "error"); }
   };
 
-  const handleCsvUpload = async (rows) => {
-    let ok = 0, failed = 0;
-    const messages = [];
+  // ── Carga masiva CSV ──────────────────────────────────────────────────────
+  // CsvUploadModal entrega un File. Aquí:
+  //   1. Parseamos el CSV en el cliente con parsearCsvModulos()
+  //   2. Creamos cada módulo individualmente (no hay endpoint masivo para módulos)
+  //   3. Devolvemos el resumen { total, exitosos, fallidos, detalle[] }
+  //      con el mismo shape que espera SuccessPanel en CsvUploadModal
+  const handleCsvUpload = async (file) => {
+    // Paso 1 — parsear. Lanza Error si el archivo es inválido.
+    const rows = await parsearCsvModulos(file);
+
+    if (rows.length === 0) {
+      throw new Error("El archivo no contiene filas de datos.");
+    }
+
+    // Paso 2 — crear en loop
+    let exitosos = 0;
+    const detalle = [];
+
     for (const row of rows) {
+      if (!row.titulo.trim()) {
+        detalle.push({ fila: row._fila, error: "El campo 'titulo' está vacío." });
+        continue;
+      }
       try {
-        await modulosCreate({ cursoId, titulo: row["titulo"] ?? "", descripcion: row["descripcion"] ?? "" });
-        ok++;
+        await modulosCreate({ cursoId, titulo: row.titulo, descripcion: row.descripcion });
+        exitosos++;
       } catch (err) {
-        failed++;
-        messages.push(`"${row["titulo"]}": ${err.message ?? "error"}`);
+        detalle.push({
+          fila: row._fila,
+          error: err?.message ?? "Error al crear el módulo.",
+        });
       }
     }
+
+    // Paso 3 — refrescar lista
     await load();
-    return { ok, failed, messages };
+
+    // Paso 4 — devolver resumen para el panel de SuccessPanel del modal
+    return {
+      total:    rows.length,
+      exitosos,
+      fallidos: detalle.length,
+      detalle,
+    };
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div>
       <Toast {...toast} />
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+      {/* ── Encabezado ── */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16,
+      }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
           Módulos del curso
         </h3>
@@ -113,7 +143,7 @@ export default function ModulosTab({ cursoId, canManage }) {
         )}
       </div>
 
-      {/* List */}
+      {/* ── Lista / skeleton / vacío ── */}
       {loading ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {[0, 1, 2].map((i) => <Sk key={i} h={72} r={12} />)}
@@ -122,7 +152,9 @@ export default function ModulosTab({ cursoId, canManage }) {
         <EmptyState
           icon={BookOpen}
           title="Sin módulos aún"
-          desc={canManage ? "Crea el primer módulo o carga uno desde CSV." : "El docente aún no ha publicado contenido."}
+          desc={canManage
+            ? "Crea el primer módulo o carga uno desde CSV."
+            : "El docente aún no ha publicado contenido."}
           action={canManage ? { label: "Crear módulo", onClick: openCreate } : null}
         />
       ) : (
@@ -148,7 +180,7 @@ export default function ModulosTab({ cursoId, canManage }) {
                 {m.descripcion && (
                   <p style={{
                     fontSize: 12.5, color: "var(--color-text-muted)", margin: "3px 0 0",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {m.descripcion}
                   </p>
@@ -174,22 +206,36 @@ export default function ModulosTab({ cursoId, canManage }) {
         </div>
       )}
 
-      {/* Modal crear/editar */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}
-        title={editTarget ? "Editar módulo" : "Nuevo módulo"} size="sm">
+      {/* ══════════════════════════════════════════════
+          Modal — Crear / Editar módulo
+      ══════════════════════════════════════════════ */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editTarget ? "Editar módulo" : "Nuevo módulo"}
+        size="sm"
+      >
         <form onSubmit={handleSave}>
           <Field label="Título *">
-            <Input value={form.titulo}
+            <Input
+              value={form.titulo}
               onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
-              placeholder="Ej: Introducción" required />
+              placeholder="Ej: Introducción"
+              required
+            />
           </Field>
           <Field label="Descripción">
-            <StTextarea value={form.descripcion}
+            <StTextarea
+              value={form.descripcion}
               onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
-              placeholder="Descripción opcional" rows={4} />
+              placeholder="Descripción opcional"
+              rows={4}
+            />
           </Field>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
-            <Button variant="ghost" type="button" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button variant="ghost" type="button" onClick={() => setModalOpen(false)}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={saving}>
               {saving ? "Guardando..." : editTarget ? "Guardar cambios" : "Crear módulo"}
             </Button>
@@ -197,16 +243,22 @@ export default function ModulosTab({ cursoId, canManage }) {
         </form>
       </Modal>
 
-      {/* Modal detalle */}
-      <Modal isOpen={detailOpen} onClose={() => setDetailOpen(false)}
-        title={viewTarget?.titulo ?? "Módulo"} size="sm">
+      {/* ══════════════════════════════════════════════
+          Modal — Detalle módulo
+      ══════════════════════════════════════════════ */}
+      <Modal
+        isOpen={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title={viewTarget?.titulo ?? "Módulo"}
+        size="sm"
+      >
         {viewTarget && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 10, flexShrink: 0,
                 background: "var(--color-primary-light)", display: "flex",
-                alignItems: "center", justifyContent: "center"
+                alignItems: "center", justifyContent: "center",
               }}>
                 <BookOpen style={{ width: 18, height: 18, color: "var(--color-primary)" }} />
               </div>
@@ -214,7 +266,9 @@ export default function ModulosTab({ cursoId, canManage }) {
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--color-text)" }}>
                   {viewTarget.titulo}
                 </p>
-                <Badge variant="info" styleType="soft" size="sm">{viewTarget.estado ?? "activo"}</Badge>
+                <Badge variant="info" styleType="soft" size="sm">
+                  {viewTarget.estado ?? "activo"}
+                </Badge>
               </div>
             </div>
             <InfoBlock label="Descripción">
@@ -227,7 +281,8 @@ export default function ModulosTab({ cursoId, canManage }) {
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20 }}>
               {canManage ? (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => { setDetailOpen(false); openEdit(viewTarget); }}>
+                  <Button variant="ghost" size="sm"
+                    onClick={() => { setDetailOpen(false); openEdit(viewTarget); }}>
                     <Pencil style={{ width: 13, height: 13 }} /> Editar
                   </Button>
                   <Button variant="ghost" size="sm"
@@ -237,26 +292,28 @@ export default function ModulosTab({ cursoId, canManage }) {
                   </Button>
                 </>
               ) : (
-                <Button variant="ghost" size="sm" onClick={() => setDetailOpen(false)}>Cerrar</Button>
+                <Button variant="ghost" size="sm" onClick={() => setDetailOpen(false)}>
+                  Cerrar
+                </Button>
               )}
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Modal CSV */}
+      {/* ══════════════════════════════════════════════
+          Modal — Carga masiva CSV (reutilizable)
+      ══════════════════════════════════════════════ */}
       <CsvUploadModal
         isOpen={csvOpen}
         onClose={() => setCsvOpen(false)}
-        title="Carga masiva de módulos"
-        description="Sube un CSV con los módulos que deseas crear."
-        columns={["titulo", "descripcion"]}
-        templateName="plantilla_modulos"
-        exampleRows={[
-          { titulo: "Introducción al curso", descripcion: "Conceptos básicos" },
-          { titulo: "Módulo 2", descripcion: "Fundamentos" },
-        ]}
         onUpload={handleCsvUpload}
+        onDownloadTemplate={descargarPlantillaModulosCSV}
+        title="Carga masiva de módulos"
+        description="Sube un CSV con los módulos a crear. La columna 'titulo' es requerida; 'descripcion' es opcional."
+        templateLabel="Descargar plantilla"
+        acceptedColumns={CSV_COLUMNAS_MODULOS}
+        maxFileSizeMB={5}
       />
     </div>
   );

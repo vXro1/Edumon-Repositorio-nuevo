@@ -17,7 +17,7 @@ import {
 } from "@/lib/apiClient";
 
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { normalizeCurso, normalizeMensaje } from "@/lib/normalizers";
+import { normalizeCurso, normalizeMensaje }from "@/lib/normalizers";
 import { Toast, UserAvatar, Button } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { humanizeError } from "@/utils/humanizeError";

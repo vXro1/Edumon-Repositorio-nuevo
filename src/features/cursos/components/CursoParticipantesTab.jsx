@@ -1,19 +1,45 @@
 // src/features/cursos/components/CursoParticipantesTab.jsx
-// Este componente nunca se renderiza si el rol no tiene VIEW_COURSE_PARTICIPANTS.
-// La protección doble vive en CursoHubPage — aquí el componente asume
-// que quien lo ve ya tiene el permiso. No repite la verificación.
-import React from "react";
-import { UserAvatar, Badge } from "@/components";
+//
+// Cambios respecto a la versión anterior:
+//   ✦ Botón "Carga masiva CSV" junto a "Agregar participante" (solo MANAGE_COURSE_PARTICIPANTS)
+//   ✦ Abre CsvUploadModal con plantilla de padres integrada
+//   ✦ Llama a cursosAddParticipantesCsv (FormData con campo archivoCSV)
+//   ✦ Recibe cursoId como prop para construir el endpoint correcto
+//   ✦ onAdd sigue funcionando igual (agregar individual)
+//
+// Props:
+//   data      {Array}   — lista de participantes (populada o con ID)
+//   cursoId   {string}  — ID del curso (requerido para carga masiva)
+//   onAdd     {fn}      — abre el modal de agregar individual
+//   onRefresh {fn}      — callback para recargar la lista tras carga masiva
+
+import React, { useState } from "react";
+import { UserAvatar, Badge, CsvUploadModal } from "@/components";
 import { useAuthContext } from "../../../features/auth/context/AuthContext";
 import { tienePermiso } from "../../../security/roleMatrix";
 import { PERMISSIONS } from "../../../security/permissions";
-export default function CursoParticipantesTab({ data = [], onAdd }) {
+import { cursosAddParticipantesCsv } from "../../../api/cursosApi";
+import { descargarPlantillaPadresCSV, CSV_COLUMNAS_PADRES } from "../../../components/ui/PadresCsvTemplate";
+
+export default function CursoParticipantesTab({ data = [], cursoId, onAdd, onRefresh }) {
   const { user } = useAuthContext();
   const rol = user?.role ?? user?.rol ?? "";
 
-  // El botón "Agregar" solo aparece para quien puede gestionar participantes.
-  // MANAGE_COURSE_PARTICIPANTS → admin y docente (ver roleMatrix.js)
   const puedeAgregar = tienePermiso(rol, PERMISSIONS.MANAGE_COURSE_PARTICIPANTS);
+
+  const [csvModalAbierto, setCsvModalAbierto] = useState(false);
+
+  // ── Handler de carga CSV ──────────────────────────────────────────────────
+  // Construye el FormData y llama al endpoint.
+  // El resultado del backend se pasa tal cual al modal para mostrar el resumen.
+  const handleCsvUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("archivoCSV", file);
+    const res = await cursosAddParticipantesCsv(cursoId, formData);
+    // Recargar lista tras carga exitosa (aunque haya errores parciales)
+    if (typeof onRefresh === "function") onRefresh();
+    return res; // { total, exitosos, fallidos, detalle[] } según el backend
+  };
 
   return (
     <div
@@ -21,8 +47,40 @@ export default function CursoParticipantesTab({ data = [], onAdd }) {
       id="tabpanel-participants"
       aria-label="Participantes del curso"
     >
+      {/* ── Barra de acciones (solo para quien puede gestionar) ── */}
       {puedeAgregar && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            marginBottom: 14,
+            flexWrap: "wrap",
+          }}
+        >
+          {/* Carga masiva CSV */}
+          <button
+            onClick={() => setCsvModalAbierto(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 8,
+              border: "1px solid var(--color-border-tertiary)",
+              background: "var(--color-background-primary)",
+              color: "var(--color-text-info)",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "background 0.15s",
+            }}
+          >
+            <CsvIcon />
+            Carga masiva CSV
+          </button>
+
+          {/* Agregar individual */}
           <button
             onClick={onAdd}
             style={{
@@ -32,6 +90,7 @@ export default function CursoParticipantesTab({ data = [], onAdd }) {
               color: "white",
               border: "none",
               fontSize: 13,
+              fontWeight: 500,
               cursor: "pointer",
             }}
           >
@@ -40,15 +99,48 @@ export default function CursoParticipantesTab({ data = [], onAdd }) {
         </div>
       )}
 
-      {data.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <ParticipantesList data={data} />
-      )}
+      {/* ── Lista o estado vacío ── */}
+      {data.length === 0 ? <EmptyState /> : <ParticipantesList data={data} />}
+
+      {/* ── Modal de carga CSV ── */}
+      <CsvUploadModal
+        isOpen={csvModalAbierto}
+        onClose={() => setCsvModalAbierto(false)}
+        onUpload={handleCsvUpload}
+        onDownloadTemplate={descargarPlantillaPadresCSV}
+        title="Carga masiva de padres de familia"
+        description="Sube un archivo CSV con los datos de los padres. Si el usuario ya existe (por cédula), se agrega directamente al curso."
+        templateLabel="Descargar plantilla"
+        acceptedColumns={CSV_COLUMNAS_PADRES}
+        maxFileSizeMB={5}
+      />
     </div>
   );
 }
 
+// ─── Ícono CSV inline (sin dependencia extra) ─────────────────────────────────
+function CsvIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="16" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  );
+}
+
+// ─── Estado vacío ─────────────────────────────────────────────────────────────
 function EmptyState() {
   return (
     <div
@@ -67,6 +159,7 @@ function EmptyState() {
   );
 }
 
+// ─── Lista de participantes ───────────────────────────────────────────────────
 function ParticipantesList({ data }) {
   return (
     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -126,8 +219,7 @@ function ParticipantesList({ data }) {
   );
 }
 
-// Badge visual para la etiqueta del participante ("padre" o "docente")
-// Fuente: campo etiqueta del endpoint GET /cursos/:id/participantes
+// ─── Badge de etiqueta ────────────────────────────────────────────────────────
 const BADGE_STYLES = {
   docente: {
     background: "var(--color-background-info)",

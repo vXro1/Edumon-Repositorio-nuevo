@@ -9,8 +9,9 @@ import {
   institucionesUpdate, usersGetById,
 } from "@/lib/apiClient";
 import { Modal, Toast, Button } from "@/components";
+import { Input } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
-import { normalizeUser } from "@/lib/normalizers";
+import { normalizeUser }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
 import { normalizePhone } from "@/utils/normalizePhone";
 
@@ -45,37 +46,6 @@ function Empty({ search, onClear }) {
         </div>
       </td>
     </tr>
-  );
-}
-
-// ── Form helpers ──────────────────────────────────────────────
-function FieldGroup({ label, children }) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function StyledInput({ value, onChange, placeholder, type = "text", required = false }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <input
-      type={type} value={value} onChange={onChange}
-      placeholder={placeholder} required={required}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={{
-        width: "100%", padding: "9px 12px", fontSize: 13.5,
-        borderRadius: 10, border: `1.5px solid ${focused ? "#0C6AC4" : "var(--color-border)"}`,
-        outline: "none", background: "var(--color-surface)", color: "var(--color-text)",
-        boxShadow: focused ? "0 0 0 3px rgba(12,106,196,0.12)" : "none",
-        transition: "border-color 150ms, box-shadow 150ms", boxSizing: "border-box",
-      }}
-    />
   );
 }
 
@@ -265,7 +235,7 @@ export default function InstitucionesPage() {
           </p>
         </div>
 
-        {/* ✅ Botones de cabecera */}
+        {/* Botones de cabecera */}
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <IconBtn color="var(--color-text-muted)" title="Actualizar" onClick={load}>
             <RefreshCw style={{ width: 15, height: 15 }} />
@@ -277,25 +247,19 @@ export default function InstitucionesPage() {
       </div>
 
       {/* Search bar */}
-      <div style={{
-        background: "var(--color-surface)", borderRadius: 14,
-        border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-        padding: "12px 16px", marginBottom: 16,
-        display: "flex", alignItems: "center", gap: 12,
-      }}>
-        <Search style={{ width: 17, height: 17, color: "var(--color-text-muted)", flexShrink: 0 }} />
-        <input
+      <div style={{ marginBottom: 16 }}>
+        <Input
           type="search"
           placeholder="Buscar por nombre, NIT, código, correo o ciudad..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 1, border: "none", outline: "none", fontSize: 13.5, color: "var(--color-text)", background: "transparent" }}
+          leftIcon={<Search size={16} />}
+          rightIcon={search ? (
+            <IconBtn color="var(--color-text-muted)" onClick={() => setSearch("")} style={{ padding: 0 }}>
+              <X style={{ width: 15, height: 15 }} />
+            </IconBtn>
+          ) : undefined}
         />
-        {search && (
-          <IconBtn color="var(--color-text-muted)" onClick={() => setSearch("")}>
-            <X style={{ width: 15, height: 15 }} />
-          </IconBtn>
-        )}
       </div>
 
       {/* Table */}
@@ -374,7 +338,7 @@ export default function InstitucionesPage() {
               )}
             </div>
 
-            {/* ✅ Acciones del modal detail */}
+            {/* Acciones del modal detail */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--color-border)" }}>
               <Button variant="ghost" onClick={closeDetail}>Cerrar</Button>
               <Button onClick={() => { closeDetail(); openEdit(detailInst); }}>
@@ -391,24 +355,92 @@ export default function InstitucionesPage() {
           <div style={{ marginBottom: 16 }}>
             <SectionLabel icon={Building2} label="Datos de la institución" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <FieldGroup label="Nombre *"><StyledInput value={form.nombre}    onChange={f("nombre")}    placeholder="Institución Educativa..." required /></FieldGroup>
-              <FieldGroup label="NIT *">   <StyledInput value={form.nit}       onChange={f("nit")}       placeholder="900.000.000-0"           required /></FieldGroup>
-              <FieldGroup label="Dirección"><StyledInput value={form.direccion} onChange={f("direccion")} placeholder="Calle 123 #45-67" /></FieldGroup>
-              <FieldGroup label="Teléfono"><StyledInput value={form.telefono}  onChange={f("telefono")}  placeholder="+57 300 000 0000" /></FieldGroup>
+              <Input
+                label="Nombre"
+                placeholder="Institución Educativa..."
+                value={form.nombre}
+                onChange={f("nombre")}
+                required
+              />
+              <Input
+                label="NIT"
+                placeholder="900.000.000-0"
+                value={form.nit}
+                onChange={f("nit")}
+                required
+              />
+              <Input
+                label="Dirección"
+                placeholder="Calle 123 #45-67"
+                value={form.direccion}
+                onChange={f("direccion")}
+                leftIcon={<MapPin size={16} />}
+              />
+              <Input
+                label="Teléfono"
+                type="tel"
+                placeholder="+57 300 000 0000"
+                value={form.telefono}
+                onChange={f("telefono")}
+                leftIcon={<Phone size={16} />}
+              />
               <div style={{ gridColumn: "1 / -1" }}>
-                <FieldGroup label="Correo institucional"><StyledInput value={form.correo} onChange={f("correo")} type="email" placeholder="contacto@institucion.edu.co" /></FieldGroup>
+                <Input
+                  label="Correo institucional"
+                  type="email"
+                  placeholder="contacto@institucion.edu.co"
+                  value={form.correo}
+                  onChange={f("correo")}
+                  leftIcon={<Mail size={16} />}
+                />
               </div>
             </div>
           </div>
           <div style={{ paddingTop: 16, borderTop: "1px solid var(--color-border)" }}>
             <SectionLabel icon={User} label="Administrador inicial" color="#16A34A" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <FieldGroup label="Nombre *">  <StyledInput value={form.adminNombre}   onChange={f("adminNombre")}   placeholder="Juan"            required /></FieldGroup>
-              <FieldGroup label="Apellido *"> <StyledInput value={form.adminApellido} onChange={f("adminApellido")} placeholder="Pérez"           required /></FieldGroup>
-              <FieldGroup label="Cédula *">  <StyledInput value={form.adminCedula}   onChange={f("adminCedula")}   placeholder="12345678"         required /></FieldGroup>
-              <FieldGroup label="Teléfono">  <StyledInput value={form.adminTelefono} onChange={f("adminTelefono")} placeholder="+57 300 000 0000" /></FieldGroup>
+              <Input
+                label="Nombre"
+                placeholder="Juan"
+                value={form.adminNombre}
+                onChange={f("adminNombre")}
+                leftIcon={<User size={16} />}
+                required
+              />
+              <Input
+                label="Apellido"
+                placeholder="Pérez"
+                value={form.adminApellido}
+                onChange={f("adminApellido")}
+                leftIcon={<User size={16} />}
+                required
+              />
+              <Input
+                label="Cédula"
+                placeholder="12345678"
+                value={form.adminCedula}
+                onChange={f("adminCedula")}
+                leftIcon={<Hash size={16} />}
+                required
+              />
+              <Input
+                label="Teléfono"
+                type="tel"
+                placeholder="+57 300 000 0000"
+                value={form.adminTelefono}
+                onChange={f("adminTelefono")}
+                leftIcon={<Phone size={16} />}
+              />
               <div style={{ gridColumn: "1 / -1" }}>
-                <FieldGroup label="Correo del admin *"><StyledInput value={form.adminCorreo} onChange={f("adminCorreo")} type="email" placeholder="admin@institucion.edu.co" required /></FieldGroup>
+                <Input
+                  label="Correo del admin"
+                  type="email"
+                  placeholder="admin@institucion.edu.co"
+                  value={form.adminCorreo}
+                  onChange={f("adminCorreo")}
+                  leftIcon={<Mail size={16} />}
+                  required
+                />
               </div>
             </div>
             <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 10, display: "flex", alignItems: "center", gap: 5 }}>
@@ -417,7 +449,7 @@ export default function InstitucionesPage() {
             </p>
           </div>
 
-          {/* ✅ Acciones del modal create */}
+          {/* Acciones del modal create */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
             <Button variant="ghost" type="button" onClick={() => setShowCreate(false)}>Cancelar</Button>
             <Button type="submit" disabled={saving}>
@@ -432,13 +464,39 @@ export default function InstitucionesPage() {
       <Modal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} title={`Editar: ${editTarget?.nombre ?? ""}`} size="md">
         <form onSubmit={handleEdit}>
           <div style={{ display: "grid", gap: 12 }}>
-            <FieldGroup label="Nombre *">  <StyledInput value={editForm.nombre}    onChange={ef("nombre")}    placeholder="Nombre de la institución" required /></FieldGroup>
-            <FieldGroup label="Dirección"> <StyledInput value={editForm.direccion} onChange={ef("direccion")} placeholder="Dirección" /></FieldGroup>
-            <FieldGroup label="Teléfono">  <StyledInput value={editForm.telefono}  onChange={ef("telefono")}  placeholder="Teléfono" /></FieldGroup>
-            <FieldGroup label="Correo">    <StyledInput value={editForm.correo}    onChange={ef("correo")}    type="email" placeholder="Correo" /></FieldGroup>
+            <Input
+              label="Nombre"
+              placeholder="Nombre de la institución"
+              value={editForm.nombre}
+              onChange={ef("nombre")}
+              required
+            />
+            <Input
+              label="Dirección"
+              placeholder="Dirección"
+              value={editForm.direccion}
+              onChange={ef("direccion")}
+              leftIcon={<MapPin size={16} />}
+            />
+            <Input
+              label="Teléfono"
+              type="tel"
+              placeholder="Teléfono"
+              value={editForm.telefono}
+              onChange={ef("telefono")}
+              leftIcon={<Phone size={16} />}
+            />
+            <Input
+              label="Correo"
+              type="email"
+              placeholder="Correo"
+              value={editForm.correo}
+              onChange={ef("correo")}
+              leftIcon={<Mail size={16} />}
+            />
           </div>
 
-          {/* ✅ Acciones del modal edit */}
+          {/* Acciones del modal edit */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
             <Button variant="ghost" type="button" onClick={() => setEditTarget(null)}>Cancelar</Button>
             <Button type="submit" disabled={saving}>
@@ -494,7 +552,7 @@ function InstitRow({ inst, onView, onEdit }) {
         {inst.ciudad && <span style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>{inst.ciudad}</span>}
       </td>
 
-      {/* ✅ Acciones de fila — Button variant="outline" size="sm" */}
+      {/* Acciones de fila */}
       <td style={{ padding: "13px 16px" }}>
         <div style={{ display: "flex", gap: 6 }}>
           <Button variant="outline" size="sm" onClick={() => onView(inst)} title="Ver detalle">

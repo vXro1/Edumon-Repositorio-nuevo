@@ -9,13 +9,14 @@ import {
   cursosGetParticipantes,
 } from "@/lib/apiClient";
 
-import { Badge, Modal, Toast,IconActionButton } from "@/components";
+import { Badge, Modal, Toast, IconActionButton } from "@/components";
 import {
   Sk,
   EmptyState,
   SectionHeader,
   iconBtn,
 } from "../shared/ui";
+import { normalizeTarea } from "@/lib/normalizers/tarea";
 
 import { fmt, fmtHour, esPasada, makeNotify } from "../shared/helpers";
 
@@ -31,6 +32,7 @@ const emptyForm = () => ({
   descripcion: "",
   fechaEntrega: "",
   asignacionTipo: "todos",
+  tipoEntrega: "archivo",
   participantes: [],
   archivosNuevos: [],
   archivosEliminar: [],
@@ -62,7 +64,7 @@ export default function TareasTab({ cursoId, canManage, canGrade, esPadre }) {
     setLoading(true);
     try {
       const res = await tareasGetAll({ cursoId });
-      setTareas(res.tareas ?? res.data ?? res ?? []);
+      setTareas((res.tareas ?? res.data ?? []).map(normalizeTarea));
     } catch {
       setTareas([]);
     } finally {
@@ -124,6 +126,7 @@ export default function TareasTab({ cursoId, canManage, canGrade, esPadre }) {
         ? t.fechaEntrega.substring(0, 16)
         : "",
       asignacionTipo: t.asignacionTipo ?? "todos",
+      tipoEntrega: t.tipoEntrega ?? "archivo",
       participantes: selIds,
       archivosNuevos: [],
       archivosEliminar: [],
@@ -181,6 +184,7 @@ export default function TareasTab({ cursoId, canManage, canGrade, esPadre }) {
       fd.append("descripcion", form.descripcion.trim());
       fd.append("cursoId", cursoId);
       fd.append("asignacionTipo", form.asignacionTipo);
+      fd.append("tipoEntrega", form.tipoEntrega ?? "archivo");
 
       if (form.fechaEntrega) {
         fd.append("fechaEntrega", form.fechaEntrega);

@@ -10,7 +10,6 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 // Log de configuración en desarrollo
 if (import.meta.env.DEV) {
-  console.log(`[API] Base URL: ${BASE_URL}`);
 }
 
 // ── Logout automático ante 401 ────────────────────────────────
@@ -62,10 +61,9 @@ export const apiFetch = async (endpoint, options = {}) => {
     // Para errores de validación, mostrar detalles
     if (res.status === 400 && data.errors && Array.isArray(data.errors)) {
       console.error(`❌ Errores de validación:`, data.errors);
-      const detailedErrors = data.errors.map(e => 
-        e.field ? `${e.field}: ${e.message}` : e.message
-      ).join(', ');
-      throw new Error(`${errorMsg} - ${detailedErrors}`);
+      const err = new Error(data.message || "Errores de validación");
+      err.validationErrors = data.errors; // [{ type, msg, path, location }]
+      throw err;
     }
     
     console.error(`API Error (${res.status}):`, errorMsg, data);
@@ -90,7 +88,6 @@ export const apiFetchFormData = async (endpoint, options = {}) => {
         formDataObj[key] = value;
       }
     }
-    console.log(`📤 FormData a ${endpoint}:`, formDataObj);
   }
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -168,8 +165,21 @@ export const authGetProfile = () => apiFetch("/auth/profile");
  */
 export const authChangePassword = ({ contrasenaActual, contrasenaNueva }) =>
   apiFetch("/auth/change-password", {
+    method: "PUT",
+    // El backend valida el campo con nombre "contraseña" (no "contraseñaActual")
+    body: JSON.stringify({ contraseña: contrasenaActual, contraseñaNueva: contrasenaNueva }),
+  });
+
+/**
+ * Completa el registro en el primer inicio de sesión.
+ * ROL: Autenticado — solo cuando primerInicioSesion === true.
+ * @param {{ nombre, apellido, cedula, correo, telefono?, contraseñaNueva, fotoPredeterminadaUrl? }} body
+ * @returns {{ token, user }}
+ */
+export const authCompleteRegistro = (body) =>
+  apiFetch("/auth/completar-registro", {
     method: "POST",
-    body: JSON.stringify({ contraseñaActual: contrasenaActual, contraseñaNueva: contrasenaNueva }),
+    body: JSON.stringify(body),
   });
 
 /**
@@ -254,6 +264,34 @@ export const usersUpdateMyPhoto = (formData) =>
  */
 export const usersGetDefaultPhotos = () =>
   apiFetch("/users/fotos-predeterminadas");
+
+/**
+ * Asigna un avatar predeterminado del catálogo como foto de perfil.
+ * Usado en el flujo de primer inicio de sesión.
+ * ROL: Autenticado (cualquier rol)
+ * @param {string} fotoPredeterminadaUrl URL del avatar seleccionado
+ */
+export const usersPatchFotoDefault = (fotoPredeterminadaUrl) =>
+  apiFetch("/users/foto-perfil", {
+    method: "PATCH",
+    body: JSON.stringify({ fotoPredeterminadaUrl }),
+  });
+
+/**
+ * Sube una imagen propia como foto de perfil.
+ * Usado en el flujo de primer inicio de sesión.
+ * ROL: Autenticado (cualquier rol)
+ * @param {File} file Archivo de imagen
+ */
+export const usersPatchFotoFile = (file) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  return apiFetchFormData("/users/foto-perfil", {
+    method: "PATCH",
+    body: fd,
+  });
+};
+
 
 /**
  * Obtiene un usuario por su ID.
@@ -789,6 +827,8 @@ export const forosGetByCurso = (cursoId) =>
  */
 export const forosGetById = (id) => apiFetch(`/foros/${id}`);
 
+export const forosDashboard = (id) => apiFetch(`/foros/${id}/dashboard`);
+
 /**
  * Actualiza un foro (título, descripción, estado, publico).
  * ROL: Docente creador / Administrador
@@ -1123,7 +1163,7 @@ export const perfilesUpdateFcmToken = (body) =>
  */
 export const calendarioGetByCurso = (cursoId, params = {}) => {
   const qs = new URLSearchParams(params).toString();
-  return apiFetch(`/calendario/curso/${cursoId}${qs ? `?${qs}` : ""}`);
+  return apiFetch(`/calendario/${cursoId}${qs ? `?${qs}` : ""}`);
 };
 
 /**
@@ -1135,7 +1175,7 @@ export const calendarioGetByCurso = (cursoId, params = {}) => {
  */
 export const calendarioGetDia = (cursoId, params = {}) => {
   const qs = new URLSearchParams(params).toString();
-  return apiFetch(`/calendario/curso/${cursoId}/dia${qs ? `?${qs}` : ""}`);
+  return apiFetch(`/calendario/${cursoId}/dia${qs ? `?${qs}` : ""}`);
 };
 
 /**
@@ -1148,7 +1188,7 @@ export const calendarioGetDia = (cursoId, params = {}) => {
 export const calendarioGetProximos = (cursoId, params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return apiFetch(
-    `/calendario/curso/${cursoId}/proximos${qs ? `?${qs}` : ""}`
+    `/calendario/${cursoId}/proximos${qs ? `?${qs}` : ""}`
   );
 };
 
@@ -1198,5 +1238,35 @@ export const calendarioGetProximos = (cursoId, params = {}) => {
 //                        notificacionesLimpiarAntiguas,
 //                        calendarioGetByCurso, calendarioGetDia, calendarioGetProximos
 //
+// ═══════════════════════════════════════════════════════════════
+// BUZÓN DE CONTACTO — /api/buzon
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Envía un mensaje de contacto desde la landing page.
+ * Pública (sin auth). Rate-limited: 3 envíos por IP / 15 min.
+ * @param {{ nombre, correo, telefono, institucion?, mensaje }} body
+ */
+export const buzonEnviar = (body) =>
+  apiFetch("/buzon", { method: "POST", body: JSON.stringify(body) });
+
+/**
+ * Lista todos los mensajes recibidos.
+ * ROL: superadmin
+ * @param {{ page?, limit?, leido? }} params
+ */
+export const buzonGetAll = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return apiFetch(`/buzon${qs ? `?${qs}` : ""}`);
+};
+
+/**
+ * Marca un mensaje como leído.
+ * ROL: superadmin
+ * @param {string} id
+ */
+export const buzonMarcarLeido = (id) =>
+  apiFetch(`/buzon/${id}/leido`, { method: "PATCH" });
+
 //  público     → authRegister, authLogin, authForgotPassword, authResetPassword
 // ═══════════════════════════════════════════════════════════════

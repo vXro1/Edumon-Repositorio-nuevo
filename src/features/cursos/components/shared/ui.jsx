@@ -98,9 +98,7 @@ export function InfoBlock({ label, children }) {
 
 export function IconBtn({ color, onClick, title, children }) {
   return (
-    <Button
-      variant="custom"
-      size="xs"
+    <button
       onClick={onClick}
       title={title}
       style={{
@@ -108,13 +106,19 @@ export function IconBtn({ color, onClick, title, children }) {
         color,
         borderRadius: 7,
         padding: 7,
-        minWidth: "unset",
-        width: "auto",
-        height: "auto",
+        border: "none",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "background var(--transition-fast)",
+        flexShrink: 0,
       }}
+      onMouseEnter={e => (e.currentTarget.style.background = `color-mix(in srgb, ${color} 22%, transparent)`)}
+      onMouseLeave={e => (e.currentTarget.style.background = `color-mix(in srgb, ${color} 12%, transparent)`)}
     >
       {children}
-    </Button>
+    </button>
   );
 }
 

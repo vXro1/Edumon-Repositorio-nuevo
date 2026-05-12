@@ -13,7 +13,7 @@ import {
   notificacionesDelete,
 } from "@/lib/apiClient";
 
-import { Toast, Button } from "@/components";
+import { Toast, Button, Badge } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 
 /* ───────────────────────── CONFIG ───────────────────────── */
@@ -21,11 +21,11 @@ import { IconBtn } from "@/features/cursos/components/shared/ui";
 const LIMIT = 15;
 
 const TIPO_META = {
-  info: { color: "#0C6AC4", bg: "rgba(12,106,196,0.10)" },
-  exito: { color: "#16A34A", bg: "rgba(22,163,74,0.10)" },
-  warning: { color: "#D97706", bg: "rgba(217,119,6,0.10)" },
-  error: { color: "#DC2626", bg: "rgba(220,38,38,0.10)" },
-  bienvenida: { color: "#8B5CF6", bg: "rgba(139,92,246,0.10)" },
+  info: { variant: "info" },
+  exito: { variant: "success" },
+  warning: { variant: "warning" },
+  error: { variant: "error" },
+  bienvenida: { variant: "purple" },
 };
 
 const FILTERS = [
@@ -193,23 +193,27 @@ export default function NotificacionesPage() {
             <Bell style={{ width: 18, height: 18, color: "#0C6AC4" }} />
 
             {noLeidas > 0 && (
-              <span style={{
-                position: "absolute",
-                top: -4,
-                right: -4,
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                background: "#DC2626",
-                color: "white",
-                fontSize: 9,
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
+              <Badge
+                variant="error"
+                dot
+                size="sm"
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  fontSize: 9,
+                  fontWeight: 800,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  padding: "0 4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 {noLeidas > 9 ? "9+" : noLeidas}
-              </span>
+              </Badge>
             )}
           </div>
 
@@ -235,29 +239,18 @@ export default function NotificacionesPage() {
         )}
       </div>
 
-      {/* FILTERS (mejor UX sin button nativo feo) */}
+      {/* FILTERS */}
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         {FILTERS.map((f) => (
-          <div
+          <Button
             key={f.key}
+            variant={filter === f.key ? "primary" : "outline"}
+            size="sm"
             onClick={() => setFilter(f.key)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: 99,
-              fontSize: 12.5,
-              fontWeight: 700,
-              cursor: "pointer",
-              background: filter === f.key ? "#0C6AC4" : "white",
-              color: filter === f.key ? "white" : "#64748B",
-              boxShadow:
-                filter === f.key
-                  ? "none"
-                  : "0 0 0 1.5px rgba(0,0,0,0.08)",
-              userSelect: "none",
-            }}
+            style={{ borderRadius: 99 }}
           >
             {f.label}
-          </div>
+          </Button>
         ))}
       </div>
 
@@ -294,7 +287,7 @@ export default function NotificacionesPage() {
           </div>
         ) : (
           notifs.map((n) => {
-            const tipo = TIPO_META[n.tipo] ?? TIPO_META.info;
+            const tipoConfig = TIPO_META[n.tipo] ?? TIPO_META.info;
 
             return (
               <div
@@ -311,19 +304,19 @@ export default function NotificacionesPage() {
                   opacity: n.leido ? 0.65 : 1,
                 }}
               >
-                <div
+                <Badge
+                  variant={tipoConfig.variant}
+                  size="sm"
                   style={{
                     width: 38,
                     height: 38,
-                    borderRadius: 10,
-                    background: tipo.bg,
+                    minWidth: 38,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
-                >
-                  <Bell style={{ width: 16, height: 16, color: tipo.color }} />
-                </div>
+                  icon={<Bell style={{ width: 16, height: 16 }} />}
+                />
 
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontWeight: 700 }}>
@@ -346,6 +339,7 @@ export default function NotificacionesPage() {
                     <IconBtn
                       color="#16A34A"
                       onClick={() => handleMarkRead(n._id)}
+                      title="Marcar como leída"
                     >
                       <Check />
                     </IconBtn>
@@ -354,6 +348,7 @@ export default function NotificacionesPage() {
                   <IconBtn
                     color="#DC2626"
                     onClick={() => handleDelete(n._id)}
+                    title="Eliminar"
                   >
                     <Trash2 />
                   </IconBtn>
@@ -382,7 +377,7 @@ export default function NotificacionesPage() {
               disabled={page === 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              <ChevronLeft /> Anterior
+              <ChevronLeft style={{ width: 14, height: 14 }} /> Anterior
             </Button>
 
             <Button
@@ -391,7 +386,7 @@ export default function NotificacionesPage() {
               disabled={page === totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
-              Siguiente <ChevronRight />
+              Siguiente <ChevronRight style={{ width: 14, height: 14 }} />
             </Button>
           </div>
         </div>

@@ -7,6 +7,7 @@ export const superadminNav = [
     path: "/institutions",
     icon: "building"
   },
+  
   {
     label: "Usuarios globales",
     path: "/users",

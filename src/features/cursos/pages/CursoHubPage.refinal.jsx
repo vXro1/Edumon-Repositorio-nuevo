@@ -86,10 +86,10 @@ export default function CursoHubPage() {
         return <TareasTab cursoId={cursoId} canManage={perms.canManageTasks}
           canGrade={perms.canGradeEntregas} esPadre={perms.esPadre} />;
       case "calendario":
-        return <CalendarioTab cursoId={cursoId} />;
+        return <CalendarioTab cursoId={cursoId} role={role} canManage={perms.canManageTasks} />;
       case "foros":
         return <ForosTab cursoId={cursoId} canCreate={perms.canCreateForo}
-          isDocente={perms.isDocente} userId={userId} />;
+          cursoNombre={curso?.nombre ?? curso?.title ?? ''} />;
       case "participantes":
         return perms.canSeeParticipants
           ? <ParticipantesTab cursoId={cursoId} canManage={perms.canManageParts} />

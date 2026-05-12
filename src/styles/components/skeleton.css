@@ -1,0 +1,74 @@
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON DESIGN SYSTEM — skeleton.css
+   Loading placeholder shimmer components.
+   ════════════════════════════════════════════════════════════════════ */
+
+@keyframes edu-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+/* ── Base skeleton ─────────────────────────────────────────────── */
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--edu-neutral-100) 25%,
+    var(--edu-neutral-150) 50%,
+    var(--edu-neutral-100) 75%
+  );
+  background-size: 800px 100%;
+  animation: edu-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Size helpers ──────────────────────────────────────────────── */
+.skeleton-text    { height: 14px; border-radius: var(--radius-xs); }
+.skeleton-text-sm { height: 11px; border-radius: var(--radius-xs); }
+.skeleton-text-lg { height: 20px; border-radius: var(--radius-sm); }
+.skeleton-title   { height: 26px; border-radius: var(--radius-sm); }
+.skeleton-avatar  { border-radius: var(--radius-full); }
+.skeleton-btn     { height: 40px; border-radius: var(--radius-lg); }
+.skeleton-card    { border-radius: var(--radius-xl); }
+
+/* ── Stat card skeleton ────────────────────────────────────────── */
+.skeleton-stat {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── List item skeleton ────────────────────────────────────────── */
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.skeleton-list-item:last-child { border-bottom: none; }
+
+/* ── Course card skeleton ──────────────────────────────────────── */
+.skeleton-course-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.skeleton-course-card .sk-cover {
+  height: 6px;
+}
+.skeleton-course-card .sk-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

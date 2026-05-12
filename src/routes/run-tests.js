@@ -1,7 +1,6 @@
 // simple test runner for Node (no deps)
 const assert = require('assert');
 
-console.log('Running basic security tests...');
 
 const { getPermissionsForRole } = require('../security/roleMatrix');
 
@@ -14,4 +13,3 @@ assert(adminPerms.includes('VIEW_REPORTS'));
 const padrePerms = getPermissionsForRole('padre');
 assert(padrePerms.includes('VIEW_COURSES'));
 
-console.log('Security tests passed ✔');

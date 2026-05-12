@@ -1,0 +1,414 @@
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON DESIGN SYSTEM — tokens.css
+   Single source of truth for all design tokens.
+   Import this first in every other stylesheet.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON DESIGN SYSTEM — tokens.css
+   Single source of truth for all design tokens.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Web fonts — rutas resueltas desde src/styles/tokens/ ───────────── */
+@font-face {
+  font-family: 'Inter';
+  src: url('../../assets/fonts/Inter-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('../../assets/fonts/Inter-Italic-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Regular.woff2')   format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Medium.woff2')    format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-SemiBold.woff2')  format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Bold.woff2')      format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+:root {
+  /* ──────────────────────────────────────────────────────────────────
+     RAW BRAND PALETTE
+     ────────────────────────────────────────────────────────────────── */
+  --edu-purple:  #8C38F0;
+  --edu-pink:    #F23D7F;
+  --edu-cyan:    #05C7F2;
+  --edu-green:   #41D958;
+  --edu-yellow:  #FCBD00;
+  --edu-cream:   #FCF7ED;
+  --edu-dark:    #0D0D0D;
+  --edu-white:   #FFFFFF;
+
+  /* ── Purple scale (primary) ──────────────────────────────────────── */
+  --edu-purple-50:  #F7F0FE;
+  --edu-purple-100: #EDD9FC;
+  --edu-purple-200: #D4ADF9;
+  --edu-purple-300: #B87AF5;
+  --edu-purple-400: #A057F2;
+  --edu-purple-500: #8C38F0;
+  --edu-purple-600: #7826D8;
+  --edu-purple-700: #621BB8;
+  --edu-purple-800: #4D1392;
+  --edu-purple-900: #360B6B;
+
+  /* ── Pink scale (secondary) ──────────────────────────────────────── */
+  --edu-pink-50:  #FEF0F5;
+  --edu-pink-100: #FDD9E9;
+  --edu-pink-200: #FAA8CC;
+  --edu-pink-300: #F675AF;
+  --edu-pink-400: #F45194;
+  --edu-pink-500: #F23D7F;
+  --edu-pink-600: #D42B68;
+  --edu-pink-700: #B01B52;
+
+  /* ── Cyan scale (accent / info) ──────────────────────────────────── */
+  --edu-cyan-50:  #F0FBFE;
+  --edu-cyan-100: #D4F4FD;
+  --edu-cyan-200: #A0E8FB;
+  --edu-cyan-300: #5DD7F8;
+  --edu-cyan-400: #25CEF5;
+  --edu-cyan-500: #05C7F2;
+  --edu-cyan-600: #04AED6;
+  --edu-cyan-700: #0392B4;
+
+  /* ── Green scale (success) ───────────────────────────────────────── */
+  --edu-green-50:  #F0FDF4;
+  --edu-green-100: #D5F7DC;
+  --edu-green-200: #A7EEB5;
+  --edu-green-300: #71E287;
+  --edu-green-400: #55DC6D;
+  --edu-green-500: #41D958;
+  --edu-green-600: #2FBD45;
+  --edu-green-700: #229D35;
+
+  /* ── Yellow scale (warning / XP) ─────────────────────────────────── */
+  --edu-yellow-50:  #FFFBEB;
+  --edu-yellow-100: #FEF5C7;
+  --edu-yellow-200: #FDE88A;
+  --edu-yellow-300: #FDD64D;
+  --edu-yellow-400: #FCC925;
+  --edu-yellow-500: #FCBD00;
+  --edu-yellow-600: #DFA300;
+  --edu-yellow-700: #B88600;
+
+  /* ── Neutral scale ───────────────────────────────────────────────── */
+  --edu-neutral-0:   #FFFFFF;
+  --edu-neutral-50:  #FAFAFA;
+  --edu-neutral-100: #F5F5F5;
+  --edu-neutral-150: #EFEFEF;
+  --edu-neutral-200: #E8E8E8;
+  --edu-neutral-300: #D4D4D4;
+  --edu-neutral-400: #A3A3A3;
+  --edu-neutral-500: #737373;
+  --edu-neutral-600: #525252;
+  --edu-neutral-700: #404040;
+  --edu-neutral-800: #262626;
+  --edu-neutral-900: #171717;
+
+  /* ──────────────────────────────────────────────────────────────────
+     SEMANTIC COLOR TOKENS
+     ────────────────────────────────────────────────────────────────── */
+
+  /* Primary → Purple */
+  --color-primary:         var(--edu-purple-500);
+  --color-primary-hover:   var(--edu-purple-600);
+  --color-primary-active:  var(--edu-purple-700);
+  --color-primary-light:   var(--edu-purple-50);
+  --color-primary-subtle:  rgba(140, 56, 240, 0.08);
+
+  /* Secondary → Pink */
+  --color-secondary:       var(--edu-pink-500);
+  --color-secondary-hover: var(--edu-pink-600);
+  --color-secondary-light: var(--edu-pink-50);
+
+  /* Accent → Cyan */
+  --color-accent:          var(--edu-cyan-500);
+  --color-accent-hover:    var(--edu-cyan-600);
+  --color-accent-light:    var(--edu-cyan-50);
+
+  /* Semantic states */
+  --color-success:         var(--edu-green-500);
+  --color-success-hover:   var(--edu-green-600);
+  --color-success-light:   var(--edu-green-50);
+
+  --color-warning:         var(--edu-yellow-500);
+  --color-warning-hover:   var(--edu-yellow-600);
+  --color-warning-light:   var(--edu-yellow-50);
+
+  --color-error:           #EF4444;
+  --color-error-hover:     #DC2626;
+  --color-error-light:     #FEF2F2;
+
+  --color-info:            var(--edu-cyan-500);
+  --color-info-light:      var(--edu-cyan-50);
+
+  /* Backgrounds */
+  --color-bg:              #FFFFFF;
+  --color-background:      #FFFFFF;
+  --color-bg-soft:         var(--edu-cream);
+  --color-bg-muted:        var(--edu-neutral-50);
+  --color-surface:         #FFFFFF;
+  --color-surface-2:       var(--edu-neutral-50);
+  --color-surface-3:       var(--edu-neutral-100);
+
+  /* Foreground / text */
+  --fg1: var(--edu-dark);
+  --fg2: var(--edu-neutral-500);
+  --fg3: var(--edu-neutral-400);
+  --fg-inverse: #FFFFFF;
+  --color-text:            var(--edu-dark);
+  --color-text-muted:      var(--edu-neutral-500);
+  --color-text-subtle:     var(--edu-neutral-400);
+  --color-text-inverse:    #FFFFFF;
+
+  /* Borders */
+  --color-border:          var(--edu-neutral-200);
+  --color-border-strong:   var(--edu-neutral-300);
+  --color-border-focus:    var(--edu-purple-400);
+
+  /* Sidebar (dark on-brand) — kept for legacy / dark mode future */
+  --color-sidebar-bg:           #0D0D0D;
+  --color-sidebar-text:         rgba(255, 255, 255, 0.80);
+  --color-sidebar-text-active:  #FFFFFF;
+  --color-sidebar-active:       var(--edu-purple-500);
+  --color-sidebar-hover:        rgba(140, 56, 240, 0.14);
+  --color-sidebar-border:       rgba(255, 255, 255, 0.07);
+
+  /* ──────────────────────────────────────────────────────────────────
+     GRADIENTS
+     ────────────────────────────────────────────────────────────────── */
+  --gradient-brand:      linear-gradient(135deg, var(--edu-purple-500) 0%, #C97AE5 55%, var(--edu-pink-400) 100%);
+  --gradient-brand-full: linear-gradient(135deg, var(--edu-purple-600) 0%, var(--edu-purple-400) 50%, #DC78C4 100%);
+  --gradient-cool:       linear-gradient(135deg, var(--edu-cyan-400) 0%, #8AC2F0 50%, var(--edu-purple-400) 100%);
+  --gradient-warm:       linear-gradient(135deg, #FFD96B 0%, #FFB07A 60%, var(--edu-pink-300) 100%);
+  --gradient-success:    linear-gradient(135deg, var(--edu-green-500) 0%, #7DDDB8 50%, var(--edu-cyan-400) 100%);
+  --gradient-sky:        linear-gradient(135deg, var(--edu-cyan-300) 0%, #A8E6D5 50%, var(--edu-green-300) 100%);
+  --gradient-berry:      linear-gradient(135deg, var(--edu-purple-400) 0%, var(--edu-pink-400) 100%);
+  --gradient-hero:       linear-gradient(125deg, var(--edu-purple-500) 0%, var(--edu-pink-400) 33%, #FFC078 66%, var(--edu-cyan-400) 100%);
+  --gradient-text:       linear-gradient(120deg, var(--edu-purple-500) 0%, var(--edu-cyan-500) 100%);
+  --gradient-card:       linear-gradient(145deg, rgba(184,122,245,0.05) 0%, rgba(93,215,248,0.04) 50%, rgba(125,221,184,0.05) 100%);
+  --gradient-cream:      linear-gradient(180deg, #FFFFFF 0%, var(--edu-cream) 100%);
+  --gradient-mesh:       radial-gradient(at 20% 20%, rgba(184,122,245,0.55) 0%, transparent 50%),
+                         radial-gradient(at 80% 15%, rgba(93,215,248,0.55) 0%, transparent 50%),
+                         radial-gradient(at 80% 85%, rgba(125,221,184,0.55) 0%, transparent 50%),
+                         radial-gradient(at 20% 85%, rgba(253,214,77,0.50) 0%, transparent 50%),
+                         var(--edu-cream);
+
+  /* ──────────────────────────────────────────────────────────────────
+     RADIUS SCALE
+     ────────────────────────────────────────────────────────────────── */
+  --radius-xs:   0.25rem;
+  --radius-sm:   0.5rem;
+  --radius-md:   0.75rem;
+  --radius-lg:   1rem;
+  --radius-xl:   1.5rem;
+  --radius-2xl:  2rem;
+  --radius-3xl:  2.5rem;
+  --radius-full: 9999px;
+
+  /* ──────────────────────────────────────────────────────────────────
+     SHADOWS
+     ────────────────────────────────────────────────────────────────── */
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm:  0 1px 6px rgba(0,0,0,0.07);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg:  0 12px 32px rgba(0,0,0,0.12);
+  --shadow-xl:  0 24px 48px rgba(0,0,0,0.14);
+  --shadow-2xl: 0 40px 80px rgba(0,0,0,0.18);
+
+  --shadow-brand:     0 4px 20px rgba(140, 56, 240, 0.25);
+  --shadow-primary:   0 4px 16px rgba(140, 56, 240, 0.30);
+  --shadow-secondary: 0 4px 16px rgba(242, 61, 127, 0.24);
+  --shadow-accent:    0 4px 16px rgba(5, 199, 242, 0.22);
+  --shadow-success:   0 4px 16px rgba(65, 217, 88, 0.22);
+
+  --shadow-card:       0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 8px 24px rgba(140, 56, 240, 0.12), 0 0 0 1.5px var(--color-primary);
+  --shadow-modal:      0 0 0 1px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.18), 0 32px 64px rgba(0,0,0,0.12);
+  --shadow-dropdown:   0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+
+  --shadow-focus:         0 0 0 3px rgba(140, 56, 240, 0.30);
+  --shadow-focus-error:   0 0 0 3px rgba(239, 68, 68, 0.28);
+  --shadow-focus-success: 0 0 0 3px rgba(65, 217, 88, 0.28);
+
+  --shadow-btn-primary: 0 5px 0 var(--edu-purple-700), 0 1px 3px rgba(140, 56, 240, 0.20);
+  --shadow-btn-success: 0 5px 0 var(--edu-green-700),  0 1px 3px rgba(65, 217, 88, 0.20);
+  --shadow-btn-danger:  0 5px 0 #B91C1C,               0 1px 3px rgba(239, 68, 68, 0.20);
+  --shadow-btn-warning: 0 5px 0 var(--edu-yellow-600), 0 1px 3px rgba(252,189,0,0.20);
+
+  /* ──────────────────────────────────────────────────────────────────
+     SPACING (4px base scale)
+     ────────────────────────────────────────────────────────────────── */
+  --space-px: 1px;
+  --space-0:  0;
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-7:  1.75rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* ──────────────────────────────────────────────────────────────────
+     LAYOUT DIMENSIONS
+     ────────────────────────────────────────────────────────────────── */
+  --sidebar-width:           248px;
+  --sidebar-width-collapsed: 64px;
+  --navbar-height:           64px;
+  --content-max-width:       1240px;
+
+  /* ──────────────────────────────────────────────────────────────────
+     TYPOGRAPHY
+     ────────────────────────────────────────────────────────────────── */
+  --font-sans:    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Poppins", "Inter", system-ui, sans-serif;
+  --font-body:    var(--font-sans);
+  --font-heading: var(--font-display);
+  --font-mono:    "Fira Code", "Cascadia Code", "Consolas", monospace;
+
+  /* Sizes */
+  --text-2xs: 0.625rem;
+  --text-xs:  0.75rem;
+  --text-sm:  0.875rem;
+  --text-base: 1rem;
+  --text-md:  1rem;
+  --text-lg:  1.125rem;
+  --text-xl:  1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+  --text-7xl: 4.5rem;
+
+  /* Weights */
+  --font-thin:       100;
+  --font-extralight: 200;
+  --font-light:      300;
+  --font-regular:    400;
+  --font-medium:     500;
+  --font-semibold:   600;
+  --font-bold:       700;
+  --font-extrabold:  800;
+  --font-black:      900;
+
+  /* Line heights */
+  --leading-none:    1;
+  --leading-tight:   1.15;
+  --leading-snug:    1.3;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+  --leading-loose:   1.9;
+
+  /* Letter spacing */
+  --tracking-tighter: -0.045em;
+  --tracking-tight:   -0.025em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.025em;
+  --tracking-wider:   0.06em;
+  --tracking-widest:  0.12em;
+
+  /* Hero (clamped) */
+  --hero-title-size:    clamp(2.75rem, 5vw, 4.75rem);
+  --hero-subtitle-size: clamp(1rem, 2vw, 1.35rem);
+
+  /* ──────────────────────────────────────────────────────────────────
+     TRANSITIONS
+     ────────────────────────────────────────────────────────────────── */
+  --transition-fast:   120ms ease;
+  --transition-base:   200ms ease;
+  --transition-slow:   300ms ease;
+  --transition-spring: 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ──────────────────────────────────────────────────────────────────
+     CLAYMORPHISM / SOFT UI TOKENS
+     Layered soft shadows + inner highlights for tactile depth
+     ────────────────────────────────────────────────────────────────── */
+
+  /* Clay base: outer shadow + subtle inner highlight */
+  --clay-shadow-sm:
+    0 2px 8px rgba(0,0,0,0.08),
+    0 1px 2px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.80);
+
+  --clay-shadow-md:
+    0 4px 16px rgba(0,0,0,0.10),
+    0 2px 4px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.85);
+
+  --clay-shadow-lg:
+    0 8px 28px rgba(0,0,0,0.12),
+    0 3px 8px rgba(0,0,0,0.08),
+    inset 0 2px 0 rgba(255,255,255,0.90);
+
+  --clay-shadow-hover:
+    0 12px 36px rgba(140, 56, 240, 0.16),
+    0 4px 12px rgba(0,0,0,0.10),
+    inset 0 1px 0 rgba(255,255,255,0.90);
+
+  /* Clay for stat/action cards */
+  --clay-card:
+    0 2px 0 rgba(0,0,0,0.04),
+    0 4px 16px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.85);
+
+  --clay-card-hover:
+    0 0px 0 rgba(0,0,0,0.04),
+    0 8px 28px rgba(140,56,240,0.14),
+    inset 0 1px 0 rgba(255,255,255,0.90);
+
+  /* Pill / badge clay */
+  --clay-pill:
+    0 2px 6px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.75);
+
+  /* Sidebar icon clay */
+  --clay-icon:
+    0 2px 8px rgba(0,0,0,0.10),
+    inset 0 1px 0 rgba(255,255,255,0.70);
+
+  --clay-icon-active:
+    0 4px 12px rgba(140, 56, 240, 0.30),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+
+  /* Button clay (replaces hard bottom press on softer elements) */
+  --clay-btn:
+    0 4px 0 rgba(0,0,0,0.12),
+    0 2px 8px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.20);
+
+  /* ──────────────────────────────────────────────────────────────────
+     Z-INDEX SCALE
+     ────────────────────────────────────────────────────────────────── */
+  --z-base:     0;
+  --z-raised:   10;
+  --z-sidebar:  20;
+  --z-navbar:   15;
+  --z-dropdown: 50;
+  --z-modal:    100;
+  --z-toast:    200;
+  --z-drawer:   40;
+  --z-backdrop: 39;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   PER-SECTION SEMANTIC ACCENTS
+   Scoped overrides so any child element can use --section, --section-50,
+   --section-100, --section-700 without hardcoding hue-specific values.
+   ────────────────────────────────────────────────────────────────────── */
+.section-inicio     { --section: var(--edu-purple-500); --section-50: var(--edu-purple-50); --section-100: var(--edu-purple-100); --section-700: var(--edu-purple-700); }
+.section-cursos     { --section: var(--edu-cyan-500);   --section-50: var(--edu-cyan-50);   --section-100: var(--edu-cyan-100);   --section-700: var(--edu-cyan-700); }
+.section-tareas     { --section: var(--edu-green-500);  --section-50: var(--edu-green-50);  --section-100: var(--edu-green-100);  --section-700: var(--edu-green-700); }
+.section-foros      { --section: var(--edu-pink-500);   --section-50: var(--edu-pink-50);   --section-100: var(--edu-pink-100);   --section-700: var(--edu-pink-700); }
+.section-calendario { --section: var(--edu-yellow-500); --section-50: var(--edu-yellow-50); --section-100: var(--edu-yellow-100); --section-700: var(--edu-yellow-700); }

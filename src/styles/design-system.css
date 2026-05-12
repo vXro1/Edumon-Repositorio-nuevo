@@ -264,7 +264,7 @@ body {
   font-size: var(--text-base);
   font-weight: var(--font-regular);
   color: var(--color-text);
-  background-color: var(--color-bg-soft);
+  background-color: var(--color-bg);
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

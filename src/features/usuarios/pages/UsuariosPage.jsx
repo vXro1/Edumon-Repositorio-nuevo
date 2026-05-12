@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { normalizeUser } from "@/lib/normalizers";
+import { normalizeUser }from "@/lib/normalizers";
 
 import {
   usersGetAll,
@@ -18,6 +18,7 @@ import {
   usersUpdate,
   usersDelete,
   institucionesGetMine,
+  institucionesGetAll,
 } from "@/lib/apiClient";
 
 import { Modal, Toast, UserAvatar } from "@/components";
@@ -65,21 +66,24 @@ function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
 }
 
-function FieldGroup({ label, children }) {
+function FieldGroup({ label, children, error }) {
   return (
     <div>
-      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
+      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: error ? "#DC2626" : "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
       {children}
+      {error && <p style={{ fontSize: 11.5, color: "#DC2626", margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}><AlertCircle style={{ width: 11, height: 11, flexShrink: 0 }} />{error}</p>}
     </div>
   );
 }
 
-function StyledInput({ value, onChange, placeholder, type = "text", required = false, disabled = false }) {
+function StyledInput({ value, onChange, placeholder, type = "text", required = false, disabled = false, hasError = false }) {
   const [f, setF] = useState(false);
+  const borderColor = hasError ? "#DC2626" : f ? "#0C6AC4" : "var(--color-border)";
+  const shadow = hasError ? "0 0 0 3px rgba(220,38,38,0.10)" : f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none";
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required} disabled={disabled}
       onFocus={() => setF(true)} onBlur={() => setF(false)}
-      style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "#0C6AC4" : "var(--color-border)"}`, outline: "none", background: disabled ? "var(--color-bg)" : "var(--color-surface)", color: "var(--color-text)", boxShadow: f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none", transition: "border-color 150ms, box-shadow 150ms", cursor: disabled ? "not-allowed" : "text" }} />
+      style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${borderColor}`, outline: "none", background: disabled ? "var(--color-bg)" : "var(--color-surface)", color: "var(--color-text)", boxShadow: shadow, transition: "border-color 150ms, box-shadow 150ms", cursor: disabled ? "not-allowed" : "text" }} />
   );
 }
 
@@ -116,7 +120,7 @@ function formatDate(iso) {
 }
 
 /* ── Constants ────────────────────────────────────────────────── */
-const INIT = { nombre: "", apellido: "", cedula: "", correo: "", telefono: "", rol: "docente" };
+const INIT = { nombre: "", apellido: "", cedula: "", correo: "", telefono: "", rol: "docente", institucionIdSA: "" };
 // Maps frontend display role to the value the backend validator accepts
 const toApiRol = (rol) => rol === "padre/tutor" ? "padre" : rol;
 const LIMIT = 15;
@@ -134,12 +138,17 @@ export default function UsuariosPage() {
   const [loading,      setLoading]    = useState(true);
   const [page,         setPage]       = useState(1);
   const [search,       setSearch]     = useState("");
+  const [debSearch,    setDebSearch]  = useState("");
   const [rolFilter,    setRolF]       = useState("");
   const [estadoFilter, setEstadoF]    = useState("");
   const [toast,        setToast]      = useState({ msg: "", type: "success" });
   const [saving,       setSaving]     = useState(false);
   const [form,         setForm]       = useState(INIT);
   const [institucionId, setInstitucionId] = useState(() => me?.institucionId ?? null);
+  const [institutions, setInstitutions]  = useState([]);
+
+  // Validation errors for create form
+  const [createErrors, setCreateErrors] = useState({});
 
   // Modal states
   const [showCreate,   setShowCreate]   = useState(false);
@@ -171,11 +180,30 @@ export default function UsuariosPage() {
     }
   }, [me, isSuperadmin]);
 
+  // Superadmin: fetch all institutions to populate the institution selector
+  useEffect(() => {
+    if (isSuperadmin) {
+      institucionesGetAll()
+        .then((res) => {
+          const list = res.instituciones ?? res ?? [];
+          setInstitutions(Array.isArray(list) ? list : []);
+        })
+        .catch(() => {});
+    }
+  }, [isSuperadmin]);
+
+  // Debounce search so API is only hit after the user pauses typing
+  useEffect(() => {
+    const t = setTimeout(() => setDebSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: LIMIT };
-      if (rolFilter)   params.rol    = rolFilter;
+      // When text-searching, fetch all matching users so client-side filter is complete
+      const params = debSearch ? { page: 1, limit: 1000 } : { page, limit: LIMIT };
+      if (rolFilter)    params.rol    = rolFilter;
       if (estadoFilter) params.estado = estadoFilter;
       const res = await usersGetAll(params);
       const list = Array.isArray(res) ? res : (res.users ?? []);
@@ -186,20 +214,27 @@ export default function UsuariosPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, rolFilter, estadoFilter]);
+  }, [page, debSearch, rolFilter, estadoFilter]);
 
   useEffect(() => { load(); }, [load]);
 
-  // Reset page on filter change
-  useEffect(() => { setPage(1); }, [rolFilter, estadoFilter]);
+  // Reset page when any filter changes (including text search)
+  useEffect(() => { setPage(1); }, [rolFilter, estadoFilter, debSearch]);
 
-  // Local search
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
-    return !q || u.nombre?.toLowerCase().includes(q) || u.apellido?.toLowerCase().includes(q) || u.correo?.toLowerCase().includes(q) || u.cedula?.includes(q) || u.telefono?.includes(q);
+    return !q
+      || u.nombre?.toLowerCase().includes(q)
+      || u.apellido?.toLowerCase().includes(q)
+      || u.correo?.toLowerCase().includes(q)
+      || u.cedula?.includes(q)
+      || u.telefono?.includes(q);
   });
 
-  const f = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+  const f = (key) => (e) => {
+    setForm((p) => ({ ...p, [key]: e.target.value }));
+    if (createErrors[key]) setCreateErrors((p) => ({ ...p, [key]: "" }));
+  };
 
   /* ── View detail ── */
   const openView = async (u) => {
@@ -219,26 +254,71 @@ export default function UsuariosPage() {
   /* ── Create ── */
   const handleCreate = async (e) => {
     e.preventDefault();
+
+    // Client-side validation
+    const cedula = form.cedula.trim();
+    const clientErrors = {};
+    if (!form.nombre.trim())                           clientErrors.nombre   = "El nombre es requerido";
+    if (!form.apellido.trim())                         clientErrors.apellido = "El apellido es requerido";
+    if (!cedula)                                       clientErrors.cedula   = "La cédula es requerida";
+    else if (!/^\d{6,10}$/.test(cedula))               clientErrors.cedula   = "La cédula debe tener entre 6 y 10 dígitos numéricos";
+    if (!form.correo.trim())                           clientErrors.correo    = "El correo es requerido";
+    else if (!/\S+@\S+\.\S+/.test(form.correo.trim())) clientErrors.correo   = "Ingresa un correo válido";
+    const rawPhone = form.telefono.trim().replace(/\s/g, "");
+    if (!rawPhone)                                     clientErrors.telefono  = "El teléfono es requerido";
+    else if (!/^\d{10}$/.test(rawPhone))               clientErrors.telefono  = "Ingresa 10 dígitos sin el +57 (ej: 3001234567)";
+
+    if (Object.keys(clientErrors).length) {
+      setCreateErrors(clientErrors);
+      notify("Corrige los campos marcados en rojo", "error");
+      return;
+    }
+
     setSaving(true);
     try {
       const rolApi = toApiRol(form.rol);
-      // Password: cedula + "Aa" always satisfies complexity (upper, lower, digit)
+      const tempPassword = `Cc${cedula}`;
       const body = {
         nombre:     form.nombre.trim(),
         apellido:   form.apellido.trim(),
-        cedula:     form.cedula.trim(),
+        cedula:     cedula,
         correo:     form.correo.trim(),
         rol:        rolApi,
-        contraseña: form.cedula.trim() + "Aa",
+        contraseña: tempPassword,
       };
       if (form.telefono) body.telefono = normalizePhone(form.telefono);
-      if (rolApi !== "superadmin" && institucionId) body.institucionId = institucionId;
+
+      if (rolApi !== "superadmin") {
+        const instId = isSuperadmin ? form.institucionIdSA : institucionId;
+        if (!instId) {
+          notify(
+            isSuperadmin
+              ? "Debes seleccionar una institución para este usuario"
+              : "No se pudo determinar tu institución. Recarga la página e intenta de nuevo.",
+            "error"
+          );
+          setSaving(false);
+          return;
+        }
+        body.institucionId = instId;
+      }
+
       await usersCreate(body);
-      notify("Usuario creado correctamente");
+      notify(`Usuario creado. Contraseña inicial: Cc${cedula}`);
       setShowCreate(false);
+      setCreateErrors({});
       setForm(INIT);
       load();
     } catch (err) {
+      // Map server-side validation errors to individual fields
+      if (err.validationErrors?.length) {
+        const serverErrors = {};
+        for (const e of err.validationErrors) {
+          const field = e.path === "contraseña" ? "_password" : e.path;
+          serverErrors[field] = e.msg;
+        }
+        setCreateErrors(serverErrors);
+      }
       notify(humanizeError(err, "Error al crear usuario"), "error");
     } finally {
       setSaving(false);
@@ -277,9 +357,13 @@ export default function UsuariosPage() {
     setSaving(true);
     try {
       await usersDelete(delTarget._id);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === delTarget._id ? { ...u, estado: "suspendido" } : u
+        )
+      );
       notify("Usuario suspendido");
       setDelTarget(null);
-      load();
     } catch (err) {
       notify(humanizeError(err, "Error al suspender usuario"), "error");
     } finally {
@@ -293,9 +377,13 @@ export default function UsuariosPage() {
     setSaving(true);
     try {
       await usersUpdate(activTarget._id, { estado: "activo" });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === activTarget._id ? { ...u, estado: "activo" } : u
+        )
+      );
       notify("Usuario activado correctamente");
       setActivTarget(null);
-      load();
     } catch (err) {
       notify(humanizeError(err, "Error al activar usuario"), "error");
     } finally {
@@ -406,7 +494,7 @@ export default function UsuariosPage() {
           </table>
         </div>
 
-        {!loading && pagination.totalPages > 1 && (
+        {!debSearch && !loading && pagination.totalPages > 1 && (
           <div style={{ padding: "12px 16px", borderTop: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>Página {page} de {pagination.totalPages} · {pagination.totalUsers} usuarios</span>
             <div style={{ display: "flex", gap: 8 }}>
@@ -418,15 +506,15 @@ export default function UsuariosPage() {
       </div>
 
       {/* ══ CREATE MODAL ══ */}
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Nuevo usuario" size="md">
+      <Modal isOpen={showCreate} onClose={() => { setShowCreate(false); setCreateErrors({}); setForm(INIT); }} title="Nuevo usuario" size="md">
         <form onSubmit={handleCreate}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FieldGroup label="Nombre *"><StyledInput value={form.nombre} onChange={f("nombre")} placeholder="Juan" required /></FieldGroup>
-            <FieldGroup label="Apellido *"><StyledInput value={form.apellido} onChange={f("apellido")} placeholder="Pérez" required /></FieldGroup>
-            <FieldGroup label="Cédula *"><StyledInput value={form.cedula} onChange={f("cedula")} placeholder="12345678" required /></FieldGroup>
-            <FieldGroup label="Teléfono"><StyledInput value={form.telefono} onChange={f("telefono")} placeholder="3001234567 (+57 se agrega automáticamente)" /></FieldGroup>
+            <FieldGroup label="Nombre *" error={createErrors.nombre}><StyledInput value={form.nombre} onChange={f("nombre")} placeholder="Juan" hasError={!!createErrors.nombre} /></FieldGroup>
+            <FieldGroup label="Apellido *" error={createErrors.apellido}><StyledInput value={form.apellido} onChange={f("apellido")} placeholder="Pérez" hasError={!!createErrors.apellido} /></FieldGroup>
+            <FieldGroup label="Cédula *" error={createErrors.cedula}><StyledInput value={form.cedula} onChange={f("cedula")} placeholder="12345678" hasError={!!createErrors.cedula} /></FieldGroup>
+            <FieldGroup label="Teléfono *" error={createErrors.telefono}><StyledInput value={form.telefono} onChange={f("telefono")} placeholder="3001234567" hasError={!!createErrors.telefono} /></FieldGroup>
             <div style={{ gridColumn: "1 / -1" }}>
-              <FieldGroup label="Correo *"><StyledInput value={form.correo} onChange={f("correo")} type="email" placeholder="usuario@correo.com" required /></FieldGroup>
+              <FieldGroup label="Correo *" error={createErrors.correo}><StyledInput value={form.correo} onChange={f("correo")} type="email" placeholder="usuario@correo.com" hasError={!!createErrors.correo} /></FieldGroup>
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <FieldGroup label="Rol *">
@@ -437,11 +525,31 @@ export default function UsuariosPage() {
                 </StyledSelect>
               </FieldGroup>
             </div>
+            {/* Superadmin: pick institution for the new user (not needed for superadmin role) */}
+            {isSuperadmin && toApiRol(form.rol) !== "superadmin" && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <FieldGroup label="Institución *">
+                  <StyledSelect value={form.institucionIdSA} onChange={f("institucionIdSA")}>
+                    <option value="">Seleccionar institución...</option>
+                    {institutions.map(inst => (
+                      <option key={inst._id} value={inst._id}>{inst.nombre}</option>
+                    ))}
+                  </StyledSelect>
+                </FieldGroup>
+              </div>
+            )}
+            {/* Regular admin: warn if institution couldn't be resolved */}
+            {!isSuperadmin && !institucionId && (
+              <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 9, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)" }}>
+                <AlertCircle style={{ width: 14, height: 14, color: "#DC2626", flexShrink: 0 }} />
+                <p style={{ fontSize: 12.5, color: "#DC2626", margin: 0 }}>No se pudo cargar tu institución. Recarga la página antes de continuar.</p>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, padding: "10px 12px", borderRadius: 9, background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.15)" }}>
             <Hash style={{ width: 13, height: 13, color: "#0C6AC4", flexShrink: 0 }} />
             <p style={{ fontSize: 12.5, color: "#0C6AC4", margin: 0 }}>
-              Contraseña inicial: <strong>cédula + "Aa"</strong> (ej: {form.cedula || "12345678"}<strong>Aa</strong>). El usuario debe cambiarla al ingresar.
+              Contraseña inicial: <strong>"Edu" + cédula</strong> — ej: <strong>{"Edu" + (form.cedula || "12345678")}</strong>. El usuario debe cambiarla al ingresar.
             </p>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>

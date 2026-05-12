@@ -1,9 +1,8 @@
 /* ════════════════════════════════════════════════════════════════════
    EDUMON — AVATARS
-   Sistema de avatares con foto, iniciales, status y grupos.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── BASE ─────────────────────────────────────────────────────────────── */
+/* ── Base ─────────────────────────────────────────────────────────────── */
 .avatar {
   display: inline-flex;
   align-items: center;
@@ -20,8 +19,8 @@
   box-shadow: var(--shadow-sm);
   user-select: none;
   transition:
-    transform   var(--transition-spring),
-    box-shadow  var(--transition-base);
+    transform  var(--transition-spring),
+    box-shadow var(--transition-base);
 }
 
 .avatar img {
@@ -31,20 +30,20 @@
   display: block;
 }
 
-/* ── TAMAÑOS ──────────────────────────────────────────────────────────── */
-.avatar-2xs { width: 1.5rem;   height: 1.5rem;   font-size: var(--text-2xs); }
-.avatar-xs  { width: 2rem;     height: 2rem;     font-size: var(--text-xs); }
-.avatar-sm  { width: 2.5rem;   height: 2.5rem;   font-size: var(--text-xs); }
-.avatar-md  { width: 3rem;     height: 3rem;     font-size: var(--text-sm); }
-.avatar-lg  { width: 4rem;     height: 4rem;     font-size: var(--text-base); }
-.avatar-xl  { width: 5.5rem;   height: 5.5rem;   font-size: var(--text-xl); }
-.avatar-2xl { width: 7.5rem;   height: 7.5rem;   font-size: var(--text-3xl); }
+/* ── Sizes ────────────────────────────────────────────────────────────── */
+.avatar-2xs { width: 1.5rem;  height: 1.5rem;  font-size: var(--text-2xs); }
+.avatar-xs  { width: 2rem;    height: 2rem;    font-size: var(--text-xs); }
+.avatar-sm  { width: 2.5rem;  height: 2.5rem;  font-size: var(--text-xs); }
+.avatar-md  { width: 3rem;    height: 3rem;    font-size: var(--text-sm); }
+.avatar-lg  { width: 4rem;    height: 4rem;    font-size: var(--text-base); }
+.avatar-xl  { width: 5.5rem;  height: 5.5rem;  font-size: var(--text-xl); }
+.avatar-2xl { width: 7.5rem;  height: 7.5rem;  font-size: var(--text-3xl); }
 
-/* ── FORMA CUADRADA (para instituciones / cursos) ─────────────────────── */
+/* ── Square shape (institutions / courses) ────────────────────────────── */
 .avatar-square    { border-radius: var(--radius-lg); }
 .avatar-square-sm { border-radius: var(--radius-md); }
 
-/* ── STATUS DOT ───────────────────────────────────────────────────────── */
+/* ── Status dot ───────────────────────────────────────────────────────── */
 .avatar-status {
   position: absolute;
   bottom: 1px;
@@ -56,8 +55,8 @@
   flex-shrink: 0;
 }
 
-.avatar-xs  .avatar-status,
-.avatar-2xs .avatar-status { width: 0.5rem; height: 0.5rem; }
+.avatar-2xs .avatar-status,
+.avatar-xs  .avatar-status { width: 0.5rem;   height: 0.5rem; }
 .avatar-lg  .avatar-status,
 .avatar-xl  .avatar-status { width: 0.875rem; height: 0.875rem; bottom: 2px; right: 2px; }
 
@@ -67,7 +66,7 @@
 .avatar-status--away    { background: var(--color-warning); }
 .avatar-status--idle    { background: var(--color-warning-light); border-color: var(--color-warning); }
 
-/* ── COLOR PALETTE (avatares sin foto) ────────────────────────────────── */
+/* ── Color palette (no-photo avatars) ────────────────────────────────── */
 .avatar-color-0 { background: var(--edu-purple-50); color: var(--edu-purple-600); }
 .avatar-color-1 { background: var(--edu-pink-50);   color: var(--edu-pink-600); }
 .avatar-color-2 { background: var(--edu-cyan-50);   color: var(--edu-cyan-600); }
@@ -75,16 +74,14 @@
 .avatar-color-4 { background: var(--edu-yellow-50); color: var(--edu-yellow-700); }
 .avatar-color-5 { background: var(--color-primary-light); color: var(--color-primary); }
 
-/* ── BORDES DE ROL ────────────────────────────────────────────────────── */
-.avatar-role-superadmin  { border-color: var(--edu-pink-500, var(--color-secondary)); }
-.avatar-role-administrador { border-color: var(--edu-cyan-500, var(--color-accent)); }
-.avatar-role-docente     { border-color: var(--color-primary); }
-.avatar-role-estudiante  { border-color: var(--edu-green-500, var(--color-success)); }
+/* ── Role borders ─────────────────────────────────────────────────────── */
+.avatar-role-superadmin    { border-color: var(--edu-pink-500); }
+.avatar-role-administrador { border-color: var(--edu-cyan-500); }
+.avatar-role-docente       { border-color: var(--color-primary); }
+.avatar-role-estudiante    { border-color: var(--edu-green-500); }
 
-/* ── INTERACTIVO ──────────────────────────────────────────────────────── */
-.avatar-interactive {
-  cursor: pointer;
-}
+/* ── Interactive ──────────────────────────────────────────────────────── */
+.avatar-interactive { cursor: pointer; }
 .avatar-interactive:hover {
   transform: scale(1.06);
   box-shadow: var(--shadow-md);
@@ -95,7 +92,7 @@
   box-shadow: var(--shadow-focus);
 }
 
-/* ── GRUPO DE AVATARES (stack) ────────────────────────────────────────── */
+/* ── Group / stack ────────────────────────────────────────────────────── */
 .avatar-group {
   display: inline-flex;
   flex-direction: row-reverse;
@@ -105,18 +102,16 @@
 .avatar-group .avatar {
   margin-left: -0.625rem;
   transition:
-    transform   var(--transition-spring),
-    z-index     0ms;
+    transform var(--transition-spring),
+    z-index   0ms;
 }
-
 .avatar-group .avatar:first-child { margin-left: 0; }
-
 .avatar-group .avatar:hover {
   transform: translateY(-4px) scale(1.08);
   z-index: 10;
 }
 
-/* Contador "+N" en el grupo */
+/* "+N" counter inside group */
 .avatar-group-count {
   background: var(--color-surface-3);
   color: var(--color-text-muted);
@@ -125,7 +120,7 @@
   border: 2.5px solid var(--color-surface);
 }
 
-/* ── AVATAR CON BADGE ─────────────────────────────────────────────────── */
+/* ── Avatar with badge ────────────────────────────────────────────────── */
 .avatar-badge {
   position: absolute;
   top: -2px;

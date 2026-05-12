@@ -1,311 +1,541 @@
 // src/components/ui/CsvUploadModal.jsx
-// ─────────────────────────────────────────────────────────────────────────────
-// Modal reutilizable para carga masiva por CSV.
+//
+// Modal reutilizable para carga masiva de archivos CSV.
+// Diseñado para ser agnóstico al dominio: recibe onUpload (async fn que
+// acepta un File) y onDownloadTemplate (fn que descarga la plantilla).
 //
 // Props:
-//   isOpen          boolean           — visibilidad
-//   onClose         () => void        — cerrar
-//   title           string            — título del modal
-//   description     string            — descripción opcional
-//   columns         string[]          — columnas de la plantilla, ej: ["titulo","descripcion"]
-//   templateName    string            — nombre del archivo a descargar, ej: "plantilla_modulos"
-//   onUpload        (rows) => Promise — recibe el array de objetos parseados del CSV
-//   exampleRows     object[]          — filas de ejemplo en la plantilla (opcional)
-// ─────────────────────────────────────────────────────────────────────────────
-import { useState, useRef } from "react";
-import { Upload, Download, FileText, X, CheckCircle2, AlertCircle } from "lucide-react";
-import { Modal, Button } from "@/components";
+//   isOpen            {boolean}   — controla visibilidad
+//   onClose           {fn}        — cierra el modal
+//   onUpload          {async fn}  — recibe el File seleccionado; debe lanzar
+//                                   error con message en caso de fallo
+//   onDownloadTemplate{fn}        — dispara descarga de la plantilla CSV
+//   title             {string}    — título del modal (default: "Carga masiva CSV")
+//   description       {string}    — descripción opcional bajo el título
+//   templateLabel     {string}    — texto del botón de plantilla
+//   acceptedColumns   {string[]}  — lista de columnas esperadas para hint visual
+//   maxFileSizeMB     {number}    — límite en MB (default: 5)
+
+import React, { useRef, useState, useCallback, useEffect } from "react";
+
+const ICONS = {
+  upload: (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  ),
+  file: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  ),
+  download: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  ),
+  close: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  check: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  error: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  ),
+  trash: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  ),
+};
+
+// ─── Estados del proceso ───────────────────────────────────────────────────
+const STATUS = { IDLE: "idle", UPLOADING: "uploading", SUCCESS: "success", ERROR: "error" };
 
 export default function CsvUploadModal({
   isOpen,
   onClose,
-  title = "Carga masiva por CSV",
-  description,
-  columns = [],
-  templateName = "plantilla",
   onUpload,
-  exampleRows = [],
+  onDownloadTemplate,
+  title = "Carga masiva CSV",
+  description,
+  templateLabel = "Descargar plantilla",
+  acceptedColumns = [],
+  maxFileSizeMB = 5,
 }) {
-  const [file, setFile]           = useState(null);
-  const [rows, setRows]           = useState([]);
-  const [errors, setErrors]       = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [result, setResult]       = useState(null);
-  const fileRef = useRef(null);
+  const inputRef = useRef(null);
+  const [file, setFile] = useState(null);
+  const [dragging, setDragging] = useState(false);
+  const [status, setStatus] = useState(STATUS.IDLE);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [result, setResult] = useState(null); // { total, exitosos, fallidos, detalle[] }
 
-  // ── Descarga plantilla CSV ────────────────────────────────────────────────
-  const downloadTemplate = () => {
-    const header = columns.join(",");
-    const examples = exampleRows.length > 0
-      ? exampleRows.map(row => columns.map(c => `"${row[c] ?? ""}"`).join(",")).join("\n")
-      : columns.map(() => '""').join(",");
-    const csv = `${header}\n${examples}`;
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
-    a.download = `${templateName}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // ── Parseo del CSV ────────────────────────────────────────────────────────
-  const parseCSV = (text) => {
-    const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 2) return { rows: [], errors: ["El archivo no tiene datos."] };
-
-    const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
-    const missing = columns.filter(c => !headers.includes(c.toLowerCase()));
-    if (missing.length > 0) {
-      return { rows: [], errors: [`Columnas faltantes: ${missing.join(", ")}`] };
+  // Limpiar estado al cerrar
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeout(() => {
+        setFile(null);
+        setStatus(STATUS.IDLE);
+        setErrorMsg("");
+        setResult(null);
+        setDragging(false);
+      }, 300);
     }
+  }, [isOpen]);
 
-    const parsed = [];
-    const errs   = [];
+  const validateFile = useCallback((f) => {
+    if (!f) return "No se seleccionó ningún archivo.";
+    if (!f.name.endsWith(".csv")) return "El archivo debe tener extensión .csv";
+    if (f.size > maxFileSizeMB * 1024 * 1024)
+      return `El archivo supera el límite de ${maxFileSizeMB} MB.`;
+    return null;
+  }, [maxFileSizeMB]);
 
-    lines.slice(1).forEach((line, i) => {
-      if (!line.trim()) return;
-      const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
-      const row  = {};
-      headers.forEach((h, idx) => { row[h] = vals[idx] ?? ""; });
-
-      const emptyRequired = columns.filter(c => !row[c.toLowerCase()]?.trim());
-      if (emptyRequired.length > 0) {
-        errs.push(`Fila ${i + 2}: faltan valores en ${emptyRequired.join(", ")}`);
-      } else {
-        parsed.push(row);
-      }
-    });
-
-    return { rows: parsed, errors: errs };
-  };
-
-  const handleFileChange = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (!f.name.endsWith(".csv")) {
-      setErrors(["Solo se aceptan archivos .csv"]);
-      setFile(null);
-      setRows([]);
+  const handleFileChange = useCallback((f) => {
+    const err = validateFile(f);
+    if (err) {
+      setErrorMsg(err);
+      setStatus(STATUS.ERROR);
       return;
     }
     setFile(f);
+    setErrorMsg("");
+    setStatus(STATUS.IDLE);
     setResult(null);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const { rows: r, errors: er } = parseCSV(ev.target.result);
-      setRows(r);
-      setErrors(er);
-    };
-    reader.readAsText(f);
-  };
+  }, [validateFile]);
 
-  const handleUpload = async () => {
-    if (!rows.length || !onUpload) return;
-    setUploading(true);
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setDragging(false);
+    const dropped = e.dataTransfer?.files?.[0];
+    if (dropped) handleFileChange(dropped);
+  }, [handleFileChange]);
+
+  const handleSubmit = async () => {
+    if (!file) return;
+    setStatus(STATUS.UPLOADING);
+    setErrorMsg("");
     try {
-      const res = await onUpload(rows);
-      setResult(res ?? { ok: rows.length, failed: 0, messages: [] });
+      const res = await onUpload(file);
+      setResult(res ?? null);
+      setStatus(STATUS.SUCCESS);
     } catch (err) {
-      setResult({ ok: 0, failed: rows.length, messages: [err.message ?? "Error al procesar"] });
-    } finally {
-      setUploading(false);
+      setErrorMsg(err?.message ?? "Error al procesar el archivo.");
+      setStatus(STATUS.ERROR);
     }
   };
 
-  const handleClose = () => {
+  const handleReset = () => {
     setFile(null);
-    setRows([]);
-    setErrors([]);
+    setStatus(STATUS.IDLE);
+    setErrorMsg("");
     setResult(null);
-    onClose();
+    if (inputRef.current) inputRef.current.value = "";
   };
 
-  const canUpload = rows.length > 0 && errors.length === 0 && !result;
+  if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={title} description={description} size="md">
+    <>
+      {/* ── Overlay ── */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(4px)",
+          zIndex: 1000,
+          animation: "fadeIn 0.18s ease",
+        }}
+      />
 
-      {/* ── Paso 1: Descargar plantilla ── */}
-      <div style={{
-        background: "var(--color-bg)", borderRadius: 10,
-        border: "1px solid var(--color-border)", padding: "14px 16px",
-        marginBottom: 16,
-      }}>
-        <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-text)", margin: "0 0 4px" }}>
-          1. Descarga la plantilla
-        </p>
-        <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "0 0 10px" }}>
-          Columnas requeridas: <strong>{columns.join(", ")}</strong>
-        </p>
-        <Button variant="secondary" size="sm" onClick={downloadTemplate}>
-          <Download style={{ width: 13, height: 13 }} /> Descargar plantilla
-        </Button>
-      </div>
+      {/* ── Panel ── */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="csv-modal-title"
+        style={{
+          position: "fixed",
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 1001,
+          width: "min(520px, 94vw)",
+          background: "var(--color-background-primary, #fff)",
+          borderRadius: 16,
+          boxShadow: "0 24px 64px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)",
+          overflow: "hidden",
+          animation: "slideUp 0.22s cubic-bezier(.25,.8,.25,1)",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          padding: "20px 24px 16px",
+          borderBottom: "0.5px solid var(--color-border-tertiary, #e5e7eb)",
+          display: "flex", alignItems: "flex-start", gap: 12,
+        }}>
+          <div style={{ flex: 1 }}>
+            <h2
+              id="csv-modal-title"
+              style={{ margin: 0, fontSize: 16, fontWeight: 600,
+                color: "var(--color-text-primary, #111)" }}
+            >
+              {title}
+            </h2>
+            {description && (
+              <p style={{ margin: "4px 0 0", fontSize: 13,
+                color: "var(--color-text-secondary, #6b7280)", lineHeight: 1.5 }}>
+                {description}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Cerrar"
+            style={{
+              background: "none", border: "none", cursor: "pointer", padding: 4,
+              color: "var(--color-text-secondary, #9ca3af)",
+              borderRadius: 6, display: "flex", alignItems: "center",
+              transition: "color 0.15s",
+            }}
+          >
+            {ICONS.close}
+          </button>
+        </div>
 
-      {/* ── Paso 2: Subir archivo ── */}
-      <div style={{
-        background: "var(--color-bg)", borderRadius: 10,
-        border: "1px solid var(--color-border)", padding: "14px 16px",
-        marginBottom: 16,
-      }}>
-        <p style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-text)", margin: "0 0 10px" }}>
-          2. Sube tu archivo CSV
-        </p>
+        {/* Body */}
+        <div style={{ padding: "20px 24px 24px" }}>
 
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv"
-          style={{ display: "none" }}
-          onChange={handleFileChange}
-        />
-
-        <div
-          onClick={() => fileRef.current?.click()}
-          style={{
-            border: `2px dashed ${file ? "var(--color-primary)" : "var(--color-border)"}`,
-            borderRadius: 10, padding: "24px 16px", textAlign: "center",
-            cursor: "pointer", transition: "border-color 150ms",
-            background: file ? "var(--color-primary-light)" : "transparent",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--color-primary)")}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = file ? "var(--color-primary)" : "var(--color-border)")}
-        >
-          {file ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <FileText style={{ width: 18, height: 18, color: "var(--color-primary)" }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-primary)" }}>{file.name}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label="Quitar archivo seleccionado"
-                onClick={e => {
-                  e.stopPropagation();
-                  setFile(null);
-                  setRows([]);
-                  setErrors([]);
-                  setResult(null);
-                  fileRef.current.value = "";
+          {/* Plantilla + columnas hint */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 16, flexWrap: "wrap", gap: 10,
+          }}>
+            {acceptedColumns.length > 0 && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {acceptedColumns.map((col) => (
+                  <span key={col} style={{
+                    fontSize: 11, padding: "2px 8px", borderRadius: 20,
+                    background: "var(--color-background-secondary, #f3f4f6)",
+                    color: "var(--color-text-secondary, #6b7280)",
+                    fontFamily: "monospace", fontWeight: 500,
+                  }}>
+                    {col}
+                  </span>
+                ))}
+              </div>
+            )}
+            {onDownloadTemplate && (
+              <button
+                onClick={onDownloadTemplate}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "6px 12px", borderRadius: 8,
+                  border: "1px solid var(--color-border-tertiary, #e5e7eb)",
+                  background: "var(--color-background-primary, #fff)",
+                  color: "var(--color-text-info, #2563eb)",
+                  fontSize: 12, fontWeight: 500, cursor: "pointer",
+                  transition: "background 0.15s",
+                  flexShrink: 0,
                 }}
               >
-                <X style={{ width: 14, height: 14 }} />
-              </Button>
+                {ICONS.download}
+                {templateLabel}
+              </button>
+            )}
+          </div>
+
+          {/* Drop zone */}
+          {status !== STATUS.SUCCESS && (
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => inputRef.current?.click()}
+              style={{
+                border: `2px dashed ${dragging
+                  ? "var(--color-text-info, #2563eb)"
+                  : file
+                    ? "var(--color-text-info, #2563eb)"
+                    : "var(--color-border-tertiary, #d1d5db)"}`,
+                borderRadius: 12,
+                padding: "28px 20px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: dragging
+                  ? "var(--color-background-info, #eff6ff)"
+                  : file
+                    ? "var(--color-background-info, #eff6ff)"
+                    : "var(--color-background-secondary, #f9fafb)",
+                transition: "all 0.18s ease",
+                position: "relative",
+              }}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".csv"
+                style={{ display: "none" }}
+                onChange={(e) => handleFileChange(e.target.files?.[0])}
+              />
+
+              {file ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                  <div style={{ color: "var(--color-text-info, #2563eb)" }}>{ICONS.file}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 500,
+                      color: "var(--color-text-primary, #111)", maxWidth: 260,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {file.name}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleReset(); }}
+                      aria-label="Quitar archivo"
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "var(--color-text-secondary, #9ca3af)", padding: 2,
+                        display: "flex", alignItems: "center", borderRadius: 4,
+                      }}
+                    >
+                      {ICONS.trash}
+                    </button>
+                  </div>
+                  <span style={{ fontSize: 12, color: "var(--color-text-secondary, #9ca3af)" }}>
+                    {(file.size / 1024).toFixed(1)} KB · Haz clic para cambiar
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                  <div style={{ color: "var(--color-text-secondary, #9ca3af)" }}>{ICONS.upload}</div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 500,
+                      color: "var(--color-text-primary, #374151)" }}>
+                      Arrastra tu archivo aquí
+                    </p>
+                    <p style={{ margin: "4px 0 0", fontSize: 12,
+                      color: "var(--color-text-secondary, #9ca3af)" }}>
+                      o haz clic para seleccionar · Solo .csv · Máx {maxFileSizeMB} MB
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <>
-              <Upload style={{ width: 24, height: 24, color: "var(--color-text-muted)", margin: "0 auto 8px" }} />
-              <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
-                Haz clic para seleccionar un archivo <strong>.csv</strong>
-              </p>
-            </>
+          )}
+
+          {/* Estado: Cargando */}
+          {status === STATUS.UPLOADING && (
+            <div style={{
+              marginTop: 16, padding: "14px 16px",
+              background: "var(--color-background-secondary, #f3f4f6)",
+              borderRadius: 10, display: "flex", alignItems: "center", gap: 12,
+            }}>
+              <div style={{
+                width: 18, height: 18, borderRadius: "50%",
+                border: "2.5px solid var(--color-text-info, #2563eb)",
+                borderTopColor: "transparent",
+                animation: "spin 0.7s linear infinite",
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 13, color: "var(--color-text-secondary, #6b7280)" }}>
+                Procesando el archivo…
+              </span>
+            </div>
+          )}
+
+          {/* Estado: Error */}
+          {status === STATUS.ERROR && errorMsg && (
+            <div style={{
+              marginTop: 16, padding: "12px 14px",
+              background: "var(--color-background-error, #fef2f2)",
+              border: "1px solid var(--color-border-error, #fca5a5)",
+              borderRadius: 10, display: "flex", alignItems: "flex-start", gap: 10,
+            }}>
+              <span style={{ color: "var(--color-text-error, #dc2626)", flexShrink: 0, marginTop: 1 }}>
+                {ICONS.error}
+              </span>
+              <span style={{ fontSize: 13, color: "var(--color-text-error, #b91c1c)", lineHeight: 1.5 }}>
+                {errorMsg}
+              </span>
+            </div>
+          )}
+
+          {/* Estado: Éxito con resumen */}
+          {status === STATUS.SUCCESS && (
+            <SuccessPanel result={result} onClose={onClose} onReset={handleReset} />
+          )}
+
+          {/* Footer acciones */}
+          {status !== STATUS.SUCCESS && (
+            <div style={{
+              marginTop: 20, display: "flex",
+              justifyContent: "flex-end", gap: 10,
+            }}>
+              <button
+                onClick={onClose}
+                style={{
+                  padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  border: "1px solid var(--color-border-tertiary, #e5e7eb)",
+                  background: "var(--color-background-primary, #fff)",
+                  color: "var(--color-text-secondary, #6b7280)",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={!file || status === STATUS.UPLOADING}
+                style={{
+                  padding: "9px 20px", borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  border: "none",
+                  background: (!file || status === STATUS.UPLOADING)
+                    ? "var(--color-border-tertiary, #d1d5db)"
+                    : "var(--color-text-info, #2563eb)",
+                  color: (!file || status === STATUS.UPLOADING) ? "#9ca3af" : "white",
+                  cursor: (!file || status === STATUS.UPLOADING) ? "not-allowed" : "pointer",
+                  transition: "background 0.15s",
+                }}
+              >
+                {status === STATUS.UPLOADING ? "Subiendo…" : "Cargar archivo"}
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* ── Errores de validación ── */}
-      {errors.length > 0 && (
+      <style>{`
+        @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes slideUp { from { opacity: 0; transform: translate(-50%, calc(-50% + 16px)) }
+                             to   { opacity: 1; transform: translate(-50%, -50%) } }
+        @keyframes spin    { to { transform: rotate(360deg) } }
+      `}</style>
+    </>
+  );
+}
+
+// ─── Panel de resultado exitoso ───────────────────────────────────────────────
+function SuccessPanel({ result, onClose, onReset }) {
+  const total     = result?.total     ?? result?.procesados ?? "—";
+  const exitosos  = result?.exitosos  ?? result?.creados    ?? "—";
+  const fallidos  = result?.fallidos  ?? result?.errores    ?? 0;
+  const detalle   = result?.detalle   ?? result?.erroresDetalle ?? [];
+
+  return (
+    <div>
+      <div style={{
+        padding: "20px", borderRadius: 12, textAlign: "center",
+        background: "var(--color-background-success, #f0fdf4)",
+        border: "1px solid var(--color-border-success, #86efac)",
+        marginBottom: detalle.length ? 16 : 0,
+      }}>
         <div style={{
-          background: "var(--color-error-light)", border: "1px solid var(--color-error)",
-          borderRadius: 10, padding: "12px 14px", marginBottom: 16,
+          width: 44, height: 44, borderRadius: "50%",
+          background: "var(--color-text-success, #16a34a)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 12px", color: "white",
         }}>
-          {errors.map((err, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: i < errors.length - 1 ? 4 : 0 }}>
-              <AlertCircle style={{ width: 13, height: 13, color: "var(--color-error)", flexShrink: 0, marginTop: 2 }} />
-              <span style={{ fontSize: 12, color: "var(--color-error)" }}>{err}</span>
+          {ICONS.check}
+        </div>
+        <p style={{ margin: "0 0 10px", fontSize: 15, fontWeight: 600,
+          color: "var(--color-text-success, #15803d)" }}>
+          Carga completada
+        </p>
+        <div style={{ display: "flex", justifyContent: "center", gap: 20 }}>
+          {[
+            { label: "Total",     value: total    },
+            { label: "Creados",   value: exitosos, highlight: true },
+            { label: "Con error", value: fallidos, warn: fallidos > 0 },
+          ].map(({ label, value, highlight, warn }) => (
+            <div key={label} style={{ textAlign: "center" }}>
+              <div style={{
+                fontSize: 22, fontWeight: 700,
+                color: warn && value > 0
+                  ? "var(--color-text-error, #dc2626)"
+                  : highlight
+                    ? "var(--color-text-success, #16a34a)"
+                    : "var(--color-text-primary, #111)",
+              }}>
+                {value}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--color-text-secondary, #9ca3af)",
+                marginTop: 2 }}>
+                {label}
+              </div>
             </div>
           ))}
         </div>
-      )}
-
-      {/* ── Preview de filas válidas ── */}
-      {rows.length > 0 && errors.length === 0 && !result && (
-        <div style={{
-          background: "var(--color-bg)", borderRadius: 10,
-          border: "1px solid var(--color-border)", marginBottom: 16, overflow: "hidden",
-        }}>
-          <div style={{
-            padding: "10px 14px", borderBottom: "1px solid var(--color-border)",
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-          }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-text)" }}>
-              Vista previa
-            </span>
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              {rows.length} fila{rows.length !== 1 ? "s" : ""} válida{rows.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-          <div style={{ maxHeight: 180, overflowY: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-              <thead>
-                <tr style={{ background: "var(--color-surface)" }}>
-                  {columns.map(c => (
-                    <th key={c} style={{
-                      padding: "8px 12px", textAlign: "left", fontWeight: 700,
-                      color: "var(--color-text-muted)", textTransform: "uppercase",
-                      fontSize: 11, letterSpacing: "0.05em",
-                      borderBottom: "1px solid var(--color-border)",
-                    }}>
-                      {c}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.slice(0, 10).map((row, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                    {columns.map(c => (
-                      <td key={c} style={{ padding: "8px 12px", color: "var(--color-text)" }}>
-                        {row[c.toLowerCase()] ?? "—"}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {rows.length > 10 && (
-              <p style={{ padding: "8px 12px", fontSize: 11.5, color: "var(--color-text-muted)", margin: 0 }}>
-                ...y {rows.length - 10} fila{rows.length - 10 !== 1 ? "s" : ""} más
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Resultado ── */}
-      {result && (
-        <div style={{
-          background: result.failed === 0 ? "var(--color-success-light)" : "var(--color-warning-light)",
-          border: `1px solid ${result.failed === 0 ? "var(--color-success)" : "var(--color-warning)"}`,
-          borderRadius: 10, padding: "12px 14px", marginBottom: 16,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: result.messages?.length ? 8 : 0 }}>
-            <CheckCircle2 style={{ width: 15, height: 15, color: result.failed === 0 ? "var(--color-success)" : "var(--color-warning)" }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>
-              {result.ok} creado{result.ok !== 1 ? "s" : ""} correctamente
-              {result.failed > 0 && ` · ${result.failed} con error`}
-            </span>
-          </div>
-          {result.messages?.map((m, i) => (
-            <p key={i} style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "2px 0 0 23px" }}>{m}</p>
-          ))}
-        </div>
-      )}
-
-      {/* ── Acciones ── */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-        <Button variant="ghost" type="button" onClick={handleClose}>
-          {result ? "Cerrar" : "Cancelar"}
-        </Button>
-        {canUpload && (
-          <Button variant="primary" type="button" disabled={uploading} onClick={handleUpload}>
-            <Upload style={{ width: 13, height: 13 }} />
-            {uploading ? "Procesando..." : `Crear ${rows.length} módulo${rows.length !== 1 ? "s" : ""}`}
-          </Button>
-        )}
       </div>
 
-    </Modal>
+      {/* Detalle de errores si los hay */}
+      {detalle.length > 0 && (
+        <details style={{ marginBottom: 16 }}>
+          <summary style={{
+            cursor: "pointer", fontSize: 13, fontWeight: 500,
+            color: "var(--color-text-error, #dc2626)",
+            padding: "8px 0", userSelect: "none",
+          }}>
+            Ver filas con errores ({detalle.length})
+          </summary>
+          <ul style={{
+            margin: "8px 0 0", padding: 0, listStyle: "none",
+            maxHeight: 160, overflowY: "auto",
+            border: "1px solid var(--color-border-error, #fca5a5)",
+            borderRadius: 8, fontSize: 12,
+          }}>
+            {detalle.map((d, i) => (
+              <li key={i} style={{
+                padding: "8px 12px",
+                borderBottom: i < detalle.length - 1
+                  ? "0.5px solid var(--color-border-tertiary, #e5e7eb)" : "none",
+                color: "var(--color-text-primary, #374151)",
+              }}>
+                <span style={{ fontWeight: 500 }}>
+                  Fila {d.fila ?? d.row ?? i + 2}:
+                </span>{" "}
+                {d.error ?? d.mensaje ?? "Error desconocido"}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+        {fallidos > 0 && (
+          <button
+            onClick={onReset}
+            style={{
+              padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 500,
+              border: "1px solid var(--color-border-tertiary, #e5e7eb)",
+              background: "var(--color-background-primary, #fff)",
+              color: "var(--color-text-secondary, #6b7280)", cursor: "pointer",
+            }}
+          >
+            Subir otro archivo
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          style={{
+            padding: "9px 20px", borderRadius: 8, fontSize: 13, fontWeight: 500,
+            border: "none",
+            background: "var(--color-text-info, #2563eb)",
+            color: "white", cursor: "pointer",
+          }}
+        >
+          Listo
+        </button>
+      </div>
+    </div>
   );
 }

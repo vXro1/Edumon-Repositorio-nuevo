@@ -7,7 +7,25 @@
       "Bash(node --input-type=module --eval ' *)",
       "Bash(Get-Content -Path \"src\\\\styles\\\\components\\\\modals.css\" -Raw)",
       "PowerShell($path = \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\\\\src\\\\styles\\\\components\"; Get-ChildItem -Path $path -File -Name | ForEach-Object { $fp = Join-Path $path $_; [PSCustomObject]@{ File=$_; Size=\\(Get-Item $fp\\).Length } })",
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\" -Force)"
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\" -Force)",
+      "Bash(Get-ChildItem -Path . -Directory)",
+      "Bash(cd \"/c/Users/Personal/OneDrive/Documentos/universidad/Proyecto Edumon/EDUMON WEB\" && ls -la src/)",
+      "Read(//c/c/Users/Personal/OneDrive/Documentos/universidad/Proyecto Edumon/EDUMON WEB/**)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\" -Recurse -Force)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\\\\src\\\\features\" -Directory | ForEach-Object { $_.Name })",
+      "Bash(xargs grep -l \"avatarUrl\\\\|avatarSelector\\\\|avatar\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\" -Recurse -Filter \"*.jsx\" -o FullName)",
+      "Bash(Select-Object -First 30)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 50 FullName)",
+      "Bash(npm install *)",
+      "Bash(node -e \"const icons = require\\('lucide-react'\\); const names = Object.keys\\(icons\\).filter\\(k => k.toLowerCase\\(\\).includes\\('panel'\\) || k.toLowerCase\\(\\).includes\\('sidebar'\\) || k.toLowerCase\\(\\).includes\\('layout'\\)\\); console.log\\(names.join\\(', '\\)\\)\")",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\Personal\\\\OneDrive\\\\Documentos\\\\universidad\\\\Proyecto Edumon\\\\EDUMON WEB\"; $env:PATH = \"$env:PATH;$PWD\\\\node_modules\\\\.bin\"; npm run build 2>&1)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Personal\\.claude\\projects\\c--Users-Personal-OneDrive-Documentos-universidad-Proyecto-Edumon-EDUMON-WEB\\memory"
     ]
   }
 }

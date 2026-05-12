@@ -2,29 +2,26 @@
 // ROL: Administrador / Docente — gestión de cursos
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
-  Layers,
-  Plus,
-  Search,
-  Edit2,
-  Archive,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
-  UserPlus,
-  UserMinus,
-  Upload,
+  Layers, Plus, Search, Edit2, Archive, Users,
+  ChevronLeft, ChevronRight, AlertCircle,
+  UserPlus, UserMinus, Upload, ExternalLink,
 } from "lucide-react";
 
 import letrasImg from "@/assets/img/letras.png";
 
-import { Modal, Button, UserAvatar, Toast } from "@/components";
+// ✅ Todos los componentes desde el index reutilizable
+import {
+  Modal, Button, UserAvatar, Toast,
+  Input, Textarea, Select,
+} from "@/components";
 
 import {
   cursosGetAll,
   cursosGetMine,
+  cursosGetById,
   cursosCreate,
   cursosUpdate,
   cursosDelete,
@@ -34,32 +31,29 @@ import {
   usersGetAll,
 } from "@/lib/apiClient";
 
-import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAuth }   from "@/features/auth/hooks/useAuth";
 import { useSearch } from "@/context/SearchContext";
-
 import { normalizeCurso, normalizeUser } from "@/lib/normalizers";
-import { humanizeError } from "@/utils/humanizeError";
+import { humanizeError }                 from "@/utils/humanizeError";
+import { normalizeRole, ROLES }          from "@/security/roleMatrix";
+
 const LIMIT = 12;
 
-const CARD_COLORS = [
-  "#0C6AC4","#6366F1","#16A34A","#D97706",
-  "#DC2626","#8B5CF6","#0891B2","#EC4899",
-];
-
 const ESTADO_META = {
-  activo:    { label: "Activo",    color: "#16A34A", bg: "rgba(22,163,74,0.1)" },
-  archivado: { label: "Archivado", color: "#D97706", bg: "rgba(217,119,6,0.1)" },
+  activo:    { label: "Activo",    color: "#16A34A", bg: "rgba(22,163,74,0.1)"  },
+  archivado: { label: "Archivado", color: "#D97706", bg: "rgba(217,119,6,0.1)"  },
 };
 
-/* ── Micro-components ─────────────────────────────────────────── */
+/* ── Skeleton ─────────────────────────────────────────────────── */
 function Sk({ h = 16, w = "100%", r = 7 }) {
   return (
-    <div className="animate-pulse" style={{
-      height: h, width: w, borderRadius: r, background: "var(--color-border)",
-    }} />
+    <div className="animate-pulse"
+      style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }}
+    />
   );
 }
 
+/* ── EstadoBadge ──────────────────────────────────────────────── */
 function EstadoBadge({ estado }) {
   const m = ESTADO_META[estado] ?? { label: estado, color: "#6B7280", bg: "rgba(107,114,128,0.1)" };
   return (
@@ -74,6 +68,7 @@ function EstadoBadge({ estado }) {
   );
 }
 
+/* ── Field wrapper ────────────────────────────────────────────── */
 function Field({ label, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
@@ -89,69 +84,34 @@ function Field({ label, children }) {
   );
 }
 
-function StInput({ style, ...props }) {
-  return (
-    <input
-      {...props}
-      style={{
-        width: "100%", padding: "9px 12px", borderRadius: 8,
-        border: "1.5px solid var(--color-border)", background: "var(--color-bg)",
-        color: "var(--color-text)", fontSize: 13.5, outline: "none",
-        transition: "border-color 0.15s", ...style,
-      }}
-      onFocus={e => (e.target.style.borderColor = "#0C6AC4")}
-      onBlur={e => (e.target.style.borderColor = "var(--color-border)")}
-    />
-  );
+/* ── Helper: nombre del docente (cubre todos los shapes del backend) ── */
+function getDocenteNombre(curso) {
+  if (curso?.docente && typeof curso.docente === "object") {
+    const full = [curso.docente.nombre, curso.docente.apellido].filter(Boolean).join(" ").trim();
+    if (full) return full;
+  }
+  if (curso?.docenteNombre) return curso.docenteNombre;
+  return "Sin docente";
 }
 
-function StTextarea({ ...props }) {
-  return (
-    <textarea
-      {...props}
-      style={{
-        width: "100%", padding: "9px 12px", borderRadius: 8,
-        border: "1.5px solid var(--color-border)", background: "var(--color-bg)",
-        color: "var(--color-text)", fontSize: 13.5, outline: "none",
-        resize: "vertical", fontFamily: "inherit", transition: "border-color 0.15s",
-      }}
-      onFocus={e => (e.target.style.borderColor = "#0C6AC4")}
-      onBlur={e => (e.target.style.borderColor = "var(--color-border)")}
-    />
-  );
-}
-
-function StSelect({ children, ...props }) {
-  return (
-    <select
-      {...props}
-      style={{
-        width: "100%", padding: "9px 12px", borderRadius: 8,
-        border: "1.5px solid var(--color-border)", background: "var(--color-bg)",
-        color: "var(--color-text)", fontSize: 13.5, outline: "none", cursor: "pointer",
-      }}
-      onFocus={e => (e.target.style.borderColor = "#0C6AC4")}
-      onBlur={e => (e.target.style.borderColor = "var(--color-border)")}
-    >
-      {children}
-    </select>
-  );
-}
-
-/* ── Main page ────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════ */
 export default function CursosPage() {
-  const { user } = useAuth();
+  const { user }  = useAuth();
+  const navigate  = useNavigate();
   const { registerSearchHandler } = useSearch();
-  const isDocente = user?.rol === "docente";
 
-  const [cursos,  setCursos]  = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page,    setPage]    = useState(1);
-  const [total,   setTotal]   = useState(0);
-  const [search,  setSearch]  = useState("");
+  const rol       = normalizeRole(user?.rol);
+  const isDocente = rol === ROLES.DOCENTE;
+
+  /* ── State ─────────────────────────────────────────────────── */
+  const [cursos,    setCursos]    = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [page,      setPage]      = useState(1);
+  const [total,     setTotal]     = useState(0);
+  const [search,    setSearch]    = useState("");
   const [debSearch, setDebSearch] = useState("");
-  const [toast,   setToast]   = useState({ msg: "", type: "success" });
-  const [saving,  setSaving]  = useState(false);
+  const [toast,     setToast]     = useState({ msg: "", type: "success" });
+  const [saving,    setSaving]    = useState(false);
 
   // Modals
   const [createOpen,   setCreateOpen]   = useState(false);
@@ -161,63 +121,101 @@ export default function CursosPage() {
   const [addPartOpen,  setAddPartOpen]  = useState(false);
   const [selected,     setSelected]     = useState(null);
 
-  // Docentes for selector
+  // Docentes para selector
   const [docentes, setDocentes] = useState([]);
 
-  // Participants
+  // Participantes
   const [parts,        setParts]        = useState([]);
   const [partsLoading, setPartsLoading] = useState(false);
 
   // Forms
-  const [createForm,     setCreateForm]     = useState({ nombre: "", descripcion: "", docenteId: "" });
+  const [createForm,      setCreateForm]      = useState({ nombre: "", descripcion: "", docenteId: "" });
   const [createCoverFile, setCreateCoverFile] = useState(null);
   const createCoverRef = useRef(null);
-  const [editForm,       setEditForm]       = useState({ nombre: "", descripcion: "" });
-  const [editCoverFile,   setEditCoverFile]   = useState(null);
-  const editCoverRef = useRef(null);
-  const [addForm,        setAddForm]        = useState({ nombre: "", apellido: "", cedula: "", telefono: "" });
 
+  const [editForm,      setEditForm]      = useState({ nombre: "", descripcion: "" });
+  const [editCoverFile, setEditCoverFile] = useState(null);
+  const editCoverRef = useRef(null);
+
+  const [addForm, setAddForm] = useState({ nombre: "", apellido: "", cedula: "", telefono: "" });
+
+  /* ── Helpers ───────────────────────────────────────────────── */
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast({ msg: "", type: "success" }), 3500);
   };
 
-  // Debounce search
+  const goToCurso = (c) => navigate(`/cursos/${c._id}`);
+
+  /* ── Debounce ──────────────────────────────────────────────── */
   useEffect(() => {
     const t = setTimeout(() => setDebSearch(search), 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [debSearch]);
+  // Reset to page 1 when search clears so normal pagination restarts correctly
+  useEffect(() => { if (!debSearch) setPage(1); }, [debSearch]);
 
+  /* ── Carga de cursos con enriquecimiento de docente ─────────── */
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
+      // When searching, fetch all items so the client-side filter is complete
+      const params = debSearch ? { page: 1, limit: 1000 } : { page, limit: LIMIT };
       const res = isDocente
-        ? await cursosGetMine({ page, limit: LIMIT })
-        : await cursosGetAll({ page, limit: LIMIT });
-      setCursos((res.cursos ?? res.data ?? []).map(normalizeCurso));
-      setTotal(res.pagination?.total ?? res.cursos?.length ?? 0);
-    } catch { notify("Error al cargar cursos", "error"); }
-    finally { setLoading(false); }
-  }, [page, isDocente, user]);
+        ? await cursosGetMine(params)
+        : await cursosGetAll(params);
+
+      const raw = (res.cursos ?? res.data ?? []).map(normalizeCurso);
+
+      // Si el docente viene sin nombre (solo ID o ausente), enriquecer con cursosGetById
+      const enriched = await Promise.all(
+        raw.map(async (c) => {
+          const needsEnrich =
+            !c.docente ||
+            typeof c.docente === "string" ||
+            !c.docente?.nombre;
+          if (needsEnrich) {
+            try {
+              const full = await cursosGetById(c._id);
+              return normalizeCurso(full.curso ?? full);
+            } catch {
+              return c;
+            }
+          }
+          return c;
+        })
+      );
+
+      setCursos(enriched);
+      setTotal(res.pagination?.total ?? raw.length);
+    } catch {
+      notify("Error al cargar cursos", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, debSearch, isDocente, user]);
 
   useEffect(() => { load(); }, [load]);
 
-  // Registrar búsqueda global
+  /* ── Búsqueda global ───────────────────────────────────────── */
   useEffect(() => {
     const unregister = registerSearchHandler("cursos", (q) => {
       const query = q.toLowerCase();
-      const filtered = cursos.filter(c =>
-        c.nombre?.toLowerCase().includes(query) ||
-        c.descripcion?.toLowerCase().includes(query)
-      );
-      return { cursos: filtered.slice(0, 5) }; // Limitar a 5 resultados
+      return {
+        cursos: cursos
+          .filter(c =>
+            c.nombre?.toLowerCase().includes(query) ||
+            c.descripcion?.toLowerCase().includes(query)
+          )
+          .slice(0, 5),
+      };
     });
     return unregister;
   }, [cursos, registerSearchHandler]);
 
+  /* ── Cargar docentes para selector ────────────────────────── */
   useEffect(() => {
     if (!user || isDocente) return;
     usersGetAll({ rol: "docente", limit: 100 })
@@ -225,33 +223,40 @@ export default function CursosPage() {
       .catch(() => {});
   }, [user, isDocente]);
 
+  /* ── Participantes ─────────────────────────────────────────── */
   const loadParts = useCallback(async (id) => {
     setPartsLoading(true);
     try {
       const res = await cursosGetParticipantes(id, { limit: 100 });
-      setParts((res.participantes ?? res.data ?? []).map(p => ({ ...p, usuario: normalizeUser(p.usuario ?? p) })));
-    } catch { notify("Error al cargar participantes", "error"); }
-    finally { setPartsLoading(false); }
+      setParts(
+        (res.participantes ?? res.data ?? []).map(p => ({
+          ...p,
+          usuario: normalizeUser(p.usuario ?? p),
+        }))
+      );
+    } catch {
+      notify("Error al cargar participantes", "error");
+    } finally {
+      setPartsLoading(false);
+    }
   }, []);
 
+  /* ── Filtro local ──────────────────────────────────────────── */
   const filtered = debSearch
     ? cursos.filter(c =>
         c.nombre?.toLowerCase().includes(debSearch.toLowerCase()) ||
-        c.docente?.nombre?.toLowerCase().includes(debSearch.toLowerCase())
+        getDocenteNombre(c).toLowerCase().includes(debSearch.toLowerCase())
       )
     : cursos;
 
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+  // Pagination is meaningless while a search is active (all data loaded client-side)
+  const totalPages = debSearch ? 1 : Math.max(1, Math.ceil(total / LIMIT));
 
-  /* ── CRUD handlers ──────────────────────────────────────────── */
+  /* ── CRUD ──────────────────────────────────────────────────── */
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!createForm.nombre.trim()) {
-      notify("El nombre del curso es requerido", "error"); return;
-    }
-    if (!isDocente && !createForm.docenteId) {
-      notify("Selecciona un docente", "error"); return;
-    }
+    if (!createForm.nombre.trim()) { notify("El nombre del curso es requerido", "error"); return; }
+    if (!isDocente && !createForm.docenteId) { notify("Selecciona un docente", "error"); return; }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -269,10 +274,17 @@ export default function CursosPage() {
     finally { setSaving(false); }
   };
 
-  const openEdit = (c) => {
+  const openEdit = async (c) => {
     setSelected(c);
     setEditForm({ nombre: c.nombre ?? "", descripcion: c.descripcion ?? "" });
     setEditOpen(true);
+    // Enriquecer con datos completos al abrir
+    try {
+      const full = await cursosGetById(c._id);
+      const enriched = normalizeCurso(full.curso ?? full);
+      setSelected(enriched);
+      setEditForm({ nombre: enriched.nombre ?? "", descripcion: enriched.descripcion ?? "" });
+    } catch { /* usa lo que tenía */ }
   };
 
   const handleEdit = async (e) => {
@@ -293,7 +305,7 @@ export default function CursosPage() {
     finally { setSaving(false); }
   };
 
-  const openArchive = (c) => { setSelected(c); setArchiveOpen(true); };
+  const openArchive  = (c) => { setSelected(c); setArchiveOpen(true); };
   const handleArchive = async () => {
     setSaving(true);
     try {
@@ -305,11 +317,7 @@ export default function CursosPage() {
     finally { setSaving(false); }
   };
 
-  const openParts = (c) => {
-    setSelected(c);
-    setParticipOpen(true);
-    loadParts(c._id);
-  };
+  const openParts = (c) => { setSelected(c); setParticipOpen(true); loadParts(c._id); };
 
   const handleRemovePart = async (userId) => {
     try {
@@ -336,15 +344,24 @@ export default function CursosPage() {
     finally { setSaving(false); }
   };
 
-  /* ── Render ─────────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     RENDER
+  ══════════════════════════════════════════════════════════════ */
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       <Toast {...toast} />
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+      {/* ── Header ── */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 24, flexWrap: "wrap", gap: 12,
+      }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: 10,
+            background: "rgba(12,106,196,0.10)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
             <Layers style={{ width: 19, height: 19, color: "#0C6AC4" }} />
           </div>
           <div>
@@ -352,38 +369,38 @@ export default function CursosPage() {
             <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", margin: 0 }}>{total} cursos en total</p>
           </div>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => setCreateOpen(true)}
-          style={{ display: "flex", alignItems: "center", gap: 7 }}
-        >
+        <Button variant="primary" onClick={() => setCreateOpen(true)}
+          style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <Plus style={{ width: 15, height: 15 }} /> Nuevo curso
         </Button>
       </div>
 
-      {/* Search */}
-      <div style={{ position: "relative", marginBottom: 18, maxWidth: 340 }}>
-        <Search style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", width: 15, height: 15, color: "var(--color-text-muted)" }} />
-        <input
+      {/* ── Search — Input reutilizable ── */}
+      <div style={{ marginBottom: 18, maxWidth: 340 }}>
+        <Input
+          name="buscar"
+          placeholder="Buscar curso o docente..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar curso o docente..."
-          style={{
-            width: "100%", paddingLeft: 34, paddingRight: 12, paddingTop: 9, paddingBottom: 9,
-            borderRadius: 9, border: "1.5px solid var(--color-border)",
-            background: "var(--color-surface)", color: "var(--color-text)", fontSize: 13.5, outline: "none",
-          }}
+          leftIcon={<Search size={15} />}
         />
       </div>
 
-      {/* Table */}
-      <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+      {/* ── Tabla ── */}
+      <div style={{
+        background: "var(--color-surface)", borderRadius: 16,
+        border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden",
+      }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
                 {["Curso", "Docente", "Participantes", "Estado", "Acciones"].map(h => (
-                  <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                  <th key={h} style={{
+                    padding: "11px 16px", textAlign: "left", fontSize: 11.5, fontWeight: 700,
+                    color: "var(--color-text-muted)", textTransform: "uppercase",
+                    letterSpacing: "0.06em", whiteSpace: "nowrap",
+                  }}>
                     {h}
                   </th>
                 ))}
@@ -394,7 +411,9 @@ export default function CursosPage() {
                 [0,1,2,3,4,5].map(i => (
                   <tr key={i} style={{ borderBottom: "1px solid var(--color-border)" }}>
                     {[0,1,2,3,4].map(j => (
-                      <td key={j} style={{ padding: "13px 16px" }}><Sk h={14} w={j === 4 ? 80 : "80%"} /></td>
+                      <td key={j} style={{ padding: "13px 16px" }}>
+                        <Sk h={14} w={j === 4 ? 80 : "80%"} />
+                      </td>
                     ))}
                   </tr>
                 ))
@@ -406,15 +425,16 @@ export default function CursosPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((c, idx) => (
-                  <tr
-                    key={c._id}
+                filtered.map((c) => (
+                  <tr key={c._id}
                     style={{ borderBottom: "1px solid var(--color-border)", transition: "background 0.12s" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "var(--color-bg)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
+                    {/* Nombre — clickeable → hub */}
                     <td style={{ padding: "13px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+                        onClick={() => goToCurso(c)} title="Abrir curso">
                         <img
                           src={c.fotoPortada || letrasImg}
                           alt={c.nombre ?? "Curso"}
@@ -425,45 +445,46 @@ export default function CursosPage() {
                             background: "var(--color-bg)",
                           }}
                         />
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)" }}>{c.nombre}</span>
+                        <span style={{
+                          fontSize: 13.5, fontWeight: 600, color: "#0C6AC4",
+                          textDecoration: "underline", textDecorationColor: "rgba(12,106,196,0.3)",
+                          textUnderlineOffset: 3,
+                        }}>
+                          {c.nombre}
+                        </span>
                       </div>
                     </td>
+
+                    {/* Docente — siempre resuelto */}
                     <td style={{ padding: "13px 16px", fontSize: 13, color: "var(--color-text-muted)" }}>
-                      {c.docente ? `${c.docente.nombre} ${c.docente.apellido}`.trim() || "—" : "—"}
+                      {getDocenteNombre(c)}
                     </td>
+
                     <td style={{ padding: "13px 16px", fontSize: 13, color: "var(--color-text-muted)" }}>
                       {c.participantes?.length ?? c.totalParticipantes ?? "—"}
                     </td>
+
                     <td style={{ padding: "13px 16px" }}>
                       <EstadoBadge estado={c.estado ?? "activo"} />
                     </td>
+
+                    {/* Acciones */}
                     <td style={{ padding: "13px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Participantes"
-                          aria-label="Ver participantes"
-                          onClick={() => openParts(c)}
-                        >
-                          <Users style={{ width: 14, height: 14, color: "#0C6AC4" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <Button variant="ghost" size="sm" title="Abrir curso"
+                          onClick={() => goToCurso(c)}>
+                          <ExternalLink style={{ width: 14, height: 14, color: "#0C6AC4" }} />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Editar"
-                          aria-label="Editar curso"
-                          onClick={() => openEdit(c)}
-                        >
-                          <Edit2 style={{ width: 14, height: 14, color: "#6366F1" }} />
+                        <Button variant="ghost" size="sm" title="Participantes"
+                          onClick={() => openParts(c)}>
+                          <Users style={{ width: 14, height: 14, color: "#6366F1" }} />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Archivar"
-                          aria-label="Archivar curso"
-                          onClick={() => openArchive(c)}
-                        >
+                        <Button variant="ghost" size="sm" title="Editar"
+                          onClick={() => openEdit(c)}>
+                          <Edit2 style={{ width: 14, height: 14, color: "#16A34A" }} />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Archivar"
+                          onClick={() => openArchive(c)}>
                           <Archive style={{ width: 14, height: 14, color: "#D97706" }} />
                         </Button>
                       </div>
@@ -475,29 +496,22 @@ export default function CursosPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderTop: "1px solid var(--color-border)" }}>
+        {/* Paginación — oculta cuando hay búsqueda activa */}
+        {!debSearch && totalPages > 1 && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px", borderTop: "1px solid var(--color-border)",
+          }}>
             <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
               Página {page} de {totalPages}
             </span>
             <div style={{ display: "flex", gap: 8 }}>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Página anterior"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
+              <Button variant="ghost" size="sm" aria-label="Anterior"
+                onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                 <ChevronLeft style={{ width: 14, height: 14 }} />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Página siguiente"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
+              <Button variant="ghost" size="sm" aria-label="Siguiente"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
                 <ChevronRight style={{ width: 14, height: 14 }} />
               </Button>
             </div>
@@ -505,49 +519,38 @@ export default function CursosPage() {
         )}
       </div>
 
-      {/* ── CREATE MODAL ── */}
+      {/* ══ CREATE MODAL ══════════════════════════════════════════ */}
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Nuevo curso" size="md">
         <form onSubmit={handleCreate}>
           <Field label="Nombre del curso *">
-            <StInput
+            <Input name="nombre" placeholder="Ej: Matemáticas 5°" required
               value={createForm.nombre}
-              onChange={e => setCreateForm(f => ({ ...f, nombre: e.target.value }))}
-              placeholder="Ej: Matemáticas 5°"
-              required
-            />
+              onChange={e => setCreateForm(f => ({ ...f, nombre: e.target.value }))} />
           </Field>
           <Field label="Descripción">
-            <StTextarea
+            <Textarea name="descripcion" placeholder="Descripción del curso (opcional)" rows={3}
               value={createForm.descripcion}
-              onChange={e => setCreateForm(f => ({ ...f, descripcion: e.target.value }))}
-              placeholder="Descripción del curso (opcional)"
-              rows={3}
-            />
+              onChange={e => setCreateForm(f => ({ ...f, descripcion: e.target.value }))} />
           </Field>
           {!isDocente && (
             <Field label="Docente *">
-              <StSelect
+              <Select name="docenteId" required
                 value={createForm.docenteId}
-                onChange={e => setCreateForm(f => ({ ...f, docenteId: e.target.value }))}
-                required
-              >
+                onChange={e => setCreateForm(f => ({ ...f, docenteId: e.target.value }))}>
                 <option value="">Seleccionar docente...</option>
                 {docentes.map(d => (
                   <option key={d._id} value={d._id}>{d.nombre} {d.apellido}</option>
                 ))}
-              </StSelect>
+              </Select>
             </Field>
           )}
           <Field label="Imagen de portada">
             <input ref={createCoverRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => setCreateCoverFile(e.target.files[0] ?? null)} />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Button
-                variant="ghost"
-                size="sm"
+              <Button variant="ghost" size="sm" type="button"
                 onClick={() => createCoverRef.current?.click()}
-                style={{ display: "flex", alignItems: "center", gap: 6 }}
-              >
+                style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Upload style={{ width: 13, height: 13 }} />
                 {createCoverFile ? createCoverFile.name : "Subir imagen"}
               </Button>
@@ -558,39 +561,56 @@ export default function CursosPage() {
             </div>
           </Field>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
-            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            <Button variant="primary" type="submit" disabled={saving}>{saving ? "Creando..." : "Crear curso"}</Button>
+            <Button variant="ghost" type="button" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving ? "Creando..." : "Crear curso"}
+            </Button>
           </div>
         </form>
       </Modal>
 
-      {/* ── EDIT MODAL ── */}
+      {/* ══ EDIT MODAL ════════════════════════════════════════════ */}
       <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Editar curso" size="md">
         <form onSubmit={handleEdit}>
+          {/* Preview del curso actual */}
+          {selected && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+              borderRadius: 10, marginBottom: 16,
+              background: "var(--color-bg)", border: "1px solid var(--color-border)",
+            }}>
+              <img
+                src={selected.fotoPortada || letrasImg} alt={selected.nombre}
+                onError={e => { e.target.onerror = null; e.target.src = letrasImg; }}
+                style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+              />
+              <div>
+                <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "var(--color-text)" }}>
+                  {selected.nombre}
+                </p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-muted)" }}>
+                  Docente: {getDocenteNombre(selected)}
+                </p>
+              </div>
+            </div>
+          )}
           <Field label="Nombre del curso *">
-            <StInput
+            <Input name="nombre" required
               value={editForm.nombre}
-              onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))}
-              required
-            />
+              onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))} />
           </Field>
           <Field label="Descripción">
-            <StTextarea
+            <Textarea name="descripcion" rows={3}
               value={editForm.descripcion}
-              onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))}
-              rows={3}
-            />
+              onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))} />
           </Field>
           <Field label="Imagen de portada">
             <input ref={editCoverRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => setEditCoverFile(e.target.files[0] ?? null)} />
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Button
-                variant="ghost"
-                size="sm"
+              <Button variant="ghost" size="sm" type="button"
                 onClick={() => editCoverRef.current?.click()}
-                style={{ display: "flex", alignItems: "center", gap: 6 }}
-              >
+                style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Upload style={{ width: 13, height: 13 }} />
                 {editCoverFile ? editCoverFile.name : selected?.fotoPortada ? "Cambiar imagen" : "Subir imagen"}
               </Button>
@@ -604,16 +624,19 @@ export default function CursosPage() {
             </div>
           </Field>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
-            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancelar</Button>
-            <Button variant="primary" type="submit" disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
+            <Button variant="ghost" type="button" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </Button>
           </div>
         </form>
       </Modal>
 
-      {/* ── ARCHIVE CONFIRM ── */}
+      {/* ══ ARCHIVE CONFIRM ═══════════════════════════════════════ */}
       <Modal isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} title="Archivar curso" size="sm">
         <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", marginBottom: 20 }}>
-          ¿Archivar el curso <strong style={{ color: "var(--color-text)" }}>{selected?.nombre}</strong>?
+          ¿Archivar el curso{" "}
+          <strong style={{ color: "var(--color-text)" }}>{selected?.nombre}</strong>?
           El curso quedará inactivo pero sus datos se conservarán.
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
@@ -624,19 +647,22 @@ export default function CursosPage() {
         </div>
       </Modal>
 
-      {/* ── PARTICIPANTS PANEL ── */}
+      {/* ══ PARTICIPANTS PANEL ════════════════════════════════════ */}
       <Modal
         isOpen={participOpen}
         onClose={() => setParticipOpen(false)}
         title={`Participantes — ${selected?.nombre ?? ""}`}
         size="lg"
       >
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-          <Button
-            variant="primary"
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <Button variant="ghost" size="sm"
+            onClick={() => { setParticipOpen(false); goToCurso(selected); }}
+            style={{ display: "flex", alignItems: "center", gap: 6, color: "#0C6AC4" }}>
+            <ExternalLink style={{ width: 13, height: 13 }} /> Ver curso completo
+          </Button>
+          <Button variant="primary"
             onClick={() => setAddPartOpen(true)}
-            style={{ display: "flex", alignItems: "center", gap: 7 }}
-          >
+            style={{ display: "flex", alignItems: "center", gap: 7 }}>
             <UserPlus style={{ width: 14, height: 14 }} /> Agregar participante
           </Button>
         </div>
@@ -653,17 +679,14 @@ export default function CursosPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 360, overflowY: "auto" }}>
             {parts.map((p) => {
-              const u = p.usuario ?? p;
-              const esDocente = p.etiqueta === "docente";
+              const u     = p.usuario ?? p;
+              const esDoc = p.etiqueta === "docente";
               return (
-                <div
-                  key={u._id ?? p._id}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "10px 14px", borderRadius: 10,
-                    border: "1px solid var(--color-border)", background: "var(--color-bg)",
-                  }}
-                >
+                <div key={u._id ?? p._id} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "10px 14px", borderRadius: 10,
+                  border: "1px solid var(--color-border)", background: "var(--color-bg)",
+                }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <UserAvatar user={u} size={36} />
                     <div>
@@ -675,14 +698,9 @@ export default function CursosPage() {
                       </p>
                     </div>
                   </div>
-                  {!esDocente && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Eliminar participante"
-                      title="Eliminar participante"
-                      onClick={() => handleRemovePart(u._id ?? p._id)}
-                    >
+                  {!esDoc && (
+                    <Button variant="ghost" size="sm" title="Eliminar participante"
+                      onClick={() => handleRemovePart(u._id ?? p._id)}>
                       <UserMinus style={{ width: 14, height: 14, color: "#DC2626" }} />
                     </Button>
                   )}
@@ -693,29 +711,35 @@ export default function CursosPage() {
         )}
       </Modal>
 
-      {/* ── ADD PARTICIPANT MODAL ── */}
+      {/* ══ ADD PARTICIPANT MODAL ═════════════════════════════════ */}
       <Modal isOpen={addPartOpen} onClose={() => setAddPartOpen(false)} title="Agregar participante" size="md">
         <form onSubmit={handleAddPart}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Field label="Nombre *">
-              <StInput value={addForm.nombre} onChange={e => setAddForm(f => ({ ...f, nombre: e.target.value }))} required />
+              <Input name="nombre" required value={addForm.nombre}
+                onChange={e => setAddForm(f => ({ ...f, nombre: e.target.value }))} />
             </Field>
             <Field label="Apellido *">
-              <StInput value={addForm.apellido} onChange={e => setAddForm(f => ({ ...f, apellido: e.target.value }))} required />
+              <Input name="apellido" required value={addForm.apellido}
+                onChange={e => setAddForm(f => ({ ...f, apellido: e.target.value }))} />
             </Field>
             <Field label="Cédula *">
-              <StInput value={addForm.cedula} onChange={e => setAddForm(f => ({ ...f, cedula: e.target.value }))} required />
+              <Input name="cedula" required value={addForm.cedula}
+                onChange={e => setAddForm(f => ({ ...f, cedula: e.target.value }))} />
             </Field>
             <Field label="Teléfono *">
-              <StInput value={addForm.telefono} onChange={e => setAddForm(f => ({ ...f, telefono: e.target.value }))} required />
+              <Input name="telefono" required value={addForm.telefono}
+                onChange={e => setAddForm(f => ({ ...f, telefono: e.target.value }))} />
             </Field>
           </div>
           <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "4px 0 16px" }}>
             Si el padre no existe, se creará con contraseña igual a su cédula.
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-            <Button variant="ghost" onClick={() => setAddPartOpen(false)}>Cancelar</Button>
-            <Button variant="primary" type="submit" disabled={saving}>{saving ? "Agregando..." : "Agregar"}</Button>
+            <Button variant="ghost" type="button" onClick={() => setAddPartOpen(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving ? "Agregando..." : "Agregar"}
+            </Button>
           </div>
         </form>
       </Modal>

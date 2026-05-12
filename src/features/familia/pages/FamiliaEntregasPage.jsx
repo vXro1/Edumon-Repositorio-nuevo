@@ -12,7 +12,7 @@ import {
   entregasGetMineByTarea, entregasCreate, entregasUpdate, entregasEnviar,
 } from "@/lib/apiClient";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { normalizeTarea, normalizeEntrega } from "@/lib/normalizers";
+import { normalizeTarea, normalizeEntrega }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
 import { Toast } from "@/components";
 

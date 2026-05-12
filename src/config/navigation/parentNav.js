@@ -7,6 +7,7 @@ export const parentNav = [
     path: "/family/profiles",
     icon: "users"
   },
+  
   {
     label: "Entregas",
     path: "/family/submissions",

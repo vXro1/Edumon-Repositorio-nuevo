@@ -3,11 +3,10 @@
 
 const baseUrl = () => import.meta.env.VITE_API_URL ?? "/api";
 
-export const testLogin = async (telefono = "+573001234567", contrasena = "test123") => {
-  console.log("🔍 Testando login al API...");
-  console.log(`   Base URL: ${baseUrl()}`);
-  console.log(`   Teléfono: ${telefono}`);
-  
+export const testLogin = async (
+  telefono = "+573001234567",
+  contrasena = "test123"
+) => {
   try {
     const response = await fetch(`${baseUrl()}/auth/login`, {
       method: "POST",
@@ -19,17 +18,16 @@ export const testLogin = async (telefono = "+573001234567", contrasena = "test12
         contrasena,
       }),
     });
-    
-    console.log(`   Status: ${response.status} ${response.statusText}`);
-    
+
     const data = await response.json().catch(() => ({}));
-    console.log("   Response:", data);
-    
+
     if (response.ok) {
-      console.log("✅ Login exitoso. Token:", data.token?.substring(0, 20) + "...");
       return data;
     } else {
-      console.error("❌ Login fallido:", data.message || "Credenciales incorrectas");
+      console.error(
+        "❌ Login fallido:",
+        data.message || "Credenciales incorrectas"
+      );
       return null;
     }
   } catch (error) {
@@ -50,9 +48,6 @@ export const testRegister = async (userData = {}) => {
     ...userData,
   };
 
-  console.log("🔍 Testando registro al API...");
-  console.log("   Datos enviados:", defaultData);
-  
   try {
     const response = await fetch(`${baseUrl()}/auth/register`, {
       method: "POST",
@@ -61,31 +56,26 @@ export const testRegister = async (userData = {}) => {
       },
       body: JSON.stringify(defaultData),
     });
-    
-    console.log(`   Status: ${response.status} ${response.statusText}`);
-    
+
     const data = await response.json().catch(() => ({}));
-    
+
     if (response.ok) {
-      console.log("✅ Registro exitoso");
-      console.log("   Token:", data.token?.substring(0, 20) + "...");
-      console.log("   Usuario:", data.user);
       return data;
     } else {
       console.error("❌ Registro fallido");
-      console.error("   Mensaje:", data.message);
-      
-      // Mostrar errores de validación detallados
+      console.error("Mensaje:", data.message);
+
       if (data.errors && Array.isArray(data.errors)) {
-        console.error("   Errores de validación:");
-        data.errors.forEach(err => {
+        console.error("Errores de validación:");
+
+        data.errors.forEach((err) => {
           const field = err.field || err.path || "desconocido";
           const msg = err.message || err.msg || "Error desconocido";
-          console.error(`     • ${field}: ${msg}`);
+
+          console.error(`• ${field}: ${msg}`);
         });
       }
-      
-      console.log("   Respuesta completa:", data);
+
       return null;
     }
   } catch (error) {
@@ -95,9 +85,6 @@ export const testRegister = async (userData = {}) => {
 };
 
 export const testApiConnection = async () => {
-  console.log("🔍 Testando conexión al API...");
-  console.log(`   Base URL: ${baseUrl()}`);
-  
   try {
     const response = await fetch(`${baseUrl()}/auth/login`, {
       method: "POST",
@@ -106,26 +93,26 @@ export const testApiConnection = async () => {
       },
       body: JSON.stringify({
         telefono: "+573001234567",
-        contraseña: "testpassword",
+        contrasena: "testpassword",
       }),
     });
-    
-    console.log(`   Status: ${response.status} ${response.statusText}`);
-    console.log(`   Headers:`, {
+
+    console.log("Headers:", {
       "content-type": response.headers.get("content-type"),
-      "access-control-allow-origin": response.headers.get("access-control-allow-origin"),
+      "access-control-allow-origin":
+        response.headers.get("access-control-allow-origin"),
     });
-    
+
     const data = await response.json().catch(() => ({}));
-    console.log("   Response:", data);
-    
+
     return {
       success: response.ok,
       status: response.status,
       data,
     };
   } catch (error) {
-    console.error("❌ Error en conexión al API:", error);
+    console.error("❌ Error en conexión al API:", error.message);
+
     return {
       success: false,
       error: error.message,
@@ -133,7 +120,7 @@ export const testApiConnection = async () => {
   }
 };
 
-// Exportar para usar en consola
+// Exportar para consola del navegador
 if (typeof window !== "undefined") {
   window.testApi = {
     login: testLogin,
@@ -141,21 +128,18 @@ if (typeof window !== "undefined") {
     connection: testApiConnection,
     help: () => {
       console.log(`
-📚 Comandos disponibles en la consola:
+📚 Comandos disponibles:
 
-1. Testear login:
-   testApi.login("+573001234567", "password123")
+1. testApi.login("+573001234567", "password123")
 
-2. Testear registro:
-   testApi.register({ nombre: "Juan", telefono: "+573001234567", contrasena: "test123" })
+2. testApi.register({
+   nombre: "Juan",
+   telefono: "+573001234567",
+   contrasena: "test123"
+})
 
-3. Testear conexión:
-   testApi.connection()
-
-4. Ver esta ayuda:
-   testApi.help()
+3. testApi.connection()
       `);
     },
   };
 }
-

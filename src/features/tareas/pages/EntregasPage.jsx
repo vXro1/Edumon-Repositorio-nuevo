@@ -2,56 +2,54 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import {
-  ArrowLeft, ClipboardList, CheckCircle2, AlertCircle,
-  Clock, Star, Loader2, RefreshCw, Users, FileText,
-  ExternalLink, ChevronDown, ChevronUp,
+  ArrowLeft, CheckCircle2, Clock, Star, Loader2, RefreshCw,
+  FileText, ExternalLink, ChevronDown, ChevronUp, Search, X,
+  ClipboardList,
 } from "lucide-react";
 
 import {
-  tareasGetById,
   entregasGetByTarea,
   entregasCalificar,
+  tareasGetById,
+  usersGetById,
 } from "@/lib/apiClient";
 
-import { normalizeTarea, normalizeEntrega } from "@/lib/normalizers";
-import { Modal, Toast } from "@/components";
+import { normalizeAndEnrichEntrega } from "@/lib/normalizers/entrega";
+import { normalizeTarea } from "@/lib/normalizers/tarea";
+import { Modal, Toast, Button, Input } from "@/components";
+import { Sk, EmptyState, Field } from "../../cursos/components/shared/ui";
 import { humanizeError } from "@/utils/humanizeError";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
-function Sk({ h = 14, w = "100%", r = 6 }) {
-  return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
-}
+// ─── Constantes ──────────────────────────────────────────────────────────────
 
 const ESTADO_CFG = {
-  enviada:     { bg: "rgba(12,106,196,0.10)",  color: "#0C6AC4",  label: "Enviada" },
-  tarde:       { bg: "rgba(220,38,38,0.10)",   color: "#DC2626",  label: "Tarde" },
-  calificada:  { bg: "rgba(22,163,74,0.10)",   color: "#16A34A",  label: "Calificada" },
-  borrador:    { bg: "rgba(148,163,184,0.15)", color: "#64748B",  label: "Borrador" },
+  enviada:    { bg: "rgba(12,106,196,0.10)",  color: "#0C6AC4",  label: "Enviada"    },
+  tarde:      { bg: "rgba(220,38,38,0.10)",   color: "#DC2626",  label: "Tarde"      },
+  calificada: { bg: "rgba(22,163,74,0.10)",   color: "#16A34A",  label: "Calificada" },
+  borrador:   { bg: "rgba(148,163,184,0.15)", color: "#64748B",  label: "Borrador"   },
 };
 
-function StatPill({ value, label, color, bg }) {
-  return (
-    <div style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "14px 20px", textAlign: "center", minWidth: 110 }}>
-      <p style={{ fontSize: 26, fontWeight: 800, color, margin: 0 }}>{value}</p>
-      <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "2px 0 0" }}>{label}</p>
-    </div>
-  );
-}
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EntregasPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [tarea,      setTarea]      = useState(null);
   const [entregas,   setEntregas]   = useState([]);
   const [stats,      setStats]      = useState({ total: 0, enviadas: 0, tarde: 0, calificadas: 0 });
   const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
+  const [search,     setSearch]     = useState("");
+  const [filterEst,  setFilterEst]  = useState("");
   const [toast,      setToast]      = useState({ msg: "", type: "success" });
 
-  // Calificar modal
-  const [showCal,    setShowCal]    = useState(false);
-  const [calForm,    setCalForm]    = useState({ nota: "", comentario: "" });
-  const [calTarget,  setCalTarget]  = useState(null);
-  const [saving,     setSaving]     = useState(false);
+  const [showCal,   setShowCal]   = useState(false);
+  const [calForm,   setCalForm]   = useState({ nota: "", comentario: "" });
+  const [calTarget, setCalTarget] = useState(null);
+  const [saving,    setSaving]    = useState(false);
 
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
@@ -60,16 +58,36 @@ export default function EntregasPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const [tareaData, entregasData] = await Promise.all([
-        tareasGetById(id),
+      const [entregasData, tareaData] = await Promise.all([
         entregasGetByTarea(id, { limit: 100 }),
+        tareasGetById(id).catch(() => null),
       ]);
-      setTarea(normalizeTarea(tareaData.tarea ?? tareaData));
-      setEntregas((entregasData.entregas ?? []).map(normalizeEntrega));
+
+      if (tareaData) setTarea(normalizeTarea(tareaData.tarea ?? tareaData));
+
+      const rawEntregas = entregasData.entregas ?? [];
+
+      // Enriquecer con datos de padres
+      const padreIds = [...new Set(rawEntregas.map(e => e.padreId).filter(Boolean))];
+      const padresMap = {};
+      await Promise.all(
+        padreIds.map(padreId =>
+          usersGetById(padreId)
+            .then(data => { padresMap[padreId] = data.usuario ?? data.user ?? data; })
+            .catch(() => { padresMap[padreId] = null; })
+        )
+      );
+
+      const enriched = rawEntregas.map(e =>
+        normalizeAndEnrichEntrega(e, { padres: padresMap, tareas: {}, docentes: {} })
+      );
+
+      setEntregas(enriched);
       if (entregasData.estadisticas) setStats(entregasData.estadisticas);
-    } catch {
-      notify("Error al cargar entregas", "error");
+    } catch (err) {
+      setError(humanizeError(err, "Error al cargar entregas"));
     } finally {
       setLoading(false);
     }
@@ -77,10 +95,19 @@ export default function EntregasPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── Filtro local ─────────────────────────────────────────────────────────
+  const filtered = entregas.filter(e => {
+    const q = search.toLowerCase();
+    const nombre = `${e.padre?.nombre ?? ""} ${e.padre?.apellido ?? ""}`.toLowerCase();
+    const matchSearch = !q || nombre.includes(q);
+    const matchEst    = !filterEst || e.estado === filterEst;
+    return matchSearch && matchEst;
+  });
+
   const openCalificar = (entrega) => {
     setCalTarget(entrega);
     setCalForm({
-      nota: entrega.calificacion?.nota?.toString() ?? "",
+      nota:       entrega.calificacion?.nota?.toString() ?? "",
       comentario: entrega.calificacion?.comentario ?? "",
     });
     setShowCal(true);
@@ -89,16 +116,26 @@ export default function EntregasPage() {
   const handleCalificar = async (e) => {
     e.preventDefault();
     const nota = parseFloat(calForm.nota);
-    if (isNaN(nota) || nota < 0 || nota > 10) {
-      notify("La nota debe ser un número entre 0 y 10", "error");
+    if (isNaN(nota) || nota < 0 || nota > 100) {
+      notify("La nota debe ser un número entre 0 y 100", "error");
+      return;
+    }
+    const docenteId = user?._id ?? user?.id;
+    if (!docenteId) {
+      notify("No se pudo obtener tu ID de docente. Vuelve a iniciar sesión.", "error");
       return;
     }
     setSaving(true);
     try {
-      await entregasCalificar(calTarget._id, { nota, comentario: calForm.comentario });
+      const response = await entregasCalificar(calTarget._id, { nota, comentario: calForm.comentario, docenteId });
+      const actualizada = normalizeAndEnrichEntrega(response.entrega, {
+        padres:   { [calTarget.padreId]: calTarget.padre },
+        tareas:   {},
+        docentes: {},
+      });
+      setEntregas(prev => prev.map(ent => ent._id === calTarget._id ? actualizada : ent));
       notify(calTarget.calificacion ? "Calificación actualizada" : "Entrega calificada");
       setShowCal(false);
-      load();
     } catch (err) {
       notify(humanizeError(err, "Error al calificar"), "error");
     } finally {
@@ -109,110 +146,214 @@ export default function EntregasPage() {
   if (loading) return (
     <div style={{ maxWidth: 960, margin: "0 auto" }}>
       <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-        <Sk h={36} w={36} r={99} /><div style={{ flex: 1 }}><Sk h={22} w="50%" /><div style={{ marginTop: 8 }}><Sk h={13} w="35%" /></div></div>
+        <Sk h={36} w={36} r={99} />
+        <div style={{ flex: 1 }}>
+          <Sk h={22} w="50%" />
+          <div style={{ marginTop: 8 }}><Sk h={13} w="35%" /></div>
+        </div>
       </div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>{[0,1,2,3].map(i => <Sk key={i} h={72} r={14} w={120} />)}</div>
-      {[0,1,2].map(i => <div key={i} style={{ marginBottom: 10 }}><Sk h={88} r={16} /></div>)}
+      <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+        {[0, 1, 2, 3].map(i => <Sk key={i} h={72} r={14} w={120} />)}
+      </div>
+      {[0, 1, 2].map(i => <div key={i} style={{ marginBottom: 10 }}><Sk h={88} r={16} /></div>)}
     </div>
   );
-
-  const tareaTitle = tarea?.titulo ?? "Tarea";
-  const cursoNombre = tarea?.curso?.nombre ?? "";
 
   return (
     <div style={{ maxWidth: 960, margin: "0 auto" }}>
       <Toast msg={toast.msg} type={toast.type} />
 
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 24 }}>
-        <button onClick={() => navigate("/tareas")} style={{ padding: 8, borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-text-muted)", flexShrink: 0, marginTop: 4 }}>
-          <ArrowLeft style={{ width: 17, height: 17 }} />
-        </button>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 21, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>Entregas — {tareaTitle}</h1>
-          <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>
-            {cursoNombre && `Curso: ${cursoNombre}`}
-            {tarea?.fechaEntrega && ` · Vence: ${new Date(tarea.fechaEntrega).toLocaleDateString("es", { day: "numeric", month: "short" })}`}
-          </p>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <Button variant="secondary" size="sm" onClick={() => navigate("/tareas")} style={{ marginTop: 3 }}>
+            <ArrowLeft style={{ width: 16, height: 16 }} />
+          </Button>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(99,102,241,0.10)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <ClipboardList style={{ width: 18, height: 18, color: "#6366F1" }} />
+              </div>
+              <div>
+                <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>
+                  Entregas
+                </h1>
+                {tarea?.titulo && (
+                  <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
+                    {tarea.titulo}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        <button onClick={load} title="Actualizar" style={{ padding: 8, borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-text-muted)" }}>
+        <Button variant="secondary" size="sm" onClick={load} title="Actualizar">
           <RefreshCw style={{ width: 15, height: 15 }} />
-        </button>
+        </Button>
       </div>
+
+      {/* ── Error ──────────────────────────────────────────────── */}
+      {error && (
+        <div style={{ background: "rgba(220,38,38,0.10)", borderRadius: 12, border: "1px solid rgba(220,38,38,0.20)", padding: "12px 16px", marginBottom: 24 }}>
+          <p style={{ fontSize: 13, color: "#DC2626", margin: 0 }}>{error}</p>
+        </div>
+      )}
 
       {/* ── Stats ──────────────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-        <StatPill value={stats.total ?? entregas.length} label="Total" color="var(--color-text)" bg="transparent" />
-        <StatPill value={stats.enviadas ?? 0} label="Enviadas" color="#0C6AC4" bg="rgba(12,106,196,0.10)" />
-        <StatPill value={stats.tarde ?? 0} label="Tarde" color="#DC2626" bg="rgba(220,38,38,0.10)" />
-        <StatPill value={stats.calificadas ?? 0} label="Calificadas" color="#16A34A" bg="rgba(22,163,74,0.10)" />
+      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+        {[
+          { value: stats.total ?? entregas.length, label: "Total",       color: "var(--color-text)" },
+          { value: stats.enviadas   ?? 0,           label: "Enviadas",   color: "#0C6AC4"           },
+          { value: stats.tarde      ?? 0,           label: "Tarde",      color: "#DC2626"           },
+          { value: stats.calificadas ?? 0,          label: "Calificadas",color: "#16A34A"           },
+        ].map(({ value, label, color }) => (
+          <div key={label} style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "14px 20px", textAlign: "center", minWidth: 110 }}>
+            <p style={{ fontSize: 26, fontWeight: 800, color, margin: 0 }}>{value}</p>
+            <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "2px 0 0" }}>{label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* ── Entregas list ──────────────────────────────────────── */}
-      {entregas.length === 0 ? (
-        <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "60px 24px", textAlign: "center" }}>
-          <FileText style={{ width: 36, height: 36, color: "var(--color-text-muted)", margin: "0 auto 12px" }} />
-          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-muted)" }}>Sin entregas todavía</p>
-          <p style={{ fontSize: 13, color: "var(--color-text-subtle)" }}>Las entregas de los padres aparecerán aquí</p>
+      {/* ── Filtros ────────────────────────────────────────────── */}
+      <div style={{
+        background: "var(--color-surface)", borderRadius: 14,
+        border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+        padding: "12px 16px", marginBottom: 16,
+        display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 200 }}>
+          <Search style={{ width: 15, height: 15, color: "var(--color-text-muted)", flexShrink: 0 }} />
+          <input
+            type="search"
+            placeholder="Buscar por nombre..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ flex: 1, border: "none", outline: "none", fontSize: 13.5, color: "var(--color-text)", background: "transparent" }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")} style={{ color: "var(--color-text-muted)", background: "none", border: "none", cursor: "pointer", display: "flex" }}>
+              <X style={{ width: 14, height: 14 }} />
+            </button>
+          )}
         </div>
+        <select
+          value={filterEst}
+          onChange={e => setFilterEst(e.target.value)}
+          style={{ padding: "7px 12px", borderRadius: 9, border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-text)", fontSize: 13, cursor: "pointer", outline: "none" }}
+        >
+          <option value="">Todos los estados</option>
+          <option value="enviada">Enviada</option>
+          <option value="tarde">Tarde</option>
+          <option value="calificada">Calificada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+
+      {/* ── Lista de entregas ──────────────────────────────────── */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title={search || filterEst ? "Sin resultados" : "Sin entregas todavía"}
+          desc={!search && !filterEst ? "Las entregas de los padres aparecerán aquí" : undefined}
+        />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {entregas.map(e => (
+          {filtered.map(e => (
             <EntregaCard key={e._id} entrega={e} onCalificar={() => openCalificar(e)} />
           ))}
         </div>
       )}
 
-      {/* ══ CALIFICAR MODAL ════════════════════════════════════ */}
-      <Modal isOpen={showCal} onClose={() => setShowCal(false)} title={calTarget?.calificacion ? "Actualizar calificación" : "Calificar entrega"} size="sm">
+      {/* ══ Modal — Calificar ════════════════════════════════════ */}
+      <Modal
+        isOpen={showCal}
+        onClose={() => setShowCal(false)}
+        title={calTarget?.calificacion ? "Actualizar calificación" : "Calificar entrega"}
+        size="sm"
+      >
         {calTarget && (
           <form onSubmit={handleCalificar}>
+            {/* Info del padre */}
             <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "12px 14px", marginBottom: 16 }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
-                {calTarget.padre.nombre} {calTarget.padre.apellido}
+                {calTarget.padre?.nombre ?? ""} {calTarget.padre?.apellido ?? ""}
               </p>
               <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-                Enviada: {new Date(calTarget.fechaEnvio ?? calTarget.createdAt).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                Enviada:{" "}
+                {calTarget.fechaEnvio
+                  ? new Date(calTarget.fechaEnvio).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                  : "—"}
               </p>
             </div>
 
+            {/* Nota actual */}
             {calTarget.calificacion && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(22,163,74,0.08)", borderRadius: 10, padding: "8px 12px", marginBottom: 14, fontSize: 12.5, color: "#16A34A", fontWeight: 600 }}>
                 <Star style={{ width: 13, height: 13 }} />
-                Nota actual: {calTarget.calificacion.nota} / 10
+                Nota actual: {calTarget.calificacion.nota} / 100
               </div>
             )}
 
+            {/* Respuesta de texto */}
+            {calTarget.textoRespuesta && (
+              <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 12px", marginBottom: 14 }}>
+                <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", margin: "0 0 4px", textTransform: "uppercase" }}>Respuesta:</p>
+                <p style={{ fontSize: 13, color: "var(--color-text)", lineHeight: 1.5, whiteSpace: "pre-wrap", margin: 0 }}>{calTarget.textoRespuesta}</p>
+              </div>
+            )}
+
+            {/* Archivos adjuntos */}
+            {calTarget.archivos?.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", margin: "0 0 8px", textTransform: "uppercase" }}>Archivos:</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {calTarget.archivos.map((a, i) => (
+                    <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", fontSize: 11.5, color: "#0C6AC4", textDecoration: "none", fontWeight: 600 }}>
+                      <FileText style={{ width: 12, height: 12 }} />
+                      {a.nombre || `Archivo ${i + 1}`}
+                      <ExternalLink style={{ width: 10, height: 10 }} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Formulario */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nota (0 – 10) *</label>
-                <input
-                  type="number" min="0" max="10" step="0.5"
+              <Field label="Nota (0 – 100) *">
+                <Input
+                  type="number"
+                  min="0" max="100" step="0.5"
                   value={calForm.nota}
                   onChange={e => setCalForm(p => ({ ...p, nota: e.target.value }))}
                   required
-                  placeholder="Ej: 8.5"
-                  style={{ width: "100%", padding: "9px 12px", fontSize: 15, fontWeight: 700, borderRadius: 10, border: "1.5px solid var(--color-border)", outline: "none", background: "var(--color-surface)", color: "var(--color-text)" }}
+                  placeholder="Ej: 85"
                 />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>Comentario</label>
-                <textarea
+              </Field>
+              <Field label="Comentario">
+                <Input
+                  as="textarea"
                   value={calForm.comentario}
                   onChange={e => setCalForm(p => ({ ...p, comentario: e.target.value }))}
                   placeholder="Retroalimentación para el padre/tutor..."
                   rows={3}
-                  style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: "1.5px solid var(--color-border)", outline: "none", background: "var(--color-surface)", color: "var(--color-text)", resize: "vertical" }}
                 />
-              </div>
+              </Field>
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
-              <button type="button" onClick={() => setShowCal(false)} style={{ padding: "9px 18px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", color: "var(--color-text)", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}>Cancelar</button>
-              <button type="submit" disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#6ba4d8" : "#0C6AC4", color: "white", fontSize: 13.5, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+              <Button variant="ghost" type="button" onClick={() => setShowCal(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving}>
                 {saving && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
                 {calTarget.calificacion ? "Actualizar" : "Calificar"}
-              </button>
+              </Button>
             </div>
           </form>
         )}
@@ -221,42 +362,86 @@ export default function EntregasPage() {
   );
 }
 
+// ─── EntregaCard ──────────────────────────────────────────────────────────────
+
 function EntregaCard({ entrega: e, onCalificar }) {
   const [expanded, setExpanded] = useState(false);
   const estadoCfg = ESTADO_CFG[e.estado] ?? ESTADO_CFG.enviada;
-  const padreNombre = `${e.padre.nombre} ${e.padre.apellido}`.trim() || "Sin nombre";
-  const fecha = e.fechaEnvio ?? e.createdAt;
-  const adjuntos = e.archivos ?? e.adjuntos ?? [];
+
+  const padreNombre = e.padre
+    ? `${e.padre.nombre ?? ""} ${e.padre.apellido ?? ""}`.trim() || "Sin nombre"
+    : "Sin nombre";
+
+  const fecha    = e.fechaEnvio ?? e.createdAt;
+  const archivos = e.archivos ?? e.archivosAdjuntos ?? [];
+
+  // Estilos de botón de acción (mismo patrón que TareasPage)
+  const actionBtn = (color = "var(--color-text-muted)") => ({
+    display: "inline-flex", alignItems: "center", gap: 5,
+    padding: "6px 11px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+    border: "1px solid var(--color-border)",
+    background: "var(--color-surface)",
+    color, cursor: "pointer",
+    transition: "background 150ms, border-color 150ms",
+  });
 
   return (
-    <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
-      <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={() => setExpanded(!expanded)}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#0C6AC4", flexShrink: 0 }}>
+    <div style={{
+      background: "var(--color-surface)", borderRadius: 16,
+      border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+      overflow: "hidden",
+    }}>
+      <div
+        style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        {/* Avatar */}
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          background: "rgba(12,106,196,0.10)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 14, fontWeight: 700, color: "#0C6AC4", flexShrink: 0,
+        }}>
           {(e.padre?.nombre?.[0] ?? "P").toUpperCase()}
         </div>
+
+        {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{padreNombre}</p>
-            <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: estadoCfg.bg, color: estadoCfg.color }}>{estadoCfg.label}</span>
+            <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: estadoCfg.bg, color: estadoCfg.color }}>
+              {estadoCfg.label}
+            </span>
             {e.calificacion && (
               <span style={{ display: "flex", alignItems: "center", gap: 3, padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: "rgba(22,163,74,0.10)", color: "#16A34A" }}>
-                <Star style={{ width: 10, height: 10 }} /> {e.calificacion.nota}/10
+                <Star style={{ width: 10, height: 10 }} /> {e.calificacion.nota}/100
               </span>
             )}
           </div>
           <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 3 }}>
-            {fecha ? new Date(fecha).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
-            {adjuntos.length > 0 && ` · ${adjuntos.length} adjunto${adjuntos.length > 1 ? "s" : ""}`}
+            {fecha
+              ? new Date(fecha).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+              : "—"}
+            {archivos.length > 0 && ` · ${archivos.length} adjunto${archivos.length > 1 ? "s" : ""}`}
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={ev => { ev.stopPropagation(); onCalificar(); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 9, border: "none", background: e.calificacion ? "rgba(22,163,74,0.12)" : "rgba(12,106,196,0.10)", color: e.calificacion ? "#16A34A" : "#0C6AC4", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
-            <Star style={{ width: 13, height: 13 }} /> {e.calificacion ? "Actualizar nota" : "Calificar"}
+
+        {/* Acciones */}
+        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+          <button
+            onClick={ev => { ev.stopPropagation(); onCalificar(); }}
+            style={actionBtn(e.calificacion ? "#16A34A" : "#0C6AC4")}
+          >
+            <Star style={{ width: 12, height: 12 }} />
+            {e.calificacion ? "Actualizar nota" : "Calificar"}
           </button>
-          {expanded ? <ChevronUp style={{ width: 16, height: 16, color: "var(--color-text-muted)" }} /> : <ChevronDown style={{ width: 16, height: 16, color: "var(--color-text-muted)" }} />}
+          {expanded
+            ? <ChevronUp style={{ width: 16, height: 16, color: "var(--color-text-muted)" }} />
+            : <ChevronDown style={{ width: 16, height: 16, color: "var(--color-text-muted)" }} />}
         </div>
       </div>
 
+      {/* Contenido expandido */}
       {expanded && (
         <div style={{ borderTop: "1px solid var(--color-border)", padding: "14px 18px", background: "var(--color-bg)" }}>
           {e.textoRespuesta && (
@@ -266,14 +451,15 @@ function EntregaCard({ entrega: e, onCalificar }) {
             </div>
           )}
 
-          {adjuntos.length > 0 && (
+          {archivos.length > 0 && (
             <div style={{ marginBottom: 12 }}>
               <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Archivos adjuntos</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {adjuntos.map((a, i) => (
-                  <a key={i} href={a.url ?? a} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "var(--color-surface)", border: "1px solid var(--color-border)", fontSize: 12.5, color: "#0C6AC4", fontWeight: 600, textDecoration: "none" }}>
+                {archivos.map((a, i) => (
+                  <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "var(--color-surface)", border: "1px solid var(--color-border)", fontSize: 12.5, color: "#0C6AC4", fontWeight: 600, textDecoration: "none" }}>
                     <FileText style={{ width: 13, height: 13 }} />
-                    {a.nombre ?? a.originalname ?? `Archivo ${i + 1}`}
+                    {a.nombre ?? a.nombreOriginal ?? `Archivo ${i + 1}`}
                     <ExternalLink style={{ width: 11, height: 11 }} />
                   </a>
                 ))}
@@ -284,9 +470,15 @@ function EntregaCard({ entrega: e, onCalificar }) {
           {e.calificacion && (
             <div style={{ background: "rgba(22,163,74,0.06)", borderRadius: 10, padding: "10px 14px", border: "1px solid rgba(22,163,74,0.15)" }}>
               <p style={{ fontSize: 11.5, fontWeight: 700, color: "#16A34A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Calificación</p>
-              <p style={{ fontSize: 14, fontWeight: 800, color: "#16A34A", margin: 0 }}>{e.calificacion.nota} / 10</p>
-              {e.calificacion.comentario && <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 4 }}>{e.calificacion.comentario}</p>}
+              <p style={{ fontSize: 14, fontWeight: 800, color: "#16A34A", margin: 0 }}>{e.calificacion.nota} / 100</p>
+              {e.calificacion.comentario && (
+                <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 4 }}>{e.calificacion.comentario}</p>
+              )}
             </div>
+          )}
+
+          {!e.textoRespuesta && archivos.length === 0 && !e.calificacion && (
+            <p style={{ fontSize: 13, color: "var(--color-text-muted)", fontStyle: "italic" }}>Sin contenido adicional</p>
           )}
         </div>
       )}

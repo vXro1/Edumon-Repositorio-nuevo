@@ -6,7 +6,6 @@ import { requestInterceptors, responseInterceptors } from './interceptors';
 const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 if (import.meta.env.DEV) {
-  console.log(`[API][core] Base URL: ${BASE_URL}`);
 }
 
 // Logout callback (provided by AuthProvider)
@@ -67,7 +66,11 @@ export const apiFetch = async (endpoint, options = {}) => {
     }
 
     if (res.status === 401) {
-      // ensure logout is called only once globally
+      // Login fallido por credenciales incorrectas — NO disparar el logout global
+      if (endpoint === "/auth/login") {
+        throw new Error(data.message || "Teléfono o contraseña incorrectos. Verifica tus credenciales.");
+      }
+      // Cualquier otro 401 = sesión expirada → logout automático (una sola vez)
       if (!_handling401) {
         _handling401 = true;
         try {

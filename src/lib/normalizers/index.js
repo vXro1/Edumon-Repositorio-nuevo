@@ -1,5 +1,16 @@
+// src/lib/normalizers/index.js
+
+// Usuarios
 export * from "./user";
+
+// Cursos
 export * from "./curso";
-export * from "./entrega";
-export * from "./foro";
+
+// Tareas
 export * from "./tarea";
+
+// Entregas
+export * from "./entrega";
+
+// Foro
+export * from "./foro";

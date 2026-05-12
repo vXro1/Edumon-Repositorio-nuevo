@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookOpen, FileText, Calendar, Bell,
-  ChevronRight, Users, Clock,
+  ChevronRight, Users, Clock, Heart,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { cursosGetMine, eventosGetHoy } from "@/lib/apiClient";
@@ -11,41 +11,42 @@ import { normalizeCurso } from "@/lib/normalizers";
 import CursoCard from "@/features/cursos/components/CursoCard";
 import { Button } from "@/components";
 
-function Skeleton({ h = 16, w = "100%", r = 7 }) {
+/* ── Skeleton ──────────────────────────────────────────────────── */
+function Sk({ h = 14, w = "100%", r = "var(--radius-sm)" }) {
+  return <span className="skeleton" style={{ height: h, width: w, borderRadius: r, display: "block" }} />;
+}
+
+/* ── Section header ────────────────────────────────────────────── */
+function SectionHeader({ title, onAction, actionLabel }) {
   return (
-    <div
-      className="animate-pulse"
-      style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }}
-    />
+    <div className="section-header">
+      <h2 className="section-title">{title}</h2>
+      {onAction && (
+        <button className="section-action" onClick={onAction}>
+          {actionLabel} <ChevronRight size={14} aria-hidden="true" />
+        </button>
+      )}
+    </div>
   );
 }
 
-function StatCard({ value, label, icon: Icon, color, bg, loading }) {
+/* ── Stat card ─────────────────────────────────────────────────── */
+function StatCard({ value, label, icon: Icon, colorClass, loading }) {
   return (
-    <div
-      style={{
-        background: "var(--color-surface)", borderRadius: 16,
-        padding: "18px 20px", border: "1px solid var(--color-border)",
-        boxShadow: "var(--shadow-card)", display: "flex",
-        alignItems: "flex-start", gap: 14,
-        transition: "box-shadow 200ms, transform 200ms",
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-card)"; e.currentTarget.style.transform = "translateY(0)"; }}
-    >
-      <div style={{ width: 42, height: 42, borderRadius: 11, flexShrink: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon style={{ width: 18, height: 18, color }} />
+    <div className="stat-card">
+      <div className={`stat-card-icon ${colorClass}`}>
+        <Icon size={20} aria-hidden="true" />
       </div>
-      <div>
+      <div className="stat-card-body">
         {loading ? (
           <>
-            <Skeleton h={26} w={50} r={6} />
-            <div style={{ marginTop: 6 }}><Skeleton h={12} w={90} r={4} /></div>
+            <Sk h={26} w={50} r="var(--radius-sm)" />
+            <div style={{ marginTop: 6 }}><Sk h={11} w={90} /></div>
           </>
         ) : (
           <>
-            <p style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text)", lineHeight: 1, margin: 0 }}>{value}</p>
-            <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 4 }}>{label}</p>
+            <p className="stat-card-value">{value}</p>
+            <p className="stat-card-label">{label}</p>
           </>
         )}
       </div>
@@ -53,18 +54,20 @@ function StatCard({ value, label, icon: Icon, color, bg, loading }) {
   );
 }
 
+/* ── Event item ────────────────────────────────────────────────── */
 function EventItem({ evento }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--color-border)" }}>
-      <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Calendar style={{ width: 15, height: 15, color: "#0C6AC4" }} />
+    <div className="list-card-item">
+      <div
+        className="list-card-item-icon"
+        style={{ background: "var(--edu-purple-50)", color: "var(--edu-purple-500)" }}
+      >
+        <Calendar size={16} aria-hidden="true" />
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0 }}>
-          {evento.titulo}
-        </p>
-        <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-          <Clock style={{ width: 10, height: 10 }} />
+      <div className="list-card-item-body">
+        <p className="list-card-item-title">{evento.titulo}</p>
+        <p className="list-card-item-meta">
+          <Clock size={10} aria-hidden="true" />
           {evento.hora ?? "Todo el día"}
         </p>
       </div>
@@ -72,54 +75,62 @@ function EventItem({ evento }) {
   );
 }
 
-// ✅ SectionHeader — usa Button variant="ghost"
-function SectionHeader({ title, action }) {
+/* ── Quick action card ─────────────────────────────────────────── */
+function QuickActionCard({ icon: Icon, label, desc, colorClass, onClick }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-      <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{title}</h2>
-      {action && (
-        <Button variant="ghost" size="sm" onClick={action.onClick} style={{ color: "#0C6AC4", gap: 4 }}>
-          {action.label} <ChevronRight style={{ width: 14, height: 14 }} />
-        </Button>
-      )}
+    <button
+      onClick={onClick}
+      className="card card-interactive"
+      style={{
+        display: "flex", alignItems: "center", gap: "var(--space-3)",
+        padding: "var(--space-4)", textAlign: "left", width: "100%",
+        background: "var(--color-surface)", border: "1px solid var(--color-border)",
+      }}
+    >
+      <div className={`stat-card-icon ${colorClass}`} style={{ flexShrink: 0 }}>
+        <Icon size={18} aria-hidden="true" />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: "var(--text-sm)", fontWeight: "var(--font-semibold)", color: "var(--color-text)", margin: 0, lineHeight: 1.3 }}>
+          {label}
+        </p>
+        <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", margin: 0, marginTop: 2 }}>
+          {desc}
+        </p>
+      </div>
+      <ChevronRight size={14} style={{ color: "var(--color-text-subtle)", flexShrink: 0 }} aria-hidden="true" />
+    </button>
+  );
+}
+
+/* ── Course grid skeletons ─────────────────────────────────────── */
+function CourseSkeletons() {
+  return (
+    <div className="grid-auto-sm">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="skeleton-course-card">
+          <div className="sk-cover skeleton" />
+          <div className="sk-body">
+            <Sk h={40} w={40} r="var(--radius-md)" />
+            <Sk h={13} w="80%" />
+            <Sk h={10} w="55%" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-// ✅ QuickBtn — eliminado useState(hov), usa Button variant="custom"
-function QuickBtn({ icon: Icon, label, desc, color, bg, onClick }) {
-  return (
-    <Button
-      variant="custom"
-      onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: 12,
-        padding: "14px 16px", borderRadius: 12,
-        border: "1px solid var(--color-border)",
-        background: "var(--color-surface)",
-        textAlign: "left", width: "100%", height: "auto",
-        justifyContent: "flex-start",
-      }}
-    >
-      <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon style={{ width: 17, height: 17, color }} />
-      </div>
-      <div style={{ textAlign: "left" }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>{label}</p>
-        <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 1 }}>{desc}</p>
-      </div>
-    </Button>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ══════════════════════════════════════════════════════════════════ */
 export default function PadreHomePage() {
-  const { user }  = useAuth();
-  const navigate  = useNavigate();
+  const { user }   = useAuth();
+  const navigate   = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [cursos,  setCursos]  = useState([]);
-  const [eventos, setEventos] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [cursos,   setCursos]   = useState([]);
+  const [eventos,  setEventos]  = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -128,7 +139,7 @@ export default function PadreHomePage() {
           cursosGetMine({ limit: 6 }),
           eventosGetHoy(),
         ]);
-        setCursos((cursosRes.cursos    ?? []).map(normalizeCurso));
+        setCursos((cursosRes.cursos   ?? []).map(normalizeCurso));
         setEventos(eventosRes.eventos ?? []);
       } catch { /* silencioso */ }
       finally  { setLoading(false); }
@@ -141,96 +152,105 @@ export default function PadreHomePage() {
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
-      {/* Welcome banner */}
-      <div style={{
-        borderRadius: 18,
-        background: "linear-gradient(135deg, #0C6AC4 0%, #1E3A6E 60%, #0F172A 100%)",
-        padding: "24px 32px", display: "flex", alignItems: "center", gap: 20,
-        marginBottom: 28, position: "relative", overflow: "hidden",
-      }}>
-        <div style={{ position: "absolute", right: -30, top: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
-        <div style={{ color: "white", position: "relative" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
+      {/* ── Welcome banner ── */}
+      <div
+        className="welcome-banner edu-fade-in"
+        style={{ background: "var(--gradient-berry)" }}
+        role="banner"
+      >
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <span className="welcome-badge">
+            <Heart size={10} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
             Padre / Tutor
-          </p>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
+          </span>
+          <h1 className="welcome-title">
             {saludo}{user?.nombre ? `, ${user.nombre}` : ""}
           </h1>
+          <p className="welcome-sub">
+            Acompaña el proceso educativo de tu familia.
+          </p>
         </div>
       </div>
 
-      {/* Stats */}
-      <section style={{ marginBottom: 28 }}>
+      {/* ── Stats ── */}
+      <section aria-label="Resumen familiar" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Resumen" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
-          <StatCard value={cursos.length}  label="Cursos activos"      icon={BookOpen} color="#0C6AC4" bg="rgba(12,106,196,0.10)" loading={loading} />
-          <StatCard value={eventos.length} label="Eventos hoy"         icon={Calendar} color="#16A34A" bg="rgba(22,163,74,0.10)"  loading={loading} />
-          <StatCard value="—"              label="Notificaciones"      icon={Bell}     color="#D97706" bg="rgba(217,119,6,0.10)"  loading={false} />
-          <StatCard value="—"              label="Entregas pendientes" icon={FileText} color="#6366F1" bg="rgba(99,102,241,0.10)" loading={false} />
+        <div className="grid-stats">
+          <StatCard value={cursos.length}  label="Cursos activos"      icon={BookOpen} colorClass="stat-icon-purple" loading={loading} />
+          <StatCard value={eventos.length} label="Eventos hoy"         icon={Calendar} colorClass="stat-icon-green"  loading={loading} />
+          <StatCard value="—"              label="Notificaciones"      icon={Bell}     colorClass="stat-icon-yellow" loading={false} />
+          <StatCard value="—"              label="Entregas pendientes" icon={FileText} colorClass="stat-icon-cyan"   loading={false} />
         </div>
       </section>
 
-      {/* Quick actions */}
-      <section style={{ marginBottom: 28 }}>
+      {/* ── Quick actions ── */}
+      <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-          <QuickBtn icon={Users}    label="Mis hijos"       desc="Ver perfiles familiares" color="#0C6AC4" bg="rgba(12,106,196,0.10)" onClick={() => navigate("/familia/perfiles")} />
-          <QuickBtn icon={FileText} label="Ver entregas"    desc="Revisión de tareas"      color="#16A34A" bg="rgba(22,163,74,0.10)"  onClick={() => navigate("/familia/entregas")} />
-          <QuickBtn icon={Bell}     label="Notificaciones"  desc="Avisos y mensajes"       color="#D97706" bg="rgba(217,119,6,0.10)"  onClick={() => navigate("/notificaciones")} />
+        <div className="grid-2-auto">
+          <QuickActionCard
+            icon={Users}    label="Perfiles familiares" desc="Ver perfiles de tus hijos"
+            colorClass="stat-icon-purple" onClick={() => navigate("/familia/perfiles")}
+          />
+          <QuickActionCard
+            icon={BookOpen} label="Ver cursos"          desc="Cursos de tus hijos"
+            colorClass="stat-icon-cyan"   onClick={() => navigate("/familia/cursos")}
+          />
+          <QuickActionCard
+            icon={FileText} label="Ver entregas"        desc="Revisión de tareas enviadas"
+            colorClass="stat-icon-green"  onClick={() => navigate("/familia/entregas")}
+          />
+          <QuickActionCard
+            icon={Calendar} label="Calendario"          desc="Eventos y actividades"
+            colorClass="stat-icon-yellow" onClick={() => navigate("/familia/calendario")}
+          />
         </div>
       </section>
 
-      {/* Courses */}
-      <section style={{ marginBottom: 28 }}>
+      {/* ── Courses ── */}
+      <section aria-label="Cursos de mis hijos" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader
           title="Cursos de mis hijos"
-          action={{ label: "Ver perfiles", onClick: () => navigate("/familia/perfiles") }}
+          actionLabel="Ver perfiles"
+          onAction={() => navigate("/familia/perfiles")}
         />
         {loading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
-            {[0, 1, 2].map((i) => (
-              <div key={i} style={{ background: "var(--color-surface)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--color-border)" }}>
-                <div style={{ height: 4, background: "var(--color-border)" }} />
-                <div style={{ padding: 16 }}>
-                  <Skeleton h={40} w={40} r={10} />
-                  <div style={{ marginTop: 12 }}><Skeleton h={14} w="80%" r={5} /></div>
-                  <div style={{ marginTop: 6 }}><Skeleton h={11} w="50%" r={4} /></div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CourseSkeletons />
         ) : cursos.length === 0 ? (
-          <div style={{
-            background: "var(--color-surface)", borderRadius: 16,
-            border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-            padding: "44px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
-          }}>
-            <BookOpen style={{ width: 28, height: 28, color: "var(--color-text-muted)" }} />
-            <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-muted)", margin: 0 }}>
-              Aún no estás inscrito en ningún curso
-            </p>
-            <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", margin: 0, opacity: 0.7 }}>
-              Contacta al docente o administrador para que te agreguen.
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <BookOpen size={24} aria-hidden="true" />
+            </div>
+            <p className="empty-state-title">Aún no hay cursos asignados</p>
+            <p className="empty-state-sub">
+              Contacta al docente o administrador para que te agreguen a un curso.
             </p>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
+          <div className="grid-auto-sm">
             {cursos.map((c, i) => (
-              <CursoCard key={c._id} curso={c} role="padre" idx={i} showCover={true} coverSrc={c.fotoPortada || null} />
+              <CursoCard
+                key={c._id}
+                curso={c}
+                role="padre"
+                idx={i}
+                showCover={true}
+                coverSrc={c.fotoPortada || null}
+              />
             ))}
           </div>
         )}
       </section>
 
-      {/* Events today */}
+      {/* ── Events today ── */}
       {!loading && eventos.length > 0 && (
-        <section>
+        <section aria-label="Eventos de hoy">
           <SectionHeader
             title="Eventos de hoy"
-            action={{ label: "Ver calendario", onClick: () => navigate("/familia/calendario") }}
+            actionLabel="Ver calendario"
+            onAction={() => navigate("/familia/calendario")}
           />
-          <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
-            {eventos.map((ev) => <EventItem key={ev._id} evento={ev} />)}
+          <div className="list-card">
+            {eventos.map(ev => <EventItem key={ev._id} evento={ev} />)}
           </div>
         </section>
       )}

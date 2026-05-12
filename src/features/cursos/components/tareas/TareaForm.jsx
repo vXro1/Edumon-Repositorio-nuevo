@@ -1,8 +1,8 @@
 // src/features/cursos/components/tareas/TareaForm.jsx
 import { useRef } from "react";
 import { FileText, Upload, X } from "lucide-react";
-import { Button, Input } from "@/components";
-import { Field, Sk, StTextarea } from "../shared/ui";
+import { Button, Input, Textarea, Checkbox } from "@/components";
+import { Field, Sk } from "../shared/ui";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 
 export default function TareaForm({
@@ -64,42 +64,45 @@ export default function TareaForm({
     });
 
   const archivosExistentes = (editTarget?.archivosAdjuntos ?? []).filter(a => a.tipo === "archivo");
-  const enlacesExistentes = (editTarget?.archivosAdjuntos ?? []).filter(a => a.tipo === "enlace");
+  const enlacesExistentes  = (editTarget?.archivosAdjuntos ?? []).filter(a => a.tipo === "enlace");
 
   return (
     <form onSubmit={onSubmit}>
 
-      <Field label="Título *">
-        <Input
-          value={form.titulo}
-          onChange={(e) => setForm(f => ({ ...f, titulo: e.target.value }))}
-          placeholder="Nombre de la tarea"
-          required
-        />
-      </Field>
+      {/* ── Título ── */}
+      <Input
+        label="Título"
+        name="titulo"
+        value={form.titulo}
+        onChange={(e) => setForm(f => ({ ...f, titulo: e.target.value }))}
+        placeholder="Nombre de la tarea"
+        required
+      />
 
-      <Field label="Descripción">
-        <StTextarea
-          value={form.descripcion}
-          onChange={(e) => setForm(f => ({ ...f, descripcion: e.target.value }))}
-          rows={4}
-        />
-      </Field>
+      {/* ── Descripción ── */}
+      <Textarea
+        label="Descripción"
+        name="descripcion"
+        value={form.descripcion}
+        onChange={(e) => setForm(f => ({ ...f, descripcion: e.target.value }))}
+        rows={4}
+      />
 
-      <Field label="Fecha de entrega">
-        <Input
-          type="datetime-local"
-          value={form.fechaEntrega}
-          onChange={(e) => setForm(f => ({ ...f, fechaEntrega: e.target.value }))}
-        />
-      </Field>
+      {/* ── Fecha de entrega ── */}
+      <Input
+        label="Fecha de entrega"
+        name="fechaEntrega"
+        type="datetime-local"
+        value={form.fechaEntrega}
+        onChange={(e) => setForm(f => ({ ...f, fechaEntrega: e.target.value }))}
+      />
 
-      {/* Asignación */}
+      {/* ── Asignación — UI compleja, Field se mantiene ── */}
       <Field label="Asignar a">
         <div style={{ display: "flex", gap: 10 }}>
           {[
-            { value: "todos", label: "🌐 Todos" },
-            { value: "seleccionados", label: "👥 Seleccionados" }
+            { value: "todos",         label: "🌐 Todos" },
+            { value: "seleccionados", label: "👥 Seleccionados" },
           ].map(({ value, label }) => (
             <button
               key={value}
@@ -112,8 +115,8 @@ export default function TareaForm({
                 fontWeight: 700,
                 border: "1.5px solid",
                 borderColor: form.asignacionTipo === value ? "var(--color-primary)" : "var(--color-border)",
-                background: form.asignacionTipo === value ? "var(--color-primary-light)" : "var(--color-bg)",
-                color: form.asignacionTipo === value ? "var(--color-primary)" : "var(--color-text-muted)",
+                background:  form.asignacionTipo === value ? "var(--color-primary-light)" : "var(--color-bg)",
+                color:       form.asignacionTipo === value ? "var(--color-primary)" : "var(--color-text-muted)",
               }}
             >
               {label}
@@ -122,74 +125,60 @@ export default function TareaForm({
         </div>
       </Field>
 
-      {/* Participantes */}
+      {/* ── Participantes ── */}
       {form.asignacionTipo === "seleccionados" && (
         <Field label={`Participantes — ${form.participantes.length}`}>
           {loadingParts ? <Sk h={90} r={8} /> :
             participantesCurso.length === 0 ? (
               <p style={{ fontSize: 12.5 }}>Sin participantes</p>
             ) : (
-              <div style={{ maxHeight: 190, overflowY: "auto", border: "1.5px solid var(--color-border)", borderRadius: 9 }}>
-                {participantesCurso.map(p => {
-                  const sel = form.participantes.includes(p._id);
-                  return (
-                    <div
-                      key={p._id}
-                      onClick={() => toggleParticipante(p._id)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "7px 10px",
-                        cursor: "pointer",
-                        background: sel ? "var(--color-primary-light)" : "transparent",
-                      }}
-                    >
-                      <div style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: 5,
-                        border: `2px solid ${sel ? "var(--color-primary)" : "var(--color-border)"}`,
-                        background: sel ? "var(--color-primary)" : "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}>
-                        {sel && <span style={{ color: "white", fontSize: 11 }}>✓</span>}
-                      </div>
-                      <span style={{ flex: 1 }}>{p.nombre} {p.apellido}</span>
-                    </div>
-                  );
-                })}
+              <div style={{
+                maxHeight: 190, overflowY: "auto",
+                border: "1.5px solid var(--color-border)", borderRadius: 9,
+              }}>
+                {participantesCurso.map(p => (
+                  <div
+                    key={p._id}
+                    onClick={() => toggleParticipante(p._id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "7px 10px", cursor: "pointer",
+                      background: form.participantes.includes(p._id)
+                        ? "var(--color-primary-light)"
+                        : "transparent",
+                    }}
+                  >
+                    <Checkbox
+                      checked={form.participantes.includes(p._id)}
+                      onChange={() => toggleParticipante(p._id)}
+                    />
+                    <span style={{ flex: 1 }}>{p.nombre} {p.apellido}</span>
+                  </div>
+                ))}
               </div>
-            )}
+            )
+          }
         </Field>
       )}
 
-      {/* Archivos existentes */}
+      {/* ── Archivos existentes ── */}
       {editTarget && archivosExistentes.length > 0 && (
         <Field label="Archivos existentes">
           {archivosExistentes.map((adj, i) => {
             const marcado = form.archivosEliminar.includes(adj.publicId);
-
             return (
               <div
                 key={adj._id ?? i}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
+                  display: "flex", alignItems: "center", gap: 10,
                   padding: "8px 12px",
-                  border: "1.5px solid var(--color-border)",
-                  borderRadius: 8,
+                  border: "1.5px solid var(--color-border)", borderRadius: 8,
                 }}
               >
                 <FileText style={{ width: 14, height: 14 }} />
-
                 <a href={adj.url} target="_blank" rel="noreferrer" style={{ flex: 1 }}>
                   {adj.nombre}
                 </a>
-
                 <IconBtn
                   color={marcado ? "var(--color-error)" : "var(--color-text-muted)"}
                   onClick={() => toggleArchivoEliminar(adj.publicId)}
@@ -202,15 +191,17 @@ export default function TareaForm({
         </Field>
       )}
 
-      {/* Nuevos archivos */}
+      {/* ── Nuevos archivos ── */}
       <Field label="Archivos">
-        <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={handleFileAdd} />
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          style={{ display: "none" }}
+          onChange={handleFileAdd}
+        />
 
-        <Button
-          variant="outline"
-          type="button"
-          onClick={() => fileRef.current?.click()}
-        >
+        <Button variant="outline" type="button" onClick={() => fileRef.current?.click()}>
           <Upload style={{ width: 14, height: 14 }} />
           Seleccionar archivos
         </Button>
@@ -219,7 +210,6 @@ export default function TareaForm({
           <div key={i} style={{ display: "flex", gap: 8, marginTop: 6 }}>
             <FileText />
             <span style={{ flex: 1 }}>{f.name}</span>
-
             <IconBtn color="var(--color-error)" onClick={() => removeArchivoNuevo(i)}>
               <X />
             </IconBtn>
@@ -227,11 +217,16 @@ export default function TareaForm({
         ))}
       </Field>
 
-      {/* Enlaces */}
+      {/* ── Enlaces ── */}
       <Field label="Enlaces">
         {form.enlacesNuevos.map((enlace, i) => (
           <div key={i} style={{ display: "flex", gap: 8 }}>
-            <Input value={enlace.url} onChange={(e) => updateEnlace(i, "url", e.target.value)} />
+            <Input
+              name={`enlace-url-${i}`}
+              value={enlace.url}
+              onChange={(e) => updateEnlace(i, "url", e.target.value)}
+              placeholder="https://..."
+            />
             <IconBtn color="var(--color-error)" onClick={() => removeEnlace(i)}>
               <X />
             </IconBtn>
@@ -243,12 +238,11 @@ export default function TareaForm({
         </Button>
       </Field>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
         <Button variant="ghost" type="button" onClick={onCancel}>
           Cancelar
         </Button>
-
         <Button type="submit" disabled={saving}>
           {saving ? "Guardando..." : editTarget ? "Guardar cambios" : "Crear tarea"}
         </Button>

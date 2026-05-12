@@ -48,24 +48,32 @@ export default function TareaDetalle({
   onDelete,
   onViewEntregas,
 }) {
-  const archivos = (t.archivosAdjuntos ?? []).filter(
-    (a) => a.tipo === "archivo"
+  // Soporta datos normalizados (t.adjuntos, t.docente, t.modulo, t.curso)
+  // y datos crudos del backend (t.archivosAdjuntos, t.docenteId como objeto, etc.)
+  const todosAdjuntos = t.adjuntos ?? t.archivosAdjuntos ?? [];
+
+  const archivos = todosAdjuntos.filter(
+    (a) => a.tipo === "archivo" || (a.tipo && !a.tipo.includes("/") && a.tipo !== "enlace")
   );
 
-  const enlaces = (t.archivosAdjuntos ?? []).filter(
+  const enlaces = todosAdjuntos.filter(
     (a) => a.tipo === "enlace"
   );
 
   const docente =
-    typeof t.docenteId === "object"
+    t.docente
+      ? `${t.docente.nombre ?? ""} ${t.docente.apellido ?? ""}`.trim()
+      : typeof t.docenteId === "object"
       ? `${t.docenteId.nombre ?? ""} ${t.docenteId.apellido ?? ""}`.trim()
       : null;
 
   const modulo =
-    typeof t.moduloId === "object" ? t.moduloId.titulo : null;
+    t.modulo?.titulo ??
+    (typeof t.moduloId === "object" ? t.moduloId?.titulo : null);
 
   const curso =
-    typeof t.cursoId === "object" ? t.cursoId.nombre : null;
+    t.curso?.nombre ??
+    (typeof t.cursoId === "object" ? t.cursoId?.nombre : null);
 
   const vencida = esPasada(t.fechaEntrega);
 
@@ -89,9 +97,9 @@ export default function TareaDetalle({
           {t.asignacionTipo === "todos" ? "Para todos" : "Seleccionados"}
         </Badge>
 
-        {t.estado && (
+        {t.estado && t.estado !== "activa" && !vencida && (
           <Badge variant="neutral" styleType="soft" size="sm">
-            {t.estado}
+            {t.estado === "cerrada" ? "Cerrada" : t.estado}
           </Badge>
         )}
       </div>

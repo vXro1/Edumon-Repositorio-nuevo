@@ -30,10 +30,10 @@ import {
   eventosDelete,
 } from "@/lib/apiClient";
 
-import { Modal, Toast, Button } from "@/components";
+import { Modal, Toast, Button, Input, Textarea, Select } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 
-import { normalizeCurso } from "@/lib/normalizers";
+import { normalizeCurso }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
 
 // ── helpers ─────────────────────────────────────────────────────
@@ -59,45 +59,8 @@ function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
 }
 
-function FieldGroup({ label, children }) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function StyledInput({ value, onChange, placeholder, type = "text", required, as: As = "input", rows }) {
-  const [f, setF] = useState(false);
-  const base = { width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "#0C6AC4" : "var(--color-border)"}`, outline: "none", background: "var(--color-surface)", color: "var(--color-text)", boxShadow: f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none", transition: "border-color 150ms, box-shadow 150ms", resize: As === "textarea" ? "vertical" : undefined };
-  const props = { value, onChange, placeholder, required, onFocus: () => setF(true), onBlur: () => setF(false), style: base };
-  return As === "textarea" ? <textarea {...props} rows={rows ?? 3} /> : <input type={type} {...props} />;
-}
-
-function StyledSelect({ value, onChange, children, required }) {
-  const [f, setF] = useState(false);
-  return (
-    <select
-      value={value}
-      onChange={onChange}
-      required={required}
-      onFocus={() => setF(true)}
-      onBlur={() => setF(false)}
-      style={{
-        width: "100%", padding: "9px 12px", fontSize: 13.5,
-        borderRadius: 10,
-        border: `1.5px solid ${f ? "#0C6AC4" : "var(--color-border)"}`,
-        outline: "none",
-        background: "var(--color-surface)",
-        color: "var(--color-text)",
-        cursor: "pointer",
-      }}
-    >
-      {children}
-    </select>
-  );
-}
+// ── StyledInput, StyledSelect y FieldGroup eliminados — reemplazados por
+//    Input, Textarea y Select del design system con prop label ─────────────
 
 const INIT_FORM = {
   titulo: "", descripcion: "", fechaInicio: "", fechaFin: "",
@@ -115,17 +78,17 @@ export default function EventosPage() {
   const [calYear,  setCalYear]  = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
 
-  const [showForm, setShowForm] = useState(false);
-  const [editTarget, setEditTarget] = useState(null);
-  const [form, setForm] = useState(INIT_FORM);
-  const [cursosIds, setCursosIds] = useState([]);
-  const [adjunto, setAdjunto] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [showForm,    setShowForm]    = useState(false);
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [form,        setForm]        = useState(INIT_FORM);
+  const [cursosIds,   setCursosIds]   = useState([]);
+  const [adjunto,     setAdjunto]     = useState(null);
+  const [saving,      setSaving]      = useState(false);
   const fileRef = useRef(null);
 
-  const [showDelete, setShowDelete] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [showDelete,  setShowDelete]  = useState(false);
+  const [deletingId,  setDeletingId]  = useState(null);
+  const [deleting,    setDeleting]    = useState(false);
 
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
@@ -133,7 +96,9 @@ export default function EventosPage() {
   };
 
   useEffect(() => {
-    cursosGetMine({ limit: 50 }).then(d => setCursos((d.cursos ?? []).map(normalizeCurso))).catch(() => {});
+    cursosGetMine({ limit: 50 })
+      .then(d => setCursos((d.cursos ?? []).map(normalizeCurso)))
+      .catch(() => {});
   }, []);
 
   const load = useCallback(async () => {
@@ -161,13 +126,13 @@ export default function EventosPage() {
   const openEdit = (ev) => {
     setEditTarget(ev);
     setForm({
-      titulo: ev.titulo ?? "",
+      titulo:      ev.titulo      ?? "",
       descripcion: ev.descripcion ?? "",
       fechaInicio: toLocalInput(ev.fechaInicio),
-      fechaFin: toLocalInput(ev.fechaFin),
-      hora: ev.hora ?? "",
-      ubicacion: ev.ubicacion ?? "",
-      categoria: ev.categoria ?? "otro",
+      fechaFin:    toLocalInput(ev.fechaFin),
+      hora:        ev.hora        ?? "",
+      ubicacion:   ev.ubicacion   ?? "",
+      categoria:   ev.categoria   ?? "otro",
     });
     const ids = (ev.cursosIds ?? ev.cursos ?? []).map(c => c._id ?? c);
     setCursosIds(ids);
@@ -176,7 +141,9 @@ export default function EventosPage() {
   };
 
   const toggleCurso = (id) => {
-    setCursosIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setCursosIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   };
 
   const handleSave = async (e) => {
@@ -184,7 +151,7 @@ export default function EventosPage() {
     setSaving(true);
     try {
       if (editTarget) await eventosUpdate(editTarget._id, form);
-      else await eventosCreate(form);
+      else            await eventosCreate(form);
 
       notify(editTarget ? "Evento actualizado" : "Evento creado");
       setShowForm(false);
@@ -256,15 +223,82 @@ export default function EventosPage() {
 
       {/* FORM MODAL */}
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Evento">
-        <form onSubmit={handleSave}>
-          <Button variant="outline" onClick={() => setShowForm(false)}>
-            Cancelar
-          </Button>
+        <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-          <Button variant="primary" disabled={saving} type="submit">
-            {saving && <Loader2 />}
-            Guardar
-          </Button>
+          <Input
+            label="Título"
+            name="titulo"
+            value={form.titulo}
+            onChange={(e) => setForm(f => ({ ...f, titulo: e.target.value }))}
+            placeholder="Nombre del evento"
+            required
+          />
+
+          <Textarea
+            label="Descripción"
+            name="descripcion"
+            value={form.descripcion}
+            onChange={(e) => setForm(f => ({ ...f, descripcion: e.target.value }))}
+            placeholder="Descripción del evento"
+            rows={3}
+          />
+
+          <Input
+            label="Fecha de inicio"
+            name="fechaInicio"
+            type="datetime-local"
+            value={form.fechaInicio}
+            onChange={(e) => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
+          />
+
+          <Input
+            label="Fecha de fin"
+            name="fechaFin"
+            type="datetime-local"
+            value={form.fechaFin}
+            onChange={(e) => setForm(f => ({ ...f, fechaFin: e.target.value }))}
+          />
+
+          <Input
+            label="Hora"
+            name="hora"
+            type="time"
+            value={form.hora}
+            onChange={(e) => setForm(f => ({ ...f, hora: e.target.value }))}
+          />
+
+          <Input
+            label="Ubicación"
+            name="ubicacion"
+            value={form.ubicacion}
+            onChange={(e) => setForm(f => ({ ...f, ubicacion: e.target.value }))}
+            placeholder="Aula, sala, enlace…"
+            leftIcon={<MapPin size={16} />}
+          />
+
+          <Select
+            label="Categoría"
+            name="categoria"
+            value={form.categoria}
+            onChange={(e) => setForm(f => ({ ...f, categoria: e.target.value }))}
+            required
+          >
+            {Object.entries(CATEGORIA_CFG).map(([key, { label }]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </Select>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10,
+            paddingTop: 10, borderTop: "1px solid var(--color-border)" }}>
+            <Button variant="ghost" type="button" onClick={() => setShowForm(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving && <Loader2 size={14} />}
+              Guardar
+            </Button>
+          </div>
+
         </form>
       </Modal>
 
@@ -275,7 +309,7 @@ export default function EventosPage() {
         </Button>
 
         <Button variant="danger" onClick={handleDelete} disabled={deleting}>
-          {deleting && <Loader2 />}
+          {deleting && <Loader2 size={14} />}
           Eliminar
         </Button>
       </Modal>

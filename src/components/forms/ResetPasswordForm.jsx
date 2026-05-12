@@ -1,173 +1,151 @@
-// src/features/auth/components/ResetPasswordForm.jsx
-
+// src/features/auth/components/forms/ResetPasswordForm.jsx
 import { useState } from "react";
-import { Input, Button } from "@/components";
-import { IconBtn } from "@/features/cursos/components/shared/ui";
-
+import { Mail, Key, Lock } from "lucide-react";
+import { Input } from "@/components";
+import AuthLayout from "./AuthLayout";
 const validate = ({ correo, codigo, contrasenaNueva, confirmar }) => {
-  const errors = {};
-
-  if (!correo.trim()) errors.correo = "El correo es requerido";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim()))
-    errors.correo = "Correo inválido";
-
-  if (!codigo.trim()) errors.codigo = "El código es requerido";
-  else if (!/^\d{6}$/.test(codigo.trim()))
-    errors.codigo = "El código debe tener 6 dígitos";
-
-  if (!contrasenaNueva) errors.contrasenaNueva = "La contraseña es requerida";
-  else if (contrasenaNueva.length < 8)
-    errors.contrasenaNueva = "Mínimo 8 caracteres";
-
-  if (!confirmar) errors.confirmar = "Confirma tu contraseña";
-  else if (confirmar !== contrasenaNueva)
-    errors.confirmar = "Las contraseñas no coinciden";
-
-  return errors;
+  const e = {};
+  if (!correo.trim())
+    e.correo = "El correo es requerido";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
+    e.correo = "Ingresa un correo válido";
+  if (!codigo.trim())
+    e.codigo = "El código es requerido";
+  else if (!/^\d{4,8}$/.test(codigo.trim()))
+    e.codigo = "El código debe tener entre 4 y 8 dígitos";
+  if (!contrasenaNueva)
+    e.contrasenaNueva = "La contraseña es requerida";
+  else if (contrasenaNueva.length < 6)
+    e.contrasenaNueva = "Mínimo 6 caracteres";
+  if (confirmar !== contrasenaNueva)
+    e.confirmar = "Las contraseñas no coinciden";
+  return e;
 };
 
 const ResetPasswordForm = ({
   onSubmit,
-  loading,
-  error,
+  loading = false,
+  error = "",
+  success = false,
   defaultEmail = "",
+  onBack,
+  onGoLogin,
 }) => {
   const [form, setForm] = useState({
-    correo: defaultEmail,
-    codigo: "",
+    correo:         defaultEmail,
+    codigo:         "",
     contrasenaNueva: "",
-    confirmar: "",
+    confirmar:      "",
   });
-
   const [errors, setErrors] = useState({});
-  const [showPass, setShowPass] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setForm((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    setForm(p => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors(p => ({ ...p, [name]: "" }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const validationErrors = validate(form);
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    const { confirmar, ...payload } = form;
+    const ve = validate(form);
+    if (Object.keys(ve).length) { setErrors(ve); return; }
+    const { confirmar, ...payload } = form;   // no enviar confirmar al backend
     onSubmit(payload);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-auth" noValidate>
-      {/* 🔴 Error global */}
-      {error && (
-        <p className="text-red-500 text-sm mb-3">
-          {error}
+    <AuthLayout>
+      <div className="auth-form-head">
+        <h1>Nueva contraseña</h1>
+        <p>
+          {success
+            ? "Tu contraseña fue actualizada correctamente."
+            : "Ingresa el código que recibiste y tu nueva contraseña."}
         </p>
-      )}
-
-      <Input
-        id="correo"
-        name="correo"
-        label="Correo electrónico"
-        type="email"
-        placeholder="usuario@ejemplo.com"
-        value={form.correo}
-        onChange={handleChange}
-        error={errors.correo}
-        autoComplete="email"
-      />
-
-      <Input
-        id="codigo"
-        name="codigo"
-        label="Código de verificación"
-        type="text"
-        placeholder="123456"
-        value={form.codigo}
-        onChange={handleChange}
-        error={errors.codigo}
-        maxLength={6}
-        inputMode="numeric"
-      />
-
-      {/* Nueva contraseña */}
-      <div className="form-field relative">
-        <Input
-          id="contrasenaNueva"
-          name="contrasenaNueva"
-          label="Nueva contraseña"
-          type={showPass ? "text" : "password"}
-          placeholder="Mínimo 8 caracteres"
-          value={form.contrasenaNueva}
-          onChange={handleChange}
-          error={errors.contrasenaNueva}
-          autoComplete="new-password"
-        />
-
-        <IconBtn
-          color="var(--color-text-muted)"
-          onClick={() => setShowPass((v) => !v)}
-          aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
-          style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-          }}
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d={
-                showPass
-                  ? "M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-                  : "M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              }
-            />
-          </svg>
-        </IconBtn>
       </div>
 
-      <Input
-        id="confirmar"
-        name="confirmar"
-        label="Confirmar contraseña"
-        type={showPass ? "text" : "password"}
-        placeholder="Repite la nueva contraseña"
-        value={form.confirmar}
-        onChange={handleChange}
-        error={errors.confirmar}
-        autoComplete="new-password"
-      />
+      {error && (
+        <div className="auth-error" role="alert">{error}</div>
+      )}
 
-      {/* Submit */}
-      <Button
-        type="submit"
-        variant="primary"
-        disabled={loading}
-        className="form-button form-button--primary"
-      >
-        {loading ? "Restableciendo..." : "Restablecer contraseña"}
-      </Button>
-    </form>
+      {success ? (
+        /* ── Estado: éxito ── */
+        <>
+          <div className="auth-success" role="status">
+            ✅ ¡Contraseña actualizada! Ya puedes iniciar sesión.
+          </div>
+          <button className="auth-submit" onClick={onGoLogin}>
+            Ir al inicio de sesión
+          </button>
+        </>
+      ) : (
+        /* ── Estado: formulario ── */
+        <form onSubmit={handleSubmit} noValidate className="auth-form">
+          <Input
+            label="Correo electrónico"
+            name="correo"
+            type="email"
+            placeholder="tucorreo@ejemplo.com"
+            value={form.correo}
+            onChange={handleChange}
+            leftIcon={<Mail size={16} />}
+            error={errors.correo}
+            autoComplete="email"
+          />
+
+          <Input
+            label="Código de verificación"
+            name="codigo"
+            type="text"
+            inputMode="numeric"
+            placeholder="123456"
+            value={form.codigo}
+            onChange={handleChange}
+            leftIcon={<Key size={16} />}
+            error={errors.codigo}
+            autoComplete="one-time-code"
+            autoFocus
+          />
+
+          <Input
+            label="Nueva contraseña"
+            name="contrasenaNueva"
+            type="password"
+            placeholder="Mínimo 6 caracteres"
+            value={form.contrasenaNueva}
+            onChange={handleChange}
+            leftIcon={<Lock size={16} />}
+            error={errors.contrasenaNueva}
+            autoComplete="new-password"
+          />
+
+          <Input
+            label="Confirmar contraseña"
+            name="confirmar"
+            type="password"
+            placeholder="Repite tu contraseña"
+            value={form.confirmar}
+            onChange={handleChange}
+            leftIcon={<Lock size={16} />}
+            error={errors.confirmar}
+            autoComplete="new-password"
+          />
+
+          <button type="submit" disabled={loading} className="auth-submit">
+            {loading
+              ? <><span className="auth-spinner" /> Guardando...</>
+              : "Cambiar contraseña"
+            }
+          </button>
+
+          <div className="auth-row-between">
+            <button type="button" className="auth-link-btn" onClick={onBack}>
+              ← Volver al inicio de sesión
+            </button>
+          </div>
+        </form>
+      )}
+    </AuthLayout>
   );
 };
-
 export default ResetPasswordForm;

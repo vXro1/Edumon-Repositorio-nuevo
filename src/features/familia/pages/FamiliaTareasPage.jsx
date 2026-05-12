@@ -9,31 +9,27 @@ import {
 import { tareasGetAll, cursosGetMine } from "@/lib/apiClient";
 import { normalizeTarea } from "@/lib/normalizers";
 
-import { Button } from "@/components";
+import { Button, Input , Badge } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 
+// ── ESTADO_META: se mantiene para mapear estado → variant de Badge ─────────
 const ESTADO_META = {
-  abierta:  { label: "Abierta",   color: "#16A34A", bg: "rgba(22,163,74,0.10)" },
-  cerrada:  { label: "Cerrada",   color: "#6B7280", bg: "rgba(107,114,128,0.10)" },
-  vencida:  { label: "Vencida",   color: "#DC2626", bg: "rgba(220,38,38,0.10)" },
+  abierta: { label: "Abierta", variant: "success"  },
+  cerrada: { label: "Cerrada", variant: "neutral"  },
+  vencida: { label: "Vencida", variant: "error"    },
 };
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
 }
 
+// ── EstadoBadge migrado — usa Badge del design system ─────────────────────
 function EstadoBadge({ estado }) {
-  const m = ESTADO_META[estado] ?? { label: estado, color: "#6B7280", bg: "rgba(107,114,128,0.10)" };
-
+  const m = ESTADO_META[estado] ?? { label: estado, variant: "neutral" };
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99,
-      background: m.bg, color: m.color,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor" }} />
+    <Badge variant={m.variant} size="sm" dot>
       {m.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -74,7 +70,7 @@ function TareaRow({ tarea, onClick }) {
       }}>
         {estado === "abierta"
           ? <ClipboardList style={{ width: 16, height: 16, color: "#0C6AC4" }} />
-          : <CheckCircle2 style={{ width: 16, height: 16, color: "#6B7280" }} />
+          : <CheckCircle2  style={{ width: 16, height: 16, color: "#6B7280" }} />
         }
       </div>
 
@@ -107,7 +103,7 @@ function TareaRow({ tarea, onClick }) {
         </div>
       </div>
 
-      {/* Badge */}
+      {/* Badge + acción */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <EstadoBadge estado={estado} />
 
@@ -123,10 +119,10 @@ function TareaRow({ tarea, onClick }) {
 export default function FamiliaTareasPage() {
   const navigate = useNavigate();
 
-  const [tareas, setTareas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [apiError, setApiError] = useState(false);
-  const [search, setSearch] = useState("");
+  const [tareas,       setTareas]       = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [apiError,     setApiError]     = useState(false);
+  const [search,       setSearch]       = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
 
   const load = async () => {
@@ -183,24 +179,18 @@ export default function FamiliaTareasPage() {
       {/* Toolbar */}
       <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
 
-        {/* Search */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          flex: 1, minWidth: 200,
-          background: "var(--color-surface)",
-          border: "1.5px solid var(--color-border)",
-          borderRadius: 10, padding: "8px 12px",
-        }}>
-          <Search style={{ width: 14, height: 14 }} />
-          <input
+        {/* Search — <input> nativo reemplazado; el <div> wrapper desaparece */}
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <Input
+            name="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar tarea…"
-            style={{ border: "none", outline: "none", flex: 1 }}
+            leftIcon={<Search size={14} />}
           />
         </div>
 
-        {/* filtros (correctamente se mantienen nativos) */}
+        {/* Filtros — toggle buttons, se mantienen nativos */}
         {["todos", "abierta", "cerrada"].map(e => (
           <button
             key={e}

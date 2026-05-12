@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookOpen, ClipboardList, Users, ChevronRight,
-  Plus, Calendar, Clock, CheckCircle2,
+  Plus, Calendar, Clock, CheckCircle2, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { cursosGetMine, tareasGetAll, eventosGetHoy } from "@/lib/apiClient";
@@ -11,54 +11,28 @@ import { normalizeCurso, normalizeTarea } from "@/lib/normalizers";
 import CursoCard from "@/features/cursos/components/CursoCard";
 import { Button } from "@/components";
 
-// ── Skeleton ────────────────────────────────────────────────
-function Skeleton({ h = 16, w = "100%", r = 7 }) {
-  return (
-    <div
-      className="animate-pulse"
-      style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }}
-    />
-  );
+/* ── Skeleton ──────────────────────────────────────────────────── */
+function Sk({ h = 14, w = "100%", r = "var(--radius-sm)" }) {
+  return <span className="skeleton" style={{ height: h, width: w, borderRadius: r, display: "block" }} />;
 }
 
-// ── Stat card ───────────────────────────────────────────────
-function StatCard({ value, label, icon: Icon, color, bg, loading }) {
+/* ── Stat card ─────────────────────────────────────────────────── */
+function StatCard({ value, label, icon: Icon, colorClass, loading }) {
   return (
-    <div
-      style={{
-        background: "var(--color-surface)", borderRadius: 16,
-        padding: "18px 20px", border: "1px solid var(--color-border)",
-        boxShadow: "var(--shadow-card)", display: "flex",
-        alignItems: "flex-start", gap: 14,
-        transition: "box-shadow 200ms, transform 200ms",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-md)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-card)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
-    >
-      <div style={{
-        width: 42, height: 42, borderRadius: 11, flexShrink: 0,
-        background: bg, display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <Icon style={{ width: 18, height: 18, color }} />
+    <div className="stat-card">
+      <div className={`stat-card-icon ${colorClass}`}>
+        <Icon size={20} aria-hidden="true" />
       </div>
-      <div style={{ flex: 1 }}>
+      <div className="stat-card-body">
         {loading ? (
           <>
-            <Skeleton h={26} w={50} r={6} />
-            <div style={{ marginTop: 6 }}><Skeleton h={12} w={90} r={4} /></div>
+            <Sk h={28} w={50} r="var(--radius-sm)" />
+            <div style={{ marginTop: 6 }}><Sk h={11} w={90} /></div>
           </>
         ) : (
           <>
-            <p style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text)", lineHeight: 1, margin: 0 }}>
-              {value}
-            </p>
-            <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 4 }}>{label}</p>
+            <p className="stat-card-value">{value}</p>
+            <p className="stat-card-label">{label}</p>
           </>
         )}
       </div>
@@ -66,63 +40,49 @@ function StatCard({ value, label, icon: Icon, color, bg, loading }) {
   );
 }
 
-// ── Task item ─────────────────────────────────────────────────
+/* ── Task list item ────────────────────────────────────────────── */
 function TaskItem({ tarea }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "10px 16px",
-      borderBottom: "1px solid var(--color-border)",
-    }}>
-      <CheckCircle2 style={{ width: 16, height: 16, flexShrink: 0, color: "rgba(12,106,196,0.5)" }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          fontSize: 13, fontWeight: 600, color: "var(--color-text)",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0,
-        }}>
-          {tarea.titulo}
-        </p>
+    <div className="list-card-item">
+      <div
+        className="list-card-item-icon"
+        style={{ background: "var(--edu-cyan-50)", color: "var(--edu-cyan-600)" }}
+      >
+        <CheckCircle2 size={16} aria-hidden="true" />
+      </div>
+      <div className="list-card-item-body">
+        <p className="list-card-item-title">{tarea.titulo}</p>
         {tarea.fechaVencimiento && (
-          <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 2 }}>
+          <p className="list-card-item-meta">
+            <Clock size={10} aria-hidden="true" />
             Vence: {new Date(tarea.fechaVencimiento).toLocaleDateString("es", { day: "numeric", month: "short" })}
           </p>
         )}
       </div>
-      <span style={{
-        fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 99,
-        background: "rgba(12,106,196,0.10)", color: "#0C6AC4",
-        whiteSpace: "nowrap", flexShrink: 0,
-      }}>
+      <span
+        className="list-card-item-badge"
+        style={{ background: "var(--edu-cyan-50)", color: "var(--edu-cyan-700)" }}
+      >
         Activa
       </span>
     </div>
   );
 }
 
-// ── Event item ───────────────────────────────────────────────
+/* ── Event list item ───────────────────────────────────────────── */
 function EventItem({ evento }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "10px 16px",
-      borderBottom: "1px solid var(--color-border)",
-    }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-        background: "rgba(22,163,74,0.10)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <Calendar style={{ width: 15, height: 15, color: "#16A34A" }} />
+    <div className="list-card-item">
+      <div
+        className="list-card-item-icon"
+        style={{ background: "var(--edu-green-50)", color: "var(--edu-green-600)" }}
+      >
+        <Calendar size={16} aria-hidden="true" />
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          fontSize: 13, fontWeight: 600, color: "var(--color-text)",
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0,
-        }}>
-          {evento.titulo}
-        </p>
-        <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-          <Clock style={{ width: 10, height: 10 }} />
+      <div className="list-card-item-body">
+        <p className="list-card-item-title">{evento.titulo}</p>
+        <p className="list-card-item-meta">
+          <Clock size={10} aria-hidden="true" />
           {evento.hora ?? "Todo el día"}
         </p>
       </div>
@@ -130,78 +90,66 @@ function EventItem({ evento }) {
   );
 }
 
-// ── Section header ───────────────────────────────────────────
-function SectionHeader({ title, action }) {
+/* ── Section header ────────────────────────────────────────────── */
+function SectionHeader({ title, onAction, actionLabel }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center",
-      justifyContent: "space-between", marginBottom: 14,
-    }}>
-      <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{title}</h2>
-      {action && (
-        <button
-          onClick={action.onClick}
-          style={{
-            display: "flex", alignItems: "center", gap: 4,
-            fontSize: 12.5, fontWeight: 600, color: "#0C6AC4",
-            background: "none", border: "none", cursor: "pointer",
-          }}
-        >
-          {action.label} <ChevronRight style={{ width: 14, height: 14 }} />
+    <div className="section-header">
+      <h2 className="section-title">{title}</h2>
+      {onAction && (
+        <button className="section-action" onClick={onAction}>
+          {actionLabel} <ChevronRight size={14} aria-hidden="true" />
         </button>
       )}
     </div>
   );
 }
 
-function EmptyCard({ icon, text, action }) {
-  const [hov, setHov] = useState(false);
+/* ── Empty state ───────────────────────────────────────────────── */
+function EmptyState({ icon: Icon, text, actionLabel, onAction }) {
   return (
-    <div style={{
-      background: "var(--color-surface)", borderRadius: 16,
-      border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-      padding: "44px 24px",
-      display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
-    }}>
-      {icon}
-      <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-muted)", margin: 0 }}>{text}</p>
-      {action && (
-        <button
-          onClick={action.onClick}
-          onMouseEnter={() => setHov(true)}
-          onMouseLeave={() => setHov(false)}
-          style={{
-            marginTop: 4, padding: "8px 18px", borderRadius: 10, border: "none",
-            background: hov ? "#0A58A8" : "#0C6AC4",
-            color: "white", fontSize: 13, fontWeight: 600,
-            cursor: "pointer", transition: "background 150ms",
-          }}
-        >
-          {action.label}
-        </button>
+    <div className="empty-state">
+      <div className="empty-state-icon">
+        <Icon size={24} aria-hidden="true" />
+      </div>
+      <p className="empty-state-title">{text}</p>
+      {onAction && (
+        <Button variant="primary" size="sm" onClick={onAction} style={{ marginTop: "var(--space-2)" }}>
+          {actionLabel}
+        </Button>
       )}
     </div>
   );
 }
 
-function QuickBtn({ icon: Icon, label, variant, onClick }) {
+/* ── Course grid skeletons ─────────────────────────────────────── */
+function CourseSkeletons() {
   return (
-    <Button variant={variant} onClick={onClick}>
-      <Icon style={{ width: 15, height: 15 }} />
-      {label}
-    </Button>
+    <div className="grid-auto-sm">
+      {[0, 1, 2].map(i => (
+        <div key={i} className="skeleton-course-card">
+          <div className="sk-cover skeleton" />
+          <div className="sk-body">
+            <Sk h={40} w={40} r="var(--radius-md)" />
+            <Sk h={13} w="80%" />
+            <Sk h={10} w="55%" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ══════════════════════════════════════════════════════════════════ */
 export default function DocenteHomePage() {
-  const { user }  = useAuth();
-  const navigate  = useNavigate();
+  const { user }   = useAuth();
+  const navigate   = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [cursos,  setCursos]  = useState([]);
-  const [tareas,  setTareas]  = useState([]);
-  const [eventos, setEventos] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [cursos,   setCursos]   = useState([]);
+  const [tareas,   setTareas]   = useState([]);
+  const [eventos,  setEventos]  = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -220,98 +168,85 @@ export default function DocenteHomePage() {
   }, []);
 
   const totalEstudiantes = cursos.reduce((a, c) => a + (c.participantes?.length ?? 0), 0);
-  const hora    = new Date().getHours();
-  const saludo  = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
+  const hora   = new Date().getHours();
+  const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
-      {/* Welcome banner */}
-      <div style={{
-        borderRadius: 18,
-        background: "linear-gradient(135deg, #0C6AC4 0%, #1E3A6E 60%, #0F172A 100%)",
-        padding: "24px 32px",
-        display: "flex", alignItems: "center", gap: 20,
-        marginBottom: 28, position: "relative", overflow: "hidden",
-      }}>
-        <div style={{
-          position: "absolute", right: -30, top: -30,
-          width: 160, height: 160, borderRadius: "50%",
-          background: "rgba(255,255,255,0.04)",
-        }} />
-        <div style={{ color: "white", position: "relative" }}>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
+      {/* ── Welcome banner ── */}
+      <div className="welcome-banner edu-fade-in" role="banner">
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <span className="welcome-badge">
+            <Sparkles size={10} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
             Docente
-          </p>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
+          </span>
+          <h1 className="welcome-title">
             {saludo}{user?.nombre ? `, ${user.nombre}` : ""}
           </h1>
+          <p className="welcome-sub">Aquí tienes un resumen de tu actividad de hoy.</p>
         </div>
       </div>
 
-      {/* Stats */}
-      <section style={{ marginBottom: 28 }}>
+      {/* ── Stats ── */}
+      <section aria-label="Estadísticas de actividad" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Tu actividad" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
-          <StatCard value={cursos.length}         label="Mis cursos"           icon={BookOpen}      color="#0C6AC4" bg="rgba(12,106,196,0.10)"  loading={loading} />
-          <StatCard value={totalEstudiantes}       label="Estudiantes en total" icon={Users}         color="#16A34A" bg="rgba(22,163,74,0.10)"   loading={loading} />
-          <StatCard value={tareas.length}          label="Tareas activas"       icon={ClipboardList} color="#6366F1" bg="rgba(99,102,241,0.10)"  loading={loading} />
-          <StatCard value={eventos.length}         label="Eventos hoy"          icon={Calendar}      color="#D97706" bg="rgba(217,119,6,0.10)"   loading={loading} />
+        <div className="grid-stats">
+          <StatCard value={cursos.length}        label="Mis cursos"           icon={BookOpen}      colorClass="stat-icon-purple" loading={loading} />
+          <StatCard value={totalEstudiantes}      label="Estudiantes en total" icon={Users}         colorClass="stat-icon-green"  loading={loading} />
+          <StatCard value={tareas.length}         label="Tareas activas"       icon={ClipboardList} colorClass="stat-icon-cyan"   loading={loading} />
+          <StatCard value={eventos.length}        label="Eventos hoy"          icon={Calendar}      colorClass="stat-icon-yellow" loading={loading} />
         </div>
       </section>
 
-      {/* Quick actions */}
-      <section style={{ marginBottom: 28 }}>
+      {/* ── Quick actions ── */}
+      <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <QuickBtn icon={Plus}          label="Crear curso"    variant="primary" onClick={() => navigate("/cursos")} />
-          <QuickBtn icon={ClipboardList} label="Nueva tarea"    variant="outline" onClick={() => navigate("/tareas")} />
-          <QuickBtn icon={Calendar}      label="Ver calendario" variant="ghost"   onClick={() => navigate("/eventos")} />
+        <div className="quick-actions">
+          <Button variant="primary" onClick={() => navigate("/cursos")}>
+            <Plus size={15} aria-hidden="true" />
+            Crear curso
+          </Button>
+          <Button variant="outline-neutral" onClick={() => navigate("/tareas")}>
+            <ClipboardList size={15} aria-hidden="true" />
+            Nueva tarea
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/calendario")}>
+            <Calendar size={15} aria-hidden="true" />
+            Ver calendario
+          </Button>
         </div>
       </section>
 
-      {/* Courses + Tasks */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0,1.6fr) minmax(0,1fr)",
-        gap: 20, marginBottom: 24,
-      }}>
+      {/* ── Courses + Tasks ── */}
+      <div className="layout-split" style={{ marginBottom: "var(--space-6)" }}>
+
         {/* Courses */}
-        <section>
+        <section aria-label="Mis cursos">
           <SectionHeader
             title="Mis cursos"
-            action={{ label: "Ver todos", onClick: () => navigate("/cursos") }}
+            actionLabel="Ver todos"
+            onAction={() => navigate("/cursos")}
           />
           {loading ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14 }}>
-              {[0, 1, 2].map((i) => (
-                <div key={i} style={{ background: "var(--color-surface)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--color-border)" }}>
-                  <div style={{ height: 4, background: "var(--color-border)" }} />
-                  <div style={{ padding: 16 }}>
-                    <Skeleton h={40} w={40} r={10} />
-                    <div style={{ marginTop: 12 }}><Skeleton h={14} w="80%" r={5} /></div>
-                    <div style={{ marginTop: 6 }}><Skeleton h={11} w="50%" r={4} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <CourseSkeletons />
           ) : cursos.length === 0 ? (
-            <EmptyCard
-              icon={<BookOpen style={{ width: 28, height: 28, color: "var(--color-text-muted)" }} />}
+            <EmptyState
+              icon={BookOpen}
               text="No tienes cursos asignados aún"
-              action={{ label: "Crear primer curso", onClick: () => navigate("/cursos") }}
+              actionLabel="Crear primer curso"
+              onAction={() => navigate("/cursos")}
             />
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 14 }}>
+            <div className="grid-auto-sm">
               {cursos.map((c, i) => (
                 <CursoCard
                   key={c._id}
                   curso={c}
-                  role="docente"      /* ← role explícito */
+                  role="docente"
                   idx={i}
                   showCover={true}
                   coverSrc={c.fotoPortada || null}
-                  /* onClick omitido → navega a /cursos/:id por defecto */
                 />
               ))}
             </div>
@@ -319,50 +254,53 @@ export default function DocenteHomePage() {
         </section>
 
         {/* Tasks */}
-        <section>
+        <section aria-label="Tareas activas">
           <SectionHeader
             title="Tareas activas"
-            action={{ label: "Ver todas", onClick: () => navigate("/tareas") }}
+            actionLabel="Ver todas"
+            onAction={() => navigate("/tareas")}
           />
-          <div style={{
-            background: "var(--color-surface)", borderRadius: 16,
-            border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-            overflow: "hidden",
-          }}>
+          <div className="list-card">
             {loading ? (
-              <div style={{ padding: 16 }}>
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} style={{ marginBottom: 14 }}>
-                    <Skeleton h={13} w="75%" r={5} />
-                    <div style={{ marginTop: 6 }}><Skeleton h={10} w="45%" r={4} /></div>
+              <div style={{ padding: "var(--space-4)" }}>
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className="skeleton-list-item">
+                    <Sk h={36} w={36} r="var(--radius-md)" />
+                    <div style={{ flex: 1 }}>
+                      <Sk h={13} w="75%" />
+                      <div style={{ marginTop: 6 }}><Sk h={10} w="45%" /></div>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : tareas.length === 0 ? (
-              <div style={{ padding: "36px 24px", textAlign: "center" }}>
-                <ClipboardList style={{ width: 24, height: 24, color: "var(--color-text-muted)", margin: "0 auto 8px" }} />
-                <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>Sin tareas activas</p>
+              <div style={{ padding: "var(--space-8) var(--space-5)", textAlign: "center" }}>
+                <ClipboardList
+                  size={24}
+                  aria-hidden="true"
+                  style={{ color: "var(--color-text-subtle)", margin: "0 auto var(--space-2)" }}
+                />
+                <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", margin: 0 }}>
+                  Sin tareas activas
+                </p>
               </div>
             ) : (
-              tareas.map((t) => <TaskItem key={t._id} tarea={t} />)
+              tareas.map(t => <TaskItem key={t._id} tarea={t} />)
             )}
           </div>
         </section>
       </div>
 
-      {/* Events today */}
+      {/* ── Events today ── */}
       {!loading && eventos.length > 0 && (
-        <section>
+        <section aria-label="Eventos de hoy" style={{ marginBottom: "var(--space-6)" }}>
           <SectionHeader
             title="Eventos de hoy"
-            action={{ label: "Ver calendario", onClick: () => navigate("/eventos") }}
+            actionLabel="Ver calendario"
+            onAction={() => navigate("/calendario")}
           />
-          <div style={{
-            background: "var(--color-surface)", borderRadius: 16,
-            border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-            overflow: "hidden",
-          }}>
-            {eventos.map((ev) => <EventItem key={ev._id} evento={ev} />)}
+          <div className="list-card">
+            {eventos.map(ev => <EventItem key={ev._id} evento={ev} />)}
           </div>
         </section>
       )}

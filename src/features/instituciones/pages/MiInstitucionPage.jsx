@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { institucionesGetMine, cursosGetAll, usersGetAll } from "@/lib/apiClient";
 import { humanizeError } from "@/utils/humanizeError";
+import {Badge} from "@/components";
 
 function Sk({ h = 16, w = "100%", r = 7 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
@@ -144,9 +145,9 @@ export default function MiInstitucionPage() {
               ))
             ) : (
               <>
-                <InfoRow icon={Building2} label="Nombre" value={inst?.nombre} />
-                <InfoRow icon={Hash}      label="NIT"    value={inst?.nit} />
-                <InfoRow icon={Hash}      label="Código" value={inst?.codigo} />
+                <InfoRow icon={Building2} label="Nombre"    value={inst?.nombre} />
+                <InfoRow icon={Hash}      label="NIT"       value={inst?.nit} />
+                <InfoRow icon={Hash}      label="Código"    value={inst?.codigo} />
                 <InfoRow icon={MapPin}    label="Dirección" value={inst?.direccion} />
                 <InfoRow icon={Phone}     label="Teléfono"  value={inst?.telefono} />
                 <InfoRow icon={Mail}      label="Correo"    value={inst?.correo} />
@@ -170,9 +171,9 @@ export default function MiInstitucionPage() {
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{user?.nombre} {user?.apellido}</p>
                   <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", margin: 0 }}>{user?.correo}</p>
-                  <span style={{ display: "inline-block", marginTop: 4, padding: "2px 8px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: "rgba(12,106,196,0.10)", color: "#0C6AC4", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Administrador
-                  </span>
+                  <div style={{ marginTop: 4 }}>
+                    <Badge variant="info" size="sm">Administrador</Badge>
+                  </div>
                 </div>
               </div>
             </div>
@@ -185,15 +186,12 @@ export default function MiInstitucionPage() {
             </div>
             <div style={{ padding: "12px 20px" }}>
               {[
-                { label: "Estado", val: "Activo", ok: true },
-                { label: "Plan",   val: "Profesional", ok: true },
-              ].map(({ label, val, ok }) => (
+                { label: "Estado", val: "Activo",        variant: "success" },
+                { label: "Plan",   val: "Profesional",   variant: "info"    },
+              ].map(({ label, val, variant }) => (
                 <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--color-border)" }}>
                   <span style={{ fontSize: 13, color: "var(--color-text-muted)" }}>{label}</span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: ok ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)", color: ok ? "#16A34A" : "#DC2626" }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", flexShrink: 0 }} />
-                    {val}
-                  </span>
+                  <Badge variant={variant} dot>{val}</Badge>
                 </div>
               ))}
             </div>

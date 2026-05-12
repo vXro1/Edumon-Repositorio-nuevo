@@ -4,22 +4,22 @@ export const teacherNav = [
   ...baseNav,
   {
     label: "Mis cursos",
-    path: "/teacher/courses",
+    path: "/cursos",
     icon: "book-open"
   },
   {
     label: "Tareas",
-    path: "/teacher/tasks",
+    path: "/tareas",
     icon: "clipboard"
   },
   {
     label: "Foros",
-    path: "/teacher/forums",
+    path: "/foros",
     icon: "message-circle"
   },
   {
     label: "Eventos",
-    path: "/teacher/events",
+    path: "/eventos",
     icon: "calendar-event"
   }
 ];

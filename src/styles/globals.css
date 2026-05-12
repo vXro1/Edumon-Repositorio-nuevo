@@ -1,24 +1,16 @@
-/* ════════════════════════════════════════════════════════════════
-   EDUMON CSS ARCHITECTURE v2 — Production Ready
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON DESIGN SYSTEM — globals.css
    Orden de cascada: TOKENS → BASE → COMPONENTS → LAYOUT → UTILS
-   Regla: los archivos de mas abajo tienen prioridad (last wins).
-   ════════════════════════════════════════════════════════════════ */
+   ════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. TOKENS CANÓNICOS (fuente de verdad de variables) ── */
-@import "./tokens/colors.css";
-@import "./tokens/typography.css";
-@import "./tokens/spacing.css";
-@import "./tokens/shadows.css";
-@import "./tokens/radius.css";
+/* ── 1. TOKENS ── */
+@import "./tokens/tokens.css";
 
 /* ── 2. BASE ── */
 @import "./base/reset.css";
 @import "./base/theme.css";
 
-/* ── 3. DESIGN SYSTEM (base de componentes, usa los tokens anteriores) ── */
-@import "./design-system.css";
-
-/* ── 4. COMPONENTS (sistema final — sobreescribe design-system si hay conflicto) ── */
+/* ── 3. COMPONENTS ── */
 @import "./components/buttons.css";
 @import "./components/forms.css";
 @import "./components/cards.css";
@@ -27,18 +19,23 @@
 @import "./components/avatar.css";
 @import "./components/toast.css";
 @import "./components/Dropdown.css";
+@import "./components/input.css";
 @import "./components/footer.css";
+@import "./components/skeleton.css";
+@import "./components/animations.css";
+
+/* ── 4. PAGES ── */
+@import "./pages/landing.css";
 
 /* ── 5. LAYOUT ── */
-@import "./layout/sidebar.css";
-@import "./layout/navbar.css";
+@import "./layout/Layout.css";
 
 /* ── 6. UTILITIES ── */
 @import "./utils/animations.css";
 @import "./utils/scrollbar.css";
 @import "./utils/accessibility.css";
 
-/* ── TAILWIND ── */
+/* ── 7. TAILWIND ── */
 @custom-variant dark (&:is(.dark *));
 
 @tailwind base;
@@ -49,56 +46,4 @@
 @theme inline {
   --font-sans:    var(--font-sans);
   --font-heading: var(--font-display);
-}
-
-/* ── FUENTES ── */
-@font-face {
-  font-family: 'Inter';
-  src: url('../assets/fonts/interformatooptimizado/Inter-VariableFont_opsz,wght.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Inter';
-  src: url('../assets/fonts/interformatooptimizado/Inter-Italic-VariableFont_opsz,wght.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Poppins';
-  src: url('../assets/fonts/poppinsoptimizada/Poppins-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Poppins';
-  src: url('../assets/fonts/poppinsoptimizada/Poppins-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Poppins';
-  src: url('../assets/fonts/poppinsoptimizada/Poppins-SemiBold.woff2') format('woff2');
-  font-weight: 600;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Poppins';
-  src: url('../assets/fonts/poppinsoptimizada/Poppins-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Poppins';
-  src: url('../assets/fonts/poppinsoptimizada/Poppins-ExtraBold.woff2') format('woff2');
-  font-weight: 800;
-  font-display: swap;
 }

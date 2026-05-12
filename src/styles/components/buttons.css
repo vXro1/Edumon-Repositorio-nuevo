@@ -1,20 +1,18 @@
-/* ════════════════════════════════════════════════════════════════════
-   EDUMON — BUTTONS
-   Sistema completo. Depende 100% de variables globales.
-   Mecánica principal: Duolingo hard-bottom press.
-   ════════════════════════════════════════════════════════════════════ */
+/* ──────────────────────────────────────────────────────────────────────
+   BUTTONS — Duolingo hard-bottom press mechanic. Full system.
+   ────────────────────────────────────────────────────────────────────── */
 
-/* ── BASE ─────────────────────────────────────────────────────────────── */
+/* ── Base ── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
 
-  font-family: var(--button-font);
-  font-size: var(--button-size);
-  font-weight: var(--button-weight);
-  letter-spacing: var(--button-tracking);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-normal);
   line-height: 1;
   white-space: nowrap;
   text-decoration: none;
@@ -30,7 +28,6 @@
   position: relative;
   overflow: hidden;
 
-  /* Transición separada por propiedad para máximo control */
   transition:
     background-color  var(--transition-fast),
     border-color      var(--transition-fast),
@@ -42,7 +39,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Overlay sutil al hover — da sensación de "brillo" sin cambiar el color base */
 .btn::before {
   content: '';
   position: absolute;
@@ -54,13 +50,11 @@
 }
 .btn:hover::before { background: rgba(255, 255, 255, 0.09); }
 
-/* Focus visible — ring accesible usando token */
 .btn:focus-visible {
   outline: none;
-  box-shadow: var(--shadow-focus);
+  box-shadow: 0 0 0 3px rgba(252, 189, 0, 0.35);
 }
 
-/* Disabled — bloqueo real, no solo visual */
 .btn:disabled,
 .btn[aria-disabled="true"] {
   opacity: 0.45;
@@ -70,7 +64,7 @@
   transform: none !important;
 }
 
-/* ── TAMAÑOS ──────────────────────────────────────────────────────────── */
+/* ── Sizes ── */
 .btn-xs {
   height: 1.875rem;
   padding: 0 var(--space-3);
@@ -78,16 +72,12 @@
   border-radius: var(--radius-md);
   gap: var(--space-1);
 }
-
 .btn-sm {
   height: 2.25rem;
   padding: 0 var(--space-4);
   font-size: var(--text-xs);
   border-radius: var(--radius-md);
 }
-
-/* .btn-md es el default — no necesita clase */
-
 .btn-lg {
   height: 3.25rem;
   padding: 0 var(--space-7);
@@ -95,7 +85,6 @@
   border-radius: var(--radius-xl);
   letter-spacing: var(--tracking-wide);
 }
-
 .btn-xl {
   height: 3.75rem;
   padding: 0 var(--space-10);
@@ -104,75 +93,69 @@
   border-radius: var(--radius-xl);
   letter-spacing: var(--tracking-wide);
 }
-
 .btn-full { width: 100%; }
-
-/* ── VARIANTE: PRIMARY ────────────────────────────────────────────────── */
-/* Sólido purple. Duolingo press mechanic. */
+/* ── Variant: Primary (yellow) ── */
 .btn-primary {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 0 var(--color-primary-active);
+  background: var(--edu-yellow-500);
+  color: var(--edu-dark);
+  border-color: var(--edu-yellow-500);
+  box-shadow: 0 4px 0 var(--edu-yellow-700);
 }
 .btn-primary:not(:disabled):not(:active):hover {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background: var(--edu-yellow-400);
+  border-color: var(--edu-yellow-400);
+  color: var(--edu-dark);
   transform: translateY(-1px);
-  box-shadow: 0 5px 0 var(--color-primary-active), var(--shadow-primary);
+  box-shadow: 0 5px 0 var(--edu-yellow-700);
 }
 .btn-primary:not(:disabled):active {
-  background: var(--color-primary-active);
+  background: var(--edu-yellow-600);
+  color: var(--edu-dark);
+  border-color: var(--edu-yellow-600);
   transform: translateY(4px);
-  box-shadow: 0 0 0 var(--color-primary-active);
-}
-.btn-primary:focus-visible {
-  box-shadow: 0 4px 0 var(--color-primary-active), var(--shadow-focus);
+  box-shadow: 0 0 0 var(--edu-yellow-700);
 }
 
-/* ── VARIANTE: GRADIENT ───────────────────────────────────────────────── */
-/* Purple → Pink. Para acciones hero / CTAs principales. */
+/* ── Variant: Gradient ── */
 .btn-gradient {
-  background: var(--gradient-brand);
-  color: var(--color-text-inverse);
+  background: linear-gradient(135deg, var(--edu-yellow-400) 0%, var(--edu-yellow-500) 55%, var(--edu-yellow-600) 100%);
+  color: var(--edu-dark);
   border-color: transparent;
-  box-shadow: 0 4px 0 var(--edu-purple-700), var(--shadow-brand);
+  box-shadow: 0 4px 0 var(--edu-yellow-700);
 }
 .btn-gradient:not(:disabled):not(:active):hover {
   transform: translateY(-1px);
-  box-shadow: 0 5px 0 var(--edu-purple-700), var(--shadow-brand);
-  filter: brightness(1.08);
+  box-shadow: 0 5px 0 var(--edu-yellow-700);
+  filter: brightness(1.06);
 }
 .btn-gradient:not(:disabled):active {
   transform: translateY(4px);
-  box-shadow: 0 0 0 var(--edu-purple-700);
-  filter: brightness(0.96);
+  box-shadow: 0 0 0 var(--edu-yellow-700);
 }
 
-/* ── VARIANTE: SECONDARY ─────────────────────────────────────────────── */
-/* Outline → fill hover. Acción secundaria clara. */
+/* ── Variant: Secondary (pink) ── */
 .btn-secondary {
-  background: transparent;
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  box-shadow: none;
+  background: var(--edu-pink-500);
+  color: var(--color-text-inverse);
+  border-color: var(--edu-pink-500);
+  box-shadow: 0 4px 0 var(--edu-pink-700);
 }
 .btn-secondary:not(:disabled):not(:active):hover {
-  background: var(--color-primary);
+  background: var(--edu-pink-400);
+  border-color: var(--edu-pink-400);
   color: var(--color-text-inverse);
   transform: translateY(-1px);
-  box-shadow: 0 4px 0 var(--color-primary-active), var(--shadow-primary);
+  box-shadow: 0 5px 0 var(--edu-pink-700);
 }
 .btn-secondary:not(:disabled):active {
-  background: var(--color-primary-active);
+  background: var(--edu-pink-600);
   color: var(--color-text-inverse);
-  border-color: var(--color-primary-active);
-  transform: translateY(3px);
-  box-shadow: none;
+  border-color: var(--edu-pink-600);
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--edu-pink-700);
 }
 
-/* ── VARIANTE: GHOST ──────────────────────────────────────────────────── */
-/* Sin fondo. Aparece al hover. Para acciones de baja jerarquía. */
+/* ── Variant: Ghost ── */
 .btn-ghost {
   background: transparent;
   color: var(--color-text-muted);
@@ -188,79 +171,74 @@
   transform: scale(0.97);
 }
 
-/* Ghost con color brand */
+/* Ghost brand (yellow tint) */
 .btn-ghost-primary {
   background: transparent;
-  color: var(--color-primary);
+  color: var(--edu-yellow-600);
   border-color: transparent;
   box-shadow: none;
 }
-.btn-ghost-primary:not(:disabled):hover {
-  background: var(--color-primary-light);
-}
+.btn-ghost-primary:not(:disabled):hover { background: var(--edu-yellow-50); }
 .btn-ghost-primary:not(:disabled):active {
-  background: var(--edu-purple-100);
+  background: var(--edu-yellow-100);
   transform: scale(0.97);
 }
 
-/* ── VARIANTE: SOFT ───────────────────────────────────────────────────── */
-/* Fondo muy suave del color brand. Sin borde. */
+/* ── Variant: Soft ── */
 .btn-soft {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+  background: var(--edu-yellow-50);
+  color: var(--edu-yellow-700);
   border-color: transparent;
   box-shadow: none;
 }
 .btn-soft:not(:disabled):hover {
-  background: var(--edu-purple-100);
+  background: var(--edu-yellow-100);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
-.btn-soft:not(:disabled):active {
-  transform: scale(0.97);
-}
+.btn-soft:not(:disabled):active { transform: scale(0.97); }
 
-/* ── VARIANTE: SUCCESS ────────────────────────────────────────────────── */
-/* Verde educativo. "Completar" / "Guardar". */
+/* ── Variant: Success ── */
 .btn-success {
   background: var(--color-success);
   color: var(--color-text-inverse);
   border-color: var(--color-success);
-  box-shadow: 0 4px 0 var(--color-success-hover);
+  box-shadow: 0 4px 0 var(--edu-green-700);
 }
 .btn-success:not(:disabled):not(:active):hover {
-  background: var(--color-success-hover);
+  background: var(--edu-green-400);
+  border-color: var(--edu-green-400);
   transform: translateY(-1px);
-  box-shadow: 0 5px 0 var(--color-success-hover), var(--shadow-success);
+  box-shadow: 0 5px 0 var(--edu-green-700);
 }
 .btn-success:not(:disabled):active {
+  background: var(--color-success-hover);
   transform: translateY(4px);
-  box-shadow: 0 0 0 var(--color-success-hover);
+  box-shadow: 0 0 0 var(--edu-green-700);
 }
 .btn-success:focus-visible {
-  box-shadow: 0 4px 0 var(--color-success-hover), var(--shadow-focus-success);
+  box-shadow: 0 4px 0 var(--edu-green-700), var(--shadow-focus-success);
 }
 
-/* ── VARIANTE: WARNING ────────────────────────────────────────────────── */
-/* Amarillo. Acciones con precaución. */
+/* ── Variant: Warning ── */
 .btn-warning {
   background: var(--color-warning);
-  color: var(--edu-neutral-900, #111827);
+  color: var(--edu-neutral-900);
   border-color: var(--color-warning);
-  box-shadow: 0 4px 0 var(--color-warning-hover);
+  box-shadow: 0 4px 0 var(--edu-yellow-700);
 }
 .btn-warning:not(:disabled):not(:active):hover {
-  background: var(--color-warning-hover);
+  background: var(--edu-yellow-400);
+  border-color: var(--edu-yellow-400);
   transform: translateY(-1px);
-  box-shadow: 0 5px 0 var(--color-warning-hover);
+  box-shadow: 0 5px 0 var(--edu-yellow-700);
 }
 .btn-warning:not(:disabled):active {
   transform: translateY(4px);
-  box-shadow: 0 0 0 var(--color-warning-hover);
+  box-shadow: 0 0 0 var(--edu-yellow-700);
 }
 
-/* ── VARIANTE: DANGER ─────────────────────────────────────────────────── */
-/* Rojo. Acciones destructivas. */
+/* ── Variant: Danger ── */
 .btn-danger {
   background: var(--color-error);
   color: var(--color-text-inverse);
@@ -268,7 +246,8 @@
   box-shadow: 0 4px 0 var(--color-error-hover);
 }
 .btn-danger:not(:disabled):not(:active):hover {
-  background: var(--color-error-hover);
+  background: #F87171;
+  border-color: #F87171;
   transform: translateY(-1px);
   box-shadow: 0 5px 0 var(--color-error-hover);
 }
@@ -280,47 +259,47 @@
   box-shadow: 0 4px 0 var(--color-error-hover), var(--shadow-focus-error);
 }
 
-/* ── VARIANTE: ACCENT ─────────────────────────────────────────────────── */
-/* Cyan. Acciones de info / exploración. */
+/* ── Variant: Accent (cyan) ── */
 .btn-accent {
   background: var(--color-accent);
-  color: var(--edu-dark, #0D0D0D);
+  color: var(--edu-dark);
   border-color: var(--color-accent);
-  box-shadow: 0 4px 0 var(--color-accent-hover);
+  box-shadow: 0 4px 0 var(--edu-cyan-700);
 }
 .btn-accent:not(:disabled):not(:active):hover {
-  background: var(--color-accent-hover);
+  background: var(--edu-cyan-400);
+  border-color: var(--edu-cyan-400);
   transform: translateY(-1px);
-  box-shadow: 0 5px 0 var(--color-accent-hover), var(--shadow-accent);
+  box-shadow: 0 5px 0 var(--edu-cyan-700);
 }
 .btn-accent:not(:disabled):active {
   transform: translateY(4px);
-  box-shadow: 0 0 0 var(--color-accent-hover);
+  box-shadow: 0 0 0 var(--edu-cyan-700);
 }
 
-/* ── VARIANTE: OUTLINE NEUTRAL ────────────────────────────────────────── */
-/* Borde gris. Neutro. Para cancelar / volver. */
+/* ── Variant: Outline Neutral ── */
 .btn-outline-neutral {
   background: var(--color-surface);
   color: var(--color-text);
   border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 4px 0 var(--edu-neutral-300);
 }
 .btn-outline-neutral:not(:disabled):hover {
   background: var(--color-surface-2);
   border-color: var(--color-text-muted);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 5px 0 var(--edu-neutral-300);
+  transform: translateY(-1px);
 }
 .btn-outline-neutral:not(:disabled):active {
   background: var(--color-surface-3);
-  transform: scale(0.98);
-  box-shadow: none;
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--edu-neutral-300);
 }
 
-/* ── VARIANTE: LINK ───────────────────────────────────────────────────── */
+/* ── Variant: Link ── */
 .btn-link {
   background: transparent;
-  color: var(--color-primary);
+  color: var(--edu-yellow-600);
   border-color: transparent;
   padding: 0;
   height: auto;
@@ -335,64 +314,8 @@
     text-decoration-color var(--transition-fast);
 }
 .btn-link:not(:disabled):hover {
-  color: var(--color-primary-hover);
+  color: var(--edu-yellow-700);
   text-decoration-color: currentColor;
   transform: none;
 }
 .btn-link:not(:disabled):active { transform: none; }
-
-/* ── ICON-ONLY BUTTONS ────────────────────────────────────────────────── */
-.btn-icon {
-  padding: 0;
-  width: 2.75rem;
-  aspect-ratio: 1;
-  flex-shrink: 0;
-}
-.btn-icon.btn-xs  { width: 1.875rem; }
-.btn-icon.btn-sm  { width: 2.25rem; }
-.btn-icon.btn-lg  { width: 3.25rem; border-radius: var(--radius-xl); }
-.btn-icon.btn-xl  { width: 3.75rem; border-radius: var(--radius-xl); }
-.btn-icon.btn-round { border-radius: var(--radius-full); }
-
-/* ── LOADING STATE ────────────────────────────────────────────────────── */
-/* Usa pseudo-elemento ::before como spinner CSS puro */
-.btn-loading {
-  pointer-events: none;
-  position: relative;
-}
-.btn-loading .btn-text     { opacity: 0; }
-.btn-loading .btn-icon-left,
-.btn-loading .btn-icon-right { display: none; }
-.btn-loading::after {
-  content: '';
-  position: absolute;
-  width: 1.1em;
-  height: 1.1em;
-  border: 2.5px solid currentColor;
-  border-top-color: transparent;
-  border-radius: var(--radius-full);
-  animation: edu-spin 0.65s linear infinite;
-}
-
-/* ── BUTTON GROUP ─────────────────────────────────────────────────────── */
-.btn-group {
-  display: inline-flex;
-  align-items: center;
-}
-.btn-group .btn {
-  border-radius: 0;
-  box-shadow: none;
-}
-.btn-group .btn:not(:last-child) { border-right-width: 0; }
-.btn-group .btn:first-child { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
-.btn-group .btn:last-child  { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; }
-.btn-group .btn:hover { z-index: 1; }
-
-/* ── SLOTS INTERNOS ───────────────────────────────────────────────────── */
-.btn-icon-left,
-.btn-icon-right {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  pointer-events: none;
-}
