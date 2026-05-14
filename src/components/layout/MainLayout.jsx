@@ -1,28 +1,25 @@
 // src/components/layout/MainLayout.jsx
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Home, BookOpen, Bell, Calendar, Building2, Layers,
   GraduationCap, ClipboardList, MessageCircle, Users,
-  FileText, LogOut, Search, PanelLeftClose, PanelLeftOpen,
-  Settings, UserCircle, Inbox, Menu, X,
+  FileText, LogOut, Menu, X, Search,
+  PanelLeftClose, PanelLeftOpen, User, ChevronDown,
 } from "lucide-react";
-import { normalizeRole } from "@/security/roleMatrix";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useSearch } from "@/context/SearchContext";
-import { UserAvatar } from "@/components";
-import { NotifBadge } from "@/components";
-import useUserPresence from "@/hooks/useUserPresence";
-import { notificacionesGetConteoNoLeidas } from "@/lib/apiClient";
 
-/* ── Icon registry ─────────────────────────────────────────────────── */
-const ICON_MAP = {
+import { useAuth }     from "../../features/auth/hooks/useAuth";
+import { useSearch }   from "../../context/SearchContext";
+import { UserAvatar }  from "@/components";
+import useUserPresence from "../../hooks/useUserPresence";
+
+// ── Icon registry ────────────────────────────────────────────────
+const ICONS = {
   home:                 Home,
   book:                 BookOpen,
   "book-open":          BookOpen,
   bell:                 Bell,
   calendar:             Calendar,
-  "calendar-event":     Calendar,
   school:               Building2,
   building:             Building2,
   layers:               Layers,
@@ -31,12 +28,9 @@ const ICON_MAP = {
   "message-circle":     MessageCircle,
   users:                Users,
   "file-text":          FileText,
-  settings:             Settings,
-  "user-circle":        UserCircle,
-  inbox:                Inbox,
 };
 
-/* ── Nav config ────────────────────────────────────────────────────── */
+// ── Navigation config per role ───────────────────────────────────
 const NAV_GROUPS = {
   superadmin: [
     {
@@ -44,7 +38,7 @@ const NAV_GROUPS = {
       items: [{ label: "Inicio", path: "/admin", icon: "home", exact: true }],
     },
     {
-      group: "Gestión global",
+      group: "Gestion global",
       items: [
         { label: "Instituciones", path: "/instituciones", icon: "building" },
         { label: "Usuarios",      path: "/usuarios",      icon: "users" },
@@ -52,415 +46,361 @@ const NAV_GROUPS = {
     },
     {
       group: "Sistema",
-      items: [
-        { label: "Buzón",          path: "/buzon",          icon: "inbox" },
-        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
-        { label: "Mi perfil",      path: "/perfil",         icon: "user-circle" },
-      ],
+      items: [{ label: "Notificaciones", path: "/notificaciones", icon: "bell" }],
     },
   ],
+
+  administrador: [
+    {
+      group: "Principal",
+      items: [{ label: "Inicio", path: "/admin", icon: "home", exact: true }],
+    },
+    {
+      group: "Mi institucion",
+      items: [
+        { label: "Institucion", path: "/institucion", icon: "school" },
+        { label: "Docentes",    path: "/docentes",    icon: "chalkboard-teacher" },
+        { label: "Cursos",      path: "/cursos",      icon: "layers" },
+      ],
+    },
+    {
+      group: "Comunicacion",
+      items: [{ label: "Notificaciones", path: "/notificaciones", icon: "bell" }],
+    },
+  ],
+
   docente: [
     {
       group: "Principal",
       items: [{ label: "Inicio", path: "/docente", icon: "home", exact: true }],
     },
     {
-      group: "Mi trabajo",
+      group: "Ensenanza",
       items: [
-        { label: "Mis cursos",  path: "/cursos",     icon: "book-open" },
-        { label: "Tareas",      path: "/tareas",     icon: "clipboard" },
-        { label: "Foros",       path: "/foros",      icon: "message-circle" },
-        { label: "Calendario",  path: "/calendario", icon: "calendar-event" },
+        { label: "Cursos",  path: "/cursos",  icon: "layers" },
+        { label: "Tareas",  path: "/tareas",  icon: "clipboard" },
+        { label: "Foros",   path: "/foros",   icon: "message-circle" },
+        { label: "Eventos", path: "/eventos", icon: "calendar" },
       ],
     },
     {
-      group: "Comunicación",
-      items: [
-        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
-        { label: "Mi perfil",      path: "/perfil",         icon: "user-circle" },
-      ],
+      group: "Comunicacion",
+      items: [{ label: "Notificaciones", path: "/notificaciones", icon: "bell" }],
     },
   ],
+
   padre: [
     {
       group: "Principal",
       items: [{ label: "Inicio", path: "/padre", icon: "home", exact: true }],
     },
     {
-      group: "Mi familia",
+      group: "Mis hijos",
       items: [
         { label: "Perfiles",   path: "/familia/perfiles",   icon: "users" },
-        { label: "Cursos",     path: "/familia/cursos",     icon: "book-open" },
+        { label: "Cursos",     path: "/familia/cursos",     icon: "layers" },
         { label: "Tareas",     path: "/familia/tareas",     icon: "clipboard" },
         { label: "Entregas",   path: "/familia/entregas",   icon: "file-text" },
         { label: "Foros",      path: "/familia/foros",      icon: "message-circle" },
-        { label: "Calendario", path: "/familia/calendario", icon: "calendar-event" },
+        { label: "Calendario", path: "/familia/calendario", icon: "calendar" },
       ],
     },
     {
-      group: "Comunicación",
-      items: [
-        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
-        { label: "Mi perfil",      path: "/perfil",         icon: "user-circle" },
-      ],
-    },
-  ],
-  admin: [
-    {
-      group: "Principal",
-      items: [{ label: "Inicio", path: "/admin", icon: "home", exact: true }],
-    },
-    {
-      group: "Mi institución",
-      items: [
-        { label: "Institución", path: "/institucion", icon: "school" },
-        { label: "Docentes",    path: "/docentes",    icon: "chalkboard-teacher" },
-        { label: "Cursos",      path: "/cursos",      icon: "layers" },
-        { label: "Calendario",  path: "/calendario",  icon: "calendar-event" },
-      ],
-    },
-    {
-      group: "Comunicación",
-      items: [
-        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
-        { label: "Mi perfil",      path: "/perfil",         icon: "user-circle" },
-      ],
+      group: "Comunicacion",
+      items: [{ label: "Notificaciones", path: "/notificaciones", icon: "bell" }],
     },
   ],
 };
+NAV_GROUPS["padre/tutor"] = NAV_GROUPS.padre;
 
-const ROLE_META = {
-  superadmin: { label: "Super Admin" },
-  admin:      { label: "Administrador" },
-  docente:    { label: "Docente" },
-  padre:      { label: "Padre / Tutor" },
+const ROLE_LABELS = {
+  superadmin:    "Super Admin",
+  administrador: "Administrador",
+  docente:       "Docente",
+  padre:         "Padre / Tutor",
+  "padre/tutor": "Padre / Tutor",
 };
 
-/* ── Section scope ─────────────────────────────────────────────────── */
-function getSectionClass(pathname) {
-  if (pathname.startsWith("/cursos"))        return "section-cursos";
-  if (pathname.startsWith("/tareas"))        return "section-tareas";
-  if (pathname.startsWith("/notificaciones")) return "section-foros";
-  if (pathname.startsWith("/calendario"))   return "section-calendario";
-  if (pathname.startsWith("/familia/calendario")) return "section-calendario";
-  return "section-inicio";
-}
-
-/* ── NavItem ───────────────────────────────────────────────────────── */
-function NavItem({ item, collapsed, onClick }) {
-  const location = useLocation();
-  const Icon = ICON_MAP[item.icon] ?? Home;
+// ── NavItem ──────────────────────────────────────────────────────
+function NavItem({ item, onClose }) {
+  const { pathname } = useLocation();
+  const Icon = ICONS[item.icon] ?? Home;
   const isActive = item.exact
-    ? location.pathname === item.path
-    : location.pathname.startsWith(item.path);
+    ? pathname === item.path
+    : pathname.startsWith(item.path);
 
   return (
     <Link
       to={item.path}
-      onClick={onClick}
-      title={item.label}
-      aria-current={isActive ? "page" : undefined}
-      className={`sidebar-item${isActive ? " active" : ""}`}
-      style={{ justifyContent: collapsed ? "center" : "flex-start" }}
+      onClick={onClose}
+      data-tooltip={item.label}
+      className={`sidebar-item${isActive ? " sidebar-item--active" : ""}`}
     >
-      <span className="ico" aria-hidden="true">
-        <Icon size={16} />
-      </span>
-      {!collapsed && <span className="lbl">{item.label}</span>}
+      <span className="sidebar-item-icon"><Icon size={17} /></span>
+      <span className="sidebar-item-label">{item.label}</span>
     </Link>
   );
 }
 
-/* ── MainLayout ────────────────────────────────────────────────────── */
+// ── Sidebar ──────────────────────────────────────────────────────
+function Sidebar({ user, logout, collapsed, onToggleCollapse, drawerOpen, onCloseDrawer }) {
+  const navigate  = useNavigate();
+  const groups    = NAV_GROUPS[user?.rol] ?? [];
+  const roleLabel = ROLE_LABELS[user?.rol] ?? user?.rol ?? "Usuario";
+
+  const cls = [
+    "sidebar",
+    collapsed  ? "sidebar--collapsed" : "",
+    drawerOpen ? "sidebar--open"      : "",
+  ].filter(Boolean).join(" ");
+
+  return (
+    <aside className={cls}>
+      {/* Header: logo + collapse button */}
+      <div className="sidebar-header">
+        <div className="sidebar-logo-icon" aria-hidden="true">E</div>
+        <span className="sidebar-logo-text">Edu<span>mon</span></span>
+        <button
+          className="sidebar-collapse-btn"
+          onClick={onToggleCollapse}
+          title={collapsed ? "Expandir menu" : "Contraer menu"}
+        >
+          {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+        </button>
+      </div>
+
+      {/* Nav groups */}
+      <nav className="sidebar-nav" aria-label="Navegacion principal">
+        {groups.map((g) => (
+          <div key={g.group} className="sidebar-group">
+            <p className="sidebar-group-label">{g.group}</p>
+            {g.items.map((item) => (
+              <NavItem
+                key={item.path}
+                item={item}
+                onClose={onCloseDrawer}
+              />
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      {/* Footer: user + logout */}
+      <div className="sidebar-footer">
+        <button
+          className="sidebar-user"
+          onClick={() => { navigate("/perfil"); onCloseDrawer(); }}
+          title="Ver mi perfil"
+        >
+          <UserAvatar user={user} size={32} />
+          <div className="sidebar-user-info">
+            <p className="sidebar-user-name">{user?.nombre ?? "Usuario"}</p>
+            <p className="sidebar-user-role">{roleLabel}</p>
+          </div>
+        </button>
+
+        <button
+          className="sidebar-item"
+          onClick={logout}
+          style={{ color: "var(--color-error)", marginTop: 4 }}
+          title="Cerrar sesion"
+        >
+          <span className="sidebar-item-icon"><LogOut size={17} /></span>
+          <span className="sidebar-item-label">Cerrar sesion</span>
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+// ── Navbar ───────────────────────────────────────────────────────
+function Navbar({ user, logout, drawerOpen, onToggleDrawer }) {
+  const navigate  = useNavigate();
+  const { query, results, isOpen, setIsOpen, handleSearch, clearSearch } = useSearch();
+
+  const [scrolled,    setScrolled]    = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 4);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handler = (e) => {
+      if (!profileRef.current?.contains(e.target)) setProfileOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [profileOpen]);
+
+  const hasResults = results.cursos?.length > 0 || results.tareas?.length > 0;
+
+  return (
+    <header className={`navbar${scrolled ? " navbar--scrolled" : ""}`}>
+      {/* Mobile hamburger */}
+      <button
+        className="navbar-toggle"
+        onClick={onToggleDrawer}
+        aria-label={drawerOpen ? "Cerrar menu" : "Abrir menu"}
+      >
+        {drawerOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Search */}
+      <div className="navbar-search">
+        <span className="navbar-search-icon"><Search size={14} /></span>
+        <input
+          className="navbar-search-input"
+          placeholder="Buscar cursos, tareas..."
+          value={query}
+          onChange={(e) => { handleSearch(e.target.value); setIsOpen(true); }}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 180)}
+          aria-label="Buscador global"
+        />
+        {!query && (
+          <span className="navbar-search-kbd">
+            <kbd className="navbar-kbd">Ctrl</kbd>
+            <kbd className="navbar-kbd">K</kbd>
+          </span>
+        )}
+        {isOpen && hasResults && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0,
+            background: "var(--color-surface)", border: "1.5px solid var(--color-border)",
+            borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-dropdown)",
+            padding: "var(--space-2)", zIndex: 300, maxHeight: 300, overflowY: "auto",
+          }}>
+            {results.cursos?.map((c) => (
+              <button
+                key={c._id}
+                className="sidebar-item"
+                style={{ borderRadius: "var(--radius-md)", width: "100%", gap: "var(--space-2)" }}
+                onMouseDown={() => { navigate(`/cursos/${c._id}`); clearSearch(); }}
+              >
+                <BookOpen size={14} />
+                <span style={{ fontSize: 13 }}>{c.nombre}</span>
+              </button>
+            ))}
+            {results.tareas?.map((t) => (
+              <button
+                key={t._id}
+                className="sidebar-item"
+                style={{ borderRadius: "var(--radius-md)", width: "100%", gap: "var(--space-2)" }}
+                onMouseDown={() => { navigate("/tareas"); clearSearch(); }}
+              >
+                <ClipboardList size={14} />
+                <span style={{ fontSize: 13 }}>{t.titulo}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="navbar-spacer" />
+
+      <div className="navbar-actions">
+        <button
+          className="navbar-action-btn"
+          onClick={() => navigate("/notificaciones")}
+          title="Notificaciones"
+        >
+          <Bell size={18} />
+        </button>
+
+        <div className="navbar-divider" />
+
+        {/* Profile dropdown */}
+        <div style={{ position: "relative" }} ref={profileRef}>
+          <button
+            className="navbar-avatar-trigger"
+            onClick={() => setProfileOpen((p) => !p)}
+            aria-expanded={profileOpen}
+          >
+            <UserAvatar user={user} size={32} />
+            <div className="navbar-avatar-info">
+              <p className="navbar-avatar-name">{user?.nombre ?? "Usuario"}</p>
+              <p className="navbar-avatar-role">{ROLE_LABELS[user?.rol] ?? user?.rol}</p>
+            </div>
+            <ChevronDown size={14} className="navbar-avatar-chevron" />
+          </button>
+
+          {profileOpen && (
+            <div className="navbar-dropdown">
+              <div className="navbar-dropdown-header">
+                <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>{user?.nombre}</p>
+                <p className="navbar-dropdown-email">{user?.correo ?? user?.telefono ?? ""}</p>
+              </div>
+              <button
+                className="navbar-dropdown-item"
+                onClick={() => { navigate("/perfil"); setProfileOpen(false); }}
+              >
+                <span className="navbar-dropdown-icon"><User size={15} /></span>
+                Mi perfil
+              </button>
+              <div className="navbar-dropdown-separator" />
+              <button
+                className="navbar-dropdown-item navbar-dropdown-item--danger"
+                onClick={logout}
+              >
+                <span className="navbar-dropdown-icon"><LogOut size={15} /></span>
+                Cerrar sesion
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ── Main Layout ──────────────────────────────────────────────────
 export const MainLayout = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [collapsed,  setCollapsed]  = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useUserPresence(user?._id);
 
-  const { query, results, isOpen, setIsOpen, handleSearch, clearSearch } = useSearch();
-
-  const [collapsed,    setCollapsed]   = useState(false);
-  const [drawerOpen,   setDrawerOpen]  = useState(false);
-  const [notifCount,   setNotifCount]  = useState(0);
-  const [navScrolled,  setNavScrolled] = useState(false);
-  const intervalRef   = useRef(null);
-  const pageRef       = useRef(null);
-
-  /* Notification polling */
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await notificacionesGetConteoNoLeidas();
-        setNotifCount(res?.noLeidas ?? 0);
-      } catch { /* silencioso */ }
-    };
-    fetch();
-    intervalRef.current = setInterval(fetch, 60_000);
-    return () => clearInterval(intervalRef.current);
-  }, []);
-
-  /* Close drawer on route change */
-  useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
-
-  /* Navbar scroll shadow — escucha scroll en .page (no en window) */
-  useEffect(() => {
-    const el = pageRef.current;
-    if (!el) return;
-    const onScroll = () => setNavScrolled(el.scrollTop > 4);
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
-
-  /* Lock body scroll when drawer open on mobile */
-  useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [drawerOpen]);
-
-  const closeDrawer   = useCallback(() => setDrawerOpen(false), []);
-  const toggleDrawer  = useCallback(() => setDrawerOpen(o => !o), []);
-  const toggleCollapse = useCallback(() => setCollapsed(c => !c), []);
-
-  const groups   = NAV_GROUPS[normalizeRole(user?.rol)] ?? [];
-  const roleMeta = ROLE_META[normalizeRole(user?.rol)] ?? { label: user?.rol };
-  const section  = getSectionClass(location.pathname);
-  const role     = normalizeRole(user?.rol);
-
-  /* On tablet the sidebar auto-collapses */
-  const isCollapsed = collapsed;
+  const layoutCls = ["app-layout", collapsed ? "app-layout--collapsed" : ""]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div
-      className={`app-shell ${section}${isCollapsed ? " collapsed" : ""}`}
-    >
-      {/* ── MOBILE BACKDROP ── */}
-      <div
-        className={`sidebar-backdrop${drawerOpen ? " open" : ""}`}
-        onClick={closeDrawer}
-        aria-hidden="true"
+    <div className={layoutCls}>
+      {/* Mobile overlay */}
+      {drawerOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <Sidebar
+        user={user}
+        logout={logout}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((c) => !c)}
+        drawerOpen={drawerOpen}
+        onCloseDrawer={() => setDrawerOpen(false)}
       />
 
-      {/* ── SIDEBAR ── */}
-      <aside
-        className={`sidebar${drawerOpen ? " drawer-open" : ""}`}
-        aria-label="Navegación principal"
-      >
-        {/* Brand + collapse toggle row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: "var(--space-1)" }}>
-          <Link
-            to={role === "padre" ? "/padre" : role === "docente" ? "/docente" : "/admin"}
-            className="sidebar-brand"
-            style={{ padding: "6px 10px", paddingBottom: 0, flex: 1, minWidth: 0 }}
-          >
-            {!isCollapsed && (
-              <>
-                <span>Edu</span>
-                <span className="mon">mon</span>
-              </>
-            )}
-            {isCollapsed && (
-              <span className="mon" style={{ fontSize: 20 }}>E</span>
-            )}
-          </Link>
-
-          {/* Desktop collapse toggle */}
-          <button
-            onClick={toggleCollapse}
-            className="nav-icon-btn"
-            title={isCollapsed ? "Expandir sidebar" : "Contraer sidebar"}
-            aria-label={isCollapsed ? "Expandir sidebar" : "Contraer sidebar"}
-            style={{ flexShrink: 0 }}
-            id="sidebar-collapse-btn"
-          >
-            {isCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
-          </button>
-
-          {/* Mobile close button */}
-          <button
-            onClick={closeDrawer}
-            className="nav-icon-btn"
-            title="Cerrar menú"
-            aria-label="Cerrar menú"
-            id="sidebar-close-btn"
-            style={{ flexShrink: 0 }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Nav groups */}
-        <nav style={{ flex: 1, minHeight: 0 }}>
-          {groups.map(({ group, items }) => (
-            <div key={group}>
-              {!isCollapsed && <p className="sidebar-section">{group}</p>}
-              {items.map(item => (
-                <NavItem
-                  key={item.path}
-                  item={item}
-                  collapsed={isCollapsed}
-                  onClick={closeDrawer}
-                />
-              ))}
-            </div>
-          ))}
-        </nav>
-
-        {/* User card */}
-        <div className="sidebar-card" style={{ cursor: "default" }}>
-          <button
-            className="nav-icon-btn"
-            onClick={() => navigate("/perfil")}
-            title="Mi perfil"
-            aria-label="Ver mi perfil"
-            style={{ padding: 0, background: "none", border: "none", flexShrink: 0 }}
-          >
-            <UserAvatar user={user} size={34} />
-          </button>
-
-          {!isCollapsed && (
-            <button
-              onClick={() => navigate("/perfil")}
-              style={{
-                flex: 1, minWidth: 0, background: "none", border: "none",
-                padding: 0, cursor: "pointer", textAlign: "left",
-              }}
-              title="Ver mi perfil"
-            >
-              <div className="who">
-                <span className="name">{user?.nombre} {user?.apellido}</span>
-                <span className="role">{roleMeta.label}</span>
-              </div>
-            </button>
-          )}
-
-          <button
-            className="nav-icon-btn"
-            onClick={logout}
-            title="Cerrar sesión"
-            aria-label="Cerrar sesión"
-            style={{ marginLeft: isCollapsed ? 0 : "auto", flexShrink: 0 }}
-          >
-            <LogOut size={15} />
-          </button>
-        </div>
-      </aside>
-
-      {/* ── MAIN ── */}
-      <div className="main">
-
-        {/* Navbar */}
-        <header className={`navbar${navScrolled ? " scrolled" : ""}`} role="banner">
-
-          {/* Hamburger — mobile + tablet */}
-          <button
-            className="nav-hamburger"
-            onClick={toggleDrawer}
-            aria-label="Abrir menú de navegación"
-            aria-expanded={drawerOpen}
-            aria-controls="sidebar"
-          >
-            <Menu size={20} />
-          </button>
-
-          {/* Search */}
-          <div className="nav-search" role="search">
-            <Search className="search-icon" size={16} aria-hidden="true" />
-            <input
-              type="search"
-              name="search"
-              placeholder="Buscar cursos, tareas…"
-              value={query}
-              onChange={e => handleSearch(e.target.value)}
-              onFocus={() => setIsOpen(true)}
-              onBlur={() => setTimeout(() => setIsOpen(false), 150)}
-              aria-label="Buscar cursos y tareas"
-              autoComplete="off"
-            />
-
-            {/* Search results dropdown */}
-            {isOpen && (results.cursos?.length > 0 || results.tareas?.length > 0) && (
-              <div className="nav-search-results" role="listbox" aria-label="Resultados de búsqueda">
-                {results.cursos?.map(c => (
-                  <button
-                    key={c._id}
-                    className="sidebar-item"
-                    role="option"
-                    style={{ width: "100%", borderRadius: 0, padding: "10px 16px" }}
-                    onMouseDown={() => { navigate(`/cursos/${c._id}`); clearSearch(); }}
-                  >
-                    <span className="ico"><BookOpen size={14} /></span>
-                    <span className="lbl">{c.nombre}</span>
-                  </button>
-                ))}
-                {results.tareas?.map(t => (
-                  <button
-                    key={t._id}
-                    className="sidebar-item"
-                    role="option"
-                    style={{ width: "100%", borderRadius: 0, padding: "10px 16px" }}
-                    onMouseDown={() => { navigate(`/tareas/${t._id}`); clearSearch(); }}
-                  >
-                    <span className="ico"><ClipboardList size={14} /></span>
-                    <span className="lbl">{t.titulo}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="nav-actions" role="toolbar" aria-label="Acciones de usuario">
-            {role === "superadmin" && (
-              <button
-                className="nav-icon-btn"
-                onClick={() => navigate("/buzon")}
-                title="Buzón de contacto"
-                aria-label="Buzón de contacto"
-              >
-                <Inbox size={18} />
-              </button>
-            )}
-
-            <button
-              className="nav-icon-btn"
-              onClick={() => navigate("/notificaciones")}
-              title={`Notificaciones${notifCount > 0 ? ` (${notifCount} sin leer)` : ""}`}
-              aria-label={`Notificaciones${notifCount > 0 ? `, ${notifCount} sin leer` : ""}`}
-            >
-              <Bell size={18} />
-              {notifCount > 0 && <NotifBadge count={notifCount} />}
-            </button>
-
-            <button
-              className="nav-icon-btn"
-              onClick={() => navigate("/perfil")}
-              title="Mi perfil"
-              aria-label="Mi perfil"
-            >
-              <UserAvatar user={user} size={28} />
-            </button>
-          </div>
-        </header>
-
-        {/* Page content */}
-        <main className="page" ref={pageRef} id="main-content" tabIndex={-1}>
+      <div className="app-content">
+        <Navbar
+          user={user}
+          logout={logout}
+          drawerOpen={drawerOpen}
+          onToggleDrawer={() => setDrawerOpen((d) => !d)}
+        />
+        <main className="app-main">
           <Outlet />
         </main>
       </div>
-
-      {/* CSS for desktop collapse toggle visibility */}
-      <style>{`
-        @media (min-width: 1024px) {
-          #sidebar-collapse-btn { display: inline-flex !important; }
-          #sidebar-close-btn    { display: none !important; }
-        }
-      `}</style>
     </div>
   );
 };

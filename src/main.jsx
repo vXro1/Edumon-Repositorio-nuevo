@@ -20,10 +20,6 @@ import "./styles/Edumonstylecomponents.css";
 // Design system — tokens + base (loaded last = highest cascade priority)
 import "./styles/globals.css";
 
-// Cargar utilidades de testing en desarrollo
-if (import.meta.env.DEV) {
-  import("./utils/testApi");
-}
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

@@ -10,6 +10,7 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 // Log de configuración en desarrollo
 if (import.meta.env.DEV) {
+  // dev-only debug hook reserved
 }
 
 // ── Logout automático ante 401 ────────────────────────────────

@@ -9,10 +9,9 @@ import React, {
 } from "react";
 
 import { authService } from "../../../services/authService";
-import { fcmService } from "../../../services/fcmService";
 import { registerLogoutCallback } from "../../../services/core/apiClient";
 import { sessionManager } from "../../../services/core/sessionManager";
-import { normalizeUser } from "@/lib/normalizers/user";
+import { normalizeUser } from "@/lib/normalizers";
 
 export const AuthContext = createContext(null);
 
@@ -22,8 +21,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
 
+  // Evita múltiples ejecuciones simultáneas del logout por 401
   const handling401 = useRef(false);
-  const fcmRegistered = useRef(false);
 
   const isAuthenticated = !!token && !!user;
 
@@ -38,7 +37,6 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async (reason) => {
     sessionManager.stop();
     setShowWarning(false);
-    fcmRegistered.current = false;
 
     try { await authService.logout(); } catch {}
 
@@ -100,24 +98,6 @@ export const AuthProvider = ({ children }) => {
     return () => sessionManager.stop();
   }, [isAuthenticated, logout]);
 
-  // ─── FCM Token: registrar cuando el usuario inicia sesión ────────────────
-  useEffect(() => {
-    if (!isAuthenticated || fcmRegistered.current) return;
-    let mounted = true;
-
-    (async () => {
-      try {
-        const fcmToken = await fcmService.requestToken();
-        if (fcmToken && mounted) {
-          await fcmService.registerToken(fcmToken);
-          fcmRegistered.current = true;
-        }
-      } catch { /* FCM es non-critical */ }
-    })();
-
-    return () => { mounted = false; };
-  }, [isAuthenticated]);
-
   // ─── Inicialización de sesión ─────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
@@ -161,7 +141,7 @@ export const AuthProvider = ({ children }) => {
 
     init();
     return () => { mounted = false; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Login ────────────────────────────────────────────────────────────────
   const login = useCallback(async (credentials) => {
@@ -173,28 +153,6 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
-  }, []);
-
-  // ─── Actualizar usuario tras completar registro ───────────────────────────
-  const updateUser = useCallback((newUser) => {
-    setUser(normalizeUser(newUser));
-  }, []);
-
-  // ─── Cambiar a un perfil familiar (titular o secundario) ──────────────────
-  // Recibe el nuevo JWT (con perfilId embebido) y los datos del perfil activo.
-  // Actualiza localStorage, el token del contexto y los campos de display del user
-  // sin perder los permisos/rol del titular (que siguen en el JWT).
-  const switchProfile = useCallback((newToken, profileData) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-    setUser(prev => ({
-      ...prev,
-      nombre:        profileData.nombre      ?? prev.nombre,
-      fotoPerfilUrl: profileData.avatarUrl   ?? prev.fotoPerfilUrl,
-      avatar:        profileData.avatarUrl   ?? prev.avatar,
-      esTitular:     profileData.esTitular   ?? false,
-      perfilActivo:  profileData.esTitular   ? null : (profileData._id ?? null),
-    }));
   }, []);
 
   // ─── Continuar sesión desde el modal de advertencia ───────────────────────
@@ -214,10 +172,8 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       stayLoggedIn,
-      updateUser,
-      switchProfile,
     }),
-    [user, token, loading, isAuthenticated, showWarning, login, logout, stayLoggedIn, updateUser, switchProfile]
+    [user, token, loading, isAuthenticated, showWarning, login, logout, stayLoggedIn]
   );
 
   return (

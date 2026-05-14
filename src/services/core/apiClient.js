@@ -6,6 +6,7 @@ import { requestInterceptors, responseInterceptors } from './interceptors';
 const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 if (import.meta.env.DEV) {
+  // dev-only debug hook reserved
 }
 
 // Logout callback (provided by AuthProvider)
