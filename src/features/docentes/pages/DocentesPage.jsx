@@ -2,18 +2,20 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Search, GraduationCap, X, Loader2, RefreshCw,
-  Upload, CheckCircle2, AlertCircle, Download, Trash2,
+  Upload, CheckCircle2, AlertCircle, Download, Trash2, FileSpreadsheet,
 } from "lucide-react";
 
-import { usersGetAll, institucionesCreateDocente, institucionesCreateDocentesCsv } from "@/lib/apiClient";
+import { usersGetAll } from "@/services/usersService";
+import { institucionesCreateDocente, institucionesCreateDocentesCsv } from "@/services/institucionesService";
 import { Modal, UserAvatar, Toast, Button, Badge, Avatar } from "@/components";
 import { Sk, EmptyState, Field } from "@/features/cursos/components/shared/ui";
 import { normalizeUser } from "@/lib/normalizers";
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
 import { normalizePhone } from "@/utils/normalizePhone";
+import { descargarPlantillaDocentesCSV, CSV_COLUMNAS_DOCENTES } from "@/components/ui/DocentesCsvTemplate";
 
-/* ── Skeleton row ───────────────────────────────────────────────────── */
+/* ── Fila esqueleto ─────────────────────────────────────────────────── */
 function SkRow() {
   return (
     <tr>
@@ -26,7 +28,7 @@ function SkRow() {
   );
 }
 
-/* ── Docente row ────────────────────────────────────────────────────── */
+/* ── Fila de docente ────────────────────────────────────────────────── */
 function DocenteRow({ docente: d }) {
   return (
     <tr
@@ -62,7 +64,7 @@ function DocenteRow({ docente: d }) {
   );
 }
 
-/* ── Form field input ───────────────────────────────────────────────── */
+/* ── Campo de formulario ────────────────────────────────────────────── */
 function FormInput({ value, onChange, placeholder, type = "text", required = false }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -91,12 +93,57 @@ function FormInput({ value, onChange, placeholder, type = "text", required = fal
   );
 }
 
-/* ── Constants ──────────────────────────────────────────────────────── */
+/* ── Tabla de referencia del formato CSV ───────────────────────────── */
+function CsvFormatoTable() {
+  return (
+    <div style={{
+      border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)",
+      overflow: "hidden",
+    }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+        <thead>
+          <tr style={{ background: "var(--color-surface-2)" }}>
+            {CSV_COLUMNAS_DOCENTES.map((col, i) => (
+              <th key={col} style={{
+                padding: "8px 12px", textAlign: "left",
+                fontWeight: 700, color: "var(--color-text)",
+                borderBottom: "1px solid var(--color-border)",
+                borderRight: i < CSV_COLUMNAS_DOCENTES.length - 1 ? "1px solid var(--color-border)" : "none",
+              }}>
+                {i + 1}. {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            ["María", "González", "3001234567", "1020304050"],
+            ["Carlos", "Ramírez", "3009876543", "1098765432"],
+          ].map((fila, r) => (
+            <tr key={r}>
+              {fila.map((val, i) => (
+                <td key={i} style={{
+                  padding: "7px 12px", color: "var(--color-text-muted)",
+                  borderRight: i < fila.length - 1 ? "1px solid var(--color-border)" : "none",
+                  borderTop: "1px solid var(--color-border)",
+                }}>
+                  {val}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ── Constantes ─────────────────────────────────────────────────────── */
 const INIT = { nombre: "", apellido: "", cedula: "", telefono: "", correo: "" };
 const LIMIT = 15;
 
 /* ══════════════════════════════════════════════════════════════════════
-   PAGE
+   PÁGINA
    ══════════════════════════════════════════════════════════════════════ */
 export default function DocentesPage() {
   const setUsers = useUserStore(s => s.setUsers);
@@ -119,13 +166,13 @@ export default function DocentesPage() {
   const [csvLoading, setCsvLoading]= useState(false);
   const [csvResult,  setCsvResult] = useState(null);
 
-  /* ── Helpers ── */
+  /* ── Auxiliares ── */
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast({ msg: "", type: "success" }), 3500);
   };
 
-  // Debounce search so API is only hit after the user pauses typing
+  // Retraso en la búsqueda para no llamar a la API en cada tecla
   useEffect(() => {
     const t = setTimeout(() => setDebSearch(search), 350);
     return () => clearTimeout(t);
@@ -136,7 +183,7 @@ export default function DocentesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // When searching, fetch all docentes so client-side filter is complete
+      // Al buscar, traer todos los docentes para que el filtro cliente sea completo
       const params = debSearch
         ? { rol: "docente", page: 1, limit: 1000 }
         : { rol: "docente", page, limit: LIMIT };
@@ -154,7 +201,7 @@ export default function DocentesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  /* ── Filter ── */
+  /* ── Filtro ── */
   const filtered = docentes.filter(d => {
     const q = search.toLowerCase();
     return !q
@@ -164,7 +211,7 @@ export default function DocentesPage() {
       || d.cedula?.includes(q);
   });
 
-  /* ── Create ── */
+  /* ── Crear ── */
   const f = key => e => setForm(p => ({ ...p, [key]: e.target.value }));
 
   const handleCreate = async e => {
@@ -183,7 +230,7 @@ export default function DocentesPage() {
     }
   };
 
-  /* ── CSV ── */
+  /* ── Importación CSV ── */
   const handleCsvUpload = async () => {
     if (!csvFile) return;
     setCsvLoading(true);
@@ -210,7 +257,7 @@ export default function DocentesPage() {
   const totalPages = debSearch ? 0 : Math.ceil(total / LIMIT);
 
   /* ══════════════════════════════════════════════════════════════════
-     RENDER
+     RENDERIZADO
      ══════════════════════════════════════════════════════════════════ */
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -372,12 +419,39 @@ export default function DocentesPage() {
         isOpen={showCsv}
         onClose={() => { setShowCsv(false); resetCsv(); }}
         title="Importar docentes por CSV"
-        description="El archivo debe tener columnas: nombre, apellido, correo, cedula, telefono."
+        description="El correo de acceso se genera automáticamente a partir de la cédula; no se incluye en el archivo."
         size="md"
       >
         {!csvResult ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-            {/* Drop zone */}
+
+            {/* Formato esperado + descarga de plantilla */}
+            <div style={{
+              background: "var(--color-surface-2)", borderRadius: "var(--radius-lg)",
+              padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-3)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                  <FileSpreadsheet size={16} style={{ color: "var(--color-primary)" }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>
+                    Formato requerido
+                  </span>
+                </div>
+                <Button variant="outline" size="sm" onClick={descargarPlantillaDocentesCSV}>
+                  <Download size={14} /> Descargar plantilla
+                </Button>
+              </div>
+
+              <CsvFormatoTable />
+
+              <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.5 }}>
+                La primera fila debe ser el encabezado exacto (<code>nombre,apellido,telefono,cedula</code>),
+                en ese orden. No incluyas una columna de correo: el sistema la genera automáticamente
+                con la cédula. La contraseña inicial de cada docente será su número de cédula.
+              </p>
+            </div>
+
+            {/* Zona de soltar archivos */}
             <div
               onClick={() => fileRef.current?.click()}
               style={{

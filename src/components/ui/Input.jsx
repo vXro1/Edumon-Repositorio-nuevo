@@ -98,7 +98,7 @@ export const Input = forwardRef(function Input({
         ) : null}
       </div>
 
-      {/* Error */}
+      {/* Error de validación */}
       {error && (
         <span id={`${inputId}-error`} className="field-error" role="alert">
           <AlertCircle size={13} strokeWidth={2.5} />
@@ -106,7 +106,7 @@ export const Input = forwardRef(function Input({
         </span>
       )}
 
-      {/* Success message */}
+      {/* Mensaje de éxito */}
       {!error && successMsg && (
         <span id={`${inputId}-success`} className="field-success-msg">
           <CheckCircle size={13} strokeWidth={2.5} className="field-check-icon" />
@@ -114,7 +114,7 @@ export const Input = forwardRef(function Input({
         </span>
       )}
 
-      {/* Hint */}
+      {/* Texto de ayuda */}
       {!error && !successMsg && hint && (
         <span id={`${inputId}-hint`} className="field-hint">{hint}</span>
       )}
@@ -123,7 +123,7 @@ export const Input = forwardRef(function Input({
 });
 
 /* ══════════════════════════════════════════════════════════════
-   TEXTAREA
+   ÁREA DE TEXTO
    ══════════════════════════════════════════════════════════════ */
 export const Textarea = forwardRef(function Textarea({
   label,
@@ -177,7 +177,7 @@ export const Textarea = forwardRef(function Textarea({
 });
 
 /* ══════════════════════════════════════════════════════════════
-   SELECT
+   SELECTOR
    ══════════════════════════════════════════════════════════════ */
 export const Select = forwardRef(function Select({
   label,
@@ -234,7 +234,7 @@ export const Select = forwardRef(function Select({
 });
 
 /* ══════════════════════════════════════════════════════════════
-   TOGGLE
+   INTERRUPTOR
    ══════════════════════════════════════════════════════════════ */
 export const Toggle = forwardRef(function Toggle({
   label,
@@ -263,20 +263,22 @@ export const Toggle = forwardRef(function Toggle({
 });
 
 /* ══════════════════════════════════════════════════════════════
-   CHECKBOX
+   CASILLA DE VERIFICACIÓN
    ══════════════════════════════════════════════════════════════ */
 export const Checkbox = forwardRef(function Checkbox({
   label,
   disabled  = false,
   className = "",
+  size      = "md",
   ...rest
 }, ref) {
+  const sizeClass = size === "sm" ? " check-sm" : "";
   return (
     <label className={`check-label ${className}`}>
       <input
         ref={ref}
         type="checkbox"
-        className="check-input"
+        className={`check-input${sizeClass}`}
         disabled={disabled}
         {...rest}
       />
@@ -286,7 +288,7 @@ export const Checkbox = forwardRef(function Checkbox({
 });
 
 /* ══════════════════════════════════════════════════════════════
-   RADIO
+   BOTÓN DE OPCIÓN
    ══════════════════════════════════════════════════════════════ */
 export const Radio = forwardRef(function Radio({
   label,

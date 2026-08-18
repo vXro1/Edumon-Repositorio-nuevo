@@ -37,7 +37,7 @@
   margin-left: var(--space-1);
 }
 
-/* ── Base Input / Textarea / Select ───────────────────────────── */
+/* ── Input / Textarea / Select base ───────────────────────────── */
 .form-input,
 .form-textarea,
 .form-select {
@@ -105,7 +105,7 @@
   cursor: pointer;
 }
 
-/* ── Sizes ────────────────────────────────────────────────────── */
+/* ── Tamaños ────────────────────────────────────────────────────── */
 .form-input-sm,
 .form-select-sm {
   height: 2.125rem;
@@ -120,7 +120,7 @@
   border-radius: var(--radius-lg);
 }
 
-/* ── Input with icon wrapper ──────────────────────────────────── */
+/* ── Contenedor de input con ícono ──────────────────────────────────── */
 .form-input-wrapper {
   position: relative;
   display: flex;
@@ -151,7 +151,7 @@
 .form-input-wrapper.has-icon-left  .form-input { padding-left:  calc(var(--space-3) * 2 + 1.125rem); }
 .form-input-wrapper.has-icon-right .form-input { padding-right: calc(var(--space-3) * 2 + 1.125rem); }
 
-/* ── Input addon (prefix / suffix) ───────────────────────────── */
+/* ── Complemento de input (prefijo / sufijo) ───────────────────────────── */
 .form-addon-wrapper {
   display: flex;
   align-items: stretch;
@@ -177,7 +177,7 @@
 .form-addon-wrapper .form-addon + .form-input,
 .form-addon-wrapper .form-input + .form-addon { border-left: 0; border-radius: 0; }
 
-/* ── Validation states ────────────────────────────────────────── */
+/* ── Estados de validación ────────────────────────────────────────── */
 .form-input-error,
 .form-textarea-error,
 .form-select-error   { border-color: var(--color-error) !important; }
@@ -194,7 +194,7 @@
 .form-textarea-success:focus,
 .form-select-success:focus { box-shadow: var(--shadow-focus-success); }
 
-/* ── Help / feedback text ─────────────────────────────────────── */
+/* ── Texto de ayuda / retroalimentación ─────────────────────────────────────── */
 .form-hint {
   font-size: var(--text-xs);
   color: var(--color-text-subtle);
@@ -219,7 +219,7 @@
   gap: var(--space-1);
 }
 
-/* ── Checkbox & Radio ─────────────────────────────────────────── */
+/* ── Casilla de verificación y botón de opción ─────────────────────────────────────── */
 .form-check {
   display: flex;
   align-items: flex-start;
@@ -288,7 +288,7 @@
   line-height: var(--leading-snug);
 }
 
-/* ── Toggle / Switch ──────────────────────────────────────────── */
+/* ── Interruptor / Switch ──────────────────────────────────────────── */
 .form-toggle {
   position: relative;
   display: inline-flex;
@@ -328,7 +328,7 @@
 .form-toggle input:checked ~ .form-toggle-track .form-toggle-thumb { transform: translateX(1.125rem); }
 .form-toggle input:focus-visible ~ .form-toggle-track { box-shadow: var(--shadow-focus); }
 
-/* ── Range ────────────────────────────────────────────────────── */
+/* ── Control deslizante ────────────────────────────────────────────────────── */
 .form-range {
   -webkit-appearance: none;
   appearance: none;
@@ -353,7 +353,7 @@
 .form-range::-webkit-slider-thumb:hover        { transform: scale(1.15); }
 .form-range:focus-visible::-webkit-slider-thumb { box-shadow: var(--shadow-focus); }
 
-/* ── Form card (fieldset-like) ────────────────────────────────── */
+/* ── Tarjeta de formulario (similar a fieldset) ────────────────────────────────── */
 .form-card {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);

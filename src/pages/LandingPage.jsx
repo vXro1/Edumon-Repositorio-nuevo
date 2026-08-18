@@ -1,16 +1,36 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { buzonEnviar } from "@/lib/apiClient";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
+import { useAuthContext } from "@/features/auth/context/AuthContext";
+import { buzonEnviar } from "@/features/buzon/services/buzonService";
 import { normalizePhone } from "@/utils/normalizePhone";
 import logo from "@/assets/icons/logo.svg";
-import edumonLetras from "@/assets/img/edumonletras.svg";
-import mascota from "@/assets/img/edumoncuerpocompleto.png";
-import avatar1 from "@/assets/img/avatars/avatar1.svg";
-import avatar2 from "@/assets/img/avatars/avatar2.svg";
-import avatar3 from "@/assets/img/avatars/avatar3.svg";
-import avatar4 from "@/assets/img/avatars/avatar4.svg";
-import avatar5 from "@/assets/img/avatars/avatar5.svg";
-import letras from "@/assets/img/edumonletras.svg";
+import edumonLetras from "@/assets/img/letras.svg";
+import mascota from "@/assets/img/cuerpocompleto.svg";
+import letras from "@/assets/img/letras.svg";
+import soporte from "@/assets/img/Buzonsoporte.svg";
+
+/* ─── Burbujas decorativas (assets reales) ─── */
+import circulo1 from "@/assets/img/circulos/circulo1.svg";
+import circulo2 from "@/assets/img/circulos/circulo2.svg";
+import circulo3 from "@/assets/img/circulos/circulo3.svg";
+import circulo4 from "@/assets/img/circulos/circulo4.svg";
+import circulo5 from "@/assets/img/circulos/circulo5.svg";
+import circulo6 from "@/assets/img/circulos/circulo6.svg";
+import circulo7 from "@/assets/img/circulos/circulo7.svg";
+import circulo8 from "@/assets/img/circulos/circulo8.svg";
+import circulo9 from "@/assets/img/circulos/circulo9.svg";
+import circulo10 from "@/assets/img/circulos/circulo10.svg";
+import circulo11 from "@/assets/img/circulos/circulo11.svg";
+import circulo12 from "@/assets/img/circulos/circulo12.svg";
+
+import "./LandingPage.css";
+
+const CIRCULOS = [
+  circulo1, circulo2, circulo3, circulo4, circulo5, circulo6,
+  circulo7, circulo8, circulo9, circulo10, circulo11, circulo12,
+];
 
 /* ─── Iconos SVG inline ─── */
 const IconSparkles = ({ size = 14 }) => (
@@ -159,11 +179,96 @@ const IconChevronRight = ({ size = 20 }) => (
   </svg>
 );
 
+/* ─── Iconos de los módulos de aprendizaje ─── */
+const IconApple = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 6.5c-3.5 0-6.5 2.7-6.5 7.3 0 4 2.7 8.2 5.5 8.2 1 0 1.5-.5 2-.5s1 .5 2 .5c2.3 0 4-2.8 5-5.6" />
+    <path d="M12 6.5c0-2.1 1.6-3.8 3.7-3.8" />
+    <path d="M15.3 9.3c2.1 0 3.9 2 3.9 4.7" />
+  </svg>
+);
+
+const IconHeartHandshake = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 7c-1.3-1.9-3.7-2.5-5.6-1.2C4.6 7 3.8 9.7 5.2 11.8L12 19l6.8-7.2c1.4-2.1.6-4.8-1.4-6.1C15.5 4.5 13.3 5.1 12 7z" />
+    <path d="M8 12.5l2 2 2-2 2 2" />
+  </svg>
+);
+
+const IconSmile = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+    <line x1="9" y1="9" x2="9.01" y2="9" />
+    <line x1="15" y1="9" x2="15.01" y2="9" />
+  </svg>
+);
+
+const IconShieldCheck = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+    <path d="M9 12l2 2 4-4" />
+  </svg>
+);
+
+const IconMessageCircle = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 11.5a8.5 8.5 0 01-8.5 8.5 8.4 8.4 0 01-4-1L3 21l2-4.5a8.4 8.4 0 01-1-4A8.5 8.5 0 0112.5 3 8.5 8.5 0 0121 11.5z" />
+  </svg>
+);
+
+const IconSprout = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 21V10" />
+    <path d="M12 10C12 6 9 4 5 4c0 4 2 7 7 7z" />
+    <path d="M12 10c0-3.5 2.5-5 6-5 0 3.5-1.5 6.5-6 6.5" />
+  </svg>
+);
+
+const IconRepeat = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 2l4 4-4 4" />
+    <path d="M3 11V9a4 4 0 014-4h14" />
+    <path d="M7 22l-4-4 4-4" />
+    <path d="M21 13v2a4 4 0 01-4 4H3" />
+  </svg>
+);
+
+const IconPuzzle = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 7h3.3a1.5 1.5 0 000-3H7V3h4v1.3a1.5 1.5 0 003 0V3h4v4h-1.3a1.5 1.5 0 000 3H20v4h-1.3a1.5 1.5 0 000 3H20v4h-4v-1.3a1.5 1.5 0 00-3 0V21H9v-1.3a1.5 1.5 0 00-3 0V21H4v-4h1.3a1.5 1.5 0 000-3H4z" />
+  </svg>
+);
+
+const IconCompass = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <polygon points="15 9 13 13 9 15 11 11 15 9" />
+  </svg>
+);
+
+const IconSmartphone = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="6" y="2" width="12" height="20" rx="2" />
+    <line x1="11" y1="18" x2="13" y2="18" />
+  </svg>
+);
+
 /* ── Datos ── */
 const NAV_LINKS = [
   { label: "Inicio", href: "#inicio" },
   { label: "Pilares", href: "#pilares" },
-  { label: "Testimonios", href: "#testimonios" },
+  { label: "Aprende", href: "#aprende" },
   { label: "Quiénes somos", href: "#quienes" },
   { label: "Contáctanos", href: "#contacto" },
 ];
@@ -186,45 +291,102 @@ const PILARES = [
   },
 ];
 
-const TESTIMONIOS = [
-  {
-    name: "María González",
-    role: "Mamá",
-    text: "Edumon cambió completamente la manera en que me comunico con los docentes de mi hija. ¡Es increíble lo fácil que es!",
-    institution: "Colegio San José",
-    avatar: avatar1,
-  },
-  {
-    name: "Carlos Herrera",
-    role: "Docente de Primaria",
-    text: "Por fin una plataforma pensada para docentes. Crear actividades formativas nunca fue tan sencillo.",
-    institution: "Escuela Nacional Simón Bolívar",
-    avatar: avatar2,
-  },
-  {
-    name: "Ana Mejía",
-    role: "Rectora",
-    text: "Desde que migramos a Edumon, la satisfacción de padres y docentes aumentó notablemente. Una herramienta transformadora.",
-    institution: "Institución Educativa Bolívar",
-    avatar: avatar3,
-  },
-  {
-    name: "Juan Pérez",
-    role: "Padre de Familia",
-    text: "Ahora puedo hacer seguimiento al proceso de mis hijos desde el celular. ¡Edumon es exactamente lo que necesitábamos!",
-    institution: "Colegio Los Andes",
-    avatar: avatar4,
-  },
-  {
-    name: "Laura Torres",
-    role: "Coordinadora Académica",
-    text: "La implementación fue rápida y el equipo de Edumon estuvo siempre disponible. Los resultados han sido increíbles.",
-    institution: "Colegio Santa María",
-    avatar: avatar5,
-  },
+const MODULOS = [
+  { icon: <IconApple />, color: "#16a34a", title: "Alimentación saludable", desc: "Ideas simples para que las comidas en casa sean más sanas y menos peleas." },
+  { icon: <IconHeartHandshake />, color: "#7c3aed", title: "Crianza respetuosa", desc: "Acompañar el crecimiento de tu hijo respetando su ritmo y su voz." },
+  { icon: <IconSmile />, color: "#f59e0b", title: "Manejo de emociones", desc: "Cómo entender y acompañar lo que siente tu hijo, incluso en las rabietas." },
+  { icon: <IconShieldCheck />, color: "#06b6d4", title: "Límites saludables", desc: "Poner reglas claras sin gritos, con cariño y firmeza al mismo tiempo." },
+  { icon: <IconMessageCircle />, color: "#db2777", title: "Comunicación familiar", desc: "Conversaciones que abren confianza en vez de cerrarla." },
+  { icon: <IconSprout />, color: "#16a34a", title: "Desarrollo infantil", desc: "Entender qué es esperable en cada etapa para acompañar mejor." },
+  { icon: <IconRepeat />, color: "#f59e0b", title: "Hábitos y rutinas", desc: "Rutinas simples que le dan estructura y seguridad al día a día." },
+  { icon: <IconUsers size={24} />, color: "#7c3aed", title: "Tiempo de calidad", desc: "Momentos cortos y significativos que fortalecen el vínculo." },
+  { icon: <IconPuzzle />, color: "#06b6d4", title: "Resolución de conflictos", desc: "Herramientas para resolver peleas y desacuerdos sin gritos." },
+  { icon: <IconCompass />, color: "#db2777", title: "Autonomía", desc: "Ayudar a tu hijo a ganar independencia con confianza y sin miedo." },
+  { icon: <IconSmartphone />, color: "#16a34a", title: "Tecnología con medida", desc: "Acuerdos sanos sobre pantallas, sin pelear todos los días por eso." },
 ];
 
-/* ── Intersection Observer hook ── */
+/* ── Config de burbujas decorativas por sección ──
+   circulo: índice 1-12 del asset (src/assets/img/circulos/circuloN.svg)
+   anim: variante de animación flotante (a | b | c)
+   Todas usan position absolute dentro de un contenedor .deco-bubbles */
+const HERO_BUBBLES = [
+  { circulo: 1, top: "4%", left: "1%", size: "150px", opacity: 0.9, anim: "a", delay: "0s" },
+  { circulo: 4, top: "12%", left: "20%", size: "52px", opacity: 0.7, anim: "b", delay: "1.1s" },
+  { circulo: 7, bottom: "8%", left: "6%", size: "100px", opacity: 0.85, anim: "c", delay: "0.5s" },
+  { circulo: 9, top: "36%", left: "42%", size: "34px", opacity: 0.5, anim: "a", delay: "2s" },
+  { circulo: 2, top: "6%", right: "4%", size: "90px", opacity: 0.85, anim: "b", delay: "0.3s" },
+  { circulo: 10, top: "26%", right: "18%", size: "48px", opacity: 0.6, anim: "c", delay: "1.5s" },
+  { circulo: 5, bottom: "4%", right: "3%", size: "130px", opacity: 0.9, anim: "a", delay: "0.8s" },
+  { circulo: 12, bottom: "22%", right: "22%", size: "38px", opacity: 0.55, anim: "b", delay: "1.8s" },
+];
+
+const PILARES_BUBBLES = [
+  { circulo: 3, top: "0%", left: "3%", size: "80px", opacity: 0.5, anim: "a", delay: "0.2s" },
+  { circulo: 6, top: "55%", left: "-2%", size: "60px", opacity: 0.4, anim: "b", delay: "1.3s" },
+  { circulo: 8, top: "8%", right: "5%", size: "70px", opacity: 0.5, anim: "c", delay: "0.6s" },
+  { circulo: 11, bottom: "0%", right: "10%", size: "56px", opacity: 0.45, anim: "a", delay: "1.9s" },
+  { circulo: 2, bottom: "12%", left: "20%", size: "36px", opacity: 0.35, anim: "b", delay: "0.9s" },
+];
+
+const APRENDE_BUBBLES = [
+  { circulo: 9, top: "2%", left: "2%", size: "64px", opacity: 0.45, anim: "b", delay: "0.4s" },
+  { circulo: 4, bottom: "6%", left: "8%", size: "44px", opacity: 0.4, anim: "a", delay: "1.6s" },
+  { circulo: 12, top: "10%", right: "3%", size: "58px", opacity: 0.45, anim: "c", delay: "1s" },
+  { circulo: 7, bottom: "2%", right: "6%", size: "80px", opacity: 0.5, anim: "b", delay: "0.2s" },
+  { circulo: 1, top: "50%", right: "1%", size: "30px", opacity: 0.35, anim: "a", delay: "2.1s" },
+];
+
+const QUIENES_BUBBLES = [
+  { circulo: 5, top: "6%", right: "2%", size: "110px", opacity: 0.5, anim: "a", delay: "0s" },
+  { circulo: 8, bottom: "6%", left: "3%", size: "70px", opacity: 0.5, anim: "b", delay: "1.2s" },
+  { circulo: 3, top: "40%", left: "-3%", size: "44px", opacity: 0.4, anim: "c", delay: "0.7s" },
+  { circulo: 10, bottom: "18%", right: "20%", size: "50px", opacity: 0.4, anim: "a", delay: "1.7s" },
+  { circulo: 6, top: "12%", left: "34%", size: "34px", opacity: 0.35, anim: "b", delay: "2.2s" },
+  { circulo: 11, bottom: "0%", right: "38%", size: "40px", opacity: 0.35, anim: "c", delay: "1.4s" },
+];
+
+const CONTACTO_BUBBLES = [
+  { circulo: 2, top: "2%", left: "0%", size: "90px", opacity: 0.4, anim: "a", delay: "0.3s" },
+  { circulo: 12, bottom: "4%", left: "16%", size: "50px", opacity: 0.4, anim: "b", delay: "1.5s" },
+  { circulo: 4, top: "16%", right: "2%", size: "66px", opacity: 0.4, anim: "c", delay: "0.9s" },
+  { circulo: 9, bottom: "10%", right: "10%", size: "40px", opacity: 0.35, anim: "a", delay: "2s" },
+  { circulo: 7, top: "60%", left: "4%", size: "36px", opacity: 0.3, anim: "b", delay: "1.1s" },
+  { circulo: 1, bottom: "40%", right: "0%", size: "56px", opacity: 0.35, anim: "c", delay: "0.5s" },
+];
+
+const FOOTER_BUBBLES = [
+  { circulo: 6, top: "4%", left: "4%", size: "60px", opacity: 0.18, anim: "a", delay: "0.4s" },
+  { circulo: 10, bottom: "8%", left: "18%", size: "40px", opacity: 0.15, anim: "b", delay: "1.3s" },
+  { circulo: 3, top: "10%", right: "6%", size: "70px", opacity: 0.18, anim: "c", delay: "0.8s" },
+  { circulo: 8, bottom: "4%", right: "16%", size: "46px", opacity: 0.15, anim: "a", delay: "1.9s" },
+];
+
+/* ── Componente de burbujas decorativas reutilizable ── */
+function DecoBubbles({ items, className = "" }) {
+  return (
+    <div className={`deco-bubbles ${className}`} aria-hidden="true">
+      {items.map((b, i) => (
+        <img
+          key={i}
+          src={CIRCULOS[b.circulo - 1]}
+          alt=""
+          draggable={false}
+          className={`deco-bubble deco-bubble--${b.anim ?? "a"}`}
+          style={{
+            top: b.top,
+            left: b.left,
+            right: b.right,
+            bottom: b.bottom,
+            width: b.size,
+            opacity: b.opacity ?? 1,
+            animationDelay: b.delay ?? "0s",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function useIntersect(ref, threshold = 0.15) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -239,14 +401,198 @@ function useIntersect(ref, threshold = 0.15) {
   return visible;
 }
 
-/* ══════════════════════════════════════════════════════
-   COMPONENTE PRINCIPAL
-   ══════════════════════════════════════════════════════ */
+/* ── Tarjeta individual del carrusel ── */
+function ModuloCard({ m }) {
+  return (
+    <article className="modulo-card">
+      <div className="modulo-card__bar" style={{ background: m.color }} />
+      <div className="modulo-card__body">
+        <div
+          className="modulo-card__icon"
+          style={{ background: `${m.color}1f`, color: m.color }}
+        >
+          {m.icon}
+        </div>
+        <h3 className="modulo-card__title">{m.title}</h3>
+        <p className="modulo-card__desc">{m.desc}</p>
+      </div>
+    </article>
+  );
+}
+
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+/* Hook: calcula, para cada slide, su distancia (en fracción de
+   "snap") respecto al punto de scroll actual. Es el patrón oficial
+   de Embla para animar scale/opacity en función del scroll, sin
+   tocar `left`/`width` (todo vía transform, barato para el GPU). */
+function useEmblaTween(emblaApi) {
+  const [tweenValues, setTweenValues] = useState([]);
+
+  const onScroll = useCallback(() => {
+    if (!emblaApi) return;
+    const progress = emblaApi.scrollProgress();
+    const snaps = emblaApi.scrollSnapList();
+    setTweenValues(snaps.map((snap) => snap - progress));
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onScroll();
+    emblaApi.on("scroll", onScroll);
+    emblaApi.on("reInit", onScroll);
+    return () => {
+      emblaApi.off("scroll", onScroll);
+      emblaApi.off("reInit", onScroll);
+    };
+  }, [emblaApi, onScroll]);
+
+  return tweenValues;
+}
+
+/* ── Carrusel de módulos ("Featured Cards") ──
+   La tarjeta activa queda centrada a escala completa; las vecinas
+   se asoman parcialmente, más pequeñas y atenuadas. Construido
+   sobre Embla Carousel: el motor resuelve el snap/drag/swipe/touch,
+   nosotros solo mapeamos su progreso de scroll a scale/opacity. */
+function ModuloCarousel() {
+  const reduceMotion = useRef(
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  );
+
+  const autoplay = useRef(
+    Autoplay({
+      delay: 5000,
+      stopOnMouseEnter: true,
+      stopOnInteraction: false,
+      playOnInit: !reduceMotion.current,
+    })
+  );
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { align: "center", loop: false, skipSnaps: false },
+    [autoplay.current]
+  );
+
+  const tweenValues = useEmblaTween(emblaApi);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+    setCanPrev(emblaApi.canScrollPrev());
+    setCanNext(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollTo = useCallback((i) => emblaApi?.scrollTo(i), [emblaApi]);
+
+  const onViewportKeyDown = (e) => {
+    if (e.key === "ArrowLeft") { e.preventDefault(); scrollPrev(); }
+    if (e.key === "ArrowRight") { e.preventDefault(); scrollNext(); }
+  };
+
+  return (
+    <div className="modulo-embla">
+      <div
+        className="modulo-embla__viewport"
+        ref={emblaRef}
+        tabIndex={0}
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="Módulos de aprendizaje"
+        onKeyDown={onViewportKeyDown}
+      >
+        <div className="modulo-embla__container">
+          {MODULOS.map((m, i) => {
+            const diff = tweenValues[i] ?? 0;
+            const scale = clamp(1 - Math.abs(diff) * 0.24, 0.82, 1);
+            const opacity = clamp(1 - Math.abs(diff) * 0.65, 0.4, 1);
+            const isActive = i === selectedIndex;
+            return (
+              <div
+                className="modulo-embla__slide"
+                key={m.title}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} de ${MODULOS.length}: ${m.title}`}
+              >
+                <div
+                  className={`modulo-embla__slide__inner ${isActive ? "is-active" : ""}`}
+                  style={{ transform: `scale(${scale})`, opacity }}
+                  onClick={() => { if (!isActive) scrollTo(i); }}
+                  tabIndex={isActive ? -1 : 0}
+                  onKeyDown={(e) => {
+                    if (!isActive && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      scrollTo(i);
+                    }
+                  }}
+                >
+                  <ModuloCard m={m} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="modulo-embla__arrow modulo-embla__arrow--prev"
+        onClick={scrollPrev}
+        disabled={!canPrev}
+        aria-label="Módulo anterior"
+      >
+        <IconChevronLeft size={20} />
+      </button>
+      <button
+        type="button"
+        className="modulo-embla__arrow modulo-embla__arrow--next"
+        onClick={scrollNext}
+        disabled={!canNext}
+        aria-label="Siguiente módulo"
+      >
+        <IconChevronRight size={20} />
+      </button>
+
+      <div className="modulo-embla__dots" role="tablist" aria-label="Selecciona un módulo">
+        {MODULOS.map((m, i) => (
+          <button
+            type="button"
+            key={m.title}
+            role="tab"
+            aria-selected={i === selectedIndex}
+            aria-label={`Ir al módulo ${i + 1}: ${m.title}`}
+            className={`modulo-embla__dot ${i === selectedIndex ? "is-active" : ""}`}
+            onClick={() => scrollTo(i)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, loading } = useAuthContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("inicio");
-  const [activeTestimonio, setActiveTestimonio] = useState(0);
   const [formData, setFormData] = useState({
     nombre: "", correo: "", telefono: "", institucion: "", mensaje: "",
   });
@@ -254,24 +600,23 @@ export default function LandingPage() {
   const [submitError, setSubmitError] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
-  /* Refs para animaciones */
+  useEffect(() => {
+    if (!loading && isAuthenticated) navigate("/dashboard", { replace: true });
+  }, [isAuthenticated, loading, navigate]);
+
   const heroRef = useRef(null);
   const pilaresRef = useRef(null);
-  const testimonRef = useRef(null);
+  const aprendeRef = useRef(null);
   const quienesRef = useRef(null);
   const contactoRef = useRef(null);
 
   const pilaresVis = useIntersect(pilaresRef);
-  const testimonVis = useIntersect(testimonRef);
+  const aprendeVis = useIntersect(aprendeRef);
   const quienesVis = useIntersect(quienesRef);
   const contactoVis = useIntersect(contactoRef);
 
-  /* Helper índice circular para el carrusel */
-  const tIdx = (i) => ((i % TESTIMONIOS.length) + TESTIMONIOS.length) % TESTIMONIOS.length;
-
-  /* Actualiza sección activa al hacer scroll */
   useEffect(() => {
-    const sections = ["inicio", "pilares", "testimonios", "quienes", "contacto"];
+    const sections = ["inicio", "pilares", "aprende", "quienes", "contacto"];
     const handler = () => {
       for (const id of [...sections].reverse()) {
         const el = document.getElementById(id);
@@ -334,7 +679,6 @@ export default function LandingPage() {
   return (
     <div className="landing">
 
-      {/* ── NAVBAR ── */}
       <header className="landing-header">
         <nav className="landing-nav">
           <a href="#inicio" className="landing-nav__logo" onClick={(e) => handleNav(e, "#inicio")}>
@@ -393,222 +737,131 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ── HERO ── */}
       <section id="inicio" className="landing-hero" ref={heroRef}>
-        <div className="landing-bubbles" aria-hidden="true">
-          <div className="bubble bubble--1" />
-          <div className="bubble bubble--2" />
-          <div className="bubble bubble--3" />
-        </div>
+        <DecoBubbles items={HERO_BUBBLES} />
 
-        <div className="landing-hero__content">
-          <div className="landing-hero__badge">
-            <IconSparkles size={13} />
-            Plataforma educativa integral · Colombia 2026
+        <div className="landing-hero__content-row">
+          <div className="landing-hero__content">
+            <div className="landing-hero__badge">
+              <IconSparkles size={13} />
+              Plataforma educativa integral · Colombia 2026
+            </div>
+
+            <h1 className="landing-hero__title">
+              Educación conectada,{" "}
+              <span className="gradient-word">familias unidas</span>
+            </h1>
+
+            <p className="landing-hero__subtitle">
+              Edumon es la plataforma que une a docentes, estudiantes y familias
+              en un solo espacio para impulsar el desarrollo académico, emocional
+              y social de cada niño.
+            </p>
+
+            <div className="landing-hero__actions">
+              <a
+                href="#contacto"
+                className="landing-hero__btn-primary"
+                onClick={(e) => handleNav(e, "#contacto")}
+              >
+                Quiero saber más <IconArrowRight size={16} />
+              </a>
+              <a
+                href="#pilares"
+                className="landing-hero__btn-secondary"
+                onClick={(e) => handleNav(e, "#pilares")}
+              >
+                <IconPlay size={14} /> Ver cómo funciona
+              </a>
+            </div>
           </div>
 
-          <h1 className="landing-hero__title">
-            Educación conectada,{" "}
-            <span className="gradient-word">familias unidas</span>
-          </h1>
-
-          <p className="landing-hero__subtitle">
-            Edumon es la plataforma que une a docentes, estudiantes y familias
-            en un solo espacio para impulsar el desarrollo académico, emocional
-            y social de cada niño.
-          </p>
-
-          <div className="landing-hero__actions">
-            <a
-              href="#contacto"
-              className="landing-hero__btn-primary"
-              onClick={(e) => handleNav(e, "#contacto")}
-            >
-              Quiero saber más <IconArrowRight size={16} />
-            </a>
-            <a
-              href="#pilares"
-              className="landing-hero__btn-secondary"
-              onClick={(e) => handleNav(e, "#pilares")}
-            >
-              <IconPlay size={14} /> Ver cómo funciona
-            </a>
+          <div className="edumon-mascot-visual" aria-hidden="true">
+            <div className="edumon-mascot-ring" />
+            <img
+              src={mascota}
+              alt="Mascota Edumon"
+              className="edumon-mascot-img"
+              loading="eager"
+            />
           </div>
-        </div>
-
-        <div className="landing-hero__mascot-wrapper" aria-hidden="true">
-          <div className="landing-hero__ring" />
-          <img
-            src={mascota}
-            alt="Mascota Edumon"
-            className="landing-hero__mascot"
-            loading="eager"
-          />
         </div>
       </section>
 
-      {/* ── PILARES ── */}
       <section
         id="pilares"
         className="landing-pilares"
         ref={pilaresRef}
         style={{ opacity: pilaresVis ? 1 : 0, transition: "opacity 0.8s ease" }}
       >
-        <div className="pilares-label">
-          <IconSparkles size={13} />
-          Características
-        </div>
+        <DecoBubbles items={PILARES_BUBBLES} />
 
-        <h2 className="pilares-title">
-          Aprende de forma{" "}
-          <span className="pilares-rainbow">integral</span>
-        </h2>
-
-        <div className="pilares-divider" />
-
-        <p className="pilares-subtitle">
-          Tres pilares que transforman la experiencia educativa
-          de toda la comunidad escolar.
-        </p>
-
-        <div className="pilares-grid">
-          {PILARES.map((p) => (
-            <div className="pilar-card" key={p.title}>
-              <div className="pilar-card__icon-circle">
-                {p.icon}
-              </div>
-              <h3 className="pilar-card__title">{p.title}</h3>
-              <p className="pilar-card__desc">{p.desc}</p>
-              <div className="pilar-card__bar" />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── TESTIMONIOS ── */}
-      <section
-        id="testimonios"
-        className="landing-testimonios"
-        ref={testimonRef}
-        style={{ opacity: testimonVis ? 1 : 0, transition: "opacity 0.8s ease 0.1s" }}
-      >
-        <div className="testimonios-header">
-          <div className="testimonios-eyebrow">
+        <div className="pilares-content">
+          <div className="pilares-label">
             <IconSparkles size={13} />
-            Lo que dicen de nosotros
+            Características
           </div>
-          <h2 className="testimonios-title">
-            <span className="t-rainbow">T</span>ESTIMONIOS
+
+          <h2 className="pilares-title">
+            Aprende de forma{" "}
+            <span className="pilares-rainbow">integral</span>
           </h2>
-        </div>
 
-        <div className="testimonios-carousel">
-          <div className="testimonios-track">
+          <div className="pilares-divider" />
 
-            {/* Card izquierda */}
-            <div
-              className="t-card t-card--prev"
-              onClick={() => setActiveTestimonio(tIdx(activeTestimonio - 1))}
-              aria-label="Ver testimonio anterior"
-            >
-              {(() => {
-                const t = TESTIMONIOS[tIdx(activeTestimonio - 1)];
-                return (
-                  <>
-                    <div className="t-card__avatar-wrap">
-                      <div className="t-card__avatar-ring" />
-                      <img src={t.avatar} alt={t.name} className="t-card__avatar" />
-                      <div className="t-card__avatar-glow" />
-                    </div>
-                    <div className="t-card__name">{t.name}</div>
-                    <span className="t-card__role">{t.role}</span>
-                    <p className="t-card__text">{t.text}</p>
-                    <div className="t-card__institution">{t.institution}</div>
-                  </>
-                );
-              })()}
-            </div>
+          <p className="pilares-subtitle">
+            Tres pilares que transforman la experiencia educativa
+            de toda la comunidad escolar.
+          </p>
 
-            {/* Card central — activa */}
-            <div className="t-card t-card--active">
-              {(() => {
-                const t = TESTIMONIOS[activeTestimonio];
-                return (
-                  <>
-                    <div className="t-card__avatar-wrap">
-                      <div className="t-card__avatar-ring" />
-                      <img src={t.avatar} alt={t.name} className="t-card__avatar" />
-                      <div className="t-card__avatar-glow" />
-                    </div>
-                    <div className="t-card__name">{t.name}</div>
-                    <span className="t-card__role">{t.role}</span>
-                    <p className="t-card__text">{t.text}</p>
-                    <div className="t-card__sep" />
-                    <div className="t-card__institution">{t.institution}</div>
-                  </>
-                );
-              })()}
-            </div>
-
-            {/* Card derecha */}
-            <div
-              className="t-card t-card--next"
-              onClick={() => setActiveTestimonio(tIdx(activeTestimonio + 1))}
-              aria-label="Ver testimonio siguiente"
-            >
-              {(() => {
-                const t = TESTIMONIOS[tIdx(activeTestimonio + 1)];
-                return (
-                  <>
-                    <div className="t-card__avatar-wrap">
-                      <div className="t-card__avatar-ring" />
-                      <img src={t.avatar} alt={t.name} className="t-card__avatar" />
-                      <div className="t-card__avatar-glow" />
-                    </div>
-                    <div className="t-card__name">{t.name}</div>
-                    <span className="t-card__role">{t.role}</span>
-                    <p className="t-card__text">{t.text}</p>
-                    <div className="t-card__institution">{t.institution}</div>
-                  </>
-                );
-              })()}
-            </div>
-
-          </div>
-        </div>
-
-        {/* Controles */}
-        <div className="testimonios-controls">
-          <button
-            className="t-arrow"
-            onClick={() => setActiveTestimonio(tIdx(activeTestimonio - 1))}
-            aria-label="Anterior"
-          >
-            <IconChevronLeft size={18} />
-          </button>
-
-          <div className="t-dots">
-            {TESTIMONIOS.map((_, i) => (
-              <button
-                key={i}
-                className={`t-dot${i === activeTestimonio ? " t-dot--active" : ""}`}
-                onClick={() => setActiveTestimonio(i)}
-                aria-label={`Ir al testimonio ${i + 1}`}
-              />
+          <div className="pilares-grid">
+            {PILARES.map((p) => (
+              <div className="pilar-card" key={p.title}>
+                <div className="pilar-card__icon-circle">
+                  {p.icon}
+                </div>
+                <h3 className="pilar-card__title">{p.title}</h3>
+                <p className="pilar-card__desc">{p.desc}</p>
+                <div className="pilar-card__bar" />
+              </div>
             ))}
           </div>
-
-          <button
-            className="t-arrow"
-            onClick={() => setActiveTestimonio(tIdx(activeTestimonio + 1))}
-            aria-label="Siguiente"
-          >
-            <IconChevronRight size={18} />
-          </button>
         </div>
       </section>
 
-      {/* ── QUIÉNES SOMOS ── */}
+      <section
+        id="aprende"
+        className="landing-aprende"
+        ref={aprendeRef}
+        style={{ opacity: aprendeVis ? 1 : 0, transition: "opacity 0.8s ease 0.1s" }}
+      >
+        <DecoBubbles items={APRENDE_BUBBLES} />
+
+        <div className="aprende-content">
+          <div style={{ textAlign: "center", maxWidth: 640, margin: "0 auto", padding: "0 1.5rem 8px" }}>
+            <div
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                fontSize: "0.8rem", fontWeight: 700, color: "#7c3aed",
+                textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10,
+              }}
+            >
+              <IconSparkles size={13} />
+              Módulos de aprendizaje
+            </div>
+            <h2 style={{ fontSize: "clamp(1.6rem, 3vw, 2.1rem)", fontWeight: 800, color: "#0f172a", margin: "0 0 10px" }}>
+              ¿Qué podrás aprender en Edumon?
+            </h2>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, color: "#64748b", margin: 0 }}>
+              Cada módulo trae retos prácticos para aplicar con tus hijos desde
+              el primer día — nada de teoría complicada.
+            </p>
+          </div>
+
+          <ModuloCarousel />
+        </div>
+      </section>
+
       <section
         id="quienes"
         className="landing-section--alt"
@@ -621,10 +874,7 @@ export default function LandingPage() {
           overflow: "hidden",
         }}
       >
-        <div className="landing-bubbles" aria-hidden="true">
-          <div className="bubble" style={{ width: 100, height: 100, top: "8%", right: "3%", background: "#e0e7ff" }} />
-          <div className="bubble bubble--alt" style={{ width: 60, height: 60, bottom: "8%", left: "5%", background: "#fce7f3" }} />
-        </div>
+        <DecoBubbles items={QUIENES_BUBBLES} />
 
         <div className="landing-quienes">
           <div className="quienes-content">
@@ -692,9 +942,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-{/* ════════════════════════════════════════
-          CONTÁCTANOS
-          ════════════════════════════════════════ */}
       <section
         id="contacto"
         ref={contactoRef}
@@ -705,13 +952,14 @@ export default function LandingPage() {
           transition: "opacity 0.7s ease, transform 0.7s ease",
         }}
       >
+        <DecoBubbles items={CONTACTO_BUBBLES} />
+
         <div className="landing-contacto">
 
-          {/* ── Columna izquierda ── */}
           <div className="contacto-left">
 
             <div className="contacto-left__badge">
-              <IconStar size={12} />
+              <IconStar size={13} />
               Instituciones educativas
             </div>
 
@@ -724,22 +972,29 @@ export default function LandingPage() {
             </h2>
 
             <p className="contacto-left__text">
-              Trabajamos directamente con cada institución. Escríbenos y te
-              acompañamos en todo el proceso de acceso y configuración.
+              Nuestro equipo acompaña a cada institución durante todo el proceso de
+              implementación. Te ayudamos con la configuración, capacitación y soporte
+              continuo para que comiences rápidamente.
             </p>
 
-            {/* Imagen de letras Edumon */}
+            <div className="contacto-beneficios">
+              <div className="beneficio"><span>✓</span> Implementación guiada</div>
+              <div className="beneficio"><span>✓</span> Capacitación para docentes</div>
+              <div className="beneficio"><span>✓</span> Soporte continuo</div>
+            </div>
+
             <div className="contacto-left__img-wrap">
+
               <img
-                src={letras}
-                alt="Edumon"
+                src={soporte}
+                alt="Buzón de soporte Edumon"
                 className="contacto-left__letras"
               />
+
             </div>
 
           </div>
 
-          {/* ── Formulario ── */}
           <div className="contacto-form-card">
             <div className="contacto-form-card__title">Solicitar información</div>
             <div className="contacto-form-card__sub">
@@ -825,8 +1080,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
       <footer className="landing-footer">
+        <DecoBubbles items={FOOTER_BUBBLES} />
+
         <div className="landing-footer__grid">
           <div className="footer-brand">
             <div className="footer-brand__wordmark">
@@ -905,7 +1161,6 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* ── MODAL DE CONFIRMACIÓN ── */}
       {showConfirm && (
         <div
           role="dialog"

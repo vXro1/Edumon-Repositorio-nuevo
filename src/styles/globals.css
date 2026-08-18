@@ -22,7 +22,6 @@
 @import "./components/input.css";
 @import "./components/footer.css";
 @import "./components/skeleton.css";
-@import "./components/animations.css";
 
 /* ── 4. PAGES ── */
 @import "./pages/landing.css";

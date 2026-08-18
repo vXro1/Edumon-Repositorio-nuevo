@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Shield, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { sesionesService } from "../../../services/sesionesService";
-import { SessionCard } from "../../../components/ui/SessionCard";
+import { SessionCard } from "../components/SessionCard";
 
 const PAGE_SIZE = 8;
 
@@ -60,7 +60,7 @@ export const SesionesPage = () => {
 
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px" }}>
 
-        {/* ── Header ── */}
+        {/* ── Cabecera ── */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
@@ -68,11 +68,11 @@ export const SesionesPage = () => {
                 width:          40,
                 height:         40,
                 borderRadius:   12,
-                background:     "rgba(140,56,240,0.10)",
+                background:     "rgba(12,106,196,0.10)",
                 display:        "flex",
                 alignItems:     "center",
                 justifyContent: "center",
-                color:          "var(--color-primary, #8C38F0)",
+                color:          "var(--color-primary)",
               }}
             >
               <Shield size={20} />
@@ -120,7 +120,7 @@ export const SesionesPage = () => {
           </button>
         </div>
 
-        {/* ── Error state ── */}
+        {/* ── Estado de error ── */}
         {isError && (
           <div
             style={{
@@ -132,7 +132,7 @@ export const SesionesPage = () => {
               borderRadius: 12,
               padding:      "14px 16px",
               marginBottom: 20,
-              color:        "#dc2626",
+              color:        "var(--color-error-hover)",
               fontSize:     13.5,
             }}
           >
@@ -141,7 +141,7 @@ export const SesionesPage = () => {
           </div>
         )}
 
-        {/* ── List ── */}
+        {/* ── Lista ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
@@ -158,7 +158,7 @@ export const SesionesPage = () => {
           }
         </div>
 
-        {/* ── Pagination ── */}
+        {/* ── Paginación ── */}
         {!isLoading && totalPages > 1 && (
           <div
             style={{

@@ -2,13 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import {
-  usersGetDefaultPhotos,
-  usersPatchFotoDefault,
-  usersPatchFotoFile,
-  usersUpdate,
-  authChangePassword,
-} from "@/lib/apiClient";
+import { usersGetDefaultPhotos, usersPatchFotoDefault, usersPatchFotoFile, usersUpdate } from "@/services/usersService";
+import { authChangePassword } from "@/services/authService";
 import { humanizeError } from "@/utils/humanizeError";
 import {
   CheckCircle2,
@@ -28,7 +23,7 @@ const ROLE_REDIRECTS = {
   "padre/tutor": "/padre",
 };
 
-/* ── Validation ─────────────────────────────────────────────── */
+/* ── Validación ─────────────────────────────────────────────── */
 function validateDataForm(form) {
   const e = {};
   if (!form.nombre.trim())   e.nombre   = "Este campo es requerido";
@@ -54,7 +49,7 @@ function validateDataForm(form) {
   return e;
 }
 
-/* ── Micro-components ───────────────────────────────────────── */
+/* ── Micro-componentes ──────────────────────────────────────── */
 function Stepper({ step }) {
   const steps = ["Foto", "Datos", "Listo"];
   return (
@@ -83,9 +78,9 @@ function Stepper({ step }) {
                 alignItems: "center",
                 justifyContent: "center",
                 background: done
-                  ? "#16A34A"
+                  ? "var(--edu-green-600)"
                   : active
-                  ? "linear-gradient(135deg, #6366F1, #0C6AC4)"
+                  ? "linear-gradient(135deg, #6366F1, var(--edu-blue-500))"
                   : "var(--color-border)",
                 color: (done || active) ? "white" : "var(--color-text-muted)",
                 fontSize: 13,
@@ -101,7 +96,7 @@ function Stepper({ step }) {
               <span style={{
                 fontSize: 11,
                 fontWeight: active ? 700 : 500,
-                color: active ? "#6366F1" : done ? "#16A34A" : "var(--color-text-muted)",
+                color: active ? "#6366F1" : done ? "var(--edu-green-600)" : "var(--color-text-muted)",
                 transition: "color 300ms",
               }}>{label}</span>
             </div>
@@ -128,7 +123,7 @@ function Field({ label, error, children }) {
       </label>
       {children}
       {error && (
-        <p style={{ fontSize: 12, color: "#DC2626", marginTop: 4, display: "flex", alignItems: "center", gap: 4, margin: "4px 0 0" }}>
+        <p style={{ fontSize: 12, color: "var(--color-error-hover)", marginTop: 4, display: "flex", alignItems: "center", gap: 4, margin: "4px 0 0" }}>
           <AlertCircle style={{ width: 11, height: 11, flexShrink: 0 }} /> {error}
         </p>
       )}
@@ -138,7 +133,7 @@ function Field({ label, error, children }) {
 
 function TextInput({ value, onChange, placeholder, type = "text", disabled = false, hasError = false }) {
   const [focused, setFocused] = useState(false);
-  const border = hasError ? "#DC2626" : focused ? "#6366F1" : "var(--color-border)";
+  const border = hasError ? "var(--color-error-hover)" : focused ? "#6366F1" : "var(--color-border)";
   const shadow = hasError
     ? "0 0 0 3px rgba(220,38,38,0.12)"
     : focused ? "0 0 0 3px rgba(99,102,241,0.12)" : "none";
@@ -172,7 +167,7 @@ function TextInput({ value, onChange, placeholder, type = "text", disabled = fal
 function PasswordInput({ value, onChange, placeholder, hasError = false }) {
   const [show, setShow] = useState(false);
   const [focused, setFocused] = useState(false);
-  const border = hasError ? "#DC2626" : focused ? "#6366F1" : "var(--color-border)";
+  const border = hasError ? "var(--color-error-hover)" : focused ? "#6366F1" : "var(--color-border)";
   const shadow = hasError
     ? "0 0 0 3px rgba(220,38,38,0.12)"
     : focused ? "0 0 0 3px rgba(99,102,241,0.12)" : "none";
@@ -235,7 +230,7 @@ function PasswordStrength({ password }) {
     { label: "Número",        ok: /[0-9]/.test(password) },
   ];
   const score = checks.filter(c => c.ok).length;
-  const barColor = ["#DC2626", "#DC2626", "#F59E0B", "#16A34A", "#16A34A"][score];
+  const barColor = ["var(--color-error-hover)", "var(--color-error-hover)", "#F59E0B", "var(--edu-green-600)", "var(--edu-green-600)"][score];
   const strengthLabel = ["", "Débil", "Regular", "Buena", "Fuerte"][score];
   return (
     <div style={{ marginTop: 8 }}>
@@ -256,7 +251,7 @@ function PasswordStrength({ password }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {checks.map((c, i) => (
-            <span key={i} style={{ fontSize: 11, color: c.ok ? "#16A34A" : "var(--color-text-muted)", display: "flex", alignItems: "center", gap: 3 }}>
+            <span key={i} style={{ fontSize: 11, color: c.ok ? "var(--edu-green-600)" : "var(--color-text-muted)", display: "flex", alignItems: "center", gap: 3 }}>
               <span>{c.ok ? "✓" : "○"}</span> {c.label}
             </span>
           ))}
@@ -291,8 +286,8 @@ function ErrorBanner({ message }) {
       border: "1px solid rgba(220,38,38,0.2)",
       marginBottom: 16,
     }}>
-      <AlertCircle style={{ width: 15, height: 15, color: "#DC2626", flexShrink: 0 }} />
-      <p style={{ fontSize: 13, color: "#DC2626", margin: 0 }}>{message}</p>
+      <AlertCircle style={{ width: 15, height: 15, color: "var(--color-error-hover)", flexShrink: 0 }} />
+      <p style={{ fontSize: 13, color: "var(--color-error-hover)", margin: 0 }}>{message}</p>
     </div>
   );
 }
@@ -310,7 +305,7 @@ function PrimaryButton({ onClick, disabled, loading, children }) {
         border: "none",
         background: (disabled || loading)
           ? "var(--color-border)"
-          : "linear-gradient(135deg, #6366F1 0%, #0C6AC4 100%)",
+          : "linear-gradient(135deg, #6366F1 0%, var(--edu-blue-500) 100%)",
         color: "white",
         fontSize: 15,
         fontWeight: 700,
@@ -329,14 +324,14 @@ function PrimaryButton({ onClick, disabled, loading, children }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Step 1 — Avatar selection
+   Paso 1 — Selección de avatar
    ══════════════════════════════════════════════════════════════ */
 function StepAvatar({ currentPhotoUrl, onComplete }) {
   const [defaultPhotos, setDefaultPhotos] = useState([]);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [photosError,   setPhotosError]   = useState(false);
-  const [selected,      setSelected]      = useState(null); // URL string
-  const [uploadedFile,  setUploadedFile]  = useState(null); // File
+  const [selected,      setSelected]      = useState(null); // cadena URL
+  const [uploadedFile,  setUploadedFile]  = useState(null); // File (archivo)
   const [previewUrl,    setPreviewUrl]    = useState(currentPhotoUrl ?? null);
   const [saving,        setSaving]        = useState(false);
   const [error,         setError]         = useState("");
@@ -363,7 +358,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
-  // Revoke previous object URL on unmount
+  // Revocar la URL de objeto anterior al desmontar
   useEffect(() => () => {
     if (objUrlRef.current) URL.revokeObjectURL(objUrlRef.current);
   }, []);
@@ -386,7 +381,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
     setSelected(null);
     setPreviewUrl(url);
     setError("");
-    // Reset input so same file can be re-selected
+    // Resetear el input para que el mismo archivo pueda volver a seleccionarse
     e.target.value = "";
   };
 
@@ -418,7 +413,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 
   return (
     <div>
-      {/* Current avatar preview */}
+      {/* Vista previa del avatar actual */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
         <div style={{
           width: 96,
@@ -508,7 +503,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
                     width: 18,
                     height: 18,
                     borderRadius: "50%",
-                    background: "#16A34A",
+                    background: "var(--edu-green-600)",
                     border: "2px solid var(--color-surface)",
                     display: "flex",
                     alignItems: "center",
@@ -577,7 +572,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Step 2 — Data update (email + password)
+   Paso 2 — Actualización de datos (correo + contraseña)
    ══════════════════════════════════════════════════════════════ */
 function StepData({ user, loginPassword, onComplete }) {
   const [form, setForm] = useState({
@@ -608,7 +603,7 @@ function StepData({ user, loginPassword, onComplete }) {
 
     setSaving(true);
     try {
-      // 1. Actualizar correo (y nombre/apellido si los editó)
+      // 1. Actualizar correo (y nombre/apellido si fueron editados)
       const updateBody = {
         correo:   form.correo.trim(),
         nombre:   form.nombre.trim(),
@@ -634,7 +629,7 @@ function StepData({ user, loginPassword, onComplete }) {
     <div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-        {/* Nombre + Apellido */}
+        {/* Nombre y Apellido */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Field label="Nombre *" error={errors.nombre}>
             <TextInput
@@ -704,7 +699,7 @@ function StepData({ user, loginPassword, onComplete }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Step 3 — Confirmation + redirect
+   Paso 3 — Confirmación y redirección
    ══════════════════════════════════════════════════════════════ */
 function StepDone({ userRol }) {
   const navigate = useNavigate();
@@ -726,13 +721,13 @@ function StepDone({ userRol }) {
         height: 72,
         borderRadius: "50%",
         background: "rgba(22,163,74,0.1)",
-        border: "2px solid #16A34A",
+        border: "2px solid var(--edu-green-600)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         margin: "0 auto 20px",
       }}>
-        <CheckCircle2 style={{ width: 36, height: 36, color: "#16A34A" }} />
+        <CheckCircle2 style={{ width: 36, height: 36, color: "var(--edu-green-600)" }} />
       </div>
       <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--color-text)", margin: "0 0 10px" }}>
         ¡Todo listo!
@@ -748,7 +743,7 @@ function StepDone({ userRol }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Main screen
+   Pantalla principal
    ══════════════════════════════════════════════════════════════ */
 const STEP_TITLES = [
   { title: "Elige tu foto de perfil", subtitle: "Esta imagen te representará en la plataforma." },
@@ -764,7 +759,7 @@ export default function FirstLoginScreen() {
 
   const [step, setStep] = useState(1);
 
-  // Prevent browser back navigation during the flow
+  // Prevenir la navegación hacia atrás del navegador durante el flujo
   useEffect(() => {
     window.history.pushState(null, document.title, window.location.href);
     const handlePop = () => {
@@ -797,13 +792,13 @@ export default function FirstLoginScreen() {
     }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
 
-        {/* ── Logo / Header ── */}
+        {/* ── Logo / Cabecera ── */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{
             width: 52,
             height: 52,
             borderRadius: 14,
-            background: "linear-gradient(135deg, #6366F1 0%, #0C6AC4 100%)",
+            background: "linear-gradient(135deg, #6366F1 0%, var(--edu-blue-500) 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -820,7 +815,7 @@ export default function FirstLoginScreen() {
           </p>
         </div>
 
-        {/* ── Card ── */}
+        {/* ── Tarjeta ── */}
         <div style={{
           background: "var(--color-surface)",
           borderRadius: 18,
@@ -828,10 +823,10 @@ export default function FirstLoginScreen() {
           boxShadow: "var(--shadow-card)",
           padding: "28px",
         }}>
-          {/* Stepper */}
+          {/* Indicador de pasos */}
           <Stepper step={step} />
 
-          {/* Step title */}
+          {/* Título del paso */}
           {step < 3 && (
             <div style={{ marginBottom: 22 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--color-text)", margin: "0 0 4px" }}>
@@ -845,7 +840,7 @@ export default function FirstLoginScreen() {
             </div>
           )}
 
-          {/* Step content */}
+          {/* Contenido del paso */}
           {step === 1 && (
             <StepAvatar
               currentPhotoUrl={user?.fotoPerfilUrl ?? null}

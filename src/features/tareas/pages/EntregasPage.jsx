@@ -7,26 +7,21 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-import {
-  entregasGetByTarea,
-  entregasCalificar,
-  tareasGetById,
-  usersGetById,
-} from "@/lib/apiClient";
+import { entregasGetByTarea, entregasCalificar } from "@/features/entregas/services/entregasService";
+import { tareasGetById } from "@/features/cursos/services/tareasService";
 
-import { normalizeAndEnrichEntrega } from "@/lib/normalizers/entrega";
+import { normalizeEntregas, normalizeEntrega } from "@/lib/normalizers/entrega";
 import { normalizeTarea } from "@/lib/normalizers/tarea";
 import { Modal, Toast, Button, Input } from "@/components";
-import { Sk, EmptyState, Field } from "../../cursos/components/shared/ui";
+import { Sk, EmptyState, Field, StarRating, StarRatingInput } from "../../cursos/components/shared/ui";
 import { humanizeError } from "@/utils/humanizeError";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
 const ESTADO_CFG = {
-  enviada:    { bg: "rgba(12,106,196,0.10)",  color: "#0C6AC4",  label: "Enviada"    },
-  tarde:      { bg: "rgba(220,38,38,0.10)",   color: "#DC2626",  label: "Tarde"      },
-  calificada: { bg: "rgba(22,163,74,0.10)",   color: "#16A34A",  label: "Calificada" },
+  enviada:    { bg: "rgba(12,106,196,0.10)",  color: "var(--color-primary)",  label: "Enviada"    },
+  tarde:      { bg: "rgba(220,38,38,0.10)",   color: "var(--color-error-hover)",  label: "Tarde"      },
+  calificada: { bg: "rgba(22,163,74,0.10)",   color: "var(--edu-green-600)",  label: "Calificada" },
   borrador:   { bg: "rgba(148,163,184,0.15)", color: "#64748B",  label: "Borrador"   },
 };
 
@@ -35,7 +30,6 @@ const ESTADO_CFG = {
 export default function EntregasPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [tarea,      setTarea]      = useState(null);
   const [entregas,   setEntregas]   = useState([]);
@@ -47,7 +41,7 @@ export default function EntregasPage() {
   const [toast,      setToast]      = useState({ msg: "", type: "success" });
 
   const [showCal,   setShowCal]   = useState(false);
-  const [calForm,   setCalForm]   = useState({ nota: "", comentario: "" });
+  const [calForm,   setCalForm]   = useState({ valoracion: 0, comentario: "" });
   const [calTarget, setCalTarget] = useState(null);
   const [saving,    setSaving]    = useState(false);
 
@@ -56,6 +50,12 @@ export default function EntregasPage() {
     setTimeout(() => setToast({ msg: "", type: "success" }), 3500);
   };
 
+  // entregasGetByTarea ya devuelve padreId y calificacion.docenteId poblados
+  // (ver entregaController.js: getEntregasByTarea popula ambos), así que no
+  // hace falta volver a pedirlos por separado. Antes se intentaba "enriquecer"
+  // llamando a usersGetById(padreId) — pero padreId YA era el objeto poblado
+  // en este punto, no un id crudo, así que esas llamadas pedían
+  // /users/[object Object] y nunca devolvían nada útil.
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -67,24 +67,7 @@ export default function EntregasPage() {
 
       if (tareaData) setTarea(normalizeTarea(tareaData.tarea ?? tareaData));
 
-      const rawEntregas = entregasData.entregas ?? [];
-
-      // Enriquecer con datos de padres
-      const padreIds = [...new Set(rawEntregas.map(e => e.padreId).filter(Boolean))];
-      const padresMap = {};
-      await Promise.all(
-        padreIds.map(padreId =>
-          usersGetById(padreId)
-            .then(data => { padresMap[padreId] = data.usuario ?? data.user ?? data; })
-            .catch(() => { padresMap[padreId] = null; })
-        )
-      );
-
-      const enriched = rawEntregas.map(e =>
-        normalizeAndEnrichEntrega(e, { padres: padresMap, tareas: {}, docentes: {} })
-      );
-
-      setEntregas(enriched);
+      setEntregas(normalizeEntregas(entregasData.entregas));
       if (entregasData.estadisticas) setStats(entregasData.estadisticas);
     } catch (err) {
       setError(humanizeError(err, "Error al cargar entregas"));
@@ -107,32 +90,29 @@ export default function EntregasPage() {
   const openCalificar = (entrega) => {
     setCalTarget(entrega);
     setCalForm({
-      nota:       entrega.calificacion?.nota?.toString() ?? "",
+      valoracion: entrega.calificacion?.valoracion ?? 0,
       comentario: entrega.calificacion?.comentario ?? "",
     });
     setShowCal(true);
   };
 
+  // El backend (calificarEntregaValidator.js) espera { valoracion (1-5),
+  // comentario } — nunca "nota" ni "docenteId" en el body. docenteId se
+  // extrae del token de sesión en el controlador (calificarEntrega.js) y
+  // el validator RECHAZA la petición si docenteId viene en el body.
   const handleCalificar = async (e) => {
     e.preventDefault();
-    const nota = parseFloat(calForm.nota);
-    if (isNaN(nota) || nota < 0 || nota > 100) {
-      notify("La nota debe ser un número entre 0 y 100", "error");
-      return;
-    }
-    const docenteId = user?._id ?? user?.id;
-    if (!docenteId) {
-      notify("No se pudo obtener tu ID de docente. Vuelve a iniciar sesión.", "error");
+    if (!calForm.valoracion) {
+      notify("Selecciona una valoración", "error");
       return;
     }
     setSaving(true);
     try {
-      const response = await entregasCalificar(calTarget._id, { nota, comentario: calForm.comentario, docenteId });
-      const actualizada = normalizeAndEnrichEntrega(response.entrega, {
-        padres:   { [calTarget.padreId]: calTarget.padre },
-        tareas:   {},
-        docentes: {},
+      const response = await entregasCalificar(calTarget._id, {
+        valoracion: calForm.valoracion,
+        comentario: calForm.comentario,
       });
+      const actualizada = normalizeEntrega(response.entrega);
       setEntregas(prev => prev.map(ent => ent._id === calTarget._id ? actualizada : ent));
       notify(calTarget.calificacion ? "Calificación actualizada" : "Entrega calificada");
       setShowCal(false);
@@ -199,7 +179,7 @@ export default function EntregasPage() {
       {/* ── Error ──────────────────────────────────────────────── */}
       {error && (
         <div style={{ background: "rgba(220,38,38,0.10)", borderRadius: 12, border: "1px solid rgba(220,38,38,0.20)", padding: "12px 16px", marginBottom: 24 }}>
-          <p style={{ fontSize: 13, color: "#DC2626", margin: 0 }}>{error}</p>
+          <p style={{ fontSize: 13, color: "var(--color-error-hover)", margin: 0 }}>{error}</p>
         </div>
       )}
 
@@ -207,9 +187,9 @@ export default function EntregasPage() {
       <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         {[
           { value: stats.total ?? entregas.length, label: "Total",       color: "var(--color-text)" },
-          { value: stats.enviadas   ?? 0,           label: "Enviadas",   color: "#0C6AC4"           },
-          { value: stats.tarde      ?? 0,           label: "Tarde",      color: "#DC2626"           },
-          { value: stats.calificadas ?? 0,          label: "Calificadas",color: "#16A34A"           },
+          { value: stats.enviadas   ?? 0,           label: "Enviadas",   color: "var(--color-primary)"           },
+          { value: stats.tarde      ?? 0,           label: "Tarde",      color: "var(--color-error-hover)"           },
+          { value: stats.calificadas ?? 0,          label: "Calificadas",color: "var(--edu-green-600)"           },
         ].map(({ value, label, color }) => (
           <div key={label} style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "14px 20px", textAlign: "center", minWidth: 110 }}>
             <p style={{ fontSize: 26, fontWeight: 800, color, margin: 0 }}>{value}</p>
@@ -290,11 +270,10 @@ export default function EntregasPage() {
               </p>
             </div>
 
-            {/* Nota actual */}
+            {/* Valoración actual */}
             {calTarget.calificacion && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(22,163,74,0.08)", borderRadius: 10, padding: "8px 12px", marginBottom: 14, fontSize: 12.5, color: "#16A34A", fontWeight: 600 }}>
-                <Star style={{ width: 13, height: 13 }} />
-                Nota actual: {calTarget.calificacion.nota} / 100
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(22,163,74,0.08)", borderRadius: 10, padding: "8px 12px", marginBottom: 14 }}>
+                <StarRating value={calTarget.calificacion.valoracion} size={14} showLabel />
               </div>
             )}
 
@@ -313,7 +292,7 @@ export default function EntregasPage() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {calTarget.archivos.map((a, i) => (
                     <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
-                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", fontSize: 11.5, color: "#0C6AC4", textDecoration: "none", fontWeight: 600 }}>
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, background: "var(--color-bg)", border: "1px solid var(--color-border)", fontSize: 11.5, color: "var(--color-primary)", textDecoration: "none", fontWeight: 600 }}>
                       <FileText style={{ width: 12, height: 12 }} />
                       {a.nombre || `Archivo ${i + 1}`}
                       <ExternalLink style={{ width: 10, height: 10 }} />
@@ -325,14 +304,10 @@ export default function EntregasPage() {
 
             {/* Formulario */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <Field label="Nota (0 – 100) *">
-                <Input
-                  type="number"
-                  min="0" max="100" step="0.5"
-                  value={calForm.nota}
-                  onChange={e => setCalForm(p => ({ ...p, nota: e.target.value }))}
-                  required
-                  placeholder="Ej: 85"
+              <Field label="Valoración (1-5 estrellas) *">
+                <StarRatingInput
+                  value={calForm.valoracion}
+                  onChange={v => setCalForm(p => ({ ...p, valoracion: v }))}
                 />
               </Field>
               <Field label="Comentario">
@@ -400,7 +375,7 @@ function EntregaCard({ entrega: e, onCalificar }) {
           width: 40, height: 40, borderRadius: "50%",
           background: "rgba(12,106,196,0.10)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 14, fontWeight: 700, color: "#0C6AC4", flexShrink: 0,
+          fontSize: 14, fontWeight: 700, color: "var(--color-primary)", flexShrink: 0,
         }}>
           {(e.padre?.nombre?.[0] ?? "P").toUpperCase()}
         </div>
@@ -413,8 +388,8 @@ function EntregaCard({ entrega: e, onCalificar }) {
               {estadoCfg.label}
             </span>
             {e.calificacion && (
-              <span style={{ display: "flex", alignItems: "center", gap: 3, padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: "rgba(22,163,74,0.10)", color: "#16A34A" }}>
-                <Star style={{ width: 10, height: 10 }} /> {e.calificacion.nota}/100
+              <span style={{ display: "flex", alignItems: "center", gap: 3, padding: "2px 9px", borderRadius: 99, background: "rgba(22,163,74,0.10)" }}>
+                <StarRating value={e.calificacion.valoracion} size={11} />
               </span>
             )}
           </div>
@@ -430,10 +405,10 @@ function EntregaCard({ entrega: e, onCalificar }) {
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
           <button
             onClick={ev => { ev.stopPropagation(); onCalificar(); }}
-            style={actionBtn(e.calificacion ? "#16A34A" : "#0C6AC4")}
+            style={actionBtn(e.calificacion ? "var(--edu-green-600)" : "var(--color-primary)")}
           >
             <Star style={{ width: 12, height: 12 }} />
-            {e.calificacion ? "Actualizar nota" : "Calificar"}
+            {e.calificacion ? "Actualizar" : "Calificar"}
           </button>
           {expanded
             ? <ChevronUp style={{ width: 16, height: 16, color: "var(--color-text-muted)" }} />
@@ -457,7 +432,7 @@ function EntregaCard({ entrega: e, onCalificar }) {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {archivos.map((a, i) => (
                   <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
-                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "var(--color-surface)", border: "1px solid var(--color-border)", fontSize: 12.5, color: "#0C6AC4", fontWeight: 600, textDecoration: "none" }}>
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "var(--color-surface)", border: "1px solid var(--color-border)", fontSize: 12.5, color: "var(--color-primary)", fontWeight: 600, textDecoration: "none" }}>
                     <FileText style={{ width: 13, height: 13 }} />
                     {a.nombre ?? a.nombreOriginal ?? `Archivo ${i + 1}`}
                     <ExternalLink style={{ width: 11, height: 11 }} />
@@ -469,10 +444,10 @@ function EntregaCard({ entrega: e, onCalificar }) {
 
           {e.calificacion && (
             <div style={{ background: "rgba(22,163,74,0.06)", borderRadius: 10, padding: "10px 14px", border: "1px solid rgba(22,163,74,0.15)" }}>
-              <p style={{ fontSize: 11.5, fontWeight: 700, color: "#16A34A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Calificación</p>
-              <p style={{ fontSize: 14, fontWeight: 800, color: "#16A34A", margin: 0 }}>{e.calificacion.nota} / 100</p>
+              <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--edu-green-600)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Calificación</p>
+              <StarRating value={e.calificacion.valoracion} size={16} showLabel />
               {e.calificacion.comentario && (
-                <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 4 }}>{e.calificacion.comentario}</p>
+                <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 6 }}>{e.calificacion.comentario}</p>
               )}
             </div>
           )}

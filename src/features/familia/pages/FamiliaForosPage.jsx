@@ -1,392 +1,257 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-
+// src/features/familia/pages/FamiliaForosPage.jsx
+// ROL: Padre / Tutor — Navegador de foros por curso.
+//
+// Antes esta página tenía su propia mini-implementación de foro (ForoDetalle,
+// MensajeCard) con divs sin estilo, sin sidebar, sin panel de actividad, sin
+// animación de like y con el mismo bug de "likes" tratado como array cuando
+// el backend lo guarda como contador (ver normalizeMensaje). El resultado se
+// sentía como una pestaña de mensajes plana, no como un foro.
+//
+// ForumPage.jsx ya es "la vista canónica del foro — todos los roles usan esta
+// misma página" (su propio comentario lo dice), montada en
+// /curso/:cursoId/foro/:foroId con sidebar, panel de actividad, materiales de
+// apoyo, respuestas anidadas y likes funcionando de verdad. Esta página ahora
+// solo hace de directorio: lista los cursos del padre y sus foros, y al
+// hacer clic navega a esa misma vista canónica en vez de reimplementarla.
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  MessageCircle, ArrowLeft, Lock, Heart, Reply,
-  Send, Loader2, CheckCircle2, AlertCircle,
-  Paperclip, ExternalLink, FileText, BookOpen, ChevronRight,
+  MessageSquare, Search, ChevronRight, AlertCircle,
+  Lock, BookOpen, Users,
 } from "lucide-react";
 
-import {
-  cursosGetMine,
-  forosGetByCurso,
-  forosGetById,
-  mensajesForoGetByForo,
-  mensajesForoCreate,
-  mensajesForoToggleLike,
-} from "@/lib/apiClient";
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { forosGetByCurso } from "@/features/foros/services/forosService";
+import { normalizeCurso, normalizeForos } from "@/lib/normalizers";
 
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import { normalizeCurso, normalizeMensaje }from "@/lib/normalizers";
-import { Toast, UserAvatar, Button } from "@/components";
-import { IconBtn } from "@/features/cursos/components/shared/ui";
-import { humanizeError } from "@/utils/humanizeError";
-import useUserStore from "@/store/useUserStore";
+import { Badge } from "@/components";
+import { Sk, EmptyState } from "@/features/cursos/components/shared/ui";
 
-function Sk({ h = 14, w = "100%", r = 6 }) {
-  return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
+function formatFecha(fechaStr) {
+  if (!fechaStr) return null;
+  return new Date(fechaStr).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
 }
 
-// ── ForoDetalle ──────────────────────────────────────────────
-function ForoDetalle({ foroId, onBack }) {
-  const { user } = useAuth();
-  const setUsers = useUserStore((s) => s.setUsers);
-
-  const [foro, setForo] = useState(null);
-  const [mensajes, setMensajes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState({ msg: "", type: "success" });
-  const [texto, setTexto] = useState("");
-  const [replyTo, setReplyTo] = useState(null);
-  const [sending, setSending] = useState(false);
-  const [archivos, setArchivos] = useState([]);
-  const fileRef = useRef(null);
-  const textareaRef = useRef(null);
-
-  const notify = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast({ msg: "", type: "success" }), 3500);
-  };
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [foroRes, mensajesRes] = await Promise.all([
-        forosGetById(foroId),
-        mensajesForoGetByForo(foroId),
-      ]);
-
-      setForo(foroRes.foro ?? foroRes);
-
-      const normalized = (mensajesRes.mensajes ?? []).map(normalizeMensaje);
-      setMensajes(normalized);
-
-      const autores = [];
-      normalized.forEach(m => {
-        if (m.autor?._id) autores.push(m.autor);
-        (m.respuestas ?? []).forEach(r => {
-          if (r.autor?._id) autores.push(r.autor);
-        });
-      });
-
-      setUsers(autores);
-    } catch {
-      notify("Error al cargar el foro", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [foroId, setUsers]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const handleSend = async () => {
-    if (!texto.trim() && archivos.length === 0) return;
-
-    setSending(true);
-    try {
-      const fd = new FormData();
-      fd.append("foroId", foroId);
-      fd.append("contenido", texto.trim());
-      if (replyTo) fd.append("respuestaA", replyTo._id);
-      archivos.forEach(f => fd.append("archivos", f));
-
-      await mensajesForoCreate(fd);
-
-      setTexto("");
-      setReplyTo(null);
-      setArchivos([]);
-      notify("Mensaje enviado");
-      load();
-    } catch (err) {
-      notify(humanizeError(err, "Error al enviar mensaje"), "error");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleLike = async (msgId) => {
-    try {
-      await mensajesForoToggleLike(msgId);
-      load();
-    } catch {}
-  };
-
-  function MensajeCard({ msg, isReply = false }) {
-    if (!msg) return null;
-
-    const name =
-      `${msg.autor?.nombre ?? ""} ${msg.autor?.apellido ?? ""}`.trim() || "Usuario";
-
-    const liked = msg.likes?.includes(user?._id);
-
-    return (
-      <div style={{
-        display: "flex",
-        gap: 10,
-        marginBottom: isReply ? 8 : 16,
-        paddingLeft: isReply ? 32 : 0,
-      }}>
-        <UserAvatar user={msg.autor} size={32} />
-
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>{name}</span>
-            <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
-              {new Date(msg.creadoEn ?? msg.createdAt).toLocaleString("es-CO")}
-            </span>
-          </div>
-
-          <p style={{ fontSize: 13.5, margin: "5px 0 8px" }}>
-            {msg.contenido}
-          </p>
-
-          {msg.archivos?.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-              {msg.archivos.map((a, i) => (
-                <a key={i} href={a.url} target="_blank" rel="noreferrer"
-                   style={{
-                     display: "flex",
-                     alignItems: "center",
-                     gap: 4,
-                     fontSize: 12,
-                     color: "#0C6AC4",
-                     textDecoration: "none",
-                   }}>
-                  <ExternalLink style={{ width: 11, height: 11 }} />
-                  {a.nombre ?? "Archivo"}
-                </a>
-              ))}
-            </div>
-          )}
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-
-            <IconBtn
-              color={liked ? "#DC2626" : "var(--color-text-muted)"}
-              onClick={() => handleLike(msg._id)}
-            >
-              <Heart
-                style={{ width: 13, height: 13 }}
-                fill={liked ? "currentColor" : "none"}
-              />
-            </IconBtn>
-
-            {!isReply && foro?.estado !== "cerrado" && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setReplyTo(msg);
-                  textareaRef.current?.focus();
-                }}
-              >
-                <Reply style={{ width: 13, height: 13 }} />
-                Responder
-              </Button>
-            )}
-          </div>
-
-          {msg.respuestas?.length > 0 && (
-            <div style={{
-              marginTop: 10,
-              borderLeft: "2px solid var(--color-border)",
-              paddingLeft: 12,
-            }}>
-              {msg.respuestas.map(r => (
-                <MensajeCard key={r._id} msg={r} isReply />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div style={{ padding: 24 }}>
-        <Sk h={20} w="40%" />
-      </div>
-    );
-  }
-
-  return (
-    <div>
-
-      <Toast msg={toast.msg} type={toast.type} />
-
-      {/* BACK */}
-      <Button variant="ghost" onClick={onBack} style={{ marginBottom: 18 }}>
-        <ArrowLeft style={{ width: 15, height: 15 }} />
-        Volver a foros
-      </Button>
-
-      {/* HEADER */}
-      <div style={{ padding: 18 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800 }}>{foro?.titulo}</h2>
-        <p style={{ fontSize: 13 }}>{foro?.descripcion}</p>
-
-        {foro?.estado === "cerrado" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Lock style={{ width: 12, height: 12 }} />
-            Cerrado
-          </div>
-        )}
-      </div>
-
-      {/* MESSAGES */}
-      <div style={{ padding: 18 }}>
-        {mensajes.map(m => <MensajeCard key={m._id} msg={m} />)}
-      </div>
-
-      {/* COMPOSE */}
-      {foro?.estado !== "cerrado" && (
-        <div style={{ padding: 18 }}>
-
-          {replyTo && (
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 10,
-            }}>
-              <span>Respondiendo a <b>{replyTo.autor?.nombre}</b></span>
-
-              <IconBtn
-                color="#DC2626"
-                onClick={() => setReplyTo(null)}
-              >
-                <AlertCircle style={{ width: 13, height: 13 }} />
-              </IconBtn>
-            </div>
-          )}
-
-          <textarea
-            ref={textareaRef}
-            value={texto}
-            onChange={e => setTexto(e.target.value)}
-            rows={3}
-            style={{ width: "100%" }}
-          />
-
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
-
-            <Button
-              variant="outline"
-              onClick={() => fileRef.current?.click()}
-            >
-              <Paperclip style={{ width: 12, height: 12 }} />
-              Adjuntar {archivos.length > 0 && `(${archivos.length})`}
-            </Button>
-
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              style={{ display: "none" }}
-              onChange={e => setArchivos(p => [...p, ...Array.from(e.target.files)])}
-            />
-
-            <Button
-              variant="primary"
-              onClick={handleSend}
-              disabled={sending || (!texto.trim() && archivos.length === 0)}
-            >
-              {sending ? (
-                <Loader2 style={{ width: 13, height: 13 }} />
-              ) : (
-                <Send style={{ width: 13, height: 13 }} />
-              )}
-              Enviar
-            </Button>
-
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── LISTA FOROS ──────────────────────────────────────────────
-function ForoCard({ foro, onClick }) {
+function ForoRow({ foro, onClick }) {
+  const cerrado = foro.estado === "cerrado";
   return (
     <div
       onClick={onClick}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        padding: "14px 18px",
-        borderBottom: "1px solid var(--color-border)",
-        cursor: "pointer",
+        display: "flex", alignItems: "center", gap: 14,
+        padding: "14px 18px", borderBottom: "1px solid var(--color-border)",
+        cursor: "pointer", transition: "background 150ms",
       }}
+      onMouseEnter={e => (e.currentTarget.style.background = "var(--color-bg)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
     >
-      <div style={{ width: 38, height: 38 }}>
-        {foro.estado === "cerrado"
-          ? <Lock />
-          : <MessageCircle />
+      <div style={{
+        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+        background: cerrado ? "rgba(107,114,128,0.10)" : "rgba(99,102,241,0.10)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {cerrado
+          ? <Lock style={{ width: 16, height: 16, color: "#6B7280" }} />
+          : <MessageSquare style={{ width: 16, height: 16, color: "#6366F1" }} />
         }
       </div>
 
-      <div style={{ flex: 1 }}>
-        <p>{foro.titulo}</p>
-        <p>{foro.descripcion}</p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          fontSize: 14, fontWeight: 600, margin: 0,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {foro.titulo}
+        </p>
+        {foro.descripcion && (
+          <p style={{
+            fontSize: 12, color: "var(--color-text-muted)", margin: "3px 0 0",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {foro.descripcion}
+          </p>
+        )}
+        <div style={{ display: "flex", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
+          <span style={{ display: "flex", gap: 4, fontSize: 11.5, color: "var(--color-text-muted)" }}>
+            <MessageSquare style={{ width: 11, height: 11 }} />
+            {foro.totalMensajes ?? 0} mensajes
+          </span>
+          {foro.createdAt && (
+            <span style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
+              Creado {formatFecha(foro.createdAt)}
+            </span>
+          )}
+        </div>
       </div>
 
-      {foro.estado === "cerrado" && (
-        <span>Cerrado</span>
+      <Badge variant={cerrado ? "neutral" : "success"} size="sm" dot>
+        {cerrado ? "Cerrado" : "Abierto"}
+      </Badge>
+
+      <ChevronRight style={{ width: 16, height: 16, color: "var(--color-text-muted)", flexShrink: 0 }} />
+    </div>
+  );
+}
+
+function CursoForosGroup({ curso, foros, onOpenForo }) {
+  return (
+    <div style={{
+      background: "var(--color-surface)", borderRadius: 16,
+      border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+      overflow: "hidden", marginBottom: 16,
+    }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "12px 18px", borderBottom: "1px solid var(--color-border)",
+        background: "var(--color-bg)",
+      }}>
+        <BookOpen style={{ width: 15, height: 15, color: "var(--color-text-muted)" }} />
+        <p style={{ fontSize: 13.5, fontWeight: 700, margin: 0 }}>{curso.nombre}</p>
+      </div>
+
+      {foros.length === 0 ? (
+        <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", margin: 0, padding: "16px 18px" }}>
+          Sin foros todavía en este curso.
+        </p>
+      ) : (
+        foros.map(f => (
+          <ForoRow key={f._id} foro={f} onClick={() => onOpenForo(f, curso)} />
+        ))
       )}
     </div>
   );
 }
 
-// ── PAGE ─────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
 export default function FamiliaForosPage() {
-  const [cursos, setCursos] = useState([]);
-  const [forosByCurso, setForosByCurso] = useState({});
+  const navigate = useNavigate();
+
+  const [grupos,  setGrupos]  = useState([]); // [{ curso, foros }]
   const [loading, setLoading] = useState(true);
-  const [activeForo, setActiveForo] = useState(null);
+  const [apiError, setApiError] = useState(false);
+  const [search,  setSearch]  = useState("");
 
-  useEffect(() => {
-    (async () => {
+  const load = async () => {
+    setLoading(true);
+    setApiError(false);
+    try {
       const res = await cursosGetMine({ limit: 50 });
-      const lista = res.cursos ?? [];
-      setCursos(lista);
+      const cursos = (res?.cursos ?? []).map(normalizeCurso);
 
-      const map = {};
-      await Promise.all(lista.map(async (c) => {
-        const fr = await forosGetByCurso(c._id);
-        map[c._id] = fr.foros ?? [];
-      }));
+      const conForos = await Promise.all(
+        cursos.map(async (curso) => {
+          try {
+            const fr = await forosGetByCurso(curso._id);
+            return { curso, foros: normalizeForos(fr?.foros ?? fr) };
+          } catch {
+            return { curso, foros: [] };
+          }
+        })
+      );
 
-      setForosByCurso(map);
+      setGrupos(conForos);
+    } catch {
+      setApiError(true);
+    } finally {
       setLoading(false);
-    })();
-  }, []);
+    }
+  };
 
-  if (activeForo) {
-    return (
-      <ForoDetalle
-        foroId={activeForo}
-        onBack={() => setActiveForo(null)}
-      />
-    );
-  }
+  useEffect(() => { load(); }, []);
+
+  const openForo = (foro, curso) => {
+    navigate(`/curso/${curso._id}/foro/${foro._id}`, { state: { cursoNombre: curso.nombre } });
+  };
+
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? grupos
+        .map(g => ({
+          ...g,
+          foros: g.foros.filter(f =>
+            f.titulo?.toLowerCase().includes(q) ||
+            g.curso.nombre?.toLowerCase().includes(q)
+          ),
+        }))
+        .filter(g => g.foros.length > 0)
+    : grupos;
+
+  const totalForos = grupos.reduce((acc, g) => acc + g.foros.length, 0);
 
   return (
-    <div>
-      <h1>Foros</h1>
-
-      {cursos.map(curso => (
-        <div key={curso._id}>
-          <h3>{curso.nombre}</h3>
-
-          {(forosByCurso[curso._id] ?? []).map(f => (
-            <ForoCard
-              key={f._id}
-              foro={f}
-              onClick={() => setActiveForo(f._id)}
-            />
-          ))}
+    <div style={{ maxWidth: 860, margin: "0 auto" }}>
+      {/* Encabezado */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 11,
+          background: "rgba(99,102,241,0.10)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Users style={{ width: 18, height: 18, color: "#6366F1" }} />
         </div>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Foros</h1>
+          <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: "2px 0 0" }}>
+            {totalForos} foro{totalForos !== 1 ? "s" : ""} en tus cursos
+          </p>
+        </div>
+      </div>
+
+      {/* Búsqueda */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
+        background: "var(--color-surface)", border: "1.5px solid var(--color-border)",
+        borderRadius: 10, padding: "8px 12px", maxWidth: 320,
+      }}>
+        <Search style={{ width: 14, height: 14, color: "var(--color-text-muted)", flexShrink: 0 }} />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar foro o curso…"
+          style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: "var(--color-text)", flex: 1 }}
+        />
+      </div>
+
+      {/* Error */}
+      {apiError && (
+        <div style={{
+          background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)",
+          borderRadius: 14, padding: "40px 24px",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 10, textAlign: "center",
+        }}>
+          <AlertCircle style={{ width: 32, height: 32, color: "var(--color-error-hover)" }} />
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>No se pudieron cargar los foros</p>
+          <button onClick={load} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "var(--color-primary)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 4 }}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {/* Lista */}
+      {!apiError && (loading ? (
+        [0, 1, 2].map(i => (
+          <div key={i} style={{
+            background: "var(--color-surface)", borderRadius: 16,
+            border: "1px solid var(--color-border)", padding: "14px 18px",
+            marginBottom: 12, display: "flex", gap: 14,
+          }}>
+            <Sk h={36} w={36} r={9} />
+            <div style={{ flex: 1 }}>
+              <Sk h={14} w="45%" />
+              <div style={{ marginTop: 8 }}><Sk h={11} w="30%" /></div>
+            </div>
+          </div>
+        ))
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={MessageSquare}
+          title={q ? "Sin resultados" : "Aún no hay foros"}
+          desc={q ? "Prueba con otro término de búsqueda." : "Cuando tus docentes creen un foro, aparecerá aquí."}
+        />
+      ) : (
+        filtered.map(g => (
+          <CursoForosGroup key={g.curso._id} curso={g.curso} foros={g.foros} onOpenForo={openForo} />
+        ))
       ))}
     </div>
   );

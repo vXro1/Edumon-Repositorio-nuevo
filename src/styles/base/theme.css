@@ -1,12 +1,12 @@
-/* ─── THEME: TRANSICIONES + TAILWIND/SHADCN COMPAT ─── */
+/* ─── TEMA: TRANSICIONES + COMPATIBILIDAD TAILWIND/SHADCN ─── */
 :root {
-  /* Transitions */
+  /* Transiciones */
   --transition-fast:   150ms ease;
   --transition-base:   200ms ease;
   --transition-slow:   300ms ease;
   --transition-spring: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Tailwind / Shadcn compatibility */
+  /* Compatibilidad con Tailwind / Shadcn */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -41,7 +41,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* ─── DARK MODE ─── */
+/* ─── MODO OSCURO ─── */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

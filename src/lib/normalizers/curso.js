@@ -3,6 +3,49 @@
 import { normalizeUser } from "./user";
 
 /**
+ * Normaliza un registro de participante/inscripción de un curso.
+ * Soporta:
+ *  - objeto de inscripción con usuario anidado: { usuario: {...}, usuarioId: {...}, rol, fechaInscripcion }
+ *  - objeto de usuario plano ya poblado
+ *  - string (ID sin poblar)
+ */
+function normalizeParticipante(p) {
+  if (!p) return null;
+
+  // ID crudo, sin poblar
+  if (typeof p === "string") {
+    return { _id: p, usuarioId: p, nombre: "", apellido: "", correo: "", rol: null };
+  }
+
+  // Registro de inscripción con usuario anidado
+  const usuarioRaw = p.usuario ?? p.usuarioId ?? p;
+  const usuario =
+    usuarioRaw && typeof usuarioRaw === "object"
+      ? normalizeUser(usuarioRaw)
+      : null;
+
+  return {
+    _id: p._id || p.id || usuario?._id || null,
+    usuarioId:
+      typeof p.usuarioId === "string"
+        ? p.usuarioId
+        : usuario?._id || (typeof usuarioRaw === "string" ? usuarioRaw : null),
+
+    // Datos del usuario aplanados para acceso directo (p.nombre, p.apellido...)
+    nombre: usuario?.nombre || "",
+    apellido: usuario?.apellido || "",
+    correo: usuario?.correo || "",
+    fotoPerfilUrl: usuario?.fotoPerfilUrl || null,
+
+    // Objeto completo del usuario, por si se necesita
+    usuario,
+
+    rol: p.rol || p.etiqueta || null,
+    fechaInscripcion: p.fechaInscripcion || p.createdAt || null,
+  };
+}
+
+/**
  * Normaliza un curso individual
  * Compatible con backend parcial, poblado o frontend-only
  */
@@ -27,10 +70,16 @@ export function normalizeCurso(curso) {
       ? normalizeUser(curso.docenteId)
       : null;
 
-  // Participantes
+  // Participantes (normalizados uno a uno, igual que docente)
   const participantes = Array.isArray(curso.participantes)
-    ? curso.participantes
+    ? curso.participantes.map(normalizeParticipante).filter(Boolean)
     : [];
+
+  // Color del curso (hex, ej. #3B82F6) — asignado por el usuario al crear/editar
+  const color =
+    /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(curso.color || "")
+      ? curso.color
+      : null;
 
   return {
     // IDs
@@ -48,6 +97,9 @@ export function normalizeCurso(curso) {
     fotoPortada: imgUrl,
     fotoPortadaUrl: imgUrl,
 
+    // Color
+    color,
+
     // Relaciones
     docente,
     docenteId:
@@ -63,8 +115,7 @@ export function normalizeCurso(curso) {
     participantes,
     totalParticipantes:
       curso.totalParticipantes ??
-      participantes.length ??
-      0,
+      participantes.length,
 
     // Extras académicos
     categoria: curso.categoria || null,

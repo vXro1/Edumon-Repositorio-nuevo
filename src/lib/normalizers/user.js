@@ -6,6 +6,9 @@
  */
 export function normalizeUser(user) {
   // Usuario vacío / fallback seguro
+  // Debe mantener el MISMO shape que el objeto normal — cualquier campo
+  // omitido aquí puede causar un crash silencioso (ej. usuario.cursos.length)
+  // en componentes que no verifican existencia antes de usarlo.
   if (!user) {
     return {
       id: null,
@@ -16,31 +19,45 @@ export function normalizeUser(user) {
       apellido: "",
       nombreCompleto: "Sin nombre",
 
-      // Perfil
-      avatar: null,
-      fotoPerfilUrl: null,
-
-      // Contacto
-      email: "",
-      correo: "",
-      telefono: "",
-      cedula: "",
-
       // Sistema
       rol: "desconocido",
       estado: "activo",
 
-      // Fechas
-      fechaRegistro: null,
-      ultimoAcceso: null,
-      createdAt: null,
-      updatedAt: null,
+      // Perfil
+      avatar: null,
+      fotoPerfilUrl: null,
+      genero: null,
+      fechaNacimiento: null,
 
-      // Extras
-      preferencias: {},
+      // Contacto
+      email: "",
+      correo: "",
+      cedula: "",
+      telefono: "",
       direccion: "",
       ciudad: "",
       pais: "",
+
+      // Académico / institucional
+      codigoEstudiante: "",
+      grado: null,
+      curso: null,
+
+      // Seguridad / sesión
+      ultimoAcceso: null,
+
+      // Fechas
+      fechaRegistro: null,
+      createdAt: null,
+      updatedAt: null,
+
+      // Configuración
+      preferencias: {},
+
+      // Relaciones opcionales
+      hijos: [],
+      cursos: [],
+      permisos: [],
     };
   }
 
@@ -49,7 +66,7 @@ export function normalizeUser(user) {
     user.id ||
     null;
 
-  // Email unificado
+  // Correo unificado
   const emailVal =
     user.correo ||
     user.email ||

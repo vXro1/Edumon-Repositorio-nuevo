@@ -1,9 +1,9 @@
 // src/features/foros/pages/ForumPage.jsx
-// THE canonical forum view. All roles use this same page.
-// Route: /curso/:cursoId/foro/:foroId
+// Vista canónica del foro. Todos los roles usan esta misma página.
+// Ruta: /curso/:cursoId/foro/:foroId
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Paperclip, X, FileText } from 'lucide-react';
 
 import { useAuthContext } from '../../../features/auth/context/AuthContext';
 import { useToast }       from '../../../context/ToastContext';
@@ -26,10 +26,10 @@ import ForumMessage  from '../components/ForumMessage';
 import ForumInput    from '../components/ForumInput';
 import ForumActivity from '../components/ForumActivity';
 import { Modal, Button } from '@/components';
-import { forosCreate } from '@/lib/apiClient';
+import { forosCreate } from '@/features/foros/services/forosService';
 import { Field } from '../../cursos/components/shared/ui';
 
-// ─── Skeletons ────────────────────────────────────────────────────────────────
+// ─── Esqueletos de carga ──────────────────────────────────────────────────────
 
 const MsgSkeleton = () => (
   <div style={{ display: 'flex', gap: 12, padding: '10px 12px' }}>
@@ -58,14 +58,45 @@ const EmptyState = ({ canPost }) => (
   </div>
 );
 
-// ─── Create Forum Modal ───────────────────────────────────────────────────────
+// ─── Modal de creación de foro ────────────────────────────────────────────────
+
+const MAX_MATERIALES = 5;
+
+// El backend (foroRoutes.js) acepta hasta 5 archivos de máx. 10MB cada uno:
+// imágenes, video (mp4/mpeg/quicktime) y PDF.
+const MaterialPill = ({ file, onRemove }) => (
+  <div style={{
+    display: 'inline-flex', alignItems: 'center', gap: 5,
+    background: 'var(--color-surface-2, #f3f4f6)', border: '1px solid var(--color-border)',
+    borderRadius: 20, padding: '3px 10px', fontSize: 12,
+  }}>
+    <FileText size={11} style={{ flexShrink: 0 }} />
+    <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {file.name}
+    </span>
+    <button onClick={() => onRemove(file)} type="button"
+      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+        color: 'var(--color-text-muted)', display: 'flex', lineHeight: 1 }}>
+      <X size={11} />
+    </button>
+  </div>
+);
 
 const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
   const [titulo,      setTitulo]      = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [materiales,  setMateriales]  = useState([]);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState('');
+  const fileRef = useRef(null);
   const { notify } = useToast();
+
+  const handleFileChange = (e) => {
+    const picked = Array.from(e.target.files ?? []);
+    setMateriales(prev => [...prev, ...picked].slice(0, MAX_MATERIALES));
+    e.target.value = '';
+  };
+  const removeMaterial = (file) => setMateriales(prev => prev.filter(f => f !== file));
 
   const handleSubmit = async () => {
     if (titulo.trim().length < 5)      { setError('El título debe tener al menos 5 caracteres.'); return; }
@@ -77,6 +108,7 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
       fd.append('descripcion', descripcion.trim());
       fd.append('cursoId', cursoId);
       fd.append('publico', 'false');
+      materiales.forEach(f => fd.append('archivos', f));
       await forosCreate(fd);
       notify('Foro creado correctamente', 'success');
       onCreated?.();
@@ -91,7 +123,7 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {error && (
-        <div style={{ background: '#fee2e2', color: '#dc2626',
+        <div style={{ background: '#fee2e2', color: 'var(--color-error-hover)',
           padding: '10px 14px', borderRadius: 8, fontSize: 13 }}>{error}</div>
       )}
       <Field label="Título *">
@@ -106,7 +138,7 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
           onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
           onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
         />
-        <span style={{ fontSize: 11, color: titulo.length < 5 ? '#dc2626' : 'var(--color-text-muted)' }}>
+        <span style={{ fontSize: 11, color: titulo.length < 5 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
           {titulo.length} / 200
         </span>
       </Field>
@@ -122,9 +154,32 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
           onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
           onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
         />
-        <span style={{ fontSize: 11, color: descripcion.length < 10 ? '#dc2626' : 'var(--color-text-muted)' }}>
+        <span style={{ fontSize: 11, color: descripcion.length < 10 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
           {descripcion.length} / 2000
         </span>
+      </Field>
+      <Field label="Materiales de apoyo (opcional)">
+        {materiales.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {materiales.map((f, i) => <MaterialPill key={i} file={f} onRemove={removeMaterial} />)}
+          </div>
+        )}
+        <button type="button" onClick={() => fileRef.current?.click()}
+          disabled={materiales.length >= MAX_MATERIALES}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'none', border: '1.5px dashed var(--color-border)',
+            borderRadius: 8, padding: '8px 14px',
+            cursor: materiales.length >= MAX_MATERIALES ? 'not-allowed' : 'pointer',
+            fontSize: 12.5, color: 'var(--color-text-muted)',
+            opacity: materiales.length >= MAX_MATERIALES ? 0.5 : 1,
+          }}>
+          <Paperclip size={13} />
+          Adjuntar imágenes, video o PDF ({materiales.length}/{MAX_MATERIALES})
+        </button>
+        <input ref={fileRef} type="file" style={{ display: 'none' }}
+          multiple accept="image/*,video/mp4,video/mpeg,video/quicktime,.pdf"
+          onChange={handleFileChange} />
       </Field>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',
         paddingTop: 8, borderTop: '1px solid var(--color-border)' }}>
@@ -138,7 +193,7 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
   );
 };
 
-// ─── ForumPage ────────────────────────────────────────────────────────────────
+// ─── Página del foro ──────────────────────────────────────────────────────────
 
 const ForumPage = () => {
   const { cursoId, foroId } = useParams();
@@ -147,44 +202,68 @@ const ForumPage = () => {
   const { user }            = useAuthContext();
   const { notify }          = useToast();
 
-  // Detect mobile breakpoint reactively
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  // Punto de quiebre "compacto": por debajo de 1100px no cabe el layout de
+  // 3 columnas (sidebar + mensajes + actividad), así que ambos paneles
+  // laterales pasan a ser overlays deslizantes en vez de columnas fijas.
+  // Antes el panel de actividad simplemente se ocultaba con
+  // `display:none` por debajo de 1100px SIN ninguna forma de volver a
+  // abrirlo — estadísticas, participantes y materiales de apoyo eran
+  // inaccesibles en tablet/móvil aunque el botón para abrirlos siguiera
+  // visible entre 768 y 1100px (no hacía nada).
+  const [isCompact, setIsCompact] = useState(() => window.innerWidth < 1100);
   useEffect(() => {
-    const fn = () => setIsMobile(window.innerWidth < 768);
+    const fn = () => setIsCompact(window.innerWidth < 1100);
     window.addEventListener('resize', fn);
     return () => window.removeEventListener('resize', fn);
   }, []);
 
-  // Panel visibility
-  const [sidebarOpen,  setSidebarOpen]  = useState(!isMobile);
-  const [activityOpen, setActivityOpen] = useState(true);
+  // Visibilidad de los paneles — en pantallas compactas ambos arrancan
+  // cerrados (son overlays que tapan el contenido); en escritorio ambos
+  // arrancan abiertos (son columnas fijas).
+  const [sidebarOpen,  setSidebarOpen]  = useState(!isCompact);
+  const [activityOpen, setActivityOpen] = useState(!isCompact);
   const [showCreate,   setShowCreate]   = useState(false);
 
-  // Close sidebar automatically when navigating to a different forum on mobile
+  // Cerrar los paneles automáticamente al navegar a otro foro en pantallas
+  // compactas, y al cruzar el punto de quiebre (evita quedar con un overlay
+  // abierto que de repente pasa a ser columna fija a medio abrir, o viceversa).
   useEffect(() => {
-    if (isMobile) setSidebarOpen(false);
-  }, [foroId, isMobile]);
+    if (isCompact) { setSidebarOpen(false); setActivityOpen(false); }
+    else { setSidebarOpen(true); setActivityOpen(true); }
+  }, [foroId, isCompact]);
 
-  // Reply / UI state
+  // En pantallas compactas solo un overlay a la vez — abrir uno cierra el otro.
+  const toggleSidebar = () => setSidebarOpen(prev => {
+    const next = !prev;
+    if (next && isCompact) setActivityOpen(false);
+    return next;
+  });
+  const toggleActivity = () => setActivityOpen(prev => {
+    const next = !prev;
+    if (next && isCompact) setSidebarOpen(false);
+    return next;
+  });
+
+  // Estado de respuesta / UI
   const [replyTo, setReplyTo] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Permissions
+  // Permisos
   const perms = useForumPermissions(user);
 
-  // Data
+  // Datos
   const { data: foro,     isLoading: foroLoading }    = useForumDetail(foroId);
-  const { data: mensajes = [], isLoading: msgLoading } = useForumMessages(foroId);
+  const { data: mensajes = [], isLoading: msgLoading } = useForumMessages(foroId, perms.userId);
   const { data: forums   = [], refetch: refetchForums } = useForumsByCourse(cursoId);
 
-  // Mutations
+  // Mutaciones
   const postMutation   = usePostMessage(foroId);
-  const likeMutation   = useLikeMessage(foroId);
+  const likeMutation   = useLikeMessage(foroId, perms.userId);
   const deleteMutation = useDeleteMessage(foroId);
   const editMutation   = useEditMessage(foroId);
   const estadoMutation = useToggleEstado(foroId);
 
-  // ─── Handlers ────────────────────────────────────────────────────────────
+  // ─── Manejadores ─────────────────────────────────────────────────────────
   const handlePost = (contenido, files, respuestaA) => {
     const fd = new FormData();
     fd.append('foroId', foroId);
@@ -229,12 +308,12 @@ const ForumPage = () => {
     });
   };
 
-  // Derive curso name from navigation state or forum data
+  // Obtener el nombre del curso desde el estado de navegación o los datos del foro
   const cursoNombre = location.state?.cursoNombre ?? foro?.curso?.nombre ?? null;
 
   return (
     <>
-      {/* Injected CSS */}
+      {/* CSS inyectado */}
       <style>{FORUM_CSS}</style>
 
       <div className="fm-root">
@@ -248,16 +327,17 @@ const ForumPage = () => {
           onToggleEstado={handleToggleEstado}
           togglingEstado={estadoMutation.isPending}
           sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen(p => !p)}
+          onToggleSidebar={toggleSidebar}
           activityOpen={activityOpen}
-          onToggleActivity={() => setActivityOpen(p => !p)}
+          onToggleActivity={toggleActivity}
         />
 
         <div className="fm-body">
-          {/* Mobile overlay — dims content behind the open sidebar */}
-          {sidebarOpen && isMobile && (
+          {/* Capa de oscurecimiento en pantallas compactas — atenúa el
+              contenido detrás de CUALQUIERA de los dos paneles overlay */}
+          {isCompact && (sidebarOpen || activityOpen) && (
             <div
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => { setSidebarOpen(false); setActivityOpen(false); }}
               style={{
                 position:       'fixed',
                 inset:          0,
@@ -268,7 +348,7 @@ const ForumPage = () => {
             />
           )}
 
-          {/* Left sidebar — always in DOM so CSS transition works */}
+          {/* Sidebar izquierdo — siempre en el DOM para que funcione la transición CSS */}
           <div className={`fm-sidebar${sidebarOpen ? ' open' : ''}`}>
             <ForumSidebar
               forums={forums}
@@ -280,7 +360,7 @@ const ForumPage = () => {
             />
           </div>
 
-          {/* Center — messages + input */}
+          {/* Centro — mensajes + entrada */}
           <main className="fm-main">
             {msgLoading ? (
               <div className="fm-messages-scroll">
@@ -319,16 +399,31 @@ const ForumPage = () => {
             )}
           </main>
 
-          {/* Right panel */}
-          {activityOpen && (
-            <div className="fm-activity">
-              <ForumActivity foro={foro} mensajes={mensajes} />
-            </div>
-          )}
+          {/* Panel derecho — siempre en el DOM (mismo motivo que el sidebar):
+              por debajo de 1100px se vuelve un overlay deslizante en vez de
+              desaparecer con display:none sin forma de reabrirlo. */}
+          <div className={`fm-activity${activityOpen ? ' open' : ''}`}>
+            {isCompact && (
+              <button
+                type="button"
+                onClick={() => setActivityOpen(false)}
+                aria-label="Cerrar panel de actividad"
+                style={{
+                  position: 'absolute', top: 10, right: 10, zIndex: 1,
+                  background: 'var(--color-surface-2)', border: 'none',
+                  borderRadius: 8, padding: 6, cursor: 'pointer',
+                  color: 'var(--color-text-muted)', display: 'flex',
+                }}
+              >
+                <X size={16} />
+              </button>
+            )}
+            <ForumActivity foro={foro} mensajes={mensajes} />
+          </div>
         </div>
       </div>
 
-      {/* Create forum modal */}
+      {/* Modal de creación de foro */}
       <Modal
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
@@ -347,12 +442,24 @@ const ForumPage = () => {
 
 export default ForumPage;
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
+// ─── Estilos CSS ──────────────────────────────────────────────────────────────
+//
+// Modelo responsivo (>=1100px vs <1100px "compacto"):
+//   - Escritorio: sidebar y actividad son columnas fijas dentro del layout de
+//     3 paneles. El botón de alternar cada uno los saca/mete del flujo
+//     (antes el toggle no tenía ningún efecto visual en escritorio).
+//   - Compacto (tableta y móvil, <1100px): ambos paneles se despegan del
+//     flujo y se vuelven overlays deslizantes (sidebar desde la izquierda,
+//     actividad desde la derecha), con fondo oscurecido — el mismo patrón
+//     que ya tenía el sidebar en móvil, ahora aplicado también a actividad.
+//     Antes, por debajo de 1100px, .fm-activity se ocultaba con
+//     display:none SIN ninguna forma de reabrirlo — estadísticas,
+//     participantes y materiales de apoyo eran inaccesibles en tablet/móvil.
 const FORUM_CSS = `
 @keyframes fm-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 @keyframes fm-spin   { to { transform: rotate(360deg); } }
 
-/* ── Root ── */
+/* ── Raíz ── */
 .fm-root {
   display:        flex;
   flex-direction: column;
@@ -362,7 +469,7 @@ const FORUM_CSS = `
   position:       relative;
 }
 
-/* ── Body ── */
+/* ── Cuerpo ── */
 .fm-body {
   display:  flex;
   flex:     1;
@@ -370,7 +477,7 @@ const FORUM_CSS = `
   position: relative;
 }
 
-/* ── Sidebar ── */
+/* ── Barra lateral ── */
 .fm-sidebar {
   width:        240px;
   flex-shrink:  0;
@@ -379,8 +486,9 @@ const FORUM_CSS = `
   background:   var(--color-surface);
   transition:   transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+.fm-sidebar:not(.open) { display: none; }
 
-/* ── Main center ── */
+/* ── Centro principal ── */
 .fm-main {
   flex:           1;
   display:        flex;
@@ -397,47 +505,67 @@ const FORUM_CSS = `
   scroll-behavior: smooth;
 }
 
-/* ── Activity panel ── */
+/* ── Panel de actividad ── */
 .fm-activity {
   width:        260px;
   flex-shrink:  0;
   border-left:  1px solid var(--color-border);
   overflow-y:   auto;
   background:   var(--color-surface);
+  position:     relative;
+  transition:   transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+.fm-activity:not(.open) { display: none; }
 
-/* ── Tablet 768–1100 ── */
+/* ── Compacto: tableta y móvil, <1100px ── */
 @media (max-width: 1100px) {
-  .fm-activity { display: none; }
-  .fm-sidebar  { width: 200px; }
-}
-
-/* ── Mobile < 768 ── */
-@media (max-width: 767px) {
   .fm-sidebar {
-    position:   fixed;
-    top:        64px;
-    left:       0;
-    bottom:     0;
-    width:      280px;
-    z-index:    40;
-    transform:  translateX(-100%);
+    position:     fixed;
+    top:          64px;
+    left:         0;
+    bottom:       0;
+    width:        280px;
+    max-width:    85vw;
+    z-index:      40;
+    display:      block;
+    transform:    translateX(-100%);
     border-right: none;
   }
   .fm-sidebar.open {
     transform:  translateX(0);
     box-shadow: 6px 0 24px rgba(0,0,0,0.18);
   }
+
+  .fm-activity {
+    position:    fixed;
+    top:         64px;
+    right:       0;
+    bottom:      0;
+    width:       300px;
+    max-width:   85vw;
+    z-index:     40;
+    display:     block;
+    transform:   translateX(100%);
+    border-left: none;
+    padding-top: 36px; /* deja sitio al botón de cerrar */
+  }
+  .fm-activity.open {
+    transform:  translateX(0);
+    box-shadow: -6px 0 24px rgba(0,0,0,0.18);
+  }
+}
+
+/* ── Móvil < 768 ── */
+@media (max-width: 767px) {
   .fm-messages-scroll {
     padding: 8px 10px 4px;
   }
-  .fm-breadcrumb      { display: none !important; }
-  .fm-toggle-activity { display: none !important; }
+  .fm-breadcrumb { display: none !important; }
 }
 
-/* ── Mobile XS < 400 ── */
+/* ── Móvil XS < 400 ── */
 @media (max-width: 400px) {
   .fm-action-label { display: none; }
-  .fm-sidebar      { width: 100vw; }
+  .fm-sidebar, .fm-activity { width: 100vw; max-width: 100vw; }
 }
 `;

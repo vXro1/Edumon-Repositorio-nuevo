@@ -1,41 +1,21 @@
+//ruta : src/features/perfil/pages/PerfilPage.jsx
 import { useState, useEffect } from "react";
 
 import {
   User, Camera, Mail, Phone, CreditCard, Building2, Shield,
   Edit3, Save, X, Calendar, Users,
-  BookOpen, GraduationCap, Key, Info, Clock, Hash, Loader2,
+  BookOpen, GraduationCap, Key, Info, Clock, Hash, Loader2, Check,
 } from "lucide-react";
 
-import {
-  usersGetMyProfile,
-  usersUpdateMyPhoto,
-  usersGetDefaultPhotos,
-  authChangePassword,
-  usersUpdate,
-  cursosGetAll,
-  cursosGetMine,
-  perfilesGetAll,
-} from "@/lib/apiClient";
+import { usersGetMyProfile, usersUpdateMyPhoto, usersGetDefaultPhotos, usersUpdate } from "@/services/usersService";
+import { cursosGetAll, cursosGetMine } from "@/features/cursos/services/cursosService";
+import { perfilesGetAll } from "@/features/familia/services/perfilesService";
+import { authChangePassword } from "@/services/authService";
 
 import { Modal, Toast, UserAvatar, Button, Input } from "@/components";
 import getRoleStyle from "@/utils/getRoleStyle";
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
-
-// ─── Local avatar imports ──────────────────────────────────────────────────
-import av1  from "@/assets/img/avatars/avatar1.svg";
-import av2  from "@/assets/img/avatars/avatar2.svg";
-import av3  from "@/assets/img/avatars/avatar3.svg";
-import av4  from "@/assets/img/avatars/avatar4.svg";
-import av5  from "@/assets/img/avatars/avatar5.svg";
-import av6  from "@/assets/img/avatars/avatar6.svg";
-import av7  from "@/assets/img/avatars/avatar7.svg";
-import av8  from "@/assets/img/avatars/avatar8.svg";
-import av9  from "@/assets/img/avatars/avatar9.svg";
-import av10 from "@/assets/img/avatars/avatar10.svg";
-import av11 from "@/assets/img/avatars/avatar11.svg";
-
-const LOCAL_AVATARS = [av1, av2, av3, av4, av5, av6, av7, av8, av9, av10, av11];
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────
 function Sk({ h = 14, r = 6 }) {
@@ -127,10 +107,10 @@ function HijosSection({ perfiles, loading }) {
           background: "var(--color-bg)", borderRadius: 12, border: "1px solid var(--color-border)",
         }}>
           {p.avatarUrl ? (
-            <img src={p.avatarUrl} alt={p.nombre} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            <img src={p.avatarUrl} alt={p.nombre} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "contain", padding: "8%", flexShrink: 0 }} />
           ) : (
             <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(22,163,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <GraduationCap size={18} color="#16A34A" />
+              <GraduationCap size={18} color="var(--edu-green-600)" />
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -162,7 +142,7 @@ function CursosSection({ cursos, loading }) {
       {cursos.map((c, i) => (
         <div key={c._id ?? i} style={{ padding: "12px 14px", background: "var(--color-bg)", borderRadius: 12, border: "1px solid var(--color-border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <BookOpen size={14} color="#8C38F0" style={{ flexShrink: 0 }} />
+            <BookOpen size={14} color="var(--color-primary)" style={{ flexShrink: 0 }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>{c.nombre}</span>
           </div>
           {c.descripcion && <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0 }}>{c.descripcion}</p>}
@@ -193,7 +173,7 @@ function PermisosSection({ permisos }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {permisos.map((p, i) => (
-        <span key={i} style={{ padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "rgba(124,58,237,0.10)", color: "#7C3AED", border: "1px solid rgba(124,58,237,0.20)" }}>
+        <span key={i} style={{ padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, background: "rgba(12,106,196,0.10)", color: "var(--color-primary)", border: "1px solid rgba(12,106,196,0.20)" }}>
           {p}
         </span>
       ))}
@@ -211,7 +191,7 @@ function RoleSection({ profile, cursos, loadingCursos, perfiles, loadingPerf }) 
         <SectionCard icon={<Users size={15} color="#D97706" />} title="Perfiles de mis hijos" iconBg="rgba(217,119,6,0.10)">
           <HijosSection perfiles={perfiles} loading={loadingPerf} />
         </SectionCard>
-        <SectionCard icon={<BookOpen size={15} color="#8C38F0" />} title="Cursos de mis hijos" iconBg="rgba(140,56,240,0.10)">
+        <SectionCard icon={<BookOpen size={15} color="var(--color-primary)" />} title="Cursos de mis hijos" iconBg="rgba(12,106,196,0.10)">
           <CursosSection cursos={cursos} loading={loadingCursos} />
         </SectionCard>
       </>
@@ -219,21 +199,21 @@ function RoleSection({ profile, cursos, loadingCursos, perfiles, loadingPerf }) 
   }
   if (rol === "docente") {
     return (
-      <SectionCard icon={<BookOpen size={15} color="#8C38F0" />} title="Mis cursos" iconBg="rgba(140,56,240,0.10)">
+      <SectionCard icon={<BookOpen size={15} color="var(--color-primary)" />} title="Mis cursos" iconBg="rgba(12,106,196,0.10)">
         <CursosSection cursos={cursos} loading={loadingCursos} />
       </SectionCard>
     );
   }
   if (rol === "estudiante") {
     return (
-      <SectionCard icon={<GraduationCap size={15} color="#16A34A" />} title="Información académica" iconBg="rgba(22,163,74,0.10)">
+      <SectionCard icon={<GraduationCap size={15} color="var(--edu-green-600)" />} title="Información académica" iconBg="rgba(22,163,74,0.10)">
         <EstudianteSection codigoEstudiante={profile.codigoEstudiante} grado={profile.grado} curso={profile.curso} />
       </SectionCard>
     );
   }
   if (rol === "admin" || rol === "administrador" || rol === "superadmin") {
     return (
-      <SectionCard icon={<Shield size={15} color="#7C3AED" />} title="Permisos y acceso" iconBg="rgba(124,58,237,0.10)">
+      <SectionCard icon={<Shield size={15} color="var(--color-primary)" />} title="Permisos y acceso" iconBg="rgba(12,106,196,0.10)">
         <PermisosSection permisos={profile.permisos} />
       </SectionCard>
     );
@@ -272,6 +252,8 @@ export default function PerfilPage() {
   const [defaultPhotos,   setDefaultPhotos]   = useState([]);
   const [loadingPhotos,   setLoadingPhotos]   = useState(false);
   const [uploadingPhoto,  setUploadingPhoto]  = useState(false);
+  const [avatarError,     setAvatarError]     = useState("");
+  const [pendingAvatar,   setPendingAvatar]   = useState(null); // { url, nombre } seleccionado, pendiente de confirmar
 
   const [showPassModal, setShowPassModal] = useState(false);
   const [passForm,      setPassForm]      = useState(EMPTY_PASS);
@@ -358,30 +340,45 @@ export default function PerfilPage() {
 
   const setField = (key) => (e) => setEditForm(f => ({ ...f, [key]: e.target.value }));
 
-  // ── Avatar modal ───────────────────────────────────────────────────────
+  // ── Avatar modal (avatares 100% desde backend/Cloudinary) ──────────────
   const openAvatarModal = async () => {
     setShowAvatarModal(true);
-    if (defaultPhotos.length === 0) {
-      setLoadingPhotos(true);
-      try {
-        const data = await usersGetDefaultPhotos();
-        setDefaultPhotos(data.fotos ?? []);
-      } catch { /* silencioso */ }
-      finally { setLoadingPhotos(false); }
+    setAvatarError("");
+    setPendingAvatar(null);
+    setLoadingPhotos(true);
+    try {
+      const data = await usersGetDefaultPhotos();
+      setDefaultPhotos(data.fotos ?? []);
+    } catch (err) {
+      setAvatarError(humanizeError(err, "No se pudieron cargar los avatares"));
+    } finally {
+      setLoadingPhotos(false);
     }
   };
 
-  const handleSelectAvatar = async (url) => {
+  const closeAvatarModal = () => {
+    if (uploadingPhoto) return;
+    setShowAvatarModal(false);
+    setPendingAvatar(null);
+  };
+
+  // Solo marca el avatar como "elegido" para previsualizarlo — no lo guarda todavía
+  const handlePickAvatar = (foto) => setPendingAvatar(foto);
+
+  // Confirma y aplica el avatar seleccionado en la vista previa
+  const handleConfirmAvatar = async () => {
+    if (!pendingAvatar) return;
     setUploadingPhoto(true);
     try {
       const fd = new FormData();
-      fd.append("fotoPredeterminadaUrl", url);
+      fd.append("fotoPredeterminadaUrl", pendingAvatar.url);
       const data   = await usersUpdateMyPhoto(fd);
-      const newUrl = data.fotoPerfilUrl ?? url;
+      const newUrl = data.fotoPerfilUrl ?? pendingAvatar.url;
       setProfile(p => ({ ...p, fotoPerfilUrl: newUrl }));
       setUser({ ...profile, fotoPerfilUrl: newUrl });
       notify("Avatar actualizado");
       setShowAvatarModal(false);
+      setPendingAvatar(null);
     } catch (err) {
       notify(humanizeError(err, "Error al actualizar avatar"), "error");
     } finally {
@@ -419,7 +416,7 @@ export default function PerfilPage() {
       {/* Title */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
         <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <User size={18} color="#0C6AC4" />
+          <User size={18} color="var(--color-primary)" />
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>Mi perfil</h1>
       </div>
@@ -444,7 +441,7 @@ export default function PerfilPage() {
                   style={{
                     position: "absolute", bottom: 0, right: 0,
                     width: 30, height: 30, borderRadius: "50%",
-                    background: "#0C6AC4", border: "2.5px solid var(--color-surface)",
+                    background: "var(--color-primary)", border: "2.5px solid var(--color-surface)",
                     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                   }}
                 >
@@ -461,7 +458,7 @@ export default function PerfilPage() {
                   {rolCfg && <InfoBadge label={rolCfg.label} color={rolCfg.color} bg={rolCfg.bg} />}
                   <InfoBadge
                     label={profile?.estado === "activo" ? "Cuenta activa" : "Cuenta suspendida"}
-                    color={profile?.estado === "activo" ? "#16A34A" : "#DC2626"}
+                    color={profile?.estado === "activo" ? "var(--edu-green-600)" : "var(--color-error-hover)"}
                     bg={profile?.estado === "activo" ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)"}
                   />
                 </div>
@@ -498,7 +495,7 @@ export default function PerfilPage() {
 
           {/* ── DATOS PERSONALES ── */}
           <SectionCard
-            icon={<Edit3 size={15} color="#0C6AC4" />}
+            icon={<Edit3 size={15} color="var(--color-primary)" />}
             title="Datos personales"
             action={
               editing ? (
@@ -611,92 +608,126 @@ export default function PerfilPage() {
         </div>
       )}
 
-      {/* ══ AVATAR MODAL ══════════════════════════════════════════════════════ */}
+      {/* ══ AVATAR MODAL — selección con vista previa y confirmación ═════════ */}
       <Modal
         isOpen={showAvatarModal}
-        onClose={() => !uploadingPhoto && setShowAvatarModal(false)}
+        onClose={closeAvatarModal}
         title="Cambiar avatar"
-        description="Elige un avatar del catálogo."
+        description="Elige un avatar y confirma para guardarlo."
         size="lg"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-          {/* Avatares locales */}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12, margin: "0 0 12px" }}>
-              Avatares del sistema
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 12 }}>
-              {LOCAL_AVATARS.map((src, i) => {
-                const isSelected = profile?.fotoPerfilUrl === src;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleSelectAvatar(src)}
-                    disabled={uploadingPhoto}
-                    title={`Avatar ${i + 1}`}
-                    style={{
-                      padding: 3,
-                      border: isSelected ? "3px solid #0C6AC4" : "3px solid transparent",
-                      borderRadius: "50%", cursor: uploadingPhoto ? "not-allowed" : "pointer",
-                      background: "none", transition: "border-color 150ms, transform 150ms",
-                    }}
-                    onMouseEnter={e => !uploadingPhoto && (e.currentTarget.style.transform = "scale(1.1)")}
-                    onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    <img src={src} alt={`Avatar ${i + 1}`} style={{ width: "100%", aspectRatio: 1, borderRadius: "50%", objectFit: "cover", display: "block" }} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Avatares de la API (Cloudinary) */}
-          {(loadingPhotos || defaultPhotos.length > 0) && (
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
-                Avatares adicionales
-              </p>
-              {loadingPhotos ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 12 }}>
-                  {[...Array(8)].map((_, i) => (
-                    <div key={i} className="animate-pulse" style={{ aspectRatio: 1, borderRadius: "50%", background: "var(--color-border)" }} />
-                  ))}
-                </div>
-              ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 12 }}>
-                  {defaultPhotos.map((foto, i) => {
-                    const isSelected = profile?.fotoPerfilUrl === foto.url;
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => handleSelectAvatar(foto.url)}
-                        disabled={uploadingPhoto}
-                        title={foto.nombre ?? `Avatar ${i + 1}`}
-                        style={{
-                          padding: 3,
-                          border: isSelected ? "3px solid #0C6AC4" : "3px solid transparent",
-                          borderRadius: "50%", cursor: uploadingPhoto ? "not-allowed" : "pointer",
-                          background: "none", transition: "border-color 150ms, transform 150ms",
-                        }}
-                        onMouseEnter={e => !uploadingPhoto && (e.currentTarget.style.transform = "scale(1.1)")}
-                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-                      >
-                        <img src={foto.url} alt={foto.nombre ?? `Avatar ${i + 1}`} style={{ width: "100%", aspectRatio: 1, borderRadius: "50%", objectFit: "cover", display: "block" }} />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+          {/* Vista previa del avatar seleccionado (aún no confirmado) */}
+          {pendingAvatar && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 16,
+              padding: "16px 18px", borderRadius: 14,
+              background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.18)",
+              flexWrap: "wrap",
+            }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%", flexShrink: 0,
+                background: "var(--color-surface)", border: "2px solid var(--color-primary)",
+                display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+              }}>
+                <img
+                  src={pendingAvatar.url}
+                  alt={pendingAvatar.nombre ?? "Avatar seleccionado"}
+                  style={{ width: "100%", height: "100%", objectFit: "contain", padding: "8%" }}
+                />
+              </div>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
+                  Avatar seleccionado
+                </p>
+                <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "2px 0 0" }}>
+                  {pendingAvatar.nombre ?? "Confirma para aplicarlo a tu perfil"}
+                </p>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConfirmAvatar}
+                loading={uploadingPhoto}
+              >
+                {uploadingPhoto ? "Guardando..." : "Usar este avatar"}
+              </Button>
             </div>
           )}
 
-          {uploadingPhoto && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 0", color: "var(--color-text-muted)", fontSize: 13.5 }}>
-              <Loader2 size={16} style={{ animation: "edu-spin 0.6s linear infinite" }} />
-              Aplicando avatar…
+          {/* Grilla de opciones */}
+          {loadingPhotos ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 14 }}>
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="animate-pulse" style={{ aspectRatio: 1, borderRadius: "50%", background: "var(--color-border)" }} />
+              ))}
+            </div>
+          ) : avatarError ? (
+            <p style={{ fontSize: 13.5, color: "var(--color-error)", margin: 0, textAlign: "center", padding: "24px 0" }}>
+              {avatarError}
+            </p>
+          ) : defaultPhotos.length === 0 ? (
+            <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", margin: 0, textAlign: "center", padding: "24px 0" }}>
+              No hay avatares disponibles por el momento.
+            </p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))", gap: 14 }}>
+              {defaultPhotos.map((foto, i) => {
+                const isCurrent  = profile?.fotoPerfilUrl === foto.url;
+                const isSelected = pendingAvatar?.url === foto.url;
+                return (
+                  <button
+                    key={foto.publicId ?? i}
+                    type="button"
+                    onClick={() => handlePickAvatar(foto)}
+                    disabled={uploadingPhoto}
+                    title={foto.nombre ?? `Avatar ${i + 1}`}
+                    style={{
+                      position: "relative",
+                      width: "100%", aspectRatio: 1, borderRadius: "50%",
+                      padding: 4,
+                      border: isSelected
+                        ? "3px solid var(--color-primary)"
+                        : isCurrent
+                          ? "3px solid rgba(12,106,196,0.35)"
+                          : "3px solid transparent",
+                      background: "var(--color-bg)",
+                      cursor: uploadingPhoto ? "not-allowed" : "pointer",
+                      transition: "transform 150ms, border-color 150ms, box-shadow 150ms",
+                      boxShadow: isSelected ? "0 4px 14px rgba(12,106,196,0.25)" : "none",
+                    }}
+                    onMouseEnter={e => !uploadingPhoto && (e.currentTarget.style.transform = "scale(1.08)")}
+                    onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    <img
+                      src={foto.url}
+                      alt={foto.nombre ?? `Avatar ${i + 1}`}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", padding: "10%", display: "block" }}
+                    />
+                    {isSelected && (
+                      <span style={{
+                        position: "absolute", bottom: -2, right: -2,
+                        width: 22, height: 22, borderRadius: "50%",
+                        background: "var(--color-primary)", border: "2px solid var(--color-surface)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Check size={12} color="white" strokeWidth={3} />
+                      </span>
+                    )}
+                    {isCurrent && !isSelected && (
+                      <span style={{
+                        position: "absolute", top: -2, left: "50%", transform: "translateX(-50%)",
+                        fontSize: 9, fontWeight: 700, color: "var(--color-primary)",
+                        background: "var(--color-surface)", padding: "1px 6px", borderRadius: 99,
+                        border: "1px solid rgba(12,106,196,0.3)", whiteSpace: "nowrap",
+                      }}>
+                        Actual
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

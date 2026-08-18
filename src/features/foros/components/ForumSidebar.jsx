@@ -1,5 +1,5 @@
 // src/features/foros/components/ForumSidebar.jsx
-// Left sidebar: list of forums within the course. Clicking navigates to ForumPage.
+// Barra lateral izquierda: lista de foros del curso. Al hacer clic navega a ForumPage.
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Lock, Plus } from 'lucide-react';
 
@@ -21,7 +21,7 @@ const ForumSidebar = ({
       minHeight:  '100%',
       boxSizing:  'border-box',
     }}>
-      {/* Header */}
+      {/* Encabezado */}
       <div style={{
         display:        'flex',
         alignItems:     'center',
@@ -38,7 +38,7 @@ const ForumSidebar = ({
           <button type="button" onClick={onCreateClick}
             title="Nuevo foro"
             style={{
-              background:   'rgba(140,56,240,0.10)',
+              background:   'rgba(12,106,196,0.10)',
               border:       'none',
               borderRadius: 6,
               padding:      '4px 6px',
@@ -48,15 +48,15 @@ const ForumSidebar = ({
               alignItems:   'center',
               transition:   'background 0.15s',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(140,56,240,0.18)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(140,56,240,0.10)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,106,196,0.18)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(12,106,196,0.10)'}
           >
             <Plus size={14} />
           </button>
         )}
       </div>
 
-      {/* Forum list */}
+      {/* Lista de foros */}
       {loading ? (
         <div style={{ padding: '0 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {[1, 2, 3].map(i => (
@@ -96,7 +96,7 @@ const ForumSidebar = ({
                   border:         'none',
                   cursor:         'pointer',
                   textAlign:      'left',
-                  background:     isActive ? 'rgba(140,56,240,0.08)' : 'transparent',
+                  background:     isActive ? 'rgba(12,106,196,0.08)' : 'transparent',
                   transition:     'background 0.15s',
                 }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
@@ -117,7 +117,7 @@ const ForumSidebar = ({
                   </p>
                   <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
                     {f.totalMensajes ?? 0} mensajes
-                    {isClosed && <span style={{ marginLeft: 5, color: '#dc2626' }}>· Cerrado</span>}
+                    {isClosed && <span style={{ marginLeft: 5, color: 'var(--color-error-hover)' }}>· Cerrado</span>}
                   </p>
                 </div>
               </button>

@@ -1,8 +1,9 @@
 // src/context/ToastContext.jsx
-// Global toast system. Wrap app with <ToastProvider>, then call:
+// Sistema global de toasts. Envuelve la app con <ToastProvider>, luego llama:
 //   const { notify } = useToast();
 //   notify("Guardado", "success");
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, AlertCircle, Info, X, AlertTriangle } from "lucide-react";
 
 const ToastContext = createContext(null);
@@ -10,38 +11,42 @@ const ToastContext = createContext(null);
 let _id = 0;
 const nextId = () => ++_id;
 
+// Todos los colores salen de los tokens semánticos (tokens.css) vía
+// color-mix() — nada hardcodeado. "info" usa --color-primary, que está
+// scopeado a .app-shell (ver MainLayout.jsx): azul en el dashboard, morado
+// en login/landing, automáticamente, sin ninguna lógica aquí.
 const VARIANTS = {
   success: {
-    bg:      "rgba(65,217,88,0.10)",
-    border:  "rgba(65,217,88,0.28)",
-    color:   "#15803d",
-    accent:  "rgba(65,217,88,0.85)",
+    bg:      "color-mix(in srgb, var(--color-success) 10%, transparent)",
+    border:  "color-mix(in srgb, var(--color-success) 30%, transparent)",
+    color:   "var(--edu-green-700)", // más oscuro que --color-success-hover, mejor contraste como texto
+    accent:  "var(--color-success)",
     Icon:    CheckCircle2,
   },
   error: {
-    bg:      "rgba(239,68,68,0.10)",
-    border:  "rgba(239,68,68,0.26)",
-    color:   "#dc2626",
-    accent:  "rgba(239,68,68,0.85)",
+    bg:      "color-mix(in srgb, var(--color-error) 10%, transparent)",
+    border:  "color-mix(in srgb, var(--color-error) 28%, transparent)",
+    color:   "var(--color-error-hover)",
+    accent:  "var(--color-error)",
     Icon:    AlertCircle,
   },
   info: {
-    bg:      "rgba(140,56,240,0.08)",
-    border:  "rgba(140,56,240,0.22)",
-    color:   "var(--color-primary, #8C38F0)",
-    accent:  "rgba(140,56,240,0.8)",
+    bg:      "color-mix(in srgb, var(--color-primary) 8%, transparent)",
+    border:  "color-mix(in srgb, var(--color-primary) 24%, transparent)",
+    color:   "var(--color-primary)",
+    accent:  "var(--color-primary)",
     Icon:    Info,
   },
   warning: {
-    bg:      "rgba(252,189,0,0.10)",
-    border:  "rgba(252,189,0,0.26)",
-    color:   "#92400e",
-    accent:  "rgba(252,189,0,0.85)",
+    bg:      "color-mix(in srgb, var(--color-warning) 12%, transparent)",
+    border:  "color-mix(in srgb, var(--color-warning) 30%, transparent)",
+    color:   "var(--edu-yellow-700)", // más oscuro que --color-warning-hover, mejor contraste como texto
+    accent:  "var(--color-warning)",
     Icon:    AlertTriangle,
   },
 };
 
-// ─── Single Toast item ────────────────────────────────────────────────────────
+// ─── Elemento Toast individual ───────────────────────────────────────────────
 const ToastItem = ({ id, msg, type = "success", onDismiss }) => {
   const v = VARIANTS[type] ?? VARIANTS.info;
 
@@ -69,8 +74,14 @@ const ToastItem = ({ id, msg, type = "success", onDismiss }) => {
         lineHeight:    1.4,
       }}
     >
-      <v.Icon style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} />
-      <span style={{ flex: 1 }}>{msg}</span>
+      <span style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: 26, height: 26, borderRadius: 9, flexShrink: 0,
+        background: v.bg, color: v.accent,
+      }}>
+        <v.Icon style={{ width: 15, height: 15 }} />
+      </span>
+      <span style={{ flex: 1, paddingTop: 3 }}>{msg}</span>
       <button
         type="button"
         onClick={() => onDismiss(id)}
@@ -94,10 +105,10 @@ const ToastItem = ({ id, msg, type = "success", onDismiss }) => {
   );
 };
 
-// ─── Toast container ──────────────────────────────────────────────────────────
+// ─── Contenedor de Toasts ────────────────────────────────────────────────────
 const ToastContainer = ({ toasts, onDismiss }) => {
   if (!toasts.length) return null;
-  return (
+  return createPortal(
     <>
       <style>{`
         @keyframes toast-in {
@@ -125,7 +136,8 @@ const ToastContainer = ({ toasts, onDismiss }) => {
           </div>
         ))}
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 
@@ -142,7 +154,7 @@ export const ToastProvider = ({ children }) => {
 
   const notify = useCallback((msg, type = "success", duration = 4500) => {
     const id = nextId();
-    setToasts(prev => [...prev.slice(-4), { id, msg, type }]); // max 5 toasts
+    setToasts(prev => [...prev.slice(-4), { id, msg, type }]); // máx 5 toasts
 
     if (duration > 0) {
       timers.current[id] = setTimeout(() => dismiss(id), duration);
@@ -161,6 +173,6 @@ export const ToastProvider = ({ children }) => {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export const useToast = () => {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used inside <ToastProvider>");
+  if (!ctx) throw new Error("useToast debe usarse dentro de <ToastProvider>");
   return ctx;
 };

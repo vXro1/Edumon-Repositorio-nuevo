@@ -1,26 +1,21 @@
 // src/services/authService.js
-// FIX: jwt_decode → jwtDecode (nombre correcto del import)
-import { apiFetch, setTokenProvider } from './core/apiClient';
-import { jwtDecode } from "jwt-decode";   // ← nombre correcto
-
-const TOKEN_KEY = 'token';
+// Backend usa cookies httpOnly (access_token / refresh_token).
+// El cliente JS no maneja ni lee tokens directamente.
+import { apiFetch } from './core/apiClient';
 
 export const authService = {
   login: async ({ telefono, contrasena }) => {
-    const data = await apiFetch('/auth/login', {
+    return apiFetch('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ telefono, contraseña: contrasena })
+      body: JSON.stringify({ telefono, contraseña: contrasena }),
     });
-    if (data?.token) {
-      try { localStorage.setItem(TOKEN_KEY, data.token); } catch {}
-    }
-    return data;
   },
 
   register: async (body) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
 
+  // silentAuth: true → un 401 aquí no dispara el logout global (ver apiClient.js)
   getProfile: async () => {
-    const data = await apiFetch('/auth/profile');
+    const data = await apiFetch('/auth/profile', { silentAuth: true });
     return data.user ?? data;
   },
 
@@ -35,16 +30,7 @@ export const authService = {
     }
   },
 
-  getToken: () => {
-    try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
-  },
-
-  clearToken: () => {
-    try { localStorage.removeItem(TOKEN_KEY); } catch {}
-  },
-
   clearAllCache: () => {
-    try { localStorage.removeItem(TOKEN_KEY); } catch {}
     try { sessionStorage.clear(); } catch {}
   },
 
@@ -52,26 +38,15 @@ export const authService = {
 
   resetPassword: async (body) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
 
-  // ─── JWT helpers ──────────────────────────────────────────────────────────
+  forgotPasswordPhone: async (body) => apiFetch('/auth/forgot-password-phone', { method: 'POST', body: JSON.stringify(body) }),
 
-  getTokenPayload: (token) => {
-    const t = token ?? authService.getToken();
-    if (!t) return null;
-    try {
-      return jwtDecode(t);   // ← FIX: era jwt_decode (ReferenceError silencioso)
-    } catch {
-      return null;
-    }
-  },
-
-  isTokenExpired: (token) => {
-    const payload = authService.getTokenPayload(token);
-    if (!payload) return true;
-    if (typeof payload.exp !== 'number') return true;
-    const now = Math.floor(Date.now() / 1000);
-    // Margen de gracia de 30 segundos para evitar falsos positivos por latencia de red
-    return payload.exp <= now + 30;
-  }
+  resetPasswordPhone: async ({ telefono, codigo, contrasenaNueva }) =>
+    apiFetch('/auth/reset-password-phone', {
+      method: 'POST',
+      body: JSON.stringify({ telefono, codigo, contraseñaNueva: contrasenaNueva }),
+    }),
 };
 
-try { setTokenProvider(() => authService.getToken()); } catch {}
+export const authChangePassword = (body) => authService.changePassword(body);
+export const authCompleteRegistro = (body) =>
+  apiFetch('/auth/completar-registro', { method: 'POST', body: JSON.stringify(body) });

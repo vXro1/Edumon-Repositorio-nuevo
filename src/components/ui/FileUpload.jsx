@@ -62,7 +62,7 @@ function FileThumb({ file, onRemove }) {
         </div>
       ) : isPdf ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: 6 }}>
-          <FileText style={{ width: 24, height: 24, color: "#dc2626" }} />
+          <FileText style={{ width: 24, height: 24, color: "var(--color-error-hover)" }} />
           <span style={{ fontSize: 8, color: "var(--color-text-muted)", textAlign: "center",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 60 }}>
             {file.name}

@@ -22,14 +22,14 @@ export default function LoadingScreen({ message = "Cargando..." }) {
 
       {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderRadius: 99, background: "white", boxShadow: "0 2px 12px rgba(12,106,196,0.12), 0 1px 3px rgba(0,0,0,0.06)", position: "relative" }}>
-        <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, var(--edu-blue-500), #1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg style={{ width: 17, height: 17, color: "white" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
         </div>
         <span style={{ fontSize: 19, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.02em" }}>
-          Edu<span style={{ color: "#0C6AC4" }}>mon</span>
+          Edu<span style={{ color: "var(--edu-blue-500)" }}>mon</span>
         </span>
       </div>
 
@@ -44,7 +44,7 @@ export default function LoadingScreen({ message = "Cargando..." }) {
           position: "absolute", inset: 0,
           borderRadius: "50%",
           border: "3px solid transparent",
-          borderTopColor: "#0C6AC4",
+          borderTopColor: "var(--edu-blue-500)",
           animation: "ls-spin 0.75s linear infinite",
         }} />
       </div>

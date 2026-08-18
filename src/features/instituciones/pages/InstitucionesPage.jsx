@@ -4,18 +4,16 @@ import {
   Phone, Mail, MapPin, Hash, User, RefreshCw,
   Eye, ExternalLink, Globe, Calendar, Shield,
 } from "lucide-react";
-import {
-  institucionesGetAll, institucionesCreate,
-  institucionesUpdate, usersGetById,
-} from "@/lib/apiClient";
+import { institucionesGetAll, institucionesCreate, institucionesUpdate } from "@/services/institucionesService";
+import { usersGetById } from "@/services/usersService";
 import { Modal, Toast, Button } from "@/components";
 import { Input } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
-import { normalizeUser }from "@/lib/normalizers";
+import { normalizeUser } from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
 import { normalizePhone } from "@/utils/normalizePhone";
 
-// ── Skeleton row ──────────────────────────────────────────────
+// ── Fila esqueleto ────────────────────────────────────────────
 function SkRow() {
   return (
     <tr>
@@ -28,7 +26,7 @@ function SkRow() {
   );
 }
 
-// ── Empty state ───────────────────────────────────────────────
+// ── Estado vacío ──────────────────────────────────────────────
 function Empty({ search, onClear }) {
   return (
     <tr>
@@ -49,18 +47,18 @@ function Empty({ search, onClear }) {
   );
 }
 
-// ── Detail helpers ────────────────────────────────────────────
+// ── Auxiliares de detalle ─────────────────────────────────────
 function InfoRow({ icon: Icon, label, value, isLink = false }) {
   if (!value) return null;
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--color-border)" }}>
       <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(12,106,196,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-        <Icon style={{ width: 13, height: 13, color: "#0C6AC4" }} />
+        <Icon style={{ width: 13, height: 13, color: "var(--color-primary)" }} />
       </div>
       <div style={{ flex: 1 }}>
         <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 2px" }}>{label}</p>
         {isLink ? (
-          <a href={value} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13.5, color: "#0C6AC4", wordBreak: "break-word", display: "flex", alignItems: "center", gap: 4 }}>
+          <a href={value} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13.5, color: "var(--color-primary)", wordBreak: "break-word", display: "flex", alignItems: "center", gap: 4 }}>
             {value} <ExternalLink style={{ width: 11, height: 11 }} />
           </a>
         ) : (
@@ -71,7 +69,7 @@ function InfoRow({ icon: Icon, label, value, isLink = false }) {
   );
 }
 
-function SectionLabel({ icon: Icon, label, color = "#0C6AC4" }) {
+function SectionLabel({ icon: Icon, label, color = "var(--color-primary)" }) {
   return (
     <p style={{ fontSize: 11.5, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
       <Icon style={{ width: 13, height: 13 }} /> {label}
@@ -89,7 +87,7 @@ function AdminAvatar({ admin }) {
           style={{ width: 60, height: 60, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--color-border)" }}
           onError={(e) => { e.currentTarget.style.display = "none"; }} />
         <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{name}</p>
-        <a href={admin.fotoPerfilUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "#0C6AC4", display: "flex", alignItems: "center", gap: 4 }}>
+        <a href={admin.fotoPerfilUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--color-primary)", display: "flex", alignItems: "center", gap: 4 }}>
           Ver foto completa <ExternalLink style={{ width: 11, height: 11 }} />
         </a>
       </div>
@@ -97,7 +95,7 @@ function AdminAvatar({ admin }) {
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 16 }}>
-      <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg,#0C6AC4,#1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg,var(--color-primary),#1E3A5F)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontSize: 20, fontWeight: 800, color: "white" }}>{initials}</span>
       </div>
       <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{name}</p>
@@ -119,17 +117,17 @@ const INIT_EDIT = { nombre: "", direccion: "", telefono: "", correo: "" };
 // ─────────────────────────────────────────────────────────────
 export default function InstitucionesPage() {
   const [instituciones, setInstituciones] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState("");
-  const [toast,        setToast]        = useState({ msg: "", type: "success" });
-  const [showCreate,   setShowCreate]   = useState(false);
-  const [editTarget,   setEditTarget]   = useState(null);
-  const [detailInst,   setDetailInst]   = useState(null);
-  const [detailAdmin,  setDetailAdmin]  = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [toast, setToast] = useState({ msg: "", type: "success" });
+  const [showCreate, setShowCreate] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [detailInst, setDetailInst] = useState(null);
+  const [detailAdmin, setDetailAdmin] = useState(null);
   const [loadingAdmin, setLoadingAdmin] = useState(false);
-  const [saving,       setSaving]       = useState(false);
-  const [form,         setForm]         = useState(INIT_FORM);
-  const [editForm,     setEditForm]     = useState(INIT_EDIT);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(INIT_FORM);
+  const [editForm, setEditForm] = useState(INIT_EDIT);
 
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
@@ -142,7 +140,7 @@ export default function InstitucionesPage() {
       const res = await institucionesGetAll();
       setInstituciones(res.instituciones ?? []);
     } catch { notify("Error al cargar instituciones", "error"); }
-    finally  { setLoading(false); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -173,21 +171,48 @@ export default function InstitucionesPage() {
 
   const closeDetail = () => { setDetailInst(null); setDetailAdmin(null); };
 
+  // dentro de InstitucionesPage.jsx
+
   const handleCreate = async (e) => {
     e.preventDefault();
+
+    // Validación previa en cliente (evita pegarle al backend con datos incompletos)
+    const nombre = form.nombre.trim();
+    const nit = form.nit.trim();
+    const adminCorreo = form.adminCorreo.trim().toLowerCase();
+    const adminCedula = form.adminCedula.trim();
+
+    if (!nombre || !nit) {
+      notify("Nombre y NIT son obligatorios", "error");
+      return;
+    }
+    if (!form.adminNombre.trim() || !form.adminApellido.trim() || !adminCedula || !adminCorreo) {
+      notify("Completa los datos del administrador (nombre, apellido, cédula y correo)", "error");
+      return;
+    }
+
     setSaving(true);
     try {
       await institucionesCreate({
         ...form,
-        telefono:      normalizePhone(form.telefono),
-        adminTelefono: normalizePhone(form.adminTelefono),
+        nombre,
+        nit,
+        adminCedula,
+        adminCorreo,
+        telefono: form.telefono ? normalizePhone(form.telefono) : "",
+        adminTelefono: form.adminTelefono ? normalizePhone(form.adminTelefono) : "",
       });
       notify("Institución creada correctamente");
       setShowCreate(false);
       setForm(INIT_FORM);
       load();
-    } catch (err) { notify(humanizeError(err, "Error al crear institución"), "error"); }
-    finally { setSaving(false); }
+    } catch (err) {
+      // Loguea el detalle real que devuelve el backend para depurar en consola
+      console.error("[crearInstitucion] respuesta backend:", err?.response?.data);
+      notify(humanizeError(err, "Error al crear institución"), "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openEdit = (inst) => {
@@ -211,7 +236,7 @@ export default function InstitucionesPage() {
     finally { setSaving(false); }
   };
 
-  const f  = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+  const f = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
   const ef = (key) => (e) => setEditForm((p) => ({ ...p, [key]: e.target.value }));
 
   const adminData = detailAdmin ||
@@ -221,12 +246,12 @@ export default function InstitucionesPage() {
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
       <Toast msg={toast.msg} type={toast.type} />
 
-      {/* Page header */}
+      {/* Encabezado de página */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Building2 style={{ width: 18, height: 18, color: "#0C6AC4" }} />
+              <Building2 style={{ width: 18, height: 18, color: "var(--color-primary)" }} />
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>Instituciones</h1>
           </div>
@@ -246,7 +271,7 @@ export default function InstitucionesPage() {
         </div>
       </div>
 
-      {/* Search bar */}
+      {/* Barra de búsqueda */}
       <div style={{ marginBottom: 16 }}>
         <Input
           type="search"
@@ -262,7 +287,7 @@ export default function InstitucionesPage() {
         />
       </div>
 
-      {/* Table */}
+      {/* Tabla */}
       <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -277,7 +302,7 @@ export default function InstitucionesPage() {
             </thead>
             <tbody>
               {loading ? (
-                [0,1,2,3,4].map((i) => <SkRow key={i} />)
+                [0, 1, 2, 3, 4].map((i) => <SkRow key={i} />)
               ) : filtered.length === 0 ? (
                 <Empty search={search} onClear={() => setSearch("")} />
               ) : (
@@ -297,29 +322,29 @@ export default function InstitucionesPage() {
         )}
       </div>
 
-      {/* DETAIL MODAL */}
+      {/* MODAL DE DETALLE */}
       <Modal isOpen={Boolean(detailInst)} onClose={closeDetail} title={detailInst?.nombre ?? "Detalle de institución"} size="md">
         {detailInst && (
           <div>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
               <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Building2 style={{ width: 28, height: 28, color: "#0C6AC4" }} />
+                <Building2 style={{ width: 28, height: 28, color: "var(--color-primary)" }} />
               </div>
             </div>
             <SectionLabel icon={Building2} label="Datos de la institución" />
             <div style={{ marginBottom: 16 }}>
-              <InfoRow icon={Hash}     label="NIT"               value={detailInst.nit} />
-              <InfoRow icon={Hash}     label="Código"            value={detailInst.codigo} />
-              <InfoRow icon={MapPin}   label="Dirección"         value={detailInst.direccion} />
-              <InfoRow icon={Phone}    label="Teléfono"          value={detailInst.telefono} />
-              <InfoRow icon={Mail}     label="Correo"            value={detailInst.correo} />
-              <InfoRow icon={Globe}    label="Ciudad"            value={detailInst.ciudad} />
+              <InfoRow icon={Hash} label="NIT" value={detailInst.nit} />
+              <InfoRow icon={Hash} label="Código" value={detailInst.codigo} />
+              <InfoRow icon={MapPin} label="Dirección" value={detailInst.direccion} />
+              <InfoRow icon={Phone} label="Teléfono" value={detailInst.telefono} />
+              <InfoRow icon={Mail} label="Correo" value={detailInst.correo} />
+              <InfoRow icon={Globe} label="Ciudad" value={detailInst.ciudad} />
               {detailInst.createdAt && (
                 <InfoRow icon={Calendar} label="Fecha de registro" value={fmtDate(detailInst.createdAt)} />
               )}
             </div>
             <div style={{ paddingTop: 16, borderTop: "1px solid var(--color-border)" }}>
-              <SectionLabel icon={Shield} label="Administrador" color="#16A34A" />
+              <SectionLabel icon={Shield} label="Administrador" color="var(--edu-green-600)" />
               {loadingAdmin ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 0", color: "var(--color-text-muted)", fontSize: 13 }}>
                   <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />
@@ -328,10 +353,10 @@ export default function InstitucionesPage() {
               ) : adminData ? (
                 <div>
                   <AdminAvatar admin={adminData} />
-                  <InfoRow icon={User}  label="Nombre completo" value={[adminData.nombre, adminData.apellido].filter(Boolean).join(" ")} />
-                  <InfoRow icon={Hash}  label="Cédula"          value={adminData.cedula} />
-                  <InfoRow icon={Mail}  label="Correo"          value={adminData.correo} />
-                  <InfoRow icon={Phone} label="Teléfono"        value={adminData.telefono} />
+                  <InfoRow icon={User} label="Nombre completo" value={[adminData.nombre, adminData.apellido].filter(Boolean).join(" ")} />
+                  <InfoRow icon={Hash} label="Cédula" value={adminData.cedula} />
+                  <InfoRow icon={Mail} label="Correo" value={adminData.correo} />
+                  <InfoRow icon={Phone} label="Teléfono" value={adminData.telefono} />
                 </div>
               ) : (
                 <p style={{ fontSize: 13, color: "var(--color-text-muted)", padding: "8px 0" }}>Sin información del administrador</p>
@@ -349,7 +374,7 @@ export default function InstitucionesPage() {
         )}
       </Modal>
 
-      {/* CREATE MODAL */}
+      {/* MODAL DE CREACIÓN */}
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Nueva institución" description="Complete todos los campos requeridos." size="lg">
         <form onSubmit={handleCreate}>
           <div style={{ marginBottom: 16 }}>
@@ -397,7 +422,7 @@ export default function InstitucionesPage() {
             </div>
           </div>
           <div style={{ paddingTop: 16, borderTop: "1px solid var(--color-border)" }}>
-            <SectionLabel icon={User} label="Administrador inicial" color="#16A34A" />
+            <SectionLabel icon={User} label="Administrador inicial" color="var(--edu-green-600)" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <Input
                 label="Nombre"
@@ -460,7 +485,7 @@ export default function InstitucionesPage() {
         </form>
       </Modal>
 
-      {/* EDIT MODAL */}
+      {/* MODAL DE EDICIÓN */}
       <Modal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} title={`Editar: ${editTarget?.nombre ?? ""}`} size="md">
         <form onSubmit={handleEdit}>
           <div style={{ display: "grid", gap: 12 }}>
@@ -510,7 +535,7 @@ export default function InstitucionesPage() {
   );
 }
 
-// ── Table row ─────────────────────────────────────────────────
+// ── Fila de tabla ─────────────────────────────────────────────
 function InstitRow({ inst, onView, onEdit }) {
   return (
     <tr style={{ borderBottom: "1px solid var(--color-border)", transition: "background 150ms" }}
@@ -520,7 +545,7 @@ function InstitRow({ inst, onView, onEdit }) {
       <td style={{ padding: "13px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Building2 style={{ width: 16, height: 16, color: "#0C6AC4" }} />
+            <Building2 style={{ width: 16, height: 16, color: "var(--color-primary)" }} />
           </div>
           <div>
             <p style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{inst.nombre}</p>

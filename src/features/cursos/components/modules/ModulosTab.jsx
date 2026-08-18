@@ -1,8 +1,9 @@
 // src/features/cursos/components/modules/ModulosTab.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
+import CursoContext from "../../context/CursoContext";
 import { BookOpen, Eye, Pencil, Trash2, Upload } from "lucide-react";
-import { modulosGetByCurso, modulosCreate, modulosUpdate, modulosDelete } from "@/lib/apiClient";
-import { Button, Input, Modal, Badge, Toast, CsvUploadModal } from "@/components";
+import { modulosGetByCurso, modulosCreate, modulosUpdate, modulosDelete } from "@/features/cursos/services/cursosService";
+import { Button, Input, AppModal, Badge, Toast, CsvUploadModal } from "@/components";
 import { Sk, EmptyState, Field, StTextarea, InfoBlock, IconBtn } from "../shared/ui";
 import { makeNotify } from "../shared/helpers";
 import {
@@ -11,7 +12,10 @@ import {
   CSV_COLUMNAS_MODULOS,
 } from "@/components/ui/ModulosCsvTemplate";
 
-export default function ModulosTab({ cursoId, canManage }) {
+export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageProp }) {
+  const ctx       = useContext(CursoContext);
+  const cursoId   = ctx?.cursoId   ?? cursoIdProp;
+  const canManage = ctx?.canManageModules ?? canManageProp;
   const [modulos, setModulos]     = useState([]);
   const [loading, setLoading]     = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -36,7 +40,7 @@ export default function ModulosTab({ cursoId, canManage }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // ── CRUD individual ───────────────────────────────────────────────────────
+  // ── CRUD individual ──────────────────────────────────────────────────────
   const openCreate = () => {
     setEditTarget(null);
     setForm({ titulo: "", descripcion: "" });
@@ -209,97 +213,95 @@ export default function ModulosTab({ cursoId, canManage }) {
       {/* ══════════════════════════════════════════════
           Modal — Crear / Editar módulo
       ══════════════════════════════════════════════ */}
-      <Modal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editTarget ? "Editar módulo" : "Nuevo módulo"}
-        size="sm"
-      >
-        <form onSubmit={handleSave}>
-          <Field label="Título *">
-            <Input
-              value={form.titulo}
-              onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
-              placeholder="Ej: Introducción"
-              required
-            />
-          </Field>
-          <Field label="Descripción">
-            <StTextarea
-              value={form.descripcion}
-              onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
-              placeholder="Descripción opcional"
-              rows={4}
-            />
-          </Field>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
-            <Button variant="ghost" type="button" onClick={() => setModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? "Guardando..." : editTarget ? "Guardar cambios" : "Crear módulo"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      <AppModal isOpen={modalOpen} onClose={() => setModalOpen(false)} size="sm">
+        <AppModal.Header
+          title={editTarget ? "Editar módulo" : "Nuevo módulo"}
+          onClose={() => setModalOpen(false)}
+        />
+        <AppModal.Body>
+          <form id="modulos-form" onSubmit={handleSave}>
+            <Field label="Título *">
+              <Input
+                value={form.titulo}
+                onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
+                placeholder="Ej: Introducción"
+                required
+              />
+            </Field>
+            <Field label="Descripción">
+              <StTextarea
+                value={form.descripcion}
+                onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
+                placeholder="Descripción opcional"
+                rows={4}
+              />
+            </Field>
+          </form>
+        </AppModal.Body>
+        <AppModal.Footer>
+          <Button variant="ghost" type="button" onClick={() => setModalOpen(false)}>Cancelar</Button>
+          <Button type="submit" form="modulos-form" disabled={saving}>
+            {saving ? "Guardando..." : editTarget ? "Guardar cambios" : "Crear módulo"}
+          </Button>
+        </AppModal.Footer>
+      </AppModal>
 
       {/* ══════════════════════════════════════════════
           Modal — Detalle módulo
       ══════════════════════════════════════════════ */}
-      <Modal
-        isOpen={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        title={viewTarget?.titulo ?? "Módulo"}
-        size="sm"
-      >
-        {viewTarget && (
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                background: "var(--color-primary-light)", display: "flex",
-                alignItems: "center", justifyContent: "center",
-              }}>
-                <BookOpen style={{ width: 18, height: 18, color: "var(--color-primary)" }} />
+      <AppModal isOpen={detailOpen} onClose={() => setDetailOpen(false)} size="sm">
+        <AppModal.Header
+          title={viewTarget?.titulo ?? "Módulo"}
+          onClose={() => setDetailOpen(false)}
+        />
+        <AppModal.Body>
+          {viewTarget && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                  background: "var(--color-primary-light)", display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                }}>
+                  <BookOpen style={{ width: 18, height: 18, color: "var(--color-primary)" }} />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--color-text)" }}>
+                    {viewTarget.titulo}
+                  </p>
+                  <Badge variant="info" styleType="soft" size="sm">
+                    {viewTarget.estado ?? "activo"}
+                  </Badge>
+                </div>
               </div>
-              <div>
-                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--color-text)" }}>
-                  {viewTarget.titulo}
+              <InfoBlock label="Descripción">
+                <p style={{ fontSize: 13.5, color: "var(--color-text)", margin: 0, lineHeight: 1.6 }}>
+                  {viewTarget.descripcion?.trim()
+                    ? viewTarget.descripcion
+                    : <span style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Sin descripción</span>}
                 </p>
-                <Badge variant="info" styleType="soft" size="sm">
-                  {viewTarget.estado ?? "activo"}
-                </Badge>
-              </div>
+              </InfoBlock>
             </div>
-            <InfoBlock label="Descripción">
-              <p style={{ fontSize: 13.5, color: "var(--color-text)", margin: 0, lineHeight: 1.6 }}>
-                {viewTarget.descripcion?.trim()
-                  ? viewTarget.descripcion
-                  : <span style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Sin descripción</span>}
-              </p>
-            </InfoBlock>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20 }}>
-              {canManage ? (
-                <>
-                  <Button variant="ghost" size="sm"
-                    onClick={() => { setDetailOpen(false); openEdit(viewTarget); }}>
-                    <Pencil style={{ width: 13, height: 13 }} /> Editar
-                  </Button>
-                  <Button variant="ghost" size="sm"
-                    style={{ color: "var(--color-error)", borderColor: "var(--color-error)" }}
-                    onClick={() => { setDetailOpen(false); handleDelete(viewTarget._id); }}>
-                    <Trash2 style={{ width: 13, height: 13 }} /> Eliminar
-                  </Button>
-                </>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={() => setDetailOpen(false)}>
-                  Cerrar
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+          )}
+        </AppModal.Body>
+        <AppModal.Footer>
+          {viewTarget && canManage ? (
+            <>
+              <Button variant="ghost" size="sm"
+                onClick={() => { setDetailOpen(false); openEdit(viewTarget); }}>
+                <Pencil style={{ width: 13, height: 13 }} /> Editar
+              </Button>
+              <Button variant="ghost" size="sm"
+                style={{ color: "var(--color-error)", borderColor: "var(--color-error)" }}
+                onClick={() => { setDetailOpen(false); handleDelete(viewTarget._id); }}>
+                <Trash2 style={{ width: 13, height: 13 }} /> Eliminar
+              </Button>
+            </>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setDetailOpen(false)}>Cerrar</Button>
+          )}
+        </AppModal.Footer>
+      </AppModal>
 
       {/* ══════════════════════════════════════════════
           Modal — Carga masiva CSV (reutilizable)

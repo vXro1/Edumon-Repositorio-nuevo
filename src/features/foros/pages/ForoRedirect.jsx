@@ -1,9 +1,9 @@
 // src/features/foros/pages/ForoRedirect.jsx
-// Canonical redirect: /foros/:id → /curso/:cursoId/foro/:id
-// Fetches the forum to get its cursoId, then redirects.
+// Redirección canónica: /foros/:id → /curso/:cursoId/foro/:id
+// Obtiene el foro para conseguir su cursoId y luego redirige.
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { forosGetById } from '@/lib/apiClient';
+import { forosGetById } from '@/features/foros/services/forosService';
 import { normalizeForo } from '@/lib/normalizers/foro';
 
 const ForoRedirect = () => {

@@ -30,7 +30,7 @@
   display: block;
 }
 
-/* ── Sizes ────────────────────────────────────────────────────────────── */
+/* ── Tamaños ────────────────────────────────────────────────────────────── */
 .avatar-2xs { width: 1.5rem;  height: 1.5rem;  font-size: var(--text-2xs); }
 .avatar-xs  { width: 2rem;    height: 2rem;    font-size: var(--text-xs); }
 .avatar-sm  { width: 2.5rem;  height: 2.5rem;  font-size: var(--text-xs); }
@@ -39,11 +39,11 @@
 .avatar-xl  { width: 5.5rem;  height: 5.5rem;  font-size: var(--text-xl); }
 .avatar-2xl { width: 7.5rem;  height: 7.5rem;  font-size: var(--text-3xl); }
 
-/* ── Square shape (institutions / courses) ────────────────────────────── */
+/* ── Forma cuadrada (instituciones / cursos) ────────────────────────────── */
 .avatar-square    { border-radius: var(--radius-lg); }
 .avatar-square-sm { border-radius: var(--radius-md); }
 
-/* ── Status dot ───────────────────────────────────────────────────────── */
+/* ── Punto de estado ───────────────────────────────────────────────────────── */
 .avatar-status {
   position: absolute;
   bottom: 1px;
@@ -66,7 +66,7 @@
 .avatar-status--away    { background: var(--color-warning); }
 .avatar-status--idle    { background: var(--color-warning-light); border-color: var(--color-warning); }
 
-/* ── Color palette (no-photo avatars) ────────────────────────────────── */
+/* ── Paleta de colores (avatares sin foto) ────────────────────────────────── */
 .avatar-color-0 { background: var(--edu-purple-50); color: var(--edu-purple-600); }
 .avatar-color-1 { background: var(--edu-pink-50);   color: var(--edu-pink-600); }
 .avatar-color-2 { background: var(--edu-cyan-50);   color: var(--edu-cyan-600); }
@@ -74,13 +74,13 @@
 .avatar-color-4 { background: var(--edu-yellow-50); color: var(--edu-yellow-700); }
 .avatar-color-5 { background: var(--color-primary-light); color: var(--color-primary); }
 
-/* ── Role borders ─────────────────────────────────────────────────────── */
+/* ── Bordes por rol ─────────────────────────────────────────────────────── */
 .avatar-role-superadmin    { border-color: var(--edu-pink-500); }
 .avatar-role-administrador { border-color: var(--edu-cyan-500); }
 .avatar-role-docente       { border-color: var(--color-primary); }
 .avatar-role-estudiante    { border-color: var(--edu-green-500); }
 
-/* ── Interactive ──────────────────────────────────────────────────────── */
+/* ── Interactivo ──────────────────────────────────────────────────────── */
 .avatar-interactive { cursor: pointer; }
 .avatar-interactive:hover {
   transform: scale(1.06);
@@ -92,7 +92,7 @@
   box-shadow: var(--shadow-focus);
 }
 
-/* ── Group / stack ────────────────────────────────────────────────────── */
+/* ── Grupo / apilado ────────────────────────────────────────────────────── */
 .avatar-group {
   display: inline-flex;
   flex-direction: row-reverse;
@@ -111,7 +111,7 @@
   z-index: 10;
 }
 
-/* "+N" counter inside group */
+/* Contador "+N" dentro del grupo */
 .avatar-group-count {
   background: var(--color-surface-3);
   color: var(--color-text-muted);
@@ -120,7 +120,7 @@
   border: 2.5px solid var(--color-surface);
 }
 
-/* ── Avatar with badge ────────────────────────────────────────────────── */
+/* ── Avatar con insignia ────────────────────────────────────────────────── */
 .avatar-badge {
   position: absolute;
   top: -2px;

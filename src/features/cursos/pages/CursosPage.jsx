@@ -7,12 +7,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Layers, Plus, Search, Edit2, Archive, Users,
   ChevronLeft, ChevronRight, AlertCircle,
-  UserPlus, UserMinus, Upload, ExternalLink,
+  UserPlus, UserMinus, Upload, ExternalLink, Pipette,
 } from "lucide-react";
 
-import letrasImg from "@/assets/img/letras.png";
+import letrasImg from "@/assets/img/letras.svg"; // fallback para cursos sin portada  
 
-// ✅ Todos los componentes desde el index reutilizable
 import {
   Modal, Button, UserAvatar, Toast,
   Input, Textarea, Select,
@@ -28,8 +27,8 @@ import {
   cursosGetParticipantes,
   cursosAddParticipante,
   cursosRemoveParticipante,
-  usersGetAll,
-} from "@/lib/apiClient";
+} from "@/features/cursos/services/cursosService";
+import { usersGetAll } from "@/services/usersService";
 
 import { useAuth }   from "@/features/auth/hooks/useAuth";
 import { useSearch } from "@/context/SearchContext";
@@ -40,11 +39,18 @@ import { normalizeRole, ROLES }          from "@/security/roleMatrix";
 const LIMIT = 12;
 
 const ESTADO_META = {
-  activo:    { label: "Activo",    color: "#16A34A", bg: "rgba(22,163,74,0.1)"  },
+  activo:    { label: "Activo",    color: "var(--edu-green-600)", bg: "rgba(22,163,74,0.1)"  },
   archivado: { label: "Archivado", color: "#D97706", bg: "rgba(217,119,6,0.1)"  },
 };
 
-/* ── Skeleton ─────────────────────────────────────────────────── */
+// Paleta base de colores para el curso (coincide con el patrón hex del validador: #3B82F6, etc.)
+const COLOR_PALETTE = [
+  "#8B5CF6", "#06B6D4", "var(--color-success)", "#F59E0B", "#EC4899",
+  "var(--color-error)", "var(--color-primary)", "#6366F1", "#14B8A6", "#F97316",
+];
+const DEFAULT_COLOR = COLOR_PALETTE[6]; // var(--color-primary)
+
+/* ── Esqueleto de carga ────────────────────────────────────────── */
 function Sk({ h = 16, w = "100%", r = 7 }) {
   return (
     <div className="animate-pulse"
@@ -69,7 +75,7 @@ function EstadoBadge({ estado }) {
 }
 
 /* ── Field wrapper ────────────────────────────────────────────── */
-function Field({ label, children }) {
+function Field({ label, children, hint }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <label style={{
@@ -80,7 +86,72 @@ function Field({ label, children }) {
         {label}
       </label>
       {children}
+      {hint && (
+        <p style={{ margin: "4px 0 0", fontSize: 11.5, color: "var(--color-text-muted)" }}>{hint}</p>
+      )}
     </div>
+  );
+}
+
+/* ── Selector de color: paleta + gotero personalizado ──────────── */
+function ColorPickerField({ value, onChange }) {
+  const isCustom = !COLOR_PALETTE.includes(value);
+  return (
+    <Field label="Color del curso">
+      <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+        {COLOR_PALETTE.map((c) => {
+          const active = value === c;
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => onChange(c)}
+              aria-label={`Elegir color ${c}`}
+              title={c}
+              style={{
+                width: 27, height: 27, borderRadius: "50%", background: c,
+                border: active ? "2px solid var(--color-surface)" : "2px solid transparent",
+                outline: active ? `2px solid ${c}` : "2px solid transparent",
+                outlineOffset: 2,
+                cursor: "pointer", padding: 0, flexShrink: 0,
+                transition: "transform 0.12s",
+                transform: active ? "scale(1.05)" : "scale(1)",
+              }}
+            />
+          );
+        })}
+
+        {/* Gotero — color personalizado vía <input type="color"> */}
+        <label
+          title="Elegir color personalizado"
+          style={{
+            width: 27, height: 27, borderRadius: "50%", cursor: "pointer",
+            position: "relative", flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: isCustom && value ? value : "var(--color-bg)",
+            border: isCustom
+              ? `2px solid var(--color-surface)`
+              : "2px dashed var(--color-border)",
+            outline: isCustom ? `2px solid ${value}` : "none",
+            outlineOffset: 2,
+          }}
+        >
+          <Pipette style={{
+            width: 13, height: 13,
+            color: isCustom ? "#fff" : "var(--color-text-muted)",
+          }} />
+          <input
+            type="color"
+            value={/^#([0-9A-Fa-f]{6})$/.test(value) ? value : DEFAULT_COLOR}
+            onChange={(e) => onChange(e.target.value)}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              opacity: 0, cursor: "pointer", border: 0, padding: 0,
+            }}
+          />
+        </label>
+      </div>
+    </Field>
   );
 }
 
@@ -113,7 +184,7 @@ export default function CursosPage() {
   const [toast,     setToast]     = useState({ msg: "", type: "success" });
   const [saving,    setSaving]    = useState(false);
 
-  // Modals
+  // Modales
   const [createOpen,   setCreateOpen]   = useState(false);
   const [editOpen,     setEditOpen]     = useState(false);
   const [archiveOpen,  setArchiveOpen]  = useState(false);
@@ -128,12 +199,14 @@ export default function CursosPage() {
   const [parts,        setParts]        = useState([]);
   const [partsLoading, setPartsLoading] = useState(false);
 
-  // Forms
-  const [createForm,      setCreateForm]      = useState({ nombre: "", descripcion: "", docenteId: "" });
+  // Formularios
+  const [createForm,      setCreateForm]      = useState({
+    nombre: "", descripcion: "", docenteId: "", color: DEFAULT_COLOR,
+  });
   const [createCoverFile, setCreateCoverFile] = useState(null);
   const createCoverRef = useRef(null);
 
-  const [editForm,      setEditForm]      = useState({ nombre: "", descripcion: "" });
+  const [editForm,      setEditForm]      = useState({ nombre: "", descripcion: "", color: DEFAULT_COLOR });
   const [editCoverFile, setEditCoverFile] = useState(null);
   const editCoverRef = useRef(null);
 
@@ -153,7 +226,7 @@ export default function CursosPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Reset to page 1 when search clears so normal pagination restarts correctly
+  // Reiniciar a página 1 cuando se limpia la búsqueda para que la paginación normal reinicie correctamente
   useEffect(() => { if (!debSearch) setPage(1); }, [debSearch]);
 
   /* ── Carga de cursos con enriquecimiento de docente ─────────── */
@@ -161,7 +234,7 @@ export default function CursosPage() {
     if (!user) return;
     setLoading(true);
     try {
-      // When searching, fetch all items so the client-side filter is complete
+      // Al buscar, traer todos los elementos para que el filtro del lado cliente sea completo
       const params = debSearch ? { page: 1, limit: 1000 } : { page, limit: LIMIT };
       const res = isDocente
         ? await cursosGetMine(params)
@@ -249,25 +322,38 @@ export default function CursosPage() {
       )
     : cursos;
 
-  // Pagination is meaningless while a search is active (all data loaded client-side)
+  // La paginación no aplica mientras hay búsqueda activa (todos los datos cargados en cliente)
   const totalPages = debSearch ? 1 : Math.max(1, Math.ceil(total / LIMIT));
 
   /* ── CRUD ──────────────────────────────────────────────────── */
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!createForm.nombre.trim()) { notify("El nombre del curso es requerido", "error"); return; }
+    const nombre = createForm.nombre.trim();
+    const descripcion = createForm.descripcion.trim();
+
+    if (!nombre) { notify("El nombre del curso es requerido", "error"); return; }
+    if (nombre.length < 2 || nombre.length > 100) {
+      notify("El nombre debe tener entre 2 y 100 caracteres", "error"); return;
+    }
+    // El backend ahora exige descripción (10-500 caracteres)
+    if (!descripcion) { notify("La descripción es requerida", "error"); return; }
+    if (descripcion.length < 10 || descripcion.length > 500) {
+      notify("La descripción debe tener entre 10 y 500 caracteres", "error"); return;
+    }
     if (!isDocente && !createForm.docenteId) { notify("Selecciona un docente", "error"); return; }
+
     setSaving(true);
     try {
       const fd = new FormData();
-      fd.append("nombre", createForm.nombre.trim());
-      if (createForm.descripcion.trim()) fd.append("descripcion", createForm.descripcion.trim());
+      fd.append("nombre", nombre);
+      fd.append("descripcion", descripcion);
       fd.append("docenteId", isDocente ? (user._id ?? user.id) : createForm.docenteId);
+      if (createForm.color) fd.append("color", createForm.color);
       if (createCoverFile) fd.append("fotoPortada", createCoverFile);
       await cursosCreate(fd);
       notify("Curso creado exitosamente");
       setCreateOpen(false);
-      setCreateForm({ nombre: "", descripcion: "", docenteId: "" });
+      setCreateForm({ nombre: "", descripcion: "", docenteId: "", color: DEFAULT_COLOR });
       setCreateCoverFile(null);
       load();
     } catch (err) { notify(humanizeError(err, "Error al crear curso"), "error"); }
@@ -276,25 +362,41 @@ export default function CursosPage() {
 
   const openEdit = async (c) => {
     setSelected(c);
-    setEditForm({ nombre: c.nombre ?? "", descripcion: c.descripcion ?? "" });
+    setEditForm({
+      nombre: c.nombre ?? "",
+      descripcion: c.descripcion ?? "",
+      color: c.color ?? DEFAULT_COLOR,
+    });
     setEditOpen(true);
     // Enriquecer con datos completos al abrir
     try {
       const full = await cursosGetById(c._id);
       const enriched = normalizeCurso(full.curso ?? full);
       setSelected(enriched);
-      setEditForm({ nombre: enriched.nombre ?? "", descripcion: enriched.descripcion ?? "" });
+      setEditForm({
+        nombre: enriched.nombre ?? "",
+        descripcion: enriched.descripcion ?? "",
+        color: enriched.color ?? DEFAULT_COLOR,
+      });
     } catch { /* usa lo que tenía */ }
   };
 
   const handleEdit = async (e) => {
     e.preventDefault();
-    if (!editForm.nombre.trim()) { notify("El nombre es requerido", "error"); return; }
+    const nombre = editForm.nombre.trim();
+    const descripcion = editForm.descripcion.trim();
+
+    if (!nombre) { notify("El nombre es requerido", "error"); return; }
+    if (descripcion && (descripcion.length < 10 || descripcion.length > 500)) {
+      notify("La descripción debe tener entre 10 y 500 caracteres", "error"); return;
+    }
+
     setSaving(true);
     try {
       const fd = new FormData();
-      fd.append("nombre", editForm.nombre.trim());
-      fd.append("descripcion", editForm.descripcion.trim());
+      fd.append("nombre", nombre);
+      fd.append("descripcion", descripcion);
+      if (editForm.color) fd.append("color", editForm.color);
       if (editCoverFile) fd.append("fotoPortada", editCoverFile);
       await cursosUpdate(selected._id, fd);
       notify("Curso actualizado");
@@ -351,7 +453,7 @@ export default function CursosPage() {
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       <Toast {...toast} />
 
-      {/* ── Header ── */}
+      {/* ── Encabezado ── */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         marginBottom: 24, flexWrap: "wrap", gap: 12,
@@ -362,7 +464,7 @@ export default function CursosPage() {
             background: "rgba(12,106,196,0.10)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <Layers style={{ width: 19, height: 19, color: "#0C6AC4" }} />
+            <Layers style={{ width: 19, height: 19, color: "var(--color-primary)" }} />
           </div>
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>Cursos</h1>
@@ -375,7 +477,7 @@ export default function CursosPage() {
         </Button>
       </div>
 
-      {/* ── Search — Input reutilizable ── */}
+      {/* ── Búsqueda — Input reutilizable ── */}
       <div style={{ marginBottom: 18, maxWidth: 340 }}>
         <Input
           name="buscar"
@@ -435,6 +537,10 @@ export default function CursosPage() {
                     <td style={{ padding: "13px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
                         onClick={() => goToCurso(c)} title="Abrir curso">
+                        <span style={{
+                          width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                          background: c.color || "var(--color-primary)",
+                        }} />
                         <img
                           src={c.fotoPortada || letrasImg}
                           alt={c.nombre ?? "Curso"}
@@ -446,7 +552,7 @@ export default function CursosPage() {
                           }}
                         />
                         <span style={{
-                          fontSize: 13.5, fontWeight: 600, color: "#0C6AC4",
+                          fontSize: 13.5, fontWeight: 600, color: "var(--color-primary)",
                           textDecoration: "underline", textDecorationColor: "rgba(12,106,196,0.3)",
                           textUnderlineOffset: 3,
                         }}>
@@ -473,7 +579,7 @@ export default function CursosPage() {
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Button variant="ghost" size="sm" title="Abrir curso"
                           onClick={() => goToCurso(c)}>
-                          <ExternalLink style={{ width: 14, height: 14, color: "#0C6AC4" }} />
+                          <ExternalLink style={{ width: 14, height: 14, color: "var(--color-primary)" }} />
                         </Button>
                         <Button variant="ghost" size="sm" title="Participantes"
                           onClick={() => openParts(c)}>
@@ -481,7 +587,7 @@ export default function CursosPage() {
                         </Button>
                         <Button variant="ghost" size="sm" title="Editar"
                           onClick={() => openEdit(c)}>
-                          <Edit2 style={{ width: 14, height: 14, color: "#16A34A" }} />
+                          <Edit2 style={{ width: 14, height: 14, color: "var(--edu-green-600)" }} />
                         </Button>
                         <Button variant="ghost" size="sm" title="Archivar"
                           onClick={() => openArchive(c)}>
@@ -519,7 +625,7 @@ export default function CursosPage() {
         )}
       </div>
 
-      {/* ══ CREATE MODAL ══════════════════════════════════════════ */}
+      {/* ══ MODAL CREAR ═══════════════════════════════════════════ */}
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Nuevo curso" size="md">
         <form onSubmit={handleCreate}>
           <Field label="Nombre del curso *">
@@ -527,8 +633,12 @@ export default function CursosPage() {
               value={createForm.nombre}
               onChange={e => setCreateForm(f => ({ ...f, nombre: e.target.value }))} />
           </Field>
-          <Field label="Descripción">
-            <Textarea name="descripcion" placeholder="Descripción del curso (opcional)" rows={3}
+          <Field
+            label="Descripción *"
+            hint={`${createForm.descripcion.trim().length}/500 (mínimo 10 caracteres)`}
+          >
+            <Textarea name="descripcion" placeholder="Describe brevemente el curso (mín. 10 caracteres)" rows={3}
+              required
               value={createForm.descripcion}
               onChange={e => setCreateForm(f => ({ ...f, descripcion: e.target.value }))} />
           </Field>
@@ -544,6 +654,10 @@ export default function CursosPage() {
               </Select>
             </Field>
           )}
+          <ColorPickerField
+            value={createForm.color}
+            onChange={(color) => setCreateForm(f => ({ ...f, color }))}
+          />
           <Field label="Imagen de portada">
             <input ref={createCoverRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => setCreateCoverFile(e.target.files[0] ?? null)} />
@@ -569,15 +683,16 @@ export default function CursosPage() {
         </form>
       </Modal>
 
-      {/* ══ EDIT MODAL ════════════════════════════════════════════ */}
+      {/* ══ MODAL EDITAR ══════════════════════════════════════════ */}
       <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Editar curso" size="md">
         <form onSubmit={handleEdit}>
-          {/* Preview del curso actual */}
+          {/* Vista previa del curso actual */}
           {selected && (
             <div style={{
               display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
               borderRadius: 10, marginBottom: 16,
               background: "var(--color-bg)", border: "1px solid var(--color-border)",
+              borderLeft: `4px solid ${editForm.color || "var(--color-primary)"}`,
             }}>
               <img
                 src={selected.fotoPortada || letrasImg} alt={selected.nombre}
@@ -599,11 +714,18 @@ export default function CursosPage() {
               value={editForm.nombre}
               onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))} />
           </Field>
-          <Field label="Descripción">
-            <Textarea name="descripcion" rows={3}
+          <Field
+            label="Descripción *"
+            hint={`${editForm.descripcion.trim().length}/500 (mínimo 10 caracteres)`}
+          >
+            <Textarea name="descripcion" rows={3} required
               value={editForm.descripcion}
               onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))} />
           </Field>
+          <ColorPickerField
+            value={editForm.color}
+            onChange={(color) => setEditForm(f => ({ ...f, color }))}
+          />
           <Field label="Imagen de portada">
             <input ref={editCoverRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => setEditCoverFile(e.target.files[0] ?? null)} />
@@ -632,7 +754,7 @@ export default function CursosPage() {
         </form>
       </Modal>
 
-      {/* ══ ARCHIVE CONFIRM ═══════════════════════════════════════ */}
+      {/* ══ CONFIRMAR ARCHIVO ════════════════════════════════════ */}
       <Modal isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} title="Archivar curso" size="sm">
         <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", marginBottom: 20 }}>
           ¿Archivar el curso{" "}
@@ -647,7 +769,7 @@ export default function CursosPage() {
         </div>
       </Modal>
 
-      {/* ══ PARTICIPANTS PANEL ════════════════════════════════════ */}
+      {/* ══ PANEL DE PARTICIPANTES ═══════════════════════════════ */}
       <Modal
         isOpen={participOpen}
         onClose={() => setParticipOpen(false)}
@@ -657,7 +779,7 @@ export default function CursosPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <Button variant="ghost" size="sm"
             onClick={() => { setParticipOpen(false); goToCurso(selected); }}
-            style={{ display: "flex", alignItems: "center", gap: 6, color: "#0C6AC4" }}>
+            style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--color-primary)" }}>
             <ExternalLink style={{ width: 13, height: 13 }} /> Ver curso completo
           </Button>
           <Button variant="primary"
@@ -701,7 +823,7 @@ export default function CursosPage() {
                   {!esDoc && (
                     <Button variant="ghost" size="sm" title="Eliminar participante"
                       onClick={() => handleRemovePart(u._id ?? p._id)}>
-                      <UserMinus style={{ width: 14, height: 14, color: "#DC2626" }} />
+                      <UserMinus style={{ width: 14, height: 14, color: "var(--color-error-hover)" }} />
                     </Button>
                   )}
                 </div>
@@ -711,7 +833,7 @@ export default function CursosPage() {
         )}
       </Modal>
 
-      {/* ══ ADD PARTICIPANT MODAL ═════════════════════════════════ */}
+      {/* ══ MODAL AGREGAR PARTICIPANTE ════════════════════════════ */}
       <Modal isOpen={addPartOpen} onClose={() => setAddPartOpen(false)} title="Agregar participante" size="md">
         <form onSubmit={handleAddPart}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

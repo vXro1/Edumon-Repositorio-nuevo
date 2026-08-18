@@ -1,6 +1,6 @@
 // src/features/cursos/hooks/useCursoTareas.js
 import { useState, useEffect } from 'react';
-import { tareasGetAll } from '@/lib/apiClient';
+import { tareasGetAll } from '@/features/cursos/services/tareasService';
 import { normalizeTarea } from '@/lib/normalizers';
 
 export default function useCursoTareas(cursoId) {

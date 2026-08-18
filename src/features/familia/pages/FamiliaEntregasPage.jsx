@@ -7,10 +7,8 @@ import {
   Upload, X, ExternalLink, ChevronDown, ChevronUp,
   Paperclip, Clock, BookOpen, Star,
 } from "lucide-react";
-import {
-  tareasGetAll, tareasGetById,
-  entregasGetMineByTarea, entregasCreate, entregasUpdate, entregasEnviar,
-} from "@/lib/apiClient";
+import { tareasGetAll, tareasGetById } from "@/features/cursos/services/tareasService";
+import { entregasGetMineByTarea, entregasCreate, entregasUpdate, entregasEnviar } from "@/features/entregas/services/entregasService";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { normalizeTarea, normalizeEntrega }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
@@ -18,9 +16,9 @@ import { Toast } from "@/components";
 
 const ESTADO_ENTREGA = {
   borrador:  { label: "Borrador",   color: "#6B7280", bg: "rgba(107,114,128,0.10)" },
-  enviada:   { label: "Enviada",    color: "#0C6AC4", bg: "rgba(12,106,196,0.10)" },
+  enviada:   { label: "Enviada",    color: "var(--color-primary)", bg: "rgba(12,106,196,0.10)" },
   tarde:     { label: "Tarde",      color: "#D97706", bg: "rgba(217,119,6,0.10)" },
-  calificada:{ label: "Calificada", color: "#16A34A", bg: "rgba(22,163,74,0.10)" },
+  calificada:{ label: "Calificada", color: "var(--edu-green-600)", bg: "rgba(22,163,74,0.10)" },
 };
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
@@ -81,14 +79,22 @@ function TareaCard({ tarea, user }) {
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
+      const esActualizacion = entrega && entrega.estado === "borrador";
+
       const fd = new FormData();
-      fd.append("tareaId", tarea._id);
-      fd.append("padreId", user._id ?? user.id);
+      // updateEntregaValidator.js RECHAZA la petición si tareaId o padreId
+      // vienen en el body ("No puedes cambiar el padre/tarea de una
+      // entrega") — solo van en el create inicial, nunca al actualizar un
+      // borrador ya existente.
+      if (!esActualizacion) {
+        fd.append("tareaId", tarea._id);
+        fd.append("padreId", user._id ?? user.id);
+      }
       fd.append("textoRespuesta", texto);
       fd.append("estado", "borrador");
       archivos.forEach(f => fd.append("archivos", f));
 
-      if (entrega && entrega.estado === "borrador") {
+      if (esActualizacion) {
         await entregasUpdate(entrega._id, fd);
         notify("Borrador guardado");
       } else {
@@ -131,7 +137,7 @@ function TareaCard({ tarea, user }) {
     }}>
       <Toast msg={toast.msg} type={toast.type} />
 
-      {/* Header row */}
+      {/* Fila de encabezado */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
@@ -178,7 +184,7 @@ function TareaCard({ tarea, user }) {
         </div>
       </div>
 
-      {/* Expanded panel */}
+      {/* Panel expandido */}
       {open && (
         <div style={{ padding: "18px 20px" }}>
           {loadingE ? (
@@ -204,24 +210,44 @@ function TareaCard({ tarea, user }) {
               )}
 
               {/* Calificación */}
-              {entrega?.estado === "calificada" && (
-                <div style={{
-                  background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.2)",
-                  borderRadius: 12, padding: "14px 16px", marginBottom: 16,
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Star style={{ width: 16, height: 16, color: "#16A34A" }} />
-                    <p style={{ fontSize: 14, fontWeight: 700, color: "#16A34A", margin: 0 }}>
-                      Calificación: {entrega.nota ?? "—"} / 10
-                    </p>
+              {entrega?.estado === "calificada" && (() => {
+                const val = entrega.calificacion?.valoracion;
+                const valida = Number.isInteger(val) && val >= 1 && val <= 5;
+                return (
+                  <div style={{
+                    background: valida ? "rgba(22,163,74,0.08)" : "rgba(220,38,38,0.06)",
+                    border: `1px solid ${valida ? "rgba(22,163,74,0.2)" : "rgba(220,38,38,0.2)"}`,
+                    borderRadius: 12, padding: "14px 16px", marginBottom: 16,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: valida ? "var(--edu-green-600)" : "var(--color-error-hover)", margin: 0 }}>
+                        Calificación:
+                      </p>
+                      {valida ? (
+                        <>
+                          <div style={{ display: "inline-flex", gap: 3 }}>
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <Star key={n} style={{
+                                width: 18, height: 18,
+                                fill: n <= val ? "#F59E0B" : "none",
+                                color: n <= val ? "#F59E0B" : "#D1D5DB",
+                              }} />
+                            ))}
+                          </div>
+                          <span style={{ fontSize: 13, color: "var(--edu-green-600)", fontWeight: 700 }}>{val}/5</span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 13, color: "var(--color-error-hover)" }}>Nota inválida</span>
+                      )}
+                    </div>
+                    {valida && entrega.calificacion?.comentario && (
+                      <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: "8px 0 0" }}>
+                        {entrega.calificacion.comentario}
+                      </p>
+                    )}
                   </div>
-                  {entrega.comentarioDocente && (
-                    <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 8, margin: "8px 0 0" }}>
-                      {entrega.comentarioDocente}
-                    </p>
-                  )}
-                </div>
-              )}
+                );
+              })()}
 
               {/* Respuesta */}
               {canEdit && (
@@ -245,11 +271,11 @@ function TareaCard({ tarea, user }) {
                       outline: "none", resize: "vertical", fontFamily: "inherit",
                       boxSizing: "border-box",
                     }}
-                    onFocus={e => (e.target.style.borderColor = "#0C6AC4")}
+                    onFocus={e => (e.target.style.borderColor = "var(--color-primary)")}
                     onBlur={e => (e.target.style.borderColor = "var(--color-border)")}
                   />
 
-                  {/* File picker */}
+                  {/* Selector de archivos */}
                   <input
                     ref={fileRef} type="file" multiple style={{ display: "none" }}
                     onChange={e => setArchivos(prev => [...prev, ...Array.from(e.target.files)])}
@@ -263,8 +289,8 @@ function TareaCard({ tarea, user }) {
                       fontSize: 12.5, color: "var(--color-text-muted)", transition: "all 150ms",
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = "#0C6AC4";
-                      e.currentTarget.style.color = "#0C6AC4";
+                      e.currentTarget.style.borderColor = "var(--color-primary)";
+                      e.currentTarget.style.color = "var(--color-primary)";
                     }}
                     onMouseLeave={e => {
                       e.currentTarget.style.borderColor = "var(--color-border)";
@@ -275,7 +301,7 @@ function TareaCard({ tarea, user }) {
                     Adjuntar archivos {archivos.length > 0 && `(${archivos.length})`}
                   </button>
 
-                  {/* Files list */}
+                  {/* Lista de archivos */}
                   {archivos.length > 0 && (
                     <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {archivos.map((f, i) => (
@@ -292,7 +318,7 @@ function TareaCard({ tarea, user }) {
                             onClick={() => setArchivos(a => a.filter((_, j) => j !== i))}
                             style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}
                           >
-                            <X style={{ width: 11, height: 11, color: "#DC2626" }} />
+                            <X style={{ width: 11, height: 11, color: "var(--color-error-hover)" }} />
                           </button>
                         </div>
                       ))}
@@ -314,7 +340,7 @@ function TareaCard({ tarea, user }) {
                         style={{
                           display: "flex", alignItems: "center", gap: 5,
                           background: "rgba(12,106,196,0.08)", border: "1px solid rgba(12,106,196,0.2)",
-                          borderRadius: 6, padding: "5px 10px", fontSize: 12, color: "#0C6AC4",
+                          borderRadius: 6, padding: "5px 10px", fontSize: 12, color: "var(--color-primary)",
                           textDecoration: "none",
                         }}
                       >
@@ -338,7 +364,7 @@ function TareaCard({ tarea, user }) {
                 </div>
               )}
 
-              {/* Actions */}
+              {/* Acciones */}
               {canEdit && (
                 <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
                   <button
@@ -358,7 +384,7 @@ function TareaCard({ tarea, user }) {
                       onClick={handleSend} disabled={saving}
                       style={{
                         display: "flex", alignItems: "center", gap: 6,
-                        background: saving ? "var(--color-border)" : "#16A34A",
+                        background: saving ? "var(--color-border)" : "var(--edu-green-600)",
                         border: "none", borderRadius: 8, padding: "9px 16px",
                         fontSize: 13, fontWeight: 700, color: "white",
                         cursor: saving ? "not-allowed" : "pointer",
@@ -420,7 +446,7 @@ export default function FamiliaEntregasPage() {
 
   return (
     <div style={{ maxWidth: 860, margin: "0 auto" }}>
-      {/* Header */}
+      {/* Encabezado */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 11,
@@ -432,12 +458,12 @@ export default function FamiliaEntregasPage() {
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>Mis entregas</h1>
           <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 2 }}>
-            Gestiona las entregas de tus tareas
+            Gestiona las entregas de tus retos
           </p>
         </div>
       </div>
 
-      {/* Search */}
+      {/* Búsqueda */}
       <div style={{
         display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
         background: "var(--color-surface)", border: "1.5px solid var(--color-border)",
@@ -447,25 +473,25 @@ export default function FamiliaEntregasPage() {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar tarea…"
+          placeholder="Buscar reto…"
           style={{ border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: "var(--color-text)", flex: 1 }}
         />
       </div>
 
-      {/* Error state */}
+      {/* Estado de error */}
       {apiError && (
         <div style={{
           background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)",
           borderRadius: 14, padding: "40px 24px",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 10, textAlign: "center",
         }}>
-          <AlertCircle style={{ width: 32, height: 32, color: "#DC2626" }} />
+          <AlertCircle style={{ width: 32, height: 32, color: "var(--color-error-hover)" }} />
           <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>No se pudieron cargar las tareas</p>
-          <button onClick={loadTareas} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#0C6AC4", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 4 }}>Reintentar</button>
+          <button onClick={loadTareas} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "var(--color-primary)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 4 }}>Reintentar</button>
         </div>
       )}
 
-      {/* Task list */}
+      {/* Lista de tareas */}
       {!apiError && (loading ? (
         [0,1,2,3].map(i => (
           <div key={i} style={{
@@ -489,7 +515,7 @@ export default function FamiliaEntregasPage() {
         }}>
           <AlertCircle style={{ width: 36, height: 36, color: "var(--color-text-muted)" }} />
           <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-muted)", margin: 0 }}>
-            No hay tareas disponibles
+            No hay retos disponibles
           </p>
         </div>
       ) : (

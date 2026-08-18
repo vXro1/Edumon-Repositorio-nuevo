@@ -1,4 +1,6 @@
 // src/features/cursos/components/shared/ui.jsx
+import { useState } from "react";
+import { Star } from "lucide-react";
 import { Button } from "@/components";
 
 export function Sk({ h = 16, w = "100%", r = 8 }) {
@@ -135,3 +137,80 @@ export const ESTADO_VARIANT = {
   tarde:      "warning",
   calificada: "success",
 };
+
+// ── Calificación de entregas: el backend valora entregas de 1 a 5 estrellas
+// (calificarEntregaValidator.js), no con una nota numérica. Un solo par de
+// componentes de estrellas usado en todas las pantallas de entregas
+// (EntregasTab, CalificarEntrega, EntregasPage) evita que cada una invente
+// su propia variante visual/de datos.
+
+// Estrellas de solo lectura — para mostrar una valoración ya guardada.
+export function StarRating({ value, size = 14, showLabel = false }) {
+  const n = Number.isInteger(value) ? value : 0;
+  if (n < 1) {
+    return (
+      <span style={{ fontSize: 11, color: "var(--color-text-muted)", fontStyle: "italic" }}>
+        Sin valoración
+      </span>
+    );
+  }
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          style={{
+            width: size, height: size,
+            fill: i <= n ? "#F59E0B" : "none",
+            color: i <= n ? "#F59E0B" : "var(--color-border)",
+          }}
+        />
+      ))}
+      {showLabel && (
+        <span style={{ fontSize: 12, color: "var(--color-text-muted)", marginLeft: 4 }}>
+          {n}/5
+        </span>
+      )}
+    </span>
+  );
+}
+
+// Estrellas interactivas — para elegir una valoración al calificar.
+export function StarRatingInput({ value, onChange, size = 26 }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      {[1, 2, 3, 4, 5].map((n) => {
+        const filled = n <= (hover || value);
+        return (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            onMouseEnter={() => setHover(n)}
+            onMouseLeave={() => setHover(0)}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              padding: 2, display: "flex", alignItems: "center",
+            }}
+            aria-label={`${n} estrella${n > 1 ? "s" : ""}`}
+          >
+            <Star
+              style={{
+                width: size, height: size,
+                fill: filled ? "#F59E0B" : "none",
+                color: filled ? "#F59E0B" : "var(--color-border)",
+                transition: "all 120ms",
+              }}
+            />
+          </button>
+        );
+      })}
+      {value > 0 && (
+        <span style={{ fontSize: 13, color: "var(--color-text-muted)", marginLeft: 4 }}>
+          {value} de 5
+        </span>
+      )}
+    </div>
+  );
+}

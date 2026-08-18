@@ -1,7 +1,8 @@
 // src/features/foros/components/ForumActivity.jsx
-// Right panel: participants, stats, and recent file attachments.
+// Panel derecho: participantes, estadísticas, materiales de apoyo del foro y
+// archivos adjuntos recientes de los mensajes.
 import { useState } from 'react';
-import { Users, BarChart2, Paperclip, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, BarChart2, Paperclip, FileText, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 
 const timeAgo = (iso) => {
   if (!iso) return '';
@@ -17,7 +18,7 @@ const timeAgo = (iso) => {
 };
 
 const ROL_COLOR = {
-  docente:       '#6d28d9',
+  docente:       '#0392B4',
   estudiante:    '#1d4ed8',
   padre:         '#047857',
   'padre/tutor': '#047857',
@@ -79,7 +80,7 @@ const Section = ({ title, icon: Icon, children, defaultOpen = true }) => {
 };
 
 const ForumActivity = ({ foro, mensajes = [] }) => {
-  // Derive participants from messages (unique authors)
+  // Obtener participantes a partir de los mensajes (autores únicos)
   const participantMap = new Map();
   mensajes.forEach(m => {
     if (m.autor?._id && !participantMap.has(m.autor._id)) {
@@ -93,7 +94,7 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
   });
   const participants = Array.from(participantMap.values());
 
-  // Collect all files from messages
+  // Recopilar todos los archivos de los mensajes
   const allFiles = [];
   mensajes.forEach(m => {
     (m.archivos ?? []).forEach(a => allFiles.push({ ...a, autor: m.autor, createdAt: m.createdAt }));
@@ -113,7 +114,7 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
       boxSizing:  'border-box',
     }}>
 
-      {/* Stats section */}
+      {/* Sección de estadísticas */}
       <Section title="Estadísticas" icon={BarChart2}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {[
@@ -146,11 +147,11 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
             display:      'inline-flex', alignItems: 'center', gap: 5,
             padding:      '3px 10px', borderRadius: 9999, fontSize: 11.5, fontWeight: 700,
             background:   foro?.estado === 'cerrado' ? '#fee2e2' : '#d1fae5',
-            color:        foro?.estado === 'cerrado' ? '#dc2626' : '#059669',
+            color:        foro?.estado === 'cerrado' ? 'var(--color-error-hover)' : '#059669',
           }}>
             <span style={{
               width: 6, height: 6, borderRadius: '50%',
-              background: foro?.estado === 'cerrado' ? '#dc2626' : '#10b981',
+              background: foro?.estado === 'cerrado' ? 'var(--color-error-hover)' : '#10b981',
               display: 'inline-block',
             }} />
             {foro?.estado === 'cerrado' ? 'Cerrado' : 'Abierto'}
@@ -161,9 +162,62 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
             </span>
           )}
         </div>
+
+        {/* Creador del foro — el backend siempre lo popula (docenteId), pero
+            antes normalizeForo lo descartaba, así que nunca se mostraba quién
+            abrió el foro. */}
+        {foro?.creador && (
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <MiniAvatar autor={foro.creador} />
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-text-muted)' }}>
+                Creado por
+              </p>
+              <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {foro.creador.nombre} {foro.creador.apellido}
+              </p>
+            </div>
+          </div>
+        )}
       </Section>
 
-      {/* Participants section */}
+      {/* Materiales de apoyo — archivos que el docente adjuntó al CREAR el
+          foro (Foro.archivos), distintos de los archivos sueltos que
+          cualquiera adjunta en un mensaje (sección "Archivos" más abajo). */}
+      {foro?.archivos?.length > 0 && (
+        <Section title="Materiales de apoyo" icon={BookOpen}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {foro.archivos.map((f, i) => (
+              <a key={f._id ?? i} href={f.url} target="_blank" rel="noreferrer"
+                style={{
+                  display:        'flex',
+                  alignItems:     'center',
+                  gap:            8,
+                  padding:        '7px 9px',
+                  borderRadius:   8,
+                  background:     'rgba(12,106,196,0.06)',
+                  border:         '1px solid rgba(12,106,196,0.18)',
+                  textDecoration: 'none',
+                  color:          'var(--color-text)',
+                  transition:     'background 0.15s',
+                  fontSize:       12.5,
+                  fontWeight:     600,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,106,196,0.12)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(12,106,196,0.06)'}
+              >
+                <FileText size={14} style={{ flexShrink: 0, color: 'var(--color-primary)' }} />
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {f.nombre ?? 'Material'}
+                </span>
+              </a>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Sección de participantes */}
       {participants.length > 0 && (
         <Section title="Participantes" icon={Users}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -192,7 +246,7 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
         </Section>
       )}
 
-      {/* Files section */}
+      {/* Sección de archivos */}
       {recentFiles.length > 0 && (
         <Section title="Archivos" icon={Paperclip} defaultOpen={false}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

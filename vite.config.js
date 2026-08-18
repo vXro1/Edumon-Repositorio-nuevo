@@ -28,9 +28,9 @@ export default defineConfig({
             if (id.includes('react')) return 'vendor.react';
             return 'vendor';
           }
-          if (id.includes('src/features/cursos')) return 'feature.cursos';
+          // cursos + foros comparten contexto (CursoContext, ForosTab) — un solo chunk evita el ciclo
+          if (id.includes('src/features/cursos') || id.includes('src/features/foros')) return 'feature.cursos';
           if (id.includes('src/features/tareas')) return 'feature.tareas';
-          if (id.includes('src/features/foros')) return 'feature.foros';
         }
       }
     }

@@ -7,13 +7,13 @@ import {
   Globe, EyeOff,
 } from "lucide-react";
 
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
 import {
-  cursosGetMine,
   forosGetByCurso,
   forosCreate,
   forosCambiarEstado,
   forosDelete,
-} from "@/lib/apiClient";
+} from "@/features/foros/services/forosService";
 
 import { Modal, Toast, Button } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
@@ -35,7 +35,7 @@ function FieldGroup({ label, children }) {
 
 function StyledInput({ value, onChange, placeholder, type = "text", required, as: As = "input", rows }) {
   const [f, setF] = useState(false);
-  const props = { value, onChange, placeholder, required, onFocus: () => setF(true), onBlur: () => setF(false), style: { width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "#0C6AC4" : "var(--color-border)"}`, outline: "none", background: "var(--color-surface)", color: "var(--color-text)", boxShadow: f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none", transition: "border-color 150ms, box-shadow 150ms", resize: As === "textarea" ? "vertical" : undefined } };
+  const props = { value, onChange, placeholder, required, onFocus: () => setF(true), onBlur: () => setF(false), style: { width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "var(--color-primary)" : "var(--color-border)"}`, outline: "none", background: "var(--color-surface)", color: "var(--color-text)", boxShadow: f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none", transition: "border-color 150ms, box-shadow 150ms", resize: As === "textarea" ? "vertical" : undefined } };
   return As === "textarea" ? <textarea {...props} rows={rows ?? 3} /> : <input type={type} {...props} />;
 }
 
@@ -143,7 +143,7 @@ export default function ForosPage() {
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       <Toast msg={toast.msg} type={toast.type} />
 
-      {/* ── Header ─────────────────────────────────────────────── */}
+      {/* ── Cabecera ─────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -155,12 +155,12 @@ export default function ForosPage() {
           <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>{foros.length} foro{foros.length !== 1 ? "s" : ""} en este curso</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          {/* Botón solo ícono → IconBtn */}
+          {/* Solo ícono → IconBtn */}
           <IconBtn color="var(--color-text-muted)" onClick={load} title="Actualizar">
             <RefreshCw style={{ width: 15, height: 15 }} />
           </IconBtn>
 
-          {/* Botón de acción con texto → Button primary */}
+          {/* Botón de acción con texto → Button primario */}
           <Button
             variant="primary"
             onClick={() => { setForm(INIT_FORM); setArchivos([]); setShowCreate(true); }}
@@ -171,7 +171,7 @@ export default function ForosPage() {
         </div>
       </div>
 
-      {/* ── Course selector ────────────────────────────────────── */}
+      {/* ── Selector de curso ────────────────────────────────────── */}
       <div style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
         <BookOpen style={{ width: 15, height: 15, color: "var(--color-text-muted)", flexShrink: 0 }} />
         <select value={cursoSel} onChange={e => setCursoSel(e.target.value)} style={{ flex: 1, border: "none", outline: "none", fontSize: 13.5, color: "var(--color-text)", background: "transparent", cursor: "pointer", fontWeight: 500 }}>
@@ -180,7 +180,7 @@ export default function ForosPage() {
         </select>
       </div>
 
-      {/* ── Forum list ─────────────────────────────────────────── */}
+      {/* ── Lista de foros ─────────────────────────────────────────── */}
       {!cursoSel ? (
         <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", padding: "60px 24px", textAlign: "center" }}>
           <MessageCircle style={{ width: 36, height: 36, color: "var(--color-text-muted)", margin: "0 auto 12px" }} />
@@ -210,7 +210,7 @@ export default function ForosPage() {
         </div>
       )}
 
-      {/* ══ CREATE MODAL ═══════════════════════════════════════ */}
+      {/* ══ MODAL DE CREACIÓN ═══════════════════════════════════════ */}
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Nuevo foro" description={`Curso: ${selectedCurso?.nombre ?? ""}`} size="md">
         <form onSubmit={handleCreate}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -226,7 +226,7 @@ export default function ForosPage() {
                 type="checkbox"
                 checked={form.publico}
                 onChange={e => setForm(p => ({ ...p, publico: e.target.checked }))}
-                style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#0C6AC4" }}
+                style={{ width: 16, height: 16, cursor: "pointer", accentColor: "var(--color-primary)" }}
               />
               <label htmlFor="publico-toggle" style={{ fontSize: 13.5, color: "var(--color-text)", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 <Globe style={{ width: 14, height: 14, color: "var(--color-text-muted)" }} />
@@ -246,7 +246,7 @@ export default function ForosPage() {
               Cancelar
             </Button>
 
-            {/* Submit con spinner → Button primary */}
+            {/* Enviar con spinner → Button primario */}
             <Button type="submit" variant="primary" disabled={saving}>
               {saving && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
               Crear foro
@@ -255,7 +255,7 @@ export default function ForosPage() {
         </form>
       </Modal>
 
-      {/* ══ DELETE CONFIRM ══════════════════════════════════════ */}
+      {/* ══ CONFIRMACIÓN DE ELIMINACIÓN ══════════════════════════════════════ */}
       <Modal isOpen={showDelete} onClose={() => setShowDelete(false)} title="Eliminar foro" size="sm">
         <p style={{ fontSize: 13.5, color: "var(--color-text-secondary)", marginBottom: 20 }}>
           Se eliminarán permanentemente el foro y todos sus mensajes. ¿Continuar?
@@ -266,7 +266,7 @@ export default function ForosPage() {
             Cancelar
           </Button>
 
-          {/* Eliminar con spinner → Button danger */}
+          {/* Eliminar con spinner → Button de peligro */}
           <Button variant="danger" onClick={handleDelete} disabled={deleting}>
             {deleting && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
             Eliminar
@@ -278,7 +278,7 @@ export default function ForosPage() {
 }
 
 function ForoCard({ foro, onOpen, onToggle, onDelete }) {
-  // useState(hov) se mantiene porque controla estilos del <div> contenedor, no de un botón
+  // useState(hov) se mantiene porque controla los estilos del <div> contenedor, no de un botón
   const [hov, setHov] = useState(false);
   const abierto = foro.estado === "abierto";
 
@@ -295,11 +295,11 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <p style={{ fontSize: 14.5, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{foro.titulo}</p>
-          <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: abierto ? "rgba(22,163,74,0.10)" : "rgba(148,163,184,0.15)", color: abierto ? "#16A34A" : "#64748B" }}>
+          <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: abierto ? "rgba(22,163,74,0.10)" : "rgba(148,163,184,0.15)", color: abierto ? "var(--edu-green-600)" : "#64748B" }}>
             {abierto ? "Abierto" : "Cerrado"}
           </span>
           {foro.publico !== false && (
-            <span style={{ padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700, background: "rgba(12,106,196,0.08)", color: "#0C6AC4", display: "flex", alignItems: "center", gap: 3 }}>
+            <span style={{ padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700, background: "rgba(12,106,196,0.08)", color: "var(--color-primary)", display: "flex", alignItems: "center", gap: 3 }}>
               <Globe style={{ width: 9, height: 9 }} /> Público
             </span>
           )}
@@ -312,7 +312,7 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        {/* Toggle estado → Button outline sm (texto + ícono, variante fija) */}
+        {/* Alternar estado → Button outline sm (texto + ícono, variante fija) */}
         <Button variant="outline" size="sm" onClick={onToggle} title={abierto ? "Cerrar foro" : "Abrir foro"}>
           {abierto ? <Lock style={{ width: 12, height: 12 }} /> : <Unlock style={{ width: 12, height: 12 }} />}
           {abierto ? "Cerrar" : "Abrir"}
@@ -323,8 +323,8 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
           Ver foro <ChevronRight style={{ width: 13, height: 13 }} />
         </Button>
 
-        {/* Solo ícono Trash → IconBtn */}
-        <IconBtn color="#DC2626" onClick={onDelete} title="Eliminar">
+        {/* Solo ícono papelera → IconBtn */}
+        <IconBtn color="var(--color-error-hover)" onClick={onDelete} title="Eliminar">
           <Trash2 style={{ width: 13, height: 13 }} />
         </IconBtn>
       </div>

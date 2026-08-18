@@ -1,6 +1,6 @@
 // src/features/cursos/components/entregas/RealizarEntrega.jsx
 import { useState } from "react";
-import { entregasCreate, entregasEnviar } from "@/lib/apiClient";
+import { entregasCreate, entregasEnviar } from "@/features/entregas/services/entregasService";
 import { useAuthContext } from "@/features/auth/context/AuthContext";
 import { Button, FileUpload, Toast } from "@/components";
 import { Field, StTextarea } from "../shared/ui";
@@ -82,8 +82,7 @@ export default function RealizarEntrega({ tarea, onSuccess, onCancel }) {
         />
       </Field>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10,
-        paddingTop: 10, borderTop: "1px solid var(--color-border)" }}>
+      <div className="modal-form-footer">
         <Button variant="ghost" type="button" onClick={onCancel} disabled={saving}>Cancelar</Button>
         <Button variant="secondary" type="button" onClick={handleDraft} disabled={saving}>
           {saving ? "Guardando..." : "Guardar borrador"}

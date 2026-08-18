@@ -4,6 +4,7 @@ import AppRoutes from "./routes/AppRoutes";
 import { AuthProvider } from "./features/auth/context/AuthContext";
 import { SearchProvider } from "./context/SearchContext";
 import { ToastProvider } from "./context/ToastContext";
+import { BreadcrumbProvider } from "./context/BreadcrumbContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,7 +22,9 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <SearchProvider>
-            <AppRoutes />
+            <BreadcrumbProvider>
+              <AppRoutes />
+            </BreadcrumbProvider>
           </SearchProvider>
         </AuthProvider>
       </ToastProvider>

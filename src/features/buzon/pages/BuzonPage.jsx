@@ -1,13 +1,14 @@
 // src/features/buzon/pages/BuzonPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import {
-  Mail, MailOpen, Inbox, RefreshCw, X, Building2,
+  Mail, MailOpen, Inbox, RefreshCw, Building2,
   Phone, AtSign, MessageSquare, Clock, CheckCheck,
 } from "lucide-react";
-import { buzonGetAll, buzonMarcarLeido } from "@/lib/apiClient";
+import { AppModal, Button } from "@/components";
+import { buzonGetAll, buzonMarcarLeido } from "@/features/buzon/services/buzonService";
 import { normalizePhone } from "@/utils/normalizePhone";
 
-/* ── Helpers ─────────────────────────────────────────────────── */
+/* ── Funciones auxiliares ────────────────────────────────────── */
 function formatDate(raw) {
   if (!raw) return "—";
   const d = new Date(raw);
@@ -28,130 +29,66 @@ function Skeleton({ h = 16, w = "100%", r = 6 }) {
 
 /* ── Modal de detalle ────────────────────────────────────────── */
 function MensajeModal({ msg, onClose, onMarcarLeido, marking }) {
-  if (!msg) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="buzon-modal-title"
-      style={{
-        position: "fixed", inset: 0, zIndex: 1000,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
-        background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div style={{
-        background: "var(--color-surface)",
-        border: "1px solid var(--color-border)",
-        borderRadius: 20, padding: "1.75rem",
-        width: "100%", maxWidth: 520,
-        boxShadow: "var(--shadow-lg, 0 24px 60px rgba(0,0,0,0.18))",
-        display: "flex", flexDirection: "column", gap: "1.25rem",
-        maxHeight: "90vh", overflowY: "auto",
-      }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+    <AppModal isOpen={!!msg} onClose={onClose} size="sm">
+      <AppModal.Header
+        title={msg?.nombre ?? ""}
+        description={msg ? formatDate(msg.createdAt) : ""}
+        onClose={onClose}
+      />
+      <AppModal.Body>
+        {msg && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+            {/* Datos de contacto */}
             <div style={{
-              width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-              background: msg.leido ? "rgba(100,116,139,0.1)" : "rgba(12,106,196,0.12)",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "var(--color-bg)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 12, padding: "1rem",
+              display: "flex", flexDirection: "column", gap: "0.65rem",
             }}>
-              {msg.leido
-                ? <MailOpen size={20} style={{ color: "var(--color-text-muted)" }} />
-                : <Mail size={20} style={{ color: "#0C6AC4" }} />
-              }
+              <Row icon={<AtSign size={14} />}      label="Correo"      value={msg.correo} />
+              <Row icon={<Phone size={14} />}        label="Teléfono"    value={normalizePhone(msg.telefono) ?? msg.telefono ?? "—"} />
+              {msg.institucion && (
+                <Row icon={<Building2 size={14} />} label="Institución" value={msg.institucion} />
+              )}
             </div>
+
+            {/* Mensaje */}
             <div>
-              <h2 id="buzon-modal-title" style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--color-text)" }}>
-                {msg.nombre}
-              </h2>
-              <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--color-text-muted)" }}>
-                {formatDate(msg.createdAt)}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: "0.5rem" }}>
+                <MessageSquare size={14} style={{ color: "var(--color-text-muted)" }} />
+                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Mensaje
+                </span>
+              </div>
+              <p style={{
+                margin: 0, fontSize: "0.9rem", lineHeight: 1.7,
+                color: "var(--color-text)",
+                background: "var(--color-bg)",
+                border: "1px solid var(--color-border)",
+                borderRadius: 12, padding: "0.875rem",
+                whiteSpace: "pre-wrap",
+              }}>
+                {msg.mensaje}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none", border: "none", cursor: "pointer", padding: 4,
-              color: "var(--color-text-muted)", borderRadius: 8, flexShrink: 0,
-            }}
+        )}
+      </AppModal.Body>
+      <AppModal.Footer>
+        <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+        {msg && !msg.leido && (
+          <Button
+            disabled={marking}
+            onClick={() => onMarcarLeido(msg._id)}
+            leftIcon={<CheckCheck size={15} />}
           >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Datos de contacto */}
-        <div style={{
-          background: "var(--color-bg)",
-          border: "1px solid var(--color-border)",
-          borderRadius: 12, padding: "1rem",
-          display: "flex", flexDirection: "column", gap: "0.65rem",
-        }}>
-          <Row icon={<AtSign size={14} />}      label="Correo"       value={msg.correo} />
-          <Row icon={<Phone size={14} />}        label="Teléfono"     value={normalizePhone(msg.telefono) ?? msg.telefono ?? "—"} />
-          {msg.institucion && (
-            <Row icon={<Building2 size={14} />} label="Institución"  value={msg.institucion} />
-          )}
-        </div>
-
-        {/* Mensaje */}
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: "0.5rem" }}>
-            <MessageSquare size={14} style={{ color: "var(--color-text-muted)" }} />
-            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Mensaje
-            </span>
-          </div>
-          <p style={{
-            margin: 0, fontSize: "0.9rem", lineHeight: 1.7,
-            color: "var(--color-text)",
-            background: "var(--color-bg)",
-            border: "1px solid var(--color-border)",
-            borderRadius: 12, padding: "0.875rem",
-            whiteSpace: "pre-wrap",
-          }}>
-            {msg.mensaje}
-          </p>
-        </div>
-
-        {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: "0.55rem 1.25rem", borderRadius: 10,
-              border: "1.5px solid var(--color-border)",
-              background: "var(--color-surface)", color: "var(--color-text-muted)",
-              fontWeight: 600, fontSize: "0.875rem", cursor: "pointer",
-            }}
-          >
-            Cerrar
-          </button>
-          {!msg.leido && (
-            <button
-              onClick={() => onMarcarLeido(msg._id)}
-              disabled={marking}
-              style={{
-                padding: "0.55rem 1.25rem", borderRadius: 10, border: "none",
-                background: "#0C6AC4", color: "#fff",
-                fontWeight: 700, fontSize: "0.875rem",
-                cursor: marking ? "wait" : "pointer",
-                opacity: marking ? 0.6 : 1,
-                display: "flex", alignItems: "center", gap: 6,
-              }}
-            >
-              <CheckCheck size={15} />
-              Marcar leído
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+            {marking ? "Marcando…" : "Marcar leído"}
+          </Button>
+        )}
+      </AppModal.Footer>
+    </AppModal>
   );
 }
 
@@ -172,10 +109,10 @@ function MensajeRow({ msg, onClick }) {
       onClick={() => onClick(msg)}
       style={{
         display: "flex", alignItems: "flex-start", gap: 14,
-        padding: "14px 18px", borderBottom: "1px solid var(--color-border)",
+        padding: "14px 18px",
         background: msg.leido ? "transparent" : "rgba(12,106,196,0.04)",
-        width: "100%", border: "none", textAlign: "left", cursor: "pointer",
-        borderBottom: "1px solid var(--color-border)",
+        width: "100%", border: "none", borderBottom: "1px solid var(--color-border)",
+        textAlign: "left", cursor: "pointer",
         transition: "background 150ms",
       }}
       onMouseEnter={e => { e.currentTarget.style.background = "var(--color-bg)"; }}
@@ -190,7 +127,7 @@ function MensajeRow({ msg, onClick }) {
       }}>
         {msg.leido
           ? <MailOpen size={17} style={{ color: "var(--color-text-muted)" }} />
-          : <Mail size={17} style={{ color: "#0C6AC4" }} />
+          : <Mail size={17} style={{ color: "var(--color-primary)" }} />
         }
       </div>
 
@@ -206,7 +143,7 @@ function MensajeRow({ msg, onClick }) {
           {!msg.leido && (
             <span style={{
               fontSize: 10, fontWeight: 800, padding: "1px 8px", borderRadius: 99,
-              background: "rgba(12,106,196,0.12)", color: "#0C6AC4",
+              background: "rgba(12,106,196,0.12)", color: "var(--color-primary)",
             }}>
               Nuevo
             </span>
@@ -294,7 +231,7 @@ export default function BuzonPage() {
             background: "rgba(12,106,196,0.1)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <Inbox size={22} style={{ color: "#0C6AC4" }} />
+            <Inbox size={22} style={{ color: "var(--color-primary)" }} />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--color-text)" }}>
@@ -334,9 +271,9 @@ export default function BuzonPage() {
             style={{
               padding: "0.4rem 1rem", borderRadius: 99, fontSize: "0.8rem", fontWeight: 600,
               cursor: "pointer", border: "1.5px solid",
-              borderColor: filtro === key ? "#0C6AC4" : "var(--color-border)",
+              borderColor: filtro === key ? "var(--color-primary)" : "var(--color-border)",
               background: filtro === key ? "rgba(12,106,196,0.1)" : "var(--color-surface)",
-              color: filtro === key ? "#0C6AC4" : "var(--color-text-muted)",
+              color: filtro === key ? "var(--color-primary)" : "var(--color-text-muted)",
             }}
           >
             {label}
@@ -383,14 +320,12 @@ export default function BuzonPage() {
       </div>
 
       {/* ── Modal de detalle ── */}
-      {selected && (
-        <MensajeModal
-          msg={selected}
-          onClose={() => setSelected(null)}
-          onMarcarLeido={handleMarcarLeido}
-          marking={marking}
-        />
-      )}
+      <MensajeModal
+        msg={selected}
+        onClose={() => setSelected(null)}
+        onMarcarLeido={handleMarcarLeido}
+        marking={marking}
+      />
     </div>
   );
 }

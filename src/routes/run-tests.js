@@ -1,15 +1,15 @@
-// simple test runner for Node (no deps)
+// ejecutor de pruebas simple para Node (sin dependencias)
 const assert = require('assert');
 
 
 const { getPermissionsForRole } = require('../security/roleMatrix');
 
-// Test admin has all permissions
+// Verifica que el admin tiene todos los permisos
 const adminPerms = getPermissionsForRole('admin');
 assert(adminPerms.includes('MANAGE_USERS'));
 assert(adminPerms.includes('VIEW_REPORTS'));
 
-// Test padre role
+// Verifica el rol padre
 const padrePerms = getPermissionsForRole('padre');
 assert(padrePerms.includes('VIEW_COURSES'));
 

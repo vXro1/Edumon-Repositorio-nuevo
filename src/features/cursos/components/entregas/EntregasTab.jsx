@@ -1,10 +1,22 @@
 // src/features/cursos/components/entregas/EntregasTab.jsx
 import { useState, useEffect, useCallback } from "react";
-import { entregasGetByTarea, entregasGetMineByTarea, entregasEnviar } from "@/lib/apiClient";
+import { entregasGetByTarea, entregasGetMineByTarea, entregasEnviar } from "@/features/entregas/services/entregasService";
 import { Badge, Button, UserAvatar, Toast } from "@/components";
-import { Sk, ESTADO_VARIANT } from "../shared/ui";
+import { Sk, ESTADO_VARIANT, StarRating } from "../shared/ui";
 import { makeNotify } from "../shared/helpers";
 import { Plus } from "lucide-react";
+
+/* El backend puede devolver la valoración como string ("3") o float (3.0).
+   Normalizamos antes de validar para evitar falsos "inválida". */
+const normalizeValoracion = (v) => {
+  if (v === null || v === undefined) return null;
+  const n = typeof v === "string" ? parseInt(v, 10) : Math.round(Number(v));
+  return isNaN(n) ? null : n;
+};
+const isValidValoracion = (v) => {
+  const n = normalizeValoracion(v);
+  return n !== null && n >= 1 && n <= 5;
+};
 
 export default function EntregasTab({ tarea, canGrade, esPadre, onGrade, onBack, onRealizarEntrega }) {
   const [entregas, setEntregas] = useState([]);
@@ -47,13 +59,12 @@ export default function EntregasTab({ tarea, canGrade, esPadre, onGrade, onBack,
   };
 
   const listaSegura = Array.isArray(entregas) ? entregas : [];
-  const puedeNuevaEntrega = esPadre && !listaSegura.some((e) => e.estado !== "borrador");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <Toast {...toast} />
 
-      {/* Stats (docente) */}
+      {/* Estadísticas (docente) */}
       {stats && (
         <div style={{ padding: "12px 16px", background: "var(--color-bg)", borderRadius: 9,
           border: "1px solid var(--color-border)", display: "flex", gap: 16, fontSize: 12,
@@ -105,11 +116,14 @@ export default function EntregasTab({ tarea, canGrade, esPadre, onGrade, onBack,
                       </p>
                     )}
                     {ent.calificacion && (
-                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--color-success)",
-                        fontWeight: 600 }}>
-                        Nota: {ent.calificacion.nota}
-                        {ent.calificacion.comentario && ` — ${ent.calificacion.comentario}`}
-                      </p>
+                      <div style={{ margin: "4px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
+                        <StarRating value={normalizeValoracion(ent.calificacion.valoracion)} size={12} />
+                        {isValidValoracion(normalizeValoracion(ent.calificacion.valoracion)) && ent.calificacion.comentario && (
+                          <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                            — {ent.calificacion.comentario}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                   <Badge variant={ESTADO_VARIANT?.[ent.estado] ?? "neutral"} styleType="soft" size="sm">
@@ -130,14 +144,6 @@ export default function EntregasTab({ tarea, canGrade, esPadre, onGrade, onBack,
                 </div>
               );
             })}
-
-            {/* Botón nueva entrega si no hay ninguna enviada/calificada */}
-            {puedeNuevaEntrega && onRealizarEntrega && (
-              <Button size="sm" variant="ghost" onClick={onRealizarEntrega}
-                style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 6 }}>
-                <Plus style={{ width: 13, height: 13 }} /> Nueva entrega
-              </Button>
-            )}
           </>
         )}
       </div>

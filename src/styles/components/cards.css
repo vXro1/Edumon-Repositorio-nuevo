@@ -23,7 +23,7 @@
 }
 .card-interactive:active { transform: translateY(0); }
 
-/* ── Anatomy ─────────────────────────────────────────────────── */
+/* ── Anatomía ─────────────────────────────────────────────────── */
 .card-cover {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -62,7 +62,7 @@
   margin: 0 var(--space-5);
 }
 
-/* ── Title / Description ─────────────────────────────────────── */
+/* ── Título / Descripción ─────────────────────────────────────── */
 .card-title {
   font-family: var(--font-display);
   font-size: var(--text-lg);
@@ -81,7 +81,7 @@
   margin: 0;
 }
 
-/* ── Variants ────────────────────────────────────────────────── */
+/* ── Variantes ────────────────────────────────────────────────── */
 .card-flat {
   border-color: transparent;
   box-shadow: none;
@@ -106,7 +106,7 @@
 
 .card-brand {
   background: var(--gradient-card);
-  border-color: rgba(140, 56, 240, 0.18);
+  border-color: var(--color-border-brand);
 }
 
 .card-primary {
@@ -147,7 +147,7 @@
 .card-glass-dark .card-description { color: #fff; }
 .card-glass-dark .card-description { opacity: 0.70; }
 
-/* ── Stat card ───────────────────────────────────────────────── */
+/* ── Tarjeta de estadística ───────────────────────────────────────────────── */
 .card-stat {
   display: flex;
   flex-direction: column;
@@ -197,7 +197,7 @@
 .card-stat-trend-up   { color: var(--color-success); }
 .card-stat-trend-down { color: var(--color-error); }
 
-/* ── Course card — Soft UI/Claymorphism ──────────────────────── */
+/* ── Tarjeta de curso — Soft UI/Claymorphism ──────────────────────── */
 .card-course { display: flex; flex-direction: column; }
 
 .card-course .card-meta {
@@ -228,7 +228,7 @@
   transition: width var(--transition-slow);
 }
 
-/* ── CursoCard (feature component) ──────────────────────────── */
+/* ── CursoCard (componente principal) ──────────────────────────── */
 .curso-card {
   background: var(--color-surface);
   border-radius: var(--radius-xl);
@@ -264,7 +264,7 @@
 }
 
 .curso-card__cover {
-  height: 96px;
+  height: 76px;
   overflow: hidden;
   background: var(--cc-bg, var(--color-surface-2));
   display: flex;
@@ -352,7 +352,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-/* ── Horizontal card ─────────────────────────────────────────── */
+/* ── Tarjeta horizontal ─────────────────────────────────────────── */
 .card-horizontal {
   display: flex;
   align-items: stretch;
@@ -369,6 +369,6 @@
   padding: var(--space-4);
 }
 
-/* ── Radius overrides ────────────────────────────────────────── */
+/* ── Ajustes de radio de borde ────────────────────────────────────────── */
 .card-sm { border-radius: var(--radius-lg); }
 .card-lg { border-radius: var(--radius-2xl); }

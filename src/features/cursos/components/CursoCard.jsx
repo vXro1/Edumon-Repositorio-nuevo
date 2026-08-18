@@ -1,4 +1,5 @@
 // src/features/cursos/components/CursoCard.jsx
+import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookOpen, ClipboardList, CheckSquare,
@@ -6,23 +7,14 @@ import {
 } from "lucide-react";
 import { getCourseActionsByRole, getCourseMainPath } from "../utils/courseActions";
 import { Button } from "@/components";
+import letrasImg from "@/assets/img/letras.svg"; // fallback para cursos sin portada
 
-/* ── Design-system palette (maps to CSS tokens) ─────────────────── */
-const PALETTE = [
-  { bg: "var(--edu-purple-50)", border: "var(--edu-purple-200)", strip: "var(--edu-purple-500)", color: "var(--edu-purple-700)" },
-  { bg: "var(--edu-cyan-50)",   border: "var(--edu-cyan-200)",   strip: "var(--edu-cyan-500)",   color: "var(--edu-cyan-700)" },
-  { bg: "var(--edu-green-50)",  border: "var(--edu-green-200)",  strip: "var(--edu-green-500)",  color: "var(--edu-green-700)" },
-  { bg: "var(--edu-yellow-50)", border: "var(--edu-yellow-200)", strip: "var(--edu-yellow-500)", color: "var(--edu-yellow-700)" },
-  { bg: "var(--edu-pink-50)",   border: "var(--edu-pink-200)",   strip: "var(--edu-pink-400)",   color: "var(--edu-pink-700)" },
-  { bg: "var(--edu-purple-100)", border: "var(--edu-purple-300)", strip: "var(--edu-purple-600)", color: "var(--edu-purple-800)" },
-  { bg: "var(--edu-cyan-100)",  border: "var(--edu-cyan-300)",  strip: "var(--edu-cyan-600)",   color: "var(--edu-cyan-800)" },
-  { bg: "var(--edu-green-100)", border: "var(--edu-green-300)", strip: "var(--edu-green-600)",  color: "var(--edu-green-800)" },
-];
-const palette = (i) => PALETTE[i % PALETTE.length];
+const HEX_RE = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+const DEFAULT_COLOR = "var(--color-primary)"; // mismo fallback usado en CursosPage / CursoContext
 
 const ICON_MAP = { BookOpen, ClipboardList, CheckSquare, TrendingUp, Users };
 
-/* ── Quick action button ───────────────────────────────────────── */
+/* ── Botón de acción rápida ─────────────────────────────────────── */
 function ActionBtn({ action, onNavigate }) {
   const Icon = ICON_MAP[action.icon] ?? BookOpen;
   const variantMap = { primary: "primary", outline: "outline-neutral", ghost: "ghost" };
@@ -39,20 +31,24 @@ function ActionBtn({ action, onNavigate }) {
   );
 }
 
-/* ── CursoCard ─────────────────────────────────────────────────── */
-export default function CursoCard({
+/* ── CursoCard ──────────────────────────────────────────────────── */
+export default memo(function CursoCard({
   curso,
   role      = "docente",
   idx       = 0,
   onClick   = null,
-  coverSrc  = null,
-  showCover = false,
   compact   = false,
 }) {
-  const navigate  = useNavigate();
-  const cc        = palette(idx);
-  const actions   = compact ? [] : getCourseActionsByRole(role, curso._id ?? curso.id);
-  const mainPath  = getCourseMainPath(curso._id ?? curso.id);
+  const navigate = useNavigate();
+
+  // Color determinado por el usuario en backend, con fallback consistente
+  const cursoColor = HEX_RE.test(curso?.color || "") ? curso.color : DEFAULT_COLOR;
+
+  // Imagen del curso — siempre presente: portada real o fallback por defecto
+  const coverSrc = curso?.fotoPortada || curso?.fotoPortadaUrl || curso?.imagen || letrasImg;
+
+  const actions  = compact ? [] : getCourseActionsByRole(role, curso._id ?? curso.id);
+  const mainPath = getCourseMainPath(curso._id ?? curso.id);
 
   const handleCardClick = () => { if (onClick) { onClick(); return; } navigate(mainPath); };
   const handleNavigate  = (path) => navigate(path);
@@ -64,60 +60,89 @@ export default function CursoCard({
       role="button"
       tabIndex={0}
       aria-label={`Abrir curso: ${curso.nombre}`}
-      className="curso-card"
-      style={{ "--cc-border": cc.border, "--cc-strip": cc.strip, "--cc-bg": cc.bg, "--cc-color": cc.color }}
+      className="curso-card curso-card--square"
+      style={{
+        "--cc-color": cursoColor,
+        aspectRatio: "1 / 1",
+        border: `2px solid ${cursoColor}`,
+        borderRadius: 14,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        cursor: "pointer",
+        background: "var(--color-surface)",
+        transition: "transform 0.14s ease, box-shadow 0.14s ease",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 14px color-mix(in srgb, ${cursoColor} 30%, transparent)`; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
     >
-      {/* Color strip */}
-      <div className="curso-card__strip" aria-hidden="true" />
+      {/* Imagen de portada — siempre visible, con fallback */}
+      <div style={{
+        width: "100%",
+        aspectRatio: "16 / 9",
+        flexShrink: 0,
+        background: "var(--color-bg)",
+        overflow: "hidden",
+      }}>
+        <img
+          src={coverSrc}
+          alt={curso.nombre ?? "Curso"}
+          loading="lazy"
+          onError={e => { e.target.onerror = null; e.target.src = letrasImg; }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      </div>
 
-      {/* Cover image */}
-      {showCover && (
-        <div className="curso-card__cover">
-          {coverSrc ? (
-            <img
-              src={coverSrc}
-              alt=""
-              loading="lazy"
-              onError={e => {
-                e.target.onerror = null;
-                e.target.style.objectFit = "contain";
-                e.target.style.padding   = "12px";
-                e.target.style.opacity   = "0.35";
-              }}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : (
-            <div className="curso-card__cover-icon">
-              <BookOpen size={20} aria-hidden="true" />
-            </div>
-          )}
+      {/* Cuerpo */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        padding: "12px 14px",
+        minHeight: 0,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+          <span style={{
+            width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+            background: cursoColor,
+          }} />
+          <h3 style={{
+            fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {curso.nombre}
+          </h3>
         </div>
-      )}
-
-      {/* Body */}
-      <div className="curso-card__body">
-        <h3 className="curso-card__title">{curso.nombre}</h3>
 
         {curso.descripcion && (
-          <p className="curso-card__desc">{curso.descripcion}</p>
+          <p style={{
+            fontSize: 12, color: "var(--color-text-muted)", margin: "0 0 8px",
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}>
+            {curso.descripcion}
+          </p>
         )}
 
-        <div style={{ flex: 1, minHeight: 8 }} />
+        <div style={{ flex: 1, minHeight: 4 }} />
 
-        {/* Footer meta */}
-        <div className="curso-card__footer">
-          <span className="curso-card__meta">
+        {/* Meta del pie */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontSize: 11.5, color: "var(--color-text-muted)",
+        }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <Users size={11} aria-hidden="true" />
             {curso.participantes?.length ?? curso.totalParticipantes ?? 0}
             {" "}{role === "padre" ? "participantes" : "alumnos"}
           </span>
-          <ArrowUpRight size={14} className="curso-card__arrow" aria-hidden="true" />
+          <ArrowUpRight size={14} style={{ color: cursoColor }} aria-hidden="true" />
         </div>
 
-        {/* Quick actions */}
+        {/* Acciones rápidas */}
         {!compact && actions.length > 0 && (
           <div
-            className="curso-card__actions"
+            style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}
             onClick={e => e.stopPropagation()}
           >
             {[...actions]
@@ -130,4 +155,4 @@ export default function CursoCard({
       </div>
     </article>
   );
-}
+});

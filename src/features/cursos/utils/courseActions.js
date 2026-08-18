@@ -8,7 +8,7 @@ import { normalizeRole, ROLES } from "@/security/roleMatrix";
  * Devuelve las acciones de una CourseCard según el rol.
  * Cada acción tiene:
  *   label    — texto del botón
- *   icon     — nombre del icono (string, el componente decide cuál importar)
+ *   icon     — nombre del icono (cadena, el componente decide cuál importar)
  *   path     — ruta a la que navegar
  *   variant  — "primary" | "outline" | "ghost"
  *   order    — posición visual
@@ -130,8 +130,8 @@ export function getCourseActionsByRole(role, courseId) {
 }
 
 /**
- * Devuelve solo el path principal del curso para ese rol.
- * Útil para el click global de la card.
+ * Devuelve solo la ruta principal del curso para ese rol.
+ * Útil para el clic global de la tarjeta.
  */
 export function getCourseMainPath(courseId) {
   return `/cursos/${courseId}`;

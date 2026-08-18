@@ -1,13 +1,13 @@
 // src/hooks/useUserPresence.js
-// Marks the current user as online/offline in the global UserStore.
-// Socket.io-ready: if a `socket` object is passed, it also emits
-// "user:online" / "user:offline" events to the server.
+// Marca al usuario actual como en línea/fuera de línea en el UserStore global.
+// Listo para Socket.io: si se pasa un objeto `socket`, también emite
+// los eventos "user:online" / "user:offline" al servidor.
 import { useEffect } from "react";
 import useUserStore from "@/store/useUserStore";
 
 /**
- * @param {string|null} userId  - ID of the authenticated user
- * @param {object|null} socket  - Optional socket.io socket instance
+ * @param {string|null} userId  - ID del usuario autenticado
+ * @param {object|null} socket  - Instancia de socket.io opcional
  */
 export default function useUserPresence(userId, socket = null) {
   const setOnline = useUserStore((s) => s.setOnline);
@@ -15,10 +15,10 @@ export default function useUserPresence(userId, socket = null) {
   useEffect(() => {
     if (!userId) return;
 
-    // Mark online in the global store
+    // Marcar como en línea en el store global
     setOnline(userId, true);
 
-    // Emit to server if socket is available
+    // Emitir al servidor si el socket está disponible
     socket?.emit("user:online", { userId });
 
     return () => {

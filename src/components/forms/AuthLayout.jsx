@@ -1,6 +1,6 @@
 // src/features/auth/components/shared/AuthLayout.jsx
-// Shared shell for all auth pages: LoginForm, ForgotPasswordForm, ResetPasswordForm.
-// Usage:
+// Contenedor compartido para todas las páginas de autenticación: LoginForm, ForgotPasswordForm, ResetPasswordForm.
+// Uso:
 //   <AuthLayout panelContent={<LeftPanel />}>
 //     <form ...>...</form>
 //   </AuthLayout>
@@ -81,16 +81,16 @@ export const DefaultLeftPanel = () => (
 );
 
 /* ─────────────────────────────────────────────
-   Shell principal
+   Contenedor principal
    - panelContent: nodo React para el panel izquierdo
-                   (default: DefaultLeftPanel)
-   - children: contenido del panel derecho (el form)
+                   (por defecto: DefaultLeftPanel)
+   - children: contenido del panel derecho (el formulario)
 ───────────────────────────────────────────── */
 const AuthLayout = ({ panelContent, children }) => (
   <>
     <style>{AUTH_CSS}</style>
     <div className="auth-root">
-      {/* Card split */}
+      {/* División de tarjeta */}
       <div className="auth-card">
         {panelContent ?? <DefaultLeftPanel />}
         <div className="auth-panel-right">
@@ -117,7 +117,7 @@ export const AUTH_CSS = `
   position: relative;
 }
 
-/* Subtle dot pattern on the bg */
+/* Patrón de puntos sutil en el fondo */
 .auth-root::before {
   content: "";
   position: fixed;
@@ -295,7 +295,7 @@ export const AUTH_CSS = `
   position: relative;
 }
 
-/* Subtle texture on the right panel */
+/* Textura sutil en el panel derecho */
 .auth-panel-right::before {
   content: "";
   position: absolute;

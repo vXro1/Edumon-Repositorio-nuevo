@@ -147,15 +147,25 @@ export function normalizeEntrega(data) {
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
 
-    // Calificación
+    // Calificación — el backend (calificarEntregaValidator.js / Entrega.js)
+    // usa "valoracion" (entero 1-5), nunca "nota". Este normalizador antes
+    // buscaba data.calificacion.nota, campo que el backend jamás envía, así
+    // que SIEMPRE devolvía calificacion: null aunque la entrega sí tuviera
+    // valoración — ocultaba la nota tanto al padre (FamiliaEntregasPage)
+    // como al docente (EntregasPage).
     calificacion:
-      data.calificacion && data.calificacion.nota !== undefined
+      data.calificacion &&
+      data.calificacion.valoracion !== undefined &&
+      data.calificacion.valoracion !== null
         ? {
-            nota: data.calificacion.nota ?? null,
+            valoracion: data.calificacion.valoracion ?? null,
             comentario: data.calificacion.comentario || "",
             fechaCalificacion:
               data.calificacion.fechaCalificacion || null,
 
+            // "docente" viene de un cache de enriquecimiento manual (ver
+            // normalizeAndEnrichEntrega); "docenteId" es como el backend lo
+            // manda de verdad cuando popula calificacion.docenteId.
             docente:
               data.calificacion.docente &&
               typeof data.calificacion.docente === "object"
@@ -172,6 +182,23 @@ export function normalizeEntrega(data) {
                       "",
                     correo:
                       data.calificacion.docente.correo ||
+                      "",
+                  }
+                : data.calificacion.docenteId &&
+                  typeof data.calificacion.docenteId === "object"
+                ? {
+                    _id:
+                      data.calificacion.docenteId._id ||
+                      data.calificacion.docenteId.id ||
+                      null,
+                    nombre:
+                      data.calificacion.docenteId.nombre ||
+                      "Docente",
+                    apellido:
+                      data.calificacion.docenteId.apellido ||
+                      "",
+                    correo:
+                      data.calificacion.docenteId.correo ||
                       "",
                   }
                 : null,
@@ -228,8 +255,11 @@ export async function enrichEntregasData(entregas) {
     return [];
   }
 
-  // Dynamic import para evitar problemas de inicialización circular con Vite
-  const { usersGetById, tareasGetById } = await import("@/lib/apiClient");
+  // Importación dinámica para evitar problemas de inicialización circular con Vite
+  const [{ usersGetById }, { tareasGetById }] = await Promise.all([
+    import("@/services/usersService"),
+    import("@/features/cursos/services/tareasService"),
+  ]);
 
   const cache = {
     padres: {},

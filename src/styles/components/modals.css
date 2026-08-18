@@ -1,20 +1,20 @@
 /* ════════════════════════════════════════════════════════════════════
    EDUMON DESIGN SYSTEM — modals.css
-   Responsive modal: full-screen on mobile, centered panel on ≥480px
+   Modal responsivo: pantalla completa en móvil, panel centrado en ≥480px
    ════════════════════════════════════════════════════════════════════ */
 
 /* ── Overlay / backdrop ──────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal, 100);
+  z-index: 300;                     /* por encima del nav-dropdown (200) */
   display: flex;
-  align-items: flex-end;            /* mobile: sheet from bottom */
+  align-items: flex-end;            /* móvil: hoja desde abajo */
   justify-content: center;
   padding: 0;
-  background: rgba(13, 13, 13, 0.50);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   animation: edu-backdrop-in 0.2s ease both;
   overscroll-behavior: contain;
 }
@@ -55,20 +55,32 @@
   .modal-panel.modal-xl { max-width: 900px; }
 }
 
-/* Mobile bottom-sheet slide-up */
+/* Deslizamiento hacia arriba (hoja inferior móvil) */
 @keyframes modal-sheet-in {
   from { opacity: 0.6; transform: translateY(100%); }
   to   { opacity: 1;   transform: translateY(0); }
 }
 
-/* ── Color strip (brand accent) ──────────────────────────────────── */
+/* Fade del backdrop */
+@keyframes edu-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Entrada del panel en desktop */
+@keyframes edu-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* ── Franja de color (acento de marca) ──────────────────────────────────── */
 .modal-strip {
   height: 4px;
   flex-shrink: 0;
   background: var(--gradient-brand);
 }
 
-/* Mobile drag handle */
+/* Asa de arrastre móvil */
 .modal-handle {
   display: block;
   width: 36px;
@@ -135,7 +147,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Slim scrollbar in modal body */
+/* Scrollbar delgada en el cuerpo del modal */
 .modal-body::-webkit-scrollbar { width: 4px; }
 .modal-body::-webkit-scrollbar-track { background: transparent; }
 .modal-body::-webkit-scrollbar-thumb {
@@ -159,11 +171,30 @@
 .modal-footer.modal-footer-center { justify-content: center; }
 .modal-footer.modal-footer-spread { justify-content: space-between; }
 
-/* Full-width buttons on mobile */
+/* Botones a ancho completo en móvil */
 @media (max-width: 479px) {
   .modal-footer {
     flex-direction: column-reverse;
     padding: var(--space-4);
   }
   .modal-footer .btn { width: 100%; }
+}
+
+/* ── In-form footer (stays in scroll flow, visually consistent) ── */
+.modal-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 479px) {
+  .modal-form-footer {
+    flex-direction: column-reverse;
+  }
+  .modal-form-footer .btn { width: 100%; }
 }

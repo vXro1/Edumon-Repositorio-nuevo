@@ -1,6 +1,8 @@
 // src/features/cursos/hooks/useCursoHub.js
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { cursosGetById, modulosGetByCurso, tareasGetAll, forosGetByCurso, cursosGetParticipantes } from '@/lib/apiClient';
+import { cursosGetById, modulosGetByCurso, cursosGetParticipantes } from '@/features/cursos/services/cursosService';
+import { tareasGetAll } from '@/features/cursos/services/tareasService';
+import { forosGetByCurso } from '@/features/foros/services/forosService';
 import { normalizeCurso, normalizeTarea, normalizeUser } from '@/lib/normalizers';
 import useUserStore from '@/store/useUserStore';
 import { humanizeError } from '@/utils/humanizeError';

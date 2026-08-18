@@ -3,15 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, BellOff, Check, CheckCheck, Trash2,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Sparkles,
 } from "lucide-react";
 
 import {
   notificacionesGetAll,
+  notificacionesGetConteoNoLeidas,
   notificacionesMarcarLeida,
   notificacionesMarcarTodasLeidas,
   notificacionesDelete,
-} from "@/lib/apiClient";
+  notificacionesLimpiarAntiguas,
+} from "@/features/notificaciones/services/notificacionesService";
 
 import { Toast, Button, Badge } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
@@ -19,13 +21,16 @@ import { IconBtn } from "@/features/cursos/components/shared/ui";
 /* ───────────────────────── CONFIG ───────────────────────── */
 
 const LIMIT = 15;
+const DIAS_LIMPIEZA = 30;
 
+// Coincide con el enum real definido en createNotificacionValidator (tipo)
 const TIPO_META = {
-  info: { variant: "info" },
-  exito: { variant: "success" },
-  warning: { variant: "warning" },
-  error: { variant: "error" },
-  bienvenida: { variant: "purple" },
+  tarea:        { variant: "info",    label: "Tarea" },
+  entrega:      { variant: "success", label: "Entrega" },
+  calificacion: { variant: "purple",  label: "Calificación" },
+  foro:         { variant: "warning", label: "Foro" },
+  evento:       { variant: "info",    label: "Evento" },
+  sistema:      { variant: "error",   label: "Sistema" },
 };
 
 const FILTERS = [
@@ -53,7 +58,7 @@ function formatDate(iso) {
   });
 }
 
-/* Skeleton */
+/* Esqueleto de carga */
 const Sk = ({ h = 16, w = "100%", r = 7 }) => (
   <div
     className="animate-pulse"
@@ -66,7 +71,7 @@ const Sk = ({ h = 16, w = "100%", r = 7 }) => (
   />
 );
 
-/* ───────────────────────── COMPONENT ───────────────────────── */
+/* ───────────────────────── COMPONENTE ───────────────────────── */
 
 export default function NotificacionesPage() {
   const [notifs, setNotifs] = useState([]);
@@ -79,6 +84,7 @@ export default function NotificacionesPage() {
   const [filter, setFilter] = useState("all");
   const [toast, setToast] = useState({ msg: "", type: "success" });
   const [markingAll, setMarkingAll] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
 
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
@@ -89,6 +95,13 @@ export default function NotificacionesPage() {
   useEffect(() => {
     setPage(1);
   }, [filter]);
+
+  /* conteo rápido de no leídas al montar, sin esperar la lista completa */
+  useEffect(() => {
+    notificacionesGetConteoNoLeidas()
+      .then((res) => setNoLeidas(res.noLeidas ?? 0))
+      .catch(() => {});
+  }, []);
 
   /* cargar datos */
   const load = useCallback(async () => {
@@ -163,6 +176,26 @@ export default function NotificacionesPage() {
     }
   };
 
+  const handleLimpiarAntiguas = async () => {
+    const confirmado = window.confirm(
+      `Esto elimina las notificaciones ya leídas con más de ${DIAS_LIMPIEZA} días. ¿Continuar?`
+    );
+    if (!confirmado) return;
+
+    setCleaning(true);
+
+    try {
+      const res = await notificacionesLimpiarAntiguas({ dias: DIAS_LIMPIEZA });
+
+      notify(res.message ?? "Notificaciones antiguas eliminadas");
+      await load();
+    } catch {
+      notify("Error al limpiar notificaciones antiguas", "error");
+    } finally {
+      setCleaning(false);
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   /* ───────────────────────── UI ───────────────────────── */
@@ -171,7 +204,7 @@ export default function NotificacionesPage() {
     <div style={{ maxWidth: 860, margin: "0 auto" }}>
       <Toast {...toast} />
 
-      {/* HEADER */}
+      {/* ENCABEZADO */}
       <div style={{
         display: "flex",
         justifyContent: "space-between",
@@ -190,7 +223,7 @@ export default function NotificacionesPage() {
             justifyContent: "center",
             position: "relative",
           }}>
-            <Bell style={{ width: 18, height: 18, color: "#0C6AC4" }} />
+            <Bell style={{ width: 18, height: 18, color: "var(--color-primary)" }} />
 
             {noLeidas > 0 && (
               <Badge
@@ -227,19 +260,31 @@ export default function NotificacionesPage() {
           </div>
         </div>
 
-        {noLeidas > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Button
             variant="outline"
-            disabled={markingAll}
-            onClick={handleMarkAll}
+            disabled={cleaning}
+            onClick={handleLimpiarAntiguas}
+            title={`Elimina notificaciones leídas con más de ${DIAS_LIMPIEZA} días`}
           >
-            <CheckCheck style={{ width: 14, height: 14 }} />
-            {markingAll ? "Procesando..." : "Marcar todas"}
+            <Sparkles style={{ width: 14, height: 14 }} />
+            {cleaning ? "Limpiando..." : "Limpiar antiguas"}
           </Button>
-        )}
+
+          {noLeidas > 0 && (
+            <Button
+              variant="outline"
+              disabled={markingAll}
+              onClick={handleMarkAll}
+            >
+              <CheckCheck style={{ width: 14, height: 14 }} />
+              {markingAll ? "Procesando..." : "Marcar todas"}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* FILTERS */}
+      {/* FILTROS */}
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         {FILTERS.map((f) => (
           <Button
@@ -254,7 +299,7 @@ export default function NotificacionesPage() {
         ))}
       </div>
 
-      {/* LIST */}
+      {/* LISTA */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
@@ -287,7 +332,7 @@ export default function NotificacionesPage() {
           </div>
         ) : (
           notifs.map((n) => {
-            const tipoConfig = TIPO_META[n.tipo] ?? TIPO_META.info;
+            const tipoConfig = TIPO_META[n.tipo] ?? { variant: "info", label: n.tipo ?? "Notificación" };
 
             return (
               <div
@@ -320,7 +365,12 @@ export default function NotificacionesPage() {
 
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontWeight: 700 }}>
-                    {n.titulo}
+                    {tipoConfig.label}
+                    {n.prioridad === "critica" && (
+                      <Badge variant="error" size="sm" style={{ marginLeft: 6, fontSize: 9 }}>
+                        Urgente
+                      </Badge>
+                    )}
                   </p>
 
                   {n.mensaje && (
@@ -330,14 +380,14 @@ export default function NotificacionesPage() {
                   )}
 
                   <p style={{ fontSize: 11, color: "#94A3B8" }}>
-                    {formatDate(n.createdAt)}
+                    {formatDate(n.fecha)}
                   </p>
                 </div>
 
                 <div style={{ display: "flex", gap: 6 }}>
                   {!n.leido && (
                     <IconBtn
-                      color="#16A34A"
+                      color="var(--edu-green-600)"
                       onClick={() => handleMarkRead(n._id)}
                       title="Marcar como leída"
                     >
@@ -346,7 +396,7 @@ export default function NotificacionesPage() {
                   )}
 
                   <IconBtn
-                    color="#DC2626"
+                    color="var(--color-error-hover)"
                     onClick={() => handleDelete(n._id)}
                     title="Eliminar"
                   >
@@ -359,7 +409,7 @@ export default function NotificacionesPage() {
         )}
       </div>
 
-      {/* PAGINATION */}
+      {/* PAGINACIÓN */}
       {totalPages > 1 && (
         <div style={{
           display: "flex",

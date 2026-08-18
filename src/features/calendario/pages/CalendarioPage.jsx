@@ -2,12 +2,11 @@
 // Calendario general para docente y administrador.
 import { useState, useEffect, useCallback } from "react";
 import { CalendarDays } from "lucide-react";
-import {
-  apiFetch,
-  cursosGetMine, calendarioGetByCurso, eventosDelete,
-} from "@/lib/apiClient";
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { calendarioGetByCurso } from "@/features/calendario/services/calendarioService";
+import { eventosDelete, eventosCreateSimple, eventosUpdateSimple } from "@/features/eventos/services/eventosService";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { normalizeRole, ROLES } from "@/security/roleMatrix";
+import { usePermission, PERMISSIONS } from "@/hooks/usePermission";
 import CalendarWidget from "@/components/ui/CalendarWidget";
 import { Modal, Button } from "@/components";
 
@@ -50,18 +49,15 @@ function CreateEventoModal({ cursos, onClose, onSaved }) {
     setSaving(true);
     setError("");
     try {
-      await apiFetch("/eventos", {
-        method: "POST",
-        body: JSON.stringify({
-          titulo:      form.titulo.trim(),
-          descripcion: form.descripcion.trim(),
-          fechaInicio: form.fechaInicio,
-          fechaFin:    form.fechaFin || form.fechaInicio,
-          hora:        form.hora,
-          ubicacion:   form.ubicacion.trim(),
-          categoria:   form.categoria,
-          cursosIds:   [cursoId],
-        }),
+      await eventosCreateSimple({
+        titulo:      form.titulo.trim(),
+        descripcion: form.descripcion.trim(),
+        fechaInicio: form.fechaInicio,
+        fechaFin:    form.fechaFin || form.fechaInicio,
+        hora:        form.hora,
+        ubicacion:   form.ubicacion.trim(),
+        categoria:   form.categoria,
+        cursosIds:   [cursoId],
       });
       onSaved();
     } catch (err) {
@@ -75,7 +71,7 @@ function CreateEventoModal({ cursos, onClose, onSaved }) {
     <Modal isOpen onClose={onClose} size="md" title="Nuevo evento" description="Crea un evento para un curso">
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {error && (
-          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#dc2626" }}>
+          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--color-error-hover)" }}>
             {error}
           </div>
         )}
@@ -163,17 +159,14 @@ function EditEventoModal({ evento, onClose, onSaved }) {
     setSaving(true);
     setError("");
     try {
-      await apiFetch(`/eventos/${evento._id ?? evento.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          titulo:      form.titulo.trim(),
-          descripcion: form.descripcion.trim(),
-          fechaInicio: form.fechaInicio,
-          fechaFin:    form.fechaFin || form.fechaInicio,
-          hora:        form.hora,
-          ubicacion:   form.ubicacion.trim(),
-          categoria:   form.categoria,
-        }),
+      await eventosUpdateSimple(evento._id ?? evento.id, {
+        titulo:      form.titulo.trim(),
+        descripcion: form.descripcion.trim(),
+        fechaInicio: form.fechaInicio,
+        fechaFin:    form.fechaFin || form.fechaInicio,
+        hora:        form.hora,
+        ubicacion:   form.ubicacion.trim(),
+        categoria:   form.categoria,
       });
       onSaved();
     } catch (err) {
@@ -187,7 +180,7 @@ function EditEventoModal({ evento, onClose, onSaved }) {
     <Modal isOpen onClose={onClose} size="md" title="Editar evento" description="Modifica los datos del evento">
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {error && (
-          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#dc2626" }}>
+          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--color-error-hover)" }}>
             {error}
           </div>
         )}
@@ -241,8 +234,7 @@ function EditEventoModal({ evento, onClose, onSaved }) {
 // ══════════════════════════════════════════════════════════════════════════
 export default function CalendarioPage() {
   const { user }  = useAuth();
-  const role      = normalizeRole(user?.rol ?? user?.role ?? "");
-  const canManage = role === ROLES.DOCENTE || role === ROLES.ADMIN || role === ROLES.SUPERADMIN;
+  const canManage = usePermission(PERMISSIONS.CREATE_EVENTS);
 
   const [cursos,     setCursos]     = useState([]);
   const [items,      setItems]      = useState([]);
@@ -308,14 +300,14 @@ export default function CalendarioPage() {
           background: "rgba(12,106,196,0.1)",
           display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
         }}>
-          <CalendarDays size={20} style={{ color: "#0C6AC4" }} />
+          <CalendarDays size={20} style={{ color: "var(--color-primary)" }} />
         </div>
         <div>
           <h1 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "var(--color-text)" }}>
             Calendario
           </h1>
           <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-            Tareas y eventos de todos tus cursos
+            Retos y eventos de todos tus cursos
           </p>
         </div>
       </div>

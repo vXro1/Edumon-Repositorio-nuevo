@@ -6,7 +6,7 @@ import {
   Users, AlertCircle,
 } from "lucide-react";
 
-import { cursosGetMine } from "@/lib/apiClient";
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
 import letrasImg from "@/assets/img/letras.png";
 import { normalizeCurso } from "@/lib/normalizers";
 import CourseCard from "@/features/cursos/components/CursoCard";
@@ -14,9 +14,9 @@ import CourseCard from "@/features/cursos/components/CursoCard";
 import { Button } from "@/components";
 
 const CARD_COLORS = [
-  { strip: "#0C6AC4", icon: "#1D4ED8", bg: "#EFF6FF" },
-  { strip: "#16A34A", icon: "#166534", bg: "#F0FDF4" },
-  { strip: "#7C3AED", icon: "#5B21B6", bg: "#FAF5FF" },
+  { strip: "var(--color-primary)", icon: "#1D4ED8", bg: "#EFF6FF" },
+  { strip: "var(--edu-green-600)", icon: "#166534", bg: "#F0FDF4" },
+  { strip: "#F23D7F", icon: "#B01B52", bg: "#FEF0F5" },
   { strip: "#EA580C", icon: "#9A3412", bg: "#FFF7ED" },
   { strip: "#0284C7", icon: "#075985", bg: "#F0F9FF" },
   { strip: "#D97706", icon: "#92400E", bg: "#FFFBEB" },

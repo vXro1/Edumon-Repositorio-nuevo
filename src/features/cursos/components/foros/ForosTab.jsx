@@ -1,11 +1,12 @@
 // src/features/cursos/components/foros/ForosTab.jsx
-// Forum tab inside CursoHubPage.
-// Clicking a forum navigates to the canonical ForumPage (/curso/:cursoId/foro/:foroId).
-// The modal-detail approach has been removed — forums open as full pages.
-import { useState, useEffect, useCallback } from 'react';
+// Pestaña de foros dentro de CursoHubPage.
+// Al hacer clic en un foro se navega a la ForumPage canónica (/curso/:cursoId/foro/:foroId).
+// El enfoque de detalle en modal ha sido eliminado — los foros se abren como páginas completas.
+import { useState, useEffect, useCallback, useContext } from 'react';
+import CursoContext from '../../context/CursoContext';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Lock, Plus, ArrowRight } from 'lucide-react';
-import { forosGetByCurso, forosCreate } from '@/lib/apiClient';
+import { forosGetByCurso, forosCreate } from '@/features/foros/services/forosService';
 import { Button, Modal, FileUpload, Toast } from '@/components';
 import { Sk, SectionHeader, Field, StTextarea } from '../shared/ui';
 import { makeNotify } from '../shared/helpers';
@@ -37,7 +38,7 @@ function ForoCrearForm({ onSubmit, onCancel }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {error && (
-        <div style={{ background: '#fee2e2', color: '#dc2626',
+        <div style={{ background: '#fee2e2', color: 'var(--color-error-hover)',
           padding: '10px 14px', borderRadius: 8, fontSize: 13 }}>
           {error}
         </div>
@@ -45,7 +46,7 @@ function ForoCrearForm({ onSubmit, onCancel }) {
       <Field label="Título *">
         <Input value={titulo} onChange={e => setTitulo(e.target.value)}
           placeholder="Mínimo 5 caracteres" maxLength={200} />
-        <span style={{ fontSize: 11, color: titulo.length < 5 ? '#dc2626' : 'var(--color-text-muted)' }}>
+        <span style={{ fontSize: 11, color: titulo.length < 5 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
           {titulo.length} / 200
         </span>
       </Field>
@@ -53,7 +54,7 @@ function ForoCrearForm({ onSubmit, onCancel }) {
         <StTextarea value={descripcion} onChange={e => setDescripcion(e.target.value)}
           placeholder="Describe de qué trata el foro (mínimo 10 caracteres)" rows={4}
           maxLength={2000} />
-        <span style={{ fontSize: 11, color: descripcion.length < 10 ? '#dc2626' : 'var(--color-text-muted)' }}>
+        <span style={{ fontSize: 11, color: descripcion.length < 10 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
           {descripcion.length} / 2000
         </span>
       </Field>
@@ -62,8 +63,7 @@ function ForoCrearForm({ onSubmit, onCancel }) {
           accept="image/*,video/mp4,.pdf" maxFiles={5}
           label="Arrastra o haz clic para adjuntar (imagen, video o PDF)" />
       </Field>
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',
-        paddingTop: 8, borderTop: '1px solid var(--color-border)' }}>
+      <div className="modal-form-footer">
         <Button variant="ghost" onClick={onCancel} disabled={loading}>Cancelar</Button>
         <Button onClick={handleSubmit}
           disabled={loading || titulo.trim().length < 5 || descripcion.trim().length < 10}>
@@ -101,20 +101,20 @@ function ForoCard({ foro, cursoId, cursoNombre }) {
         gap:          12,
         cursor:       'pointer',
         transition:   'border-color 0.15s, box-shadow 0.15s',
-        boxShadow:    hov ? '0 4px 16px rgba(140,56,240,0.08)' : 'none',
+        boxShadow:    hov ? '0 4px 16px rgba(12,106,196,0.08)' : 'none',
       }}
     >
-      {/* Icon */}
+      {/* Ícono */}
       <div style={{
         width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-        background: isClosed ? 'var(--color-surface-2)' : 'rgba(140,56,240,0.08)',
+        background: isClosed ? 'var(--color-surface-2)' : 'rgba(12,106,196,0.08)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: isClosed ? 'var(--color-text-muted)' : 'var(--color-primary)',
       }}>
         {isClosed ? <Lock size={16} /> : <MessageSquare size={16} />}
       </div>
 
-      {/* Info */}
+      {/* Información */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
           <p style={{ fontWeight: 700, margin: 0, fontSize: 14, color: 'var(--color-text)',
@@ -122,7 +122,7 @@ function ForoCard({ foro, cursoId, cursoNombre }) {
             {foro.titulo}
           </p>
           {isClosed && (
-            <span style={{ fontSize: 10, background: '#fee2e2', color: '#dc2626',
+            <span style={{ fontSize: 10, background: '#fee2e2', color: 'var(--color-error-hover)',
               padding: '2px 7px', borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>
               Cerrado
             </span>
@@ -139,7 +139,7 @@ function ForoCard({ foro, cursoId, cursoNombre }) {
         </p>
       </div>
 
-      {/* Arrow */}
+      {/* Flecha */}
       <ArrowRight size={16} style={{
         color: hov ? 'var(--color-primary)' : 'var(--color-border)',
         transition: 'color 0.15s', flexShrink: 0,
@@ -150,7 +150,11 @@ function ForoCard({ foro, cursoId, cursoNombre }) {
 
 // ─── ForosTab ─────────────────────────────────────────────────────────────────
 
-export default function ForosTab({ cursoId, cursoNombre, canCreate = false }) {
+export default function ForosTab({ cursoId: cursoIdProp, cursoNombre: cursoNombreProp, canCreate: canCreateProp = false }) {
+  const ctx         = useContext(CursoContext);
+  const cursoId     = ctx?.cursoId     ?? cursoIdProp;
+  const cursoNombre = ctx?.curso?.nombre ?? cursoNombreProp ?? "";
+  const canCreate   = ctx?.canCreateForo ?? canCreateProp;
   const [foros,     setForos]     = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [showCrear, setShowCrear] = useState(false);
@@ -188,7 +192,7 @@ export default function ForosTab({ cursoId, cursoNombre, canCreate = false }) {
     <div>
       <Toast {...toast} />
 
-      {/* Header row */}
+      {/* Fila de encabezado */}
       <div style={{ display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', marginBottom: 14 }}>
         <SectionHeader title="Foros" />
@@ -200,7 +204,7 @@ export default function ForosTab({ cursoId, cursoNombre, canCreate = false }) {
         )}
       </div>
 
-      {/* Create modal */}
+      {/* Modal de creación */}
       <Modal isOpen={showCrear} onClose={() => setShowCrear(false)}
         title="Crear nuevo foro" size="md">
         <ForoCrearForm
@@ -209,7 +213,7 @@ export default function ForosTab({ cursoId, cursoNombre, canCreate = false }) {
         />
       </Modal>
 
-      {/* List */}
+      {/* Lista */}
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[0, 1, 2].map(i => <Sk key={i} h={80} r={12} />)}

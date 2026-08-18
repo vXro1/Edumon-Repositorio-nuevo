@@ -99,23 +99,23 @@
   font-weight: 600;
 }
 
-/* Hover — borde más notorio */
+/* Hover — borde más visible */
 .input:hover:not(:disabled):not(.input-error):not(.input-success) {
   border-color: #c0c0c0;
 }
 
-/* Focus — ilumina borde azul, elimina sombra base, sube levemente */
+/* Focus — ilumina el borde azul, elimina la sombra base, sube levemente */
 .input:focus:not(.input-error):not(.input-success) {
   border-color: #1CB0F6;
   box-shadow: 0 0 0 3px rgba(28, 176, 246, 0.20);
   transform: translateY(-1px);
 }
 
-/* Con ícono izquierda */
+/* Con ícono a la izquierda */
 .input-icon-left  { padding-left: 44px; }
 .input-icon-right { padding-right: 44px; }
 
-/* ── Sizes ────────────────────────────────────────────────────────────── */
+/* ── Tamaños ────────────────────────────────────────────────────────────── */
 .input-sm {
   min-height: 40px;
   font-size: 13px;
@@ -158,7 +158,7 @@
 .input-wrapper:has(.input-lg) .input-adornment { width: 52px; }
 .input-wrapper:has(.input-lg) .input-adornment svg { width: 20px; height: 20px; }
 
-/* Ícono se ilumina con el focus */
+/* El ícono se ilumina con el foco */
 .input-wrapper:focus-within:not(:has(.input-error)) .input-adornment {
   color: #1CB0F6;
 }
@@ -192,7 +192,7 @@
   transform: translateY(-1px);
 }
 
-/* Shake en el wrapper cuando hay error */
+/* Animación shake en el contenedor cuando hay error */
 .field:has(.input-error) .input-wrapper {
   animation: duo-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
@@ -261,7 +261,7 @@
   line-height: 1.4;
 }
 
-/* Checkmark pop */
+/* Animación de aparición del checkmark */
 .field-success-msg svg,
 .field-check-icon {
   animation: duo-check-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -405,7 +405,7 @@
   cursor: not-allowed;
 }
 
-/* Checkbox */
+/* Casilla de verificación */
 .check-input {
   width: 22px;
   height: 22px;
@@ -435,7 +435,7 @@
   box-shadow: 0 3px 0 #46A302;
 }
 
-/* Checkmark SVG via clip */
+/* SVG del checkmark vía clip */
 .check-input:checked::after {
   content: '';
   position: absolute;
@@ -455,7 +455,26 @@
   box-shadow: 0 0 0 3px rgba(28, 176, 246, 0.25);
 }
 
-/* Radio */
+/* Variante compacta — para listas densas (participantes, selects) */
+.check-input.check-sm {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border-width: 2px;
+  box-shadow: none;
+}
+.check-input.check-sm:checked {
+  box-shadow: none;
+}
+.check-input.check-sm:checked::after {
+  background-size: 10px;
+}
+.check-input.check-sm:active:not(:disabled) {
+  transform: scale(0.90);
+  box-shadow: none;
+}
+
+/* Botón de opción */
 .radio-input {
   width: 22px;
   height: 22px;
@@ -537,7 +556,7 @@
     box-shadow    200ms ease;
 }
 
-/* Thumb */
+/* Pulgar del toggle */
 .toggle-track::after {
   content: '';
   position: absolute;
@@ -551,7 +570,7 @@
   transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Checked */
+/* Seleccionado */
 .toggle-input:checked + .toggle-track {
   background: #58CC02;
   border-color: #58CC02;
@@ -562,13 +581,13 @@
   transform: translateX(22px);
 }
 
-/* Active press */
+/* Presión activa */
 .toggle:active .toggle-track {
   transform: translateY(3px);
   box-shadow: none !important;
 }
 
-/* Disabled */
+/* Desactivado */
 .toggle-input:disabled + .toggle-track {
   opacity: 0.5;
   cursor: not-allowed;
@@ -579,4 +598,80 @@
   font-size: 14px;
   font-weight: 700;
   color: #3c3c3c;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CONTEXTO MODAL — inputs compactos y sin sombra 3D
+   Cuando el Input/Textarea/Select está dentro de .modal-body,
+   se reduce tamaño y se elimina el efecto Duolingo pesado.
+   ════════════════════════════════════════════════════════════════════ */
+
+.modal-body .field { gap: 5px; }
+
+.modal-body .field-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.modal-body .input {
+  min-height: 38px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid #e2e2e2;
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 0 12px;
+}
+.modal-body .input::placeholder { font-weight: 500; }
+.modal-body .input:hover:not(:disabled):not(.input-error):not(.input-success) {
+  border-color: #bbb;
+}
+.modal-body .input:focus:not(.input-error):not(.input-success) {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-soft);
+  transform: none;
+}
+.modal-body .input.input-error { box-shadow: none; }
+
+.modal-body .textarea {
+  min-height: 80px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid #e2e2e2;
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 10px 12px;
+}
+.modal-body .textarea::placeholder { font-weight: 500; }
+.modal-body .textarea:hover:not(:disabled):not(.input-error) { border-color: #bbb; }
+.modal-body .textarea:focus:not(.input-error) {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-soft);
+  transform: none;
+}
+
+.modal-body .select {
+  min-height: 38px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid #e2e2e2;
+  border-radius: 10px;
+  box-shadow: none;
+  padding-left: 12px;
+}
+.modal-body .select:hover:not(:disabled) { border-color: #bbb; }
+.modal-body .select:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-soft);
+  transform: none;
+}
+
+/* Input icon adornments también se ajustan */
+.modal-body .input-icon-left  { padding-left: 36px; }
+.modal-body .input-icon-right { padding-right: 36px; }
+.modal-body .input-wrapper .input-adornment { width: 36px; }
+.modal-body .input-wrapper .input-adornment svg { width: 15px; height: 15px; }
+.modal-body .input-wrapper:focus-within:not(:has(.input-error)) .input-adornment {
+  color: var(--color-primary);
 }

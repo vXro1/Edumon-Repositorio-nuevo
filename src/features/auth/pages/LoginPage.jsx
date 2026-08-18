@@ -7,22 +7,22 @@ import { LoginForm } from "@/components";
 import { useToast } from "../../../context/ToastContext";
 
 const ROLE_REDIRECTS = {
-  superadmin:    "/admin",
+  superadmin: "/admin",
   administrador: "/admin",
-  docente:       "/docente",
-  padre:         "/padre",
+  docente: "/docente",
+  padre: "/padre",
   "padre/tutor": "/padre",
 };
 
 export const LoginPage = () => {
-  const { login }      = useAuth();
-  const { notify }     = useToast();
-  const navigate       = useNavigate();
-  const location       = useLocation();
+  const { login } = useAuth();
+  const { notify } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
+  const [error, setError] = useState("");
 
   const sessionExpired = searchParams.get("expired") === "1";
   const from = location.state?.from?.pathname || "/";
@@ -32,7 +32,6 @@ export const LoginPage = () => {
     setError("");
     try {
       const data = await login(credentials);
-
       if (data?.primerInicioSesion) {
         navigate("/primer-inicio", {
           replace: true,
@@ -41,8 +40,8 @@ export const LoginPage = () => {
         return;
       }
 
-      const rol      = data.user?.rol;
-      const nombre   = data.user?.nombre ?? "Usuario";
+      const rol = data.user?.rol;
+      const nombre = data.user?.nombre ?? "Usuario";
       const redirect = ROLE_REDIRECTS[rol] || from;
 
       notify(`¡Bienvenido, ${nombre}!`, "success");

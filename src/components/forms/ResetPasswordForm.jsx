@@ -1,14 +1,19 @@
 // src/features/auth/components/forms/ResetPasswordForm.jsx
 import { useState } from "react";
-import { Mail, Key, Lock } from "lucide-react";
+import { Mail, Phone, Key, Lock } from "lucide-react";
 import { Input } from "@/components";
 import AuthLayout from "./AuthLayout";
-const validate = ({ correo, codigo, contrasenaNueva, confirmar }) => {
+
+const validate = ({ correo, telefono, codigo, contrasenaNueva, confirmar, method }) => {
   const e = {};
-  if (!correo.trim())
-    e.correo = "El correo es requerido";
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
-    e.correo = "Ingresa un correo válido";
+  if (method === "phone") {
+    if (!telefono?.trim()) e.telefono = "El número es requerido";
+  } else {
+    if (!correo?.trim())
+      e.correo = "El correo es requerido";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
+      e.correo = "Ingresa un correo válido";
+  }
   if (!codigo.trim())
     e.codigo = "El código es requerido";
   else if (!/^\d{4,8}$/.test(codigo.trim()))
@@ -28,14 +33,17 @@ const ResetPasswordForm = ({
   error = "",
   success = false,
   defaultEmail = "",
+  defaultPhone = "",
+  method = "email",
   onBack,
   onGoLogin,
 }) => {
   const [form, setForm] = useState({
-    correo:         defaultEmail,
-    codigo:         "",
+    correo:          defaultEmail,
+    telefono:        defaultPhone,
+    codigo:          "",
     contrasenaNueva: "",
-    confirmar:      "",
+    confirmar:       "",
   });
   const [errors, setErrors] = useState({});
 
@@ -47,10 +55,10 @@ const ResetPasswordForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const ve = validate(form);
+    const ve = validate({ ...form, method });
     if (Object.keys(ve).length) { setErrors(ve); return; }
-    const { confirmar, ...payload } = form;   // no enviar confirmar al backend
-    onSubmit(payload);
+    const { confirmar, ...rest } = form;
+    onSubmit({ ...rest, method });
   };
 
   return (
@@ -60,7 +68,7 @@ const ResetPasswordForm = ({
         <p>
           {success
             ? "Tu contraseña fue actualizada correctamente."
-            : "Ingresa el código que recibiste y tu nueva contraseña."}
+            : `Ingresa el código que recibiste por ${method === "phone" ? "WhatsApp" : "correo"} y tu nueva contraseña.`}
         </p>
       </div>
 
@@ -69,7 +77,6 @@ const ResetPasswordForm = ({
       )}
 
       {success ? (
-        /* ── Estado: éxito ── */
         <>
           <div className="auth-success" role="status">
             ✅ ¡Contraseña actualizada! Ya puedes iniciar sesión.
@@ -79,19 +86,32 @@ const ResetPasswordForm = ({
           </button>
         </>
       ) : (
-        /* ── Estado: formulario ── */
         <form onSubmit={handleSubmit} noValidate className="auth-form">
-          <Input
-            label="Correo electrónico"
-            name="correo"
-            type="email"
-            placeholder="tucorreo@ejemplo.com"
-            value={form.correo}
-            onChange={handleChange}
-            leftIcon={<Mail size={16} />}
-            error={errors.correo}
-            autoComplete="email"
-          />
+          {method === "phone" ? (
+            <Input
+              label="Número de WhatsApp"
+              name="telefono"
+              type="tel"
+              placeholder="+573113014875"
+              value={form.telefono}
+              onChange={handleChange}
+              leftIcon={<Phone size={16} />}
+              error={errors.telefono}
+              autoComplete="tel"
+            />
+          ) : (
+            <Input
+              label="Correo electrónico"
+              name="correo"
+              type="email"
+              placeholder="tucorreo@ejemplo.com"
+              value={form.correo}
+              onChange={handleChange}
+              leftIcon={<Mail size={16} />}
+              error={errors.correo}
+              autoComplete="email"
+            />
+          )}
 
           <Input
             label="Código de verificación"

@@ -1,6 +1,6 @@
 // src/features/cursos/components/CursoTabs.jsx
-// Pure presentational — no role/permission logic.
-// Uses .tab-bar / .tab-item from Layout.css.
+// Puramente presentacional — sin lógica de rol/permiso.
+// Usa .tab-bar / .tab-item de Layout.css.
 import React from "react";
 
 export default function CursoTabs({ tabs = [], active, onChange }) {

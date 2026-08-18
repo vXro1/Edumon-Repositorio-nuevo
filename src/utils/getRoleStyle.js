@@ -1,6 +1,6 @@
 // src/utils/getRoleStyle.js
-// Single source of truth for role → visual style mapping.
-// Used in lists, profiles, foros, cursos — never duplicated per-file.
+// Fuente única de verdad para el mapeo de rol → estilo visual.
+// Usado en listas, perfiles, foros, cursos — nunca duplicado por archivo.
 
 const ROLE_STYLES = {
   docente:       { color: "#0C6AC4", bg: "rgba(12,106,196,0.10)",   label: "Docente" },
@@ -16,8 +16,8 @@ const ROLE_STYLES = {
 const DEFAULT_STYLE = { color: "#94A3B8", bg: "rgba(148,163,184,0.12)", label: "Usuario" };
 
 /**
- * Returns { color, bg, label } for the given role string.
- * Falls back to a neutral gray style for unknown roles.
+ * Retorna { color, bg, label } para el rol dado.
+ * Usa un estilo gris neutro como fallback para roles desconocidos.
  *
  * @param {string} rol
  * @returns {{ color: string, bg: string, label: string }}

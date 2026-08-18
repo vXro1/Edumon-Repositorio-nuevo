@@ -1,15 +1,13 @@
 // src/features/cursos/components/entregas/CalificarEntrega.jsx
 import { useState } from "react";
-import { entregasCalificar } from "@/lib/apiClient";
-import { useAuthContext } from "@/features/auth/context/AuthContext";
-import { Button, Input, Toast } from "@/components";
-import { Field, InfoBlock, StTextarea } from "../shared/ui";
+import { entregasCalificar } from "@/features/entregas/services/entregasService";
+import { Button, Toast } from "@/components";
+import { Field, InfoBlock, StTextarea, StarRatingInput } from "../shared/ui";
 import { makeNotify } from "../shared/helpers";
 
 export default function CalificarEntrega({ entrega, onSuccess, onCancel }) {
-  const { user } = useAuthContext();
   const [gradeForm, setGradeForm] = useState({
-    nota: entrega.calificacion?.nota ?? "",
+    valoracion: entrega.calificacion?.valoracion ?? 0,
     comentario: entrega.calificacion?.comentario ?? "",
   });
   const [saving, setSaving] = useState(false);
@@ -21,12 +19,12 @@ export default function CalificarEntrega({ entrega, onSuccess, onCancel }) {
 
   const handleGrade = async (e) => {
     e.preventDefault();
-    if (!gradeForm.nota) { notify("Ingresa una nota", "error"); return; }
+    if (!gradeForm.valoracion) { notify("Selecciona una valoración", "error"); return; }
     setSaving(true);
     try {
       await entregasCalificar(entrega._id, {
-        ...gradeForm,
-        docenteId: user?._id ?? user?.id,
+        valoracion: gradeForm.valoracion,
+        comentario: gradeForm.comentario,
       });
       onSuccess();
     } catch {
@@ -53,11 +51,11 @@ export default function CalificarEntrega({ entrega, onSuccess, onCancel }) {
       )}
 
       <form onSubmit={handleGrade} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <Field label="Nota (0-10) *">
-          <Input type="number" min="0" max="10" step="0.1"
-            value={gradeForm.nota}
-            onChange={(e) => setGradeForm((f) => ({ ...f, nota: e.target.value }))}
-            placeholder="Ej: 8.5" required />
+        <Field label="Valoración (1-5 estrellas) *">
+          <StarRatingInput
+            value={gradeForm.valoracion}
+            onChange={(v) => setGradeForm((f) => ({ ...f, valoracion: v }))}
+          />
         </Field>
 
         <Field label="Comentario">
@@ -66,8 +64,7 @@ export default function CalificarEntrega({ entrega, onSuccess, onCancel }) {
             placeholder="Retroalimentación al estudiante" rows={3} />
         </Field>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10,
-          paddingTop: 10, borderTop: "1px solid var(--color-border)" }}>
+        <div className="modal-form-footer">
           <Button variant="ghost" type="button" onClick={onCancel}>Cancelar</Button>
           <Button type="submit" disabled={saving}>{saving ? "Guardando..." : "Calificar"}</Button>
         </div>

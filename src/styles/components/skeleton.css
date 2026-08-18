@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════
    EDUMON DESIGN SYSTEM — skeleton.css
-   Loading placeholder shimmer components.
+   Componentes de esqueleto con efecto shimmer de carga.
    ════════════════════════════════════════════════════════════════════ */
 
 @keyframes edu-shimmer {
@@ -24,7 +24,7 @@
   user-select: none;
 }
 
-/* ── Size helpers ──────────────────────────────────────────────── */
+/* ── Auxiliares de tamaño ──────────────────────────────────────────────── */
 .skeleton-text    { height: 14px; border-radius: var(--radius-xs); }
 .skeleton-text-sm { height: 11px; border-radius: var(--radius-xs); }
 .skeleton-text-lg { height: 20px; border-radius: var(--radius-sm); }

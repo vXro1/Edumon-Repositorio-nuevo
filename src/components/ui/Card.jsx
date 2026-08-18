@@ -29,9 +29,14 @@ export function EdumonProgress({ value = 0 }) {
 
   return (
     <div className="mt-3">
-      <div className="flex justify-between text-xs mb-1.5" style={{ color: "var(--color-text-muted)" }}>
+      <div
+        className="flex justify-between text-xs mb-1.5"
+        style={{ color: "var(--color-text-muted)" }}
+      >
         <span>Progreso</span>
-        <span className="font-semibold" style={{ color: barColor }}>{pct}%</span>
+        <span className="font-semibold" style={{ color: barColor }}>
+          {pct}%
+        </span>
       </div>
 
       <div
@@ -44,14 +49,17 @@ export function EdumonProgress({ value = 0 }) {
       >
         <div
           className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: barColor }}
+          style={{
+            width: `${pct}%`,
+            background: barColor,
+          }}
         />
       </div>
     </div>
   );
 }
 
-/* ─── AVATAR STACK ─── */
+/* ─── AVATAR ─── */
 export function EdumonAvatar({ initials }) {
   return (
     <div
@@ -93,45 +101,48 @@ export default function EdumonCard({
       onMouseLeave={() => setHover(false)}
       className={[
         "relative rounded-2xl overflow-hidden flex flex-col",
-        "border transition-all duration-300",
+        "border",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-primary)] focus-visible:ring-offset-2",
         isInteractive ? "cursor-pointer" : "",
         className,
       ].join(" ")}
       style={{
         background: "var(--color-surface)",
-        borderColor: hover ? "var(--color-primary)" : "var(--color-border)",
-        boxShadow: hover ? "var(--shadow-card-hover)" : "var(--shadow-card)",
-        transform: hover ? "translateY(-2px)" : "translateY(0)",
+        borderColor: hover
+          ? "var(--color-primary)"
+          : "var(--color-border)",
+        boxShadow: hover
+          ? "var(--shadow-card-hover)"
+          : "var(--shadow-card)",
       }}
     >
-      {/* GRADIENT BORDER OVERLAY — visible only on hover */}
+      {/* BORDE DEGRADADO */}
       <div
         aria-hidden="true"
         className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300"
         style={{
           padding: "1.5px",
-          background: hover ? "var(--gradient-brand-full)" : "transparent",
-          WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          background: hover
+            ? "var(--gradient-brand-full)"
+            : "transparent",
+          WebkitMask:
+            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
           opacity: hover ? 1 : 0,
         }}
       />
 
-      {/* CONTENT */}
       <div className="relative z-10 flex flex-col h-full">
-
-        {/* COVER */}
+        {/* PORTADA */}
         {coverContent && (
           <div className="h-40 w-full overflow-hidden">
             {coverContent}
           </div>
         )}
 
-        {/* BODY */}
+        {/* CUERPO */}
         <div className="p-5 flex flex-col gap-3 flex-1">
-
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {badges.map((b, i) => (
@@ -150,7 +161,10 @@ export default function EdumonCard({
           )}
 
           {description && (
-            <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               {description}
             </p>
           )}
@@ -165,8 +179,13 @@ export default function EdumonCard({
                 color: "var(--color-text-muted)",
               }}
             >
-              <div className="flex items-center gap-2 flex-wrap">{footerLeft}</div>
-              <div className="flex items-center">{footerRight}</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {footerLeft}
+              </div>
+
+              <div className="flex items-center">
+                {footerRight}
+              </div>
             </div>
           )}
         </div>
@@ -179,7 +198,7 @@ export default function EdumonCard({
 export function EdumonStatCard({ value, label, icon }) {
   return (
     <div
-      className="rounded-2xl p-5 border transition-all duration-200 hover:-translate-y-0.5"
+      className="rounded-2xl p-5 border"
       style={{
         background: "var(--color-surface)",
         borderColor: "var(--color-border)",
@@ -187,17 +206,28 @@ export function EdumonStatCard({ value, label, icon }) {
       }}
     >
       {icon && (
-        <div className="mb-3 w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: "var(--color-primary-light)", color: "var(--color-primary)" }}>
+        <div
+          className="mb-3 w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{
+            background: "var(--color-primary-light)",
+            color: "var(--color-primary)",
+          }}
+        >
           {icon}
         </div>
       )}
 
-      <p className="text-2xl sm:text-3xl font-bold" style={{ color: "var(--color-text)" }}>
+      <p
+        className="text-2xl sm:text-3xl font-bold"
+        style={{ color: "var(--color-text)" }}
+      >
         {value}
       </p>
 
-      <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+      <p
+        className="text-sm mt-0.5"
+        style={{ color: "var(--color-text-muted)" }}
+      >
         {label}
       </p>
     </div>

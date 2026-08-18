@@ -1,5 +1,5 @@
 // src/components/ui/Avatar.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import fallbackImg from "@/assets/icons/logo.svg";
 
 const SIZES = {
@@ -17,6 +17,10 @@ export default function Avatar({
   className = "",
 }) {
   const [imgSrc, setImgSrc] = useState(src || null);
+
+  useEffect(() => {
+    setImgSrc(src || null);
+  }, [src]);
 
   return (
     <div
@@ -37,7 +41,11 @@ export default function Avatar({
         <img
           src={imgSrc}
           alt={alt}
-          className="w-full h-full object-cover"
+          // object-contain en vez de object-cover: los avatares vienen en
+          // proporciones distintas (altos, anchos, ya circulares). "cover"
+          // recorta cabezas/bordes para llenar el círculo; "contain" siempre
+          // muestra la imagen completa, centrada, con un pequeño respiro.
+          className="w-full h-full object-contain p-[10%]"
           onError={() => setImgSrc(null)}
         />
       ) : initials ? (

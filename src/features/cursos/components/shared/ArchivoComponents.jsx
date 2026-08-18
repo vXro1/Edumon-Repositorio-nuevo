@@ -15,7 +15,7 @@ function detectTipo(tipo = "", url = "") {
   if (t.includes("word") || t.includes("doc")) return "doc";
   if (t.includes("excel") || t.includes("sheet")) return "excel";
 
-  // fallback por extensión
+  // alternativa por extensión
   if (/\.(jpg|jpeg|png|gif|webp|avif|svg)/i.test(url)) return "imagen";
   if (/\.(mp4|mov|avi|webm|mkv)/i.test(url)) return "video";
   if (/\.pdf/i.test(url)) return "pdf";
@@ -35,7 +35,7 @@ function fmtTamano(bytes = 0) {
 }
 
 /* ─────────────────────────────────────────────
-   PREVIEW LOCAL (ANTES DE SUBIR)
+   VISTA PREVIA LOCAL (ANTES DE SUBIR)
 ───────────────────────────────────────────── */
 export function ArchivoPreview({ archivo, onRemove }) {
   const [preview, setPreview] = useState(null);

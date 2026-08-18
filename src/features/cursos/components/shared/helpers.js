@@ -56,7 +56,7 @@ export const isMine = (m, userId) => {
 
 export const esPasada = (fecha) => fecha && new Date(fecha) < new Date();
 
-/** Hook factory: notificaciones toast de 3 s */
+/** Fábrica de hook: notificaciones toast de 3 s */
 export function makeNotify(setToast) {
   return (msg, type = "success") => {
     setToast({ msg, type });

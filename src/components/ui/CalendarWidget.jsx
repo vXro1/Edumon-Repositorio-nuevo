@@ -52,7 +52,7 @@ function isSameDay(a, b) {
 function urgency(fecha) {
   if (!fecha) return { variant: "info", color: "#6366f1", label: "Próxima" };
   const diff = (new Date(fecha) - new Date()) / 864e5;
-  if (diff < 0)  return { variant: "error",   color: "#ef4444", label: "Vencida"    };
+  if (diff < 0)  return { variant: "error",   color: "var(--color-error)", label: "Vencida"    };
   if (diff <= 1) return { variant: "warning",  color: "#f97316", label: "Urgente"    };
   if (diff <= 3) return { variant: "warning",  color: "#eab308", label: "Esta semana"};
   return           { variant: "success",  color: "#22c55e", label: "Próxima"    };
@@ -375,8 +375,8 @@ export default function CalendarWidget({
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {stats && [
             { label: "Tareas",   val: stats.totalTareas,     color: "#6366f1" },
-            { label: "Eventos",  val: stats.totalEventos,    color: "#0C6AC4" },
-            { label: "Vencidas", val: stats.tareasVencidas,  color: "#ef4444" },
+            { label: "Eventos",  val: stats.totalEventos,    color: "var(--color-primary)" },
+            { label: "Vencidas", val: stats.tareasVencidas,  color: "var(--color-error)" },
             { label: "Próximos", val: stats.eventosProximos, color: "#22c55e" },
           ].map(({ label, val, color }) => (
             <div key={label} style={{
@@ -533,7 +533,7 @@ export default function CalendarWidget({
             display: "flex", gap: 10, flexWrap: "wrap",
           }}>
             {[
-              { color: "#ef4444", label: "Vencida"  },
+              { color: "var(--color-error)", label: "Vencida"  },
               { color: "#f97316", label: "Urgente"  },
               { color: "#22c55e", label: "Próxima"  },
               { color: "#2196F3", label: "Evento"   },

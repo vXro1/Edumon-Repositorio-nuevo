@@ -15,7 +15,7 @@ export default function Footer({
         borderTop: "1px solid var(--color-border)",
       }}
     >
-      {/* Decorative ambient glows */}
+      {/* Brillos ambientales decorativos */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.07]">
         <div
           className="absolute w-96 h-96 rounded-full blur-3xl -top-32 -left-20"
@@ -29,10 +29,10 @@ export default function Footer({
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        {/* GRID */}
+        {/* CUADRÍCULA */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
 
-          {/* BRAND */}
+          {/* MARCA */}
           <section aria-label="Edumon">
             <div className="flex items-center gap-2 mb-4">
               <img src={logo} alt="Edumon" className="w-7 h-7" />
@@ -45,7 +45,7 @@ export default function Footer({
             </p>
           </section>
 
-          {/* LINK COLUMNS */}
+          {/* COLUMNAS DE ENLACES */}
           {columns.map((col, i) => (
             <nav key={i} aria-label={col.title}>
               <h3
@@ -73,14 +73,14 @@ export default function Footer({
           ))}
         </div>
 
-        {/* DIVIDER */}
+        {/* DIVISOR */}
         <div
           className="mt-10 mb-6 h-px"
           style={{ background: "var(--color-border)" }}
           aria-hidden="true"
         />
 
-        {/* COPYRIGHT */}
+        {/* DERECHOS DE AUTOR */}
         <p className="text-center text-xs" style={{ color: "var(--color-text-muted)" }}>
           &copy; {copyright}
         </p>

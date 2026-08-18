@@ -1,5 +1,6 @@
-// src/utils/testApi.js
-// Utilidad para testear la conexión al API sin ir a través de React
+// src/utils/testApi.js — DEV ONLY. No importar en producción.
+// Expone window.testApi para depuración manual desde la consola del navegador.
+// Uso: testApi.login("+573001234567", "password") | testApi.connection()
 
 const baseUrl = () => import.meta.env.VITE_API_URL ?? "/api";
 

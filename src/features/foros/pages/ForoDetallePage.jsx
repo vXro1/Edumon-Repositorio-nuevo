@@ -14,7 +14,7 @@ import {
   mensajesForoGetByForo,
   mensajesForoCreate,
   mensajesForoToggleLike,
-} from "@/lib/apiClient";
+} from "@/features/foros/services/forosService";
 
 import { useAuth }          from "@/features/auth/hooks/useAuth";
 import { normalizeMensaje } from "@/lib/normalizers";
@@ -23,7 +23,7 @@ import { IconBtn }          from "@/features/cursos/components/shared/ui";
 import useUserStore         from "@/store/useUserStore";
 import { humanizeError }    from "@/utils/humanizeError";
 
-/* ─── Skeleton ──────────────────────────────────────────────── */
+/* ─── Esqueleto de carga ─────────────────────────────────────── */
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return (
     <div
@@ -58,7 +58,7 @@ function LoadingSkeleton() {
   );
 }
 
-/* ─── Helpers ───────────────────────────────────────────────── */
+/* ─── Utilidades ────────────────────────────────────────────── */
 function formatFecha(iso) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("es-CO", {
@@ -121,7 +121,7 @@ function ArchivoChip({ archivo }) {
   );
 }
 
-/* ─── MensajeCard ───────────────────────────────────────────── */
+/* ─── Tarjeta de mensaje ─────────────────────────────────────── */
 function MensajeCard({ mensaje, onLike, onReply, esRespuesta = false }) {
   const [hov, setHov] = useState(false);
   const liked = mensaje.yaLeDioLike;
@@ -200,7 +200,7 @@ function MensajeCard({ mensaje, onLike, onReply, esRespuesta = false }) {
   );
 }
 
-/* ─── Composer ──────────────────────────────────────────────── */
+/* ─── Compositor ────────────────────────────────────────────── */
 function Composer({ texto, setTexto, archivos, setArchivos, sending, onSubmit, replyTo, onCancelReply, textareaRef, fileRef }) {
   const [focused, setFocused] = useState(false);
 
@@ -327,7 +327,7 @@ function Composer({ texto, setTexto, archivos, setArchivos, sending, onSubmit, r
   );
 }
 
-/* ─── Page ──────────────────────────────────────────────────── */
+/* ─── Página ────────────────────────────────────────────────── */
 export default function ForoDetallePage() {
   const { id }   = useParams();
   const navigate = useNavigate();
@@ -459,7 +459,7 @@ export default function ForoDetallePage() {
     <div style={{ maxWidth: 820, margin: "0 auto" }}>
       <Toast msg={toast.msg} type={toast.type} />
 
-      {/* ── Header ── */}
+      {/* ── Cabecera ── */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 20 }}>
         <IconBtn color="var(--color-text-muted)" onClick={() => navigate("/foros")} title="Volver">
           <ArrowLeft size={17} />
@@ -473,14 +473,14 @@ export default function ForoDetallePage() {
             <span style={{
               padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700,
               background: abierto ? "rgba(22,163,74,0.10)" : "rgba(148,163,184,0.15)",
-              color: abierto ? "#16A34A" : "#64748B",
+              color: abierto ? "var(--edu-green-600)" : "#64748B",
             }}>
               {abierto ? "Abierto" : "Cerrado"}
             </span>
             {foro.publico !== false && (
               <span style={{
                 padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700,
-                background: "rgba(12,106,196,0.08)", color: "#0C6AC4",
+                background: "rgba(12,106,196,0.08)", color: "var(--color-primary)",
                 display: "inline-flex", alignItems: "center", gap: 3,
               }}>
                 <Globe size={9} /> Público

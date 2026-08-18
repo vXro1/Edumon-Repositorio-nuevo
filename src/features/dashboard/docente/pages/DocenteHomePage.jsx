@@ -6,17 +6,19 @@ import {
   Plus, Calendar, Clock, CheckCircle2, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { cursosGetMine, tareasGetAll, eventosGetHoy } from "@/lib/apiClient";
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { tareasGetAll } from "@/features/cursos/services/tareasService";
+import { eventosGetHoy } from "@/features/eventos/services/eventosService";
 import { normalizeCurso, normalizeTarea } from "@/lib/normalizers";
 import CursoCard from "@/features/cursos/components/CursoCard";
 import { Button } from "@/components";
 
-/* ── Skeleton ──────────────────────────────────────────────────── */
+/* ── Esqueleto de carga ────────────────────────────────────────── */
 function Sk({ h = 14, w = "100%", r = "var(--radius-sm)" }) {
   return <span className="skeleton" style={{ height: h, width: w, borderRadius: r, display: "block" }} />;
 }
 
-/* ── Stat card ─────────────────────────────────────────────────── */
+/* ── Tarjeta de estadística ────────────────────────────────────── */
 function StatCard({ value, label, icon: Icon, colorClass, loading }) {
   return (
     <div className="stat-card">
@@ -40,7 +42,7 @@ function StatCard({ value, label, icon: Icon, colorClass, loading }) {
   );
 }
 
-/* ── Task list item ────────────────────────────────────────────── */
+/* ── Ítem de lista de tareas ───────────────────────────────────── */
 function TaskItem({ tarea }) {
   return (
     <div className="list-card-item">
@@ -69,7 +71,7 @@ function TaskItem({ tarea }) {
   );
 }
 
-/* ── Event list item ───────────────────────────────────────────── */
+/* ── Ítem de lista de eventos ──────────────────────────────────── */
 function EventItem({ evento }) {
   return (
     <div className="list-card-item">
@@ -90,7 +92,7 @@ function EventItem({ evento }) {
   );
 }
 
-/* ── Section header ────────────────────────────────────────────── */
+/* ── Encabezado de sección ─────────────────────────────────────── */
 function SectionHeader({ title, onAction, actionLabel }) {
   return (
     <div className="section-header">
@@ -104,7 +106,7 @@ function SectionHeader({ title, onAction, actionLabel }) {
   );
 }
 
-/* ── Empty state ───────────────────────────────────────────────── */
+/* ── Estado vacío ──────────────────────────────────────────────── */
 function EmptyState({ icon: Icon, text, actionLabel, onAction }) {
   return (
     <div className="empty-state">
@@ -121,7 +123,7 @@ function EmptyState({ icon: Icon, text, actionLabel, onAction }) {
   );
 }
 
-/* ── Course grid skeletons ─────────────────────────────────────── */
+/* ── Esqueletos de cuadrícula de cursos ────────────────────────── */
 function CourseSkeletons() {
   return (
     <div className="grid-auto-sm">
@@ -140,7 +142,7 @@ function CourseSkeletons() {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   MAIN PAGE
+   PÁGINA PRINCIPAL
    ══════════════════════════════════════════════════════════════════ */
 export default function DocenteHomePage() {
   const { user }   = useAuth();
@@ -174,9 +176,9 @@ export default function DocenteHomePage() {
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
-      {/* ── Welcome banner ── */}
+      {/* ── Banner de bienvenida ── */}
       <div className="welcome-banner edu-fade-in" role="banner">
-        <div style={{ position: "relative", zIndex: 1 }}>
+        <div style={{ position: "relative", zIndex: 1, width: "100%" }}>
           <span className="welcome-badge">
             <Sparkles size={10} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
             Docente
@@ -184,22 +186,45 @@ export default function DocenteHomePage() {
           <h1 className="welcome-title">
             {saludo}{user?.nombre ? `, ${user.nombre}` : ""}
           </h1>
-          <p className="welcome-sub">Aquí tienes un resumen de tu actividad de hoy.</p>
+          {!loading && (
+            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginTop: "var(--space-3)" }}>
+              {cursos.length > 0 && (
+                <span className="welcome-chip">
+                  {cursos.length} {cursos.length === 1 ? "curso activo" : "cursos activos"}
+                </span>
+              )}
+              {tareas.length > 0 && (
+                <span className="welcome-chip">
+                  {tareas.length} {tareas.length === 1 ? "reto activo" : "retos activos"}
+                </span>
+              )}
+              {eventos.length > 0 && (
+                <span className="welcome-chip">
+                  {eventos.length} {eventos.length === 1 ? "evento hoy" : "eventos hoy"}
+                </span>
+              )}
+              {totalEstudiantes > 0 && (
+                <span className="welcome-chip">
+                  {totalEstudiantes} {totalEstudiantes === 1 ? "estudiante" : "estudiantes"}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Stats ── */}
+      {/* ── Estadísticas ── */}
       <section aria-label="Estadísticas de actividad" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Tu actividad" />
         <div className="grid-stats">
           <StatCard value={cursos.length}        label="Mis cursos"           icon={BookOpen}      colorClass="stat-icon-purple" loading={loading} />
           <StatCard value={totalEstudiantes}      label="Estudiantes en total" icon={Users}         colorClass="stat-icon-green"  loading={loading} />
-          <StatCard value={tareas.length}         label="Tareas activas"       icon={ClipboardList} colorClass="stat-icon-cyan"   loading={loading} />
+          <StatCard value={tareas.length}         label="Retos activos"        icon={ClipboardList} colorClass="stat-icon-cyan"   loading={loading} />
           <StatCard value={eventos.length}        label="Eventos hoy"          icon={Calendar}      colorClass="stat-icon-yellow" loading={loading} />
         </div>
       </section>
 
-      {/* ── Quick actions ── */}
+      {/* ── Acciones rápidas ── */}
       <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
         <div className="quick-actions">
@@ -209,7 +234,7 @@ export default function DocenteHomePage() {
           </Button>
           <Button variant="outline-neutral" onClick={() => navigate("/tareas")}>
             <ClipboardList size={15} aria-hidden="true" />
-            Nueva tarea
+            Nuevo reto
           </Button>
           <Button variant="ghost" onClick={() => navigate("/calendario")}>
             <Calendar size={15} aria-hidden="true" />
@@ -218,10 +243,10 @@ export default function DocenteHomePage() {
         </div>
       </section>
 
-      {/* ── Courses + Tasks ── */}
+      {/* ── Cursos + Retos ── */}
       <div className="layout-split" style={{ marginBottom: "var(--space-6)" }}>
 
-        {/* Courses */}
+        {/* Cursos */}
         <section aria-label="Mis cursos">
           <SectionHeader
             title="Mis cursos"
@@ -245,19 +270,18 @@ export default function DocenteHomePage() {
                   curso={c}
                   role="docente"
                   idx={i}
-                  showCover={true}
-                  coverSrc={c.fotoPortada || null}
+                  compact={true}
                 />
               ))}
             </div>
           )}
         </section>
 
-        {/* Tasks */}
-        <section aria-label="Tareas activas">
+        {/* Retos */}
+        <section aria-label="Retos activos">
           <SectionHeader
-            title="Tareas activas"
-            actionLabel="Ver todas"
+            title="Retos activos"
+            actionLabel="Ver todos"
             onAction={() => navigate("/tareas")}
           />
           <div className="list-card">
@@ -281,7 +305,7 @@ export default function DocenteHomePage() {
                   style={{ color: "var(--color-text-subtle)", margin: "0 auto var(--space-2)" }}
                 />
                 <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", margin: 0 }}>
-                  Sin tareas activas
+                  Sin retos activos
                 </p>
               </div>
             ) : (
@@ -291,7 +315,7 @@ export default function DocenteHomePage() {
         </section>
       </div>
 
-      {/* ── Events today ── */}
+      {/* ── Eventos de hoy ── */}
       {!loading && eventos.length > 0 && (
         <section aria-label="Eventos de hoy" style={{ marginBottom: "var(--space-6)" }}>
           <SectionHeader

@@ -19,7 +19,7 @@
   to   { transform: scaleX(0); }
 }
 
-/* ── Viewport (fixed container) ───────────────────────────────────────── */
+/* ── Viewport (contenedor fijo) ───────────────────────────────────────── */
 .toast-viewport {
   position: fixed;
   bottom: var(--space-6);
@@ -33,7 +33,7 @@
   pointer-events: none;
 }
 
-/* ── Base toast ───────────────────────────────────────────────────────── */
+/* ── Toast base ───────────────────────────────────────────────────────── */
 .toast {
   display: flex;
   align-items: flex-start;
@@ -51,7 +51,7 @@
   animation: edu-toast-enter 0.35s var(--transition-spring) both;
 }
 
-/* Progress bar track */
+/* Pista de la barra de progreso */
 .toast::after {
   content: '';
   position: absolute;
@@ -64,7 +64,7 @@
   transform-origin: left;
 }
 
-/* ── Icon ─────────────────────────────────────────────────────────────── */
+/* ── Ícono ─────────────────────────────────────────────────────────────── */
 .toast-icon {
   flex-shrink: 0;
   width: 2rem;
@@ -76,7 +76,7 @@
   font-size: var(--text-base);
 }
 
-/* ── Content ──────────────────────────────────────────────────────────── */
+/* ── Contenido ──────────────────────────────────────────────────────────── */
 .toast-content {
   flex: 1;
   min-width: 0;
@@ -98,7 +98,7 @@
   line-height: var(--leading-relaxed);
 }
 
-/* ── Close button ─────────────────────────────────────────────────────── */
+/* ── Botón de cierre ─────────────────────────────────────────────────────── */
 .toast-close {
   flex-shrink: 0;
   width: 1.5rem;
@@ -122,7 +122,7 @@
   color: var(--color-text);
 }
 
-/* ── Variants ─────────────────────────────────────────────────────────── */
+/* ── Variantes ─────────────────────────────────────────────────────────── */
 .toast-success {
   border-color: var(--color-success-light);
   border-left: 4px solid var(--color-success);
@@ -151,13 +151,13 @@
 .toast-info .toast-icon { background: var(--color-accent-light); color: var(--color-accent-hover); }
 .toast-info::after      { background: var(--color-accent-light); }
 
-/* ── Exit (add via JS) ────────────────────────────────────────────────── */
+/* ── Salida (agregar vía JS) ────────────────────────────────────────────────── */
 .toast-exiting {
   animation: edu-toast-exit 0.30s ease forwards;
   pointer-events: none;
 }
 
-/* ── Auto-dismiss progress (set --toast-duration on the element) ──────── */
+/* ── Progreso de cierre automático (establecer --toast-duration en el elemento) ──────── */
 .toast-has-progress::after {
   background: currentColor;
   opacity: 0.20;
@@ -165,7 +165,7 @@
   animation: edu-toast-progress var(--toast-duration, 5s) linear forwards;
 }
 
-/* ── Responsive ───────────────────────────────────────────────────────── */
+/* ── Responsivo ───────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .toast-viewport {
     bottom: var(--space-4);

@@ -11,15 +11,8 @@ import {
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { normalizeUser }from "@/lib/normalizers";
 
-import {
-  usersGetAll,
-  usersGetById,
-  usersCreate,
-  usersUpdate,
-  usersDelete,
-  institucionesGetMine,
-  institucionesGetAll,
-} from "@/lib/apiClient";
+import { usersGetAll, usersGetById, usersCreate, usersUpdate, usersDelete } from "@/services/usersService";
+import { institucionesGetMine, institucionesGetAll } from "@/services/institucionesService";
 
 import { Modal, Toast, UserAvatar } from "@/components";
 
@@ -55,7 +48,7 @@ function RolBadge({ rol }) {
 function EstadoBadge({ estado }) {
   const ok = estado === "activo";
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: ok ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)", color: ok ? "#16A34A" : "#DC2626" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: ok ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)", color: ok ? "var(--edu-green-600)" : "var(--color-error-hover)" }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor" }} />
       {ok ? "Activo" : "Suspendido"}
     </span>
@@ -69,16 +62,16 @@ function Sk({ h = 14, w = "100%", r = 6 }) {
 function FieldGroup({ label, children, error }) {
   return (
     <div>
-      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: error ? "#DC2626" : "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
+      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: error ? "var(--color-error-hover)" : "var(--color-text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
       {children}
-      {error && <p style={{ fontSize: 11.5, color: "#DC2626", margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}><AlertCircle style={{ width: 11, height: 11, flexShrink: 0 }} />{error}</p>}
+      {error && <p style={{ fontSize: 11.5, color: "var(--color-error-hover)", margin: "4px 0 0", display: "flex", alignItems: "center", gap: 4 }}><AlertCircle style={{ width: 11, height: 11, flexShrink: 0 }} />{error}</p>}
     </div>
   );
 }
 
 function StyledInput({ value, onChange, placeholder, type = "text", required = false, disabled = false, hasError = false }) {
   const [f, setF] = useState(false);
-  const borderColor = hasError ? "#DC2626" : f ? "#0C6AC4" : "var(--color-border)";
+  const borderColor = hasError ? "var(--color-error-hover)" : f ? "var(--color-primary)" : "var(--color-border)";
   const shadow = hasError ? "0 0 0 3px rgba(220,38,38,0.10)" : f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none";
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required} disabled={disabled}
@@ -91,7 +84,7 @@ function StyledSelect({ value, onChange, children, disabled = false }) {
   const [f, setF] = useState(false);
   return (
     <select value={value} onChange={onChange} disabled={disabled} onFocus={() => setF(true)} onBlur={() => setF(false)}
-      style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "#0C6AC4" : "var(--color-border)"}`, outline: "none", background: disabled ? "var(--color-bg)" : "var(--color-surface)", color: "var(--color-text)", cursor: disabled ? "not-allowed" : "pointer", transition: "border-color 150ms" }}>
+      style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "var(--color-primary)" : "var(--color-border)"}`, outline: "none", background: disabled ? "var(--color-bg)" : "var(--color-surface)", color: "var(--color-text)", cursor: disabled ? "not-allowed" : "pointer", transition: "border-color 150ms" }}>
       {children}
     </select>
   );
@@ -99,7 +92,7 @@ function StyledSelect({ value, onChange, children, disabled = false }) {
 
 
 /* Detail info row */
-function InfoRow({ icon: Icon, label, value, color = "#0C6AC4" }) {
+function InfoRow({ icon: Icon, label, value, color = "var(--color-primary)" }) {
   if (!value) return null;
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--color-border)" }}>
@@ -415,9 +408,9 @@ export default function UsuariosPage() {
           <button onClick={load} title="Actualizar" style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-text-muted)" }}>
             <RefreshCw style={{ width: 15, height: 15 }} />
           </button>
-          <button onClick={() => { setForm(INIT); setShowCreate(true); }} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 10, border: "none", background: "#0C6AC4", color: "white", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}
+          <button onClick={() => { setForm(INIT); setShowCreate(true); }} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 10, border: "none", background: "var(--color-primary)", color: "white", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#0A58A8"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#0C6AC4"; }}>
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--color-primary)"; }}>
             <Plus style={{ width: 16, height: 16 }} /> Nuevo usuario
           </button>
         </div>
@@ -541,14 +534,14 @@ export default function UsuariosPage() {
             {/* Regular admin: warn if institution couldn't be resolved */}
             {!isSuperadmin && !institucionId && (
               <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 9, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)" }}>
-                <AlertCircle style={{ width: 14, height: 14, color: "#DC2626", flexShrink: 0 }} />
-                <p style={{ fontSize: 12.5, color: "#DC2626", margin: 0 }}>No se pudo cargar tu institución. Recarga la página antes de continuar.</p>
+                <AlertCircle style={{ width: 14, height: 14, color: "var(--color-error-hover)", flexShrink: 0 }} />
+                <p style={{ fontSize: 12.5, color: "var(--color-error-hover)", margin: 0 }}>No se pudo cargar tu institución. Recarga la página antes de continuar.</p>
               </div>
             )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, padding: "10px 12px", borderRadius: 9, background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.15)" }}>
-            <Hash style={{ width: 13, height: 13, color: "#0C6AC4", flexShrink: 0 }} />
-            <p style={{ fontSize: 12.5, color: "#0C6AC4", margin: 0 }}>
+            <Hash style={{ width: 13, height: 13, color: "var(--color-primary)", flexShrink: 0 }} />
+            <p style={{ fontSize: 12.5, color: "var(--color-primary)", margin: 0 }}>
               Contraseña inicial: <strong>"Edu" + cédula</strong> — ej: <strong>{"Edu" + (form.cedula || "12345678")}</strong>. El usuario debe cambiarla al ingresar.
             </p>
           </div>
@@ -615,7 +608,7 @@ export default function UsuariosPage() {
                 <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Foto de perfil</p>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   <img src={d.fotoPerfilUrl} alt="Foto de perfil" style={{ width: 80, height: 80, borderRadius: 12, objectFit: "cover", border: "2px solid var(--color-border)" }} />
-                  <a href={d.fotoPerfilUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: "#0C6AC4", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                  <a href={d.fotoPerfilUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: "var(--color-primary)", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
                     <Eye style={{ width: 13, height: 13 }} /> Ver imagen completa
                   </a>
                 </div>
@@ -639,11 +632,11 @@ export default function UsuariosPage() {
                 <Edit2 style={{ width: 13, height: 13 }} /> Editar
               </button>
               {d.estado === "activo" ? (
-                <button onClick={() => { setViewTarget(null); setDelTarget(d); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "none", background: "rgba(220,38,38,0.1)", color: "#DC2626", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => { setViewTarget(null); setDelTarget(d); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "none", background: "rgba(220,38,38,0.1)", color: "var(--color-error-hover)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                   <UserX style={{ width: 13, height: 13 }} /> Suspender
                 </button>
               ) : (
-                <button onClick={() => { setViewTarget(null); setActivTarget(d); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "none", background: "rgba(22,163,74,0.1)", color: "#16A34A", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => { setViewTarget(null); setActivTarget(d); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, border: "none", background: "rgba(22,163,74,0.1)", color: "var(--edu-green-600)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                   <UserCheck style={{ width: 13, height: 13 }} /> Activar
                 </button>
               )}
@@ -666,7 +659,7 @@ export default function UsuariosPage() {
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <BtnCancel onClick={() => setDelTarget(null)} />
-          <button onClick={handleSuspend} disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#fca5a5" : "#DC2626", color: "white", fontSize: 13.5, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={handleSuspend} disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#fca5a5" : "var(--color-error-hover)", color: "white", fontSize: 13.5, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
             {saving && <Loader2 style={{ width: 14, height: 14, animation: "edu-spin 0.6s linear infinite" }} />}
             {saving ? "Suspendiendo..." : "Suspender"}
           </button>
@@ -687,7 +680,7 @@ export default function UsuariosPage() {
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <BtnCancel onClick={() => setActivTarget(null)} />
-          <button onClick={handleActivate} disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#86efac" : "#16A34A", color: "white", fontSize: 13.5, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={handleActivate} disabled={saving} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#86efac" : "var(--edu-green-600)", color: "white", fontSize: 13.5, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
             {saving && <Loader2 style={{ width: 14, height: 14, animation: "edu-spin 0.6s linear infinite" }} />}
             {saving ? "Activando..." : "Activar usuario"}
           </button>
@@ -723,10 +716,10 @@ function UserRow({ user: u, onView, onEdit, onSuspend, onActivate }) {
       <td style={{ padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 5 }}>
           <ActionIconBtn icon={Eye}       title="Ver detalles"  color="#6366F1" bg="rgba(99,102,241,0.08)"  onClick={onView} />
-          <ActionIconBtn icon={Edit2}     title="Editar"        color="#0C6AC4" bg="rgba(12,106,196,0.08)"  onClick={onEdit} />
+          <ActionIconBtn icon={Edit2}     title="Editar"        color="var(--color-primary)" bg="rgba(12,106,196,0.08)"  onClick={onEdit} />
           {suspended
-            ? <ActionIconBtn icon={UserCheck} title="Activar"   color="#16A34A" bg="rgba(22,163,74,0.08)"  onClick={onActivate} />
-            : <ActionIconBtn icon={UserX}     title="Suspender" color="#DC2626" bg="rgba(220,38,38,0.08)"  onClick={onSuspend} />
+            ? <ActionIconBtn icon={UserCheck} title="Activar"   color="var(--edu-green-600)" bg="rgba(22,163,74,0.08)"  onClick={onActivate} />
+            : <ActionIconBtn icon={UserX}     title="Suspender" color="var(--color-error-hover)" bg="rgba(220,38,38,0.08)"  onClick={onSuspend} />
           }
         </div>
       </td>
@@ -762,7 +755,7 @@ function BtnCancel({ onClick }) {
 
 function BtnSave({ children, saving, ...props }) {
   return (
-    <button type="submit" disabled={saving} {...props} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#6ba4d8" : "#0C6AC4", color: "white", fontSize: 13.5, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+    <button type="submit" disabled={saving} {...props} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: saving ? "#6ba4d8" : "var(--color-primary)", color: "white", fontSize: 13.5, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}>
       {saving && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
       {children}
     </button>

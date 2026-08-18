@@ -8,14 +8,14 @@ import {
 import {
   perfilesGetAll, perfilesCreate, perfilesUpdate,
   perfilesDelete, perfilesSeleccionar, perfilesUpdateFcmToken,
-  usersGetDefaultPhotos,
-} from "@/lib/apiClient";
+} from "@/features/familia/services/perfilesService";
+import { usersGetDefaultPhotos } from "@/services/usersService";
 import { humanizeError } from "@/utils/humanizeError";
 import { Toast, Button, Input, Badge, Modal } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
-// ─── Local avatar imports ──────────────────────────────────────────────────
+// ─── Importaciones de avatares locales ────────────────────────────────────
 import av1  from "@/assets/img/avatars/avatar1.svg";
 import av2  from "@/assets/img/avatars/avatar2.svg";
 import av3  from "@/assets/img/avatars/avatar3.svg";
@@ -30,7 +30,7 @@ import av11 from "@/assets/img/avatars/avatar11.svg";
 
 const LOCAL_AVATARS = [av1, av2, av3, av4, av5, av6, av7, av8, av9, av10, av11];
 
-// ─── Avatar picker ─────────────────────────────────────────────────────────
+// ─── Selector de avatar ────────────────────────────────────────────────────
 function AvatarPicker({ value, onChange, defaultPhotos, loadingPhotos }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -58,7 +58,7 @@ function AvatarPicker({ value, onChange, defaultPhotos, loadingPhotos }) {
             <button
               type="button"
               onClick={() => onChange("")}
-              style={{ fontSize: 12, color: "#DC2626", background: "none", border: "none", cursor: "pointer", padding: "3px 0 0", fontWeight: 600 }}
+              style={{ fontSize: 12, color: "var(--color-error-hover)", background: "none", border: "none", cursor: "pointer", padding: "3px 0 0", fontWeight: 600 }}
             >
               Quitar avatar
             </button>
@@ -82,7 +82,7 @@ function AvatarPicker({ value, onChange, defaultPhotos, loadingPhotos }) {
                 title={`Avatar ${i + 1}`}
                 style={{
                   padding: 2,
-                  border: sel ? "3px solid #0C6AC4" : "3px solid transparent",
+                  border: sel ? "3px solid var(--color-primary)" : "3px solid transparent",
                   borderRadius: "50%", background: "none", cursor: "pointer",
                   transition: "border-color 120ms, transform 120ms",
                   outline: "none",
@@ -121,7 +121,7 @@ function AvatarPicker({ value, onChange, defaultPhotos, loadingPhotos }) {
                     title={foto.nombre ?? `Avatar ${i + 1}`}
                     style={{
                       padding: 2,
-                      border: sel ? "3px solid #0C6AC4" : "3px solid transparent",
+                      border: sel ? "3px solid var(--color-primary)" : "3px solid transparent",
                       borderRadius: "50%", background: "none", cursor: "pointer",
                       transition: "border-color 120ms, transform 120ms",
                       outline: "none",
@@ -141,7 +141,7 @@ function AvatarPicker({ value, onChange, defaultPhotos, loadingPhotos }) {
   );
 }
 
-// ─── Profile card ──────────────────────────────────────────────────────────
+// ─── Tarjeta de perfil ─────────────────────────────────────────────────────
 function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete, switching }) {
   const name    = perfil.nombre ?? "Perfil";
   const initial = name?.[0]?.toUpperCase() ?? "?";
@@ -149,25 +149,25 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
   return (
     <div style={{
       background: "var(--color-surface)",
-      border: `2px solid ${isSelected ? "#0C6AC4" : "var(--color-border)"}`,
+      border: `2px solid ${isSelected ? "var(--color-primary)" : "var(--color-border)"}`,
       borderRadius: 18, padding: "22px 20px",
       display: "flex", flexDirection: "column", alignItems: "center",
       gap: 12, textAlign: "center", position: "relative",
       transition: "border-color 200ms, box-shadow 200ms",
       boxShadow: isSelected ? "0 0 0 3px rgba(12,106,196,0.15)" : "var(--shadow-card)",
     }}>
-      {/* Selected check */}
+      {/* Marca de seleccionado */}
       {isSelected && (
         <div style={{
           position: "absolute", top: 12, right: 12,
           width: 22, height: 22, borderRadius: "50%",
-          background: "#0C6AC4", display: "flex", alignItems: "center", justifyContent: "center",
+          background: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <Check size={12} color="white" />
         </div>
       )}
 
-      {/* Titular badge */}
+      {/* Insignia de titular */}
       {isTitular && (
         <Badge
           variant="warning"
@@ -186,7 +186,7 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
         ) : (
           <div style={{
             width: "100%", height: "100%",
-            background: "linear-gradient(135deg,#0C6AC4,#1E3A6E)",
+            background: "linear-gradient(135deg,var(--color-primary),#1E3A6E)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 26, fontWeight: 800, color: "white",
           }}>
@@ -197,7 +197,7 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
 
       <p style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--color-text)" }}>{name}</p>
 
-      {/* Actions */}
+      {/* Acciones */}
       <div style={{ display: "flex", gap: 8 }}>
         {!isSelected && (
           <Button variant="primary" size="sm" onClick={onSelect} loading={switching}>
@@ -205,7 +205,7 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
           </Button>
         )}
         {isSelected && !isTitular && (
-          <span style={{ fontSize: 12, color: "#0C6AC4", fontWeight: 600 }}>Activo</span>
+          <span style={{ fontSize: 12, color: "var(--color-primary)", fontWeight: 600 }}>Activo</span>
         )}
         {isSelected && isTitular && (
           <span style={{ fontSize: 12, color: "#D97706", fontWeight: 600 }}>Perfil actual</span>
@@ -215,7 +215,7 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
             <IconBtn color="#6366F1" onClick={onEdit} title="Editar">
               <Edit2 size={13} />
             </IconBtn>
-            <IconBtn color="#DC2626" onClick={onDelete} title="Eliminar">
+            <IconBtn color="var(--color-error-hover)" onClick={onDelete} title="Eliminar">
               <Trash2 size={13} />
             </IconBtn>
           </>
@@ -334,7 +334,7 @@ export default function FamiliaPerfilesPage() {
     }
   };
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────
+  // ── CRUD (crear, leer, actualizar, eliminar) ──────────────────────────────
   const handleCreate = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -381,12 +381,12 @@ export default function FamiliaPerfilesPage() {
 
   const canCreate = perfiles.length < 5;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Renderizado ────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: 860, margin: "0 auto" }}>
       <Toast msg={toast.msg} type={toast.type} />
 
-      {/* Header */}
+      {/* Encabezado */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28, gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(217,119,6,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -413,14 +413,14 @@ export default function FamiliaPerfilesPage() {
           marginBottom: 20, padding: "10px 16px", borderRadius: 12,
           background: "rgba(12,106,196,0.08)", border: "1px solid rgba(12,106,196,0.20)",
           display: "flex", alignItems: "center", gap: 10, fontSize: 13.5,
-          color: "#0C6AC4", fontWeight: 600,
+          color: "var(--color-primary)", fontWeight: 600,
         }}>
           <UserCircle size={16} />
           Estás navegando con el perfil: <strong>{perfiles.find(p => p._id === activeId)?.nombre ?? "Secundario"}</strong>
         </div>
       )}
 
-      {/* Error */}
+      {/* Error de carga */}
       {apiError && (
         <div style={{ marginBottom: 20 }}>
           <Badge variant="error" icon={<AlertCircle size={16} />}>
@@ -430,7 +430,7 @@ export default function FamiliaPerfilesPage() {
         </div>
       )}
 
-      {/* Skeletons */}
+      {/* Esqueletos de carga */}
       {loading && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
           {[...Array(3)].map((_, i) => (
@@ -477,7 +477,7 @@ export default function FamiliaPerfilesPage() {
                 justifyContent: "center", gap: 8, color: "var(--color-text-muted)",
                 transition: "border-color 150ms", minHeight: 180,
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "#0C6AC4"}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--color-primary)"}
               onMouseLeave={e => e.currentTarget.style.borderColor = "var(--color-border)"}
             >
               <Plus size={24} />

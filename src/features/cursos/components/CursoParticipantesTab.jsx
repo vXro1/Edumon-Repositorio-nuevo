@@ -6,19 +6,22 @@
 //   ✦ Llama a cursosAddParticipantesCsv (FormData con campo archivoCSV)
 //   ✦ Recibe cursoId como prop para construir el endpoint correcto
 //   ✦ onAdd sigue funcionando igual (agregar individual)
+//   ✦ FIX: getParticipantesCurso devuelve el usuario APLANADO (nombre/apellido/correo
+//     directo sobre el participante), no anidado en "usuario". ParticipantesList ahora
+//     soporta ambos shapes para no depender de que el padre lo normalice antes.
 //
 // Props:
-//   data      {Array}   — lista de participantes (populada o con ID)
+//   data      {Array}   — lista de participantes (poblada, aplanada, o con ID)
 //   cursoId   {string}  — ID del curso (requerido para carga masiva)
 //   onAdd     {fn}      — abre el modal de agregar individual
 //   onRefresh {fn}      — callback para recargar la lista tras carga masiva
 
 import React, { useState } from "react";
-import { UserAvatar, Badge, CsvUploadModal } from "@/components";
+import { UserAvatar, CsvUploadModal } from "@/components";
 import { useAuthContext } from "../../../features/auth/context/AuthContext";
 import { tienePermiso } from "../../../security/roleMatrix";
 import { PERMISSIONS } from "../../../security/permissions";
-import { cursosAddParticipantesCsv } from "../../../api/cursosApi";
+import { cursosAddParticipantesCsv } from "@/features/cursos/services/cursosService";
 import { descargarPlantillaPadresCSV, CSV_COLUMNAS_PADRES } from "../../../components/ui/PadresCsvTemplate";
 
 export default function CursoParticipantesTab({ data = [], cursoId, onAdd, onRefresh }) {
@@ -159,21 +162,34 @@ function EmptyState() {
   );
 }
 
+// ─── Resolución del usuario a partir del participante ─────────────────────────
+// Soporta 3 shapes posibles:
+//   1) Aplanado (lo que devuelve getParticipantesCurso): { _id, nombre, apellido, correo, ... }
+//   2) Anidado y populado: { usuario: { _id, nombre, apellido, correo, ... }, etiqueta }
+//   3) Anidado sin popular: { usuario: "id-string", etiqueta }
+function resolverUsuario(p) {
+  if (p.usuario && typeof p.usuario === "object") return p.usuario;
+  if (p.nombre || p.apellido || p.correo) return p; // shape aplanado
+  return null; // solo tenemos un ID, sin datos poblados
+}
+
+function resolverIdParaKey(p) {
+  return p._id ?? (typeof p.usuario === "object" ? p.usuario._id : p.usuario) ?? p.correo;
+}
+
 // ─── Lista de participantes ───────────────────────────────────────────────────
 function ParticipantesList({ data }) {
   return (
     <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
       {data.map((p) => {
-        // Defensa contra objetos no populados: si p.usuario es un string ID,
-        // mostramos fallback en lugar de crashear con .nombre
-        const usuario = typeof p.usuario === "object" ? p.usuario : null;
+        const usuario = resolverUsuario(p);
         const nombre = usuario
           ? `${usuario.nombre ?? ""} ${usuario.apellido ?? ""}`.trim()
-          : `ID: ${String(p.usuario).slice(-6)}`;
+          : `ID: ${String(typeof p.usuario === "object" ? p.usuario?._id : p.usuario ?? "").slice(-6)}`;
 
         return (
           <li
-            key={p.usuario?._id ?? p.usuario}
+            key={resolverIdParaKey(p)}
             style={{
               padding: "10px 14px",
               borderRadius: 10,

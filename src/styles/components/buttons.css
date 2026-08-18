@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────────────
-   BUTTONS — Duolingo hard-bottom press mechanic. Full system.
+   BOTONES — Mecanismo de presión inferior estilo Duolingo. Sistema completo.
    ────────────────────────────────────────────────────────────────────── */
 
 /* ── Base ── */
@@ -52,7 +52,7 @@
 
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(252, 189, 0, 0.35);
+  box-shadow: var(--shadow-focus);
 }
 
 .btn:disabled,
@@ -64,7 +64,7 @@
   transform: none !important;
 }
 
-/* ── Sizes ── */
+/* ── Tamaños ── */
 .btn-xs {
   height: 1.875rem;
   padding: 0 var(--space-3);
@@ -94,29 +94,29 @@
   letter-spacing: var(--tracking-wide);
 }
 .btn-full { width: 100%; }
-/* ── Variant: Primary (yellow) ── */
+/* ── Variante: Primario (morado — color de marca) ── */
 .btn-primary {
-  background: var(--edu-yellow-500);
-  color: var(--edu-dark);
-  border-color: var(--edu-yellow-500);
-  box-shadow: 0 4px 0 var(--edu-yellow-700);
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 0 var(--color-primary-active);
 }
 .btn-primary:not(:disabled):not(:active):hover {
-  background: var(--edu-yellow-400);
-  border-color: var(--edu-yellow-400);
-  color: var(--edu-dark);
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 5px 0 var(--edu-yellow-700);
+  box-shadow: 0 5px 0 var(--color-primary-active);
 }
 .btn-primary:not(:disabled):active {
-  background: var(--edu-yellow-600);
-  color: var(--edu-dark);
-  border-color: var(--edu-yellow-600);
+  background: var(--color-primary-active);
+  color: #ffffff;
+  border-color: var(--color-primary-active);
   transform: translateY(4px);
-  box-shadow: 0 0 0 var(--edu-yellow-700);
+  box-shadow: 0 0 0 var(--color-primary-active);
 }
 
-/* ── Variant: Gradient ── */
+/* ── Variante: Gradiente ── */
 .btn-gradient {
   background: linear-gradient(135deg, var(--edu-yellow-400) 0%, var(--edu-yellow-500) 55%, var(--edu-yellow-600) 100%);
   color: var(--edu-dark);
@@ -133,7 +133,7 @@
   box-shadow: 0 0 0 var(--edu-yellow-700);
 }
 
-/* ── Variant: Secondary (pink) ── */
+/* ── Variante: Secundario (rosa) ── */
 .btn-secondary {
   background: var(--edu-pink-500);
   color: var(--color-text-inverse);
@@ -155,7 +155,7 @@
   box-shadow: 0 0 0 var(--edu-pink-700);
 }
 
-/* ── Variant: Ghost ── */
+/* ── Variante: Fantasma ── */
 .btn-ghost {
   background: transparent;
   color: var(--color-text-muted);
@@ -171,7 +171,7 @@
   transform: scale(0.97);
 }
 
-/* Ghost brand (yellow tint) */
+/* Fantasma de marca (tinte amarillo) */
 .btn-ghost-primary {
   background: transparent;
   color: var(--edu-yellow-600);
@@ -184,7 +184,7 @@
   transform: scale(0.97);
 }
 
-/* ── Variant: Soft ── */
+/* ── Variante: Suave ── */
 .btn-soft {
   background: var(--edu-yellow-50);
   color: var(--edu-yellow-700);
@@ -198,7 +198,7 @@
 }
 .btn-soft:not(:disabled):active { transform: scale(0.97); }
 
-/* ── Variant: Success ── */
+/* ── Variante: Éxito ── */
 .btn-success {
   background: var(--color-success);
   color: var(--color-text-inverse);
@@ -220,7 +220,7 @@
   box-shadow: 0 4px 0 var(--edu-green-700), var(--shadow-focus-success);
 }
 
-/* ── Variant: Warning ── */
+/* ── Variante: Advertencia ── */
 .btn-warning {
   background: var(--color-warning);
   color: var(--edu-neutral-900);
@@ -238,7 +238,7 @@
   box-shadow: 0 0 0 var(--edu-yellow-700);
 }
 
-/* ── Variant: Danger ── */
+/* ── Variante: Peligro ── */
 .btn-danger {
   background: var(--color-error);
   color: var(--color-text-inverse);
@@ -259,7 +259,7 @@
   box-shadow: 0 4px 0 var(--color-error-hover), var(--shadow-focus-error);
 }
 
-/* ── Variant: Accent (cyan) ── */
+/* ── Variante: Acento (cian) ── */
 .btn-accent {
   background: var(--color-accent);
   color: var(--edu-dark);
@@ -277,7 +277,7 @@
   box-shadow: 0 0 0 var(--edu-cyan-700);
 }
 
-/* ── Variant: Outline Neutral ── */
+/* ── Variante: Contorno Neutro ── */
 .btn-outline-neutral {
   background: var(--color-surface);
   color: var(--color-text);
@@ -296,7 +296,7 @@
   box-shadow: 0 0 0 var(--edu-neutral-300);
 }
 
-/* ── Variant: Link ── */
+/* ── Variante: Enlace ── */
 .btn-link {
   background: transparent;
   color: var(--edu-yellow-600);

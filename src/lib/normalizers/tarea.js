@@ -1,7 +1,25 @@
 // src/lib/normalizers/tarea.js
+//
+// Único punto de normalización de una "Tarea" que llega del backend.
+// Todo lo que se agrega o cambia aquí debe respetar EXACTAMENTE el
+// contrato del backend (Tarea.js / createTareaValidator.js /
+// updateTareaValidator.js / tareasController.js):
+//
+//   - etiquetas               -> Array<String>
+//   - criterios               -> String (NO es un array de objetos)
+//   - archivosAdjuntos        -> Array<{ tipo: "archivo" | "enlace", url, nombre, ... }>
+//                                Los "enlaces" NO son un campo aparte en el modelo:
+//                                el backend los guarda mezclados dentro de
+//                                archivosAdjuntos con tipo: "enlace".
+//   - participantesSeleccionados -> Array<ObjectId> o Array<Usuario poblado>
+//
+// Cualquier campo que no exista en el backend (puntajeMaximo, permiteEntregaTardia,
+// etc.) se mantiene solo como valor por defecto de UI, nunca se envía de vuelta.
 
 /**
- * Normaliza archivos adjuntos de tareas
+ * Normaliza archivos adjuntos de tareas.
+ * Se usa tanto para adjuntos tipo "archivo" (Cloudinary) como tipo "enlace"
+ * (ambos viven juntos en archivosAdjuntos — ver nota arriba).
  */
 export function normalizeArchivosTarea(archivos) {
   if (!Array.isArray(archivos)) return [];
@@ -35,6 +53,9 @@ export function normalizeArchivosTarea(archivos) {
       archivo.public_id ||
       "",
 
+    // "tipo" es el campo clave para distinguir archivo vs enlace más
+    // adelante (TareaDetalle.jsx y TareaForm.jsx filtran por
+    // a.tipo === "enlace"). Se preserva tal cual viene del backend.
     tipo:
       archivo.tipo ||
       archivo.tipoArchivo ||
@@ -55,34 +76,6 @@ export function normalizeArchivosTarea(archivos) {
   }));
 }
 
-/**
- * Normaliza criterios de evaluación
- */
-export function normalizeCriterios(criterios) {
-  if (!Array.isArray(criterios)) return [];
-
-  return criterios.map((criterio, index) => ({
-    _id:
-      criterio._id ||
-      criterio.id ||
-      `criterio_${index}`,
-
-    titulo:
-      criterio.titulo ||
-      criterio.nombre ||
-      "Criterio",
-
-    descripcion:
-      criterio.descripcion ||
-      "",
-
-    puntaje:
-      criterio.puntaje ??
-      criterio.valor ??
-      0,
-  }));
-}
-
 // El backend almacena "publicada" para tareas activas y nunca actualiza a "vencida"
 const ESTADO_MAP = { publicada: "activa" };
 
@@ -95,8 +88,50 @@ function resolveEstado(estado, fechaEntrega) {
 }
 
 /**
- * Normaliza una tarea individual
- * Compatible con backend parcial, frontend-only o datos enriquecidos
+ * Normaliza el módulo asociado a una tarea.
+ * Soporta tarea.modulo (objeto), tarea.moduloId (objeto poblado) o
+ * tarea.moduloId (string sin poblar).
+ */
+function normalizeModulo(tarea) {
+  if (tarea.modulo && typeof tarea.modulo === "object") {
+    return {
+      _id: tarea.modulo._id || tarea.modulo.id || null,
+      titulo: tarea.modulo.titulo || "",
+      descripcion: tarea.modulo.descripcion || "",
+    };
+  }
+  if (tarea.moduloId && typeof tarea.moduloId === "object") {
+    return {
+      _id: tarea.moduloId._id || tarea.moduloId.id || null,
+      titulo: tarea.moduloId.titulo || "",
+      descripcion: tarea.moduloId.descripcion || "",
+    };
+  }
+  return null;
+}
+
+/**
+ * Normaliza la lista de participantes seleccionados.
+ * Soporta objetos poblados (con .populate en el backend) o IDs crudos (string).
+ */
+function normalizeParticipantesSeleccionados(participantes) {
+  if (!Array.isArray(participantes)) return [];
+
+  return participantes.map((p) =>
+    p && typeof p === "object"
+      ? {
+          _id: p._id || p.id || null,
+          nombre: p.nombre || "",
+          apellido: p.apellido || "",
+          correo: p.correo || "",
+        }
+      : p // ID crudo (string) cuando el backend no lo pobló
+  );
+}
+
+/**
+ * Normaliza una tarea individual.
+ * Compatible con backend parcial, frontend-only o datos enriquecidos.
  */
 export function normalizeTarea(tarea) {
   if (!tarea) return null;
@@ -174,7 +209,15 @@ export function normalizeTarea(tarea) {
         }
       : null;
 
-  // Adjuntos
+  // Módulo (mismo patrón que curso/docente)
+  const modulo = normalizeModulo(tarea);
+
+  // Adjuntos: incluye tanto archivos (Cloudinary) como enlaces — el backend
+  // NO tiene un campo "enlaces" separado en el modelo Tarea, ambos viven
+  // juntos en archivosAdjuntos distinguidos por el campo "tipo". Los
+  // componentes que necesitan solo enlaces o solo archivos deben filtrar
+  // este mismo array (ver TareaDetalle.jsx / TareaForm.jsx: `.filter(a =>
+  // a.tipo === "enlace")` / `.filter(a => a.tipo === "archivo")`).
   const adjuntos = normalizeArchivosTarea(
     tarea.adjuntos ||
       tarea.archivos ||
@@ -182,9 +225,18 @@ export function normalizeTarea(tarea) {
       []
   );
 
-  // Criterios
-  const criterios = normalizeCriterios(
-    tarea.criterios
+  // Criterios: en el backend es un STRING plano, no un array de objetos
+  // (ver createTareaValidator.js: body('criterios').optional().trim()).
+  // Antes existía normalizeCriterios(), que asumía una estructura de
+  // {titulo, descripcion, puntaje}[] que nunca existió en el backend —
+  // por eso siempre devolvía [] y el dato "desaparecía" en pantalla aunque
+  // sí estuviera guardado. Se eliminó esa función y aquí simplemente se
+  // pasa el string tal cual, sin transformarlo.
+  const criterios = typeof tarea.criterios === "string" ? tarea.criterios : "";
+
+  // Participantes seleccionados
+  const participantesSeleccionados = normalizeParticipantesSeleccionados(
+    tarea.participantesSeleccionados
   );
 
   return {
@@ -259,6 +311,18 @@ export function normalizeTarea(tarea) {
           tarea.docenteId?.id ||
           null,
 
+    // Módulo (antes se perdía: solo copiaba tarea.modulo, que nunca llega
+    // del backend; el backend siempre envía tarea.moduloId poblado)
+    modulo,
+    moduloId:
+      typeof tarea.moduloId === "string"
+        ? tarea.moduloId
+        : tarea.modulo?._id ||
+          tarea.modulo?.id ||
+          tarea.moduloId?._id ||
+          tarea.moduloId?.id ||
+          null,
+
     // Configuración
     asignacionTipo:
       tarea.asignacionTipo ||
@@ -281,11 +345,19 @@ export function normalizeTarea(tarea) {
       100,
 
     // Contenido
+    // Se exponen 3 alias (adjuntos / archivos / archivosAdjuntos) apuntando
+    // al mismo array ya normalizado, porque distintos componentes del
+    // frontend leen con nombres distintos. Es un alias de conveniencia de
+    // UI, no una duplicación real de datos ni un campo inventado.
     adjuntos,
     archivos: adjuntos,
     archivosAdjuntos: adjuntos,
 
     criterios,
+
+    // Participantes (antes no se copiaba en absoluto, por eso el bloque
+    // "Asignada a (N)" de TareaDetalle.jsx nunca se mostraba)
+    participantesSeleccionados,
 
     // Progreso / estadísticas
     totalEntregas:
@@ -300,11 +372,10 @@ export function normalizeTarea(tarea) {
       tarea.totalCalificadas ??
       0,
 
-    // Extras
-    modulo:
-      tarea.modulo ||
-      null,
-
+    // Etiquetas: Array<String> real en el backend. Nunca se hace
+    // JSON.parse/JSON.stringify aquí — si tarea.etiquetas ya es un array,
+    // se usa tal cual; si no, se cae a [] en vez de intentar "adivinar"
+    // un formato roto (evita propagar corrupción histórica de datos).
     etiquetas:
       Array.isArray(tarea.etiquetas)
         ? tarea.etiquetas
@@ -313,7 +384,7 @@ export function normalizeTarea(tarea) {
 }
 
 /**
- * Normaliza múltiples tareas
+ * Normaliza múltiples tareas.
  */
 export function normalizeTareas(tareas) {
   if (!Array.isArray(tareas)) return [];
@@ -323,7 +394,7 @@ export function normalizeTareas(tareas) {
 }
 
 /**
- * Convierte tareas a mapa por ID
+ * Convierte tareas a mapa por ID.
  */
 export function normalizeTareasMap(tareas) {
   return normalizeTareas(tareas).reduce(

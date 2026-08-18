@@ -7,7 +7,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { institucionesGetMine, cursosGetAll, usersGetAll } from "@/lib/apiClient";
+import { institucionesGetMine } from "@/services/institucionesService";
+import { cursosGetAll } from "@/features/cursos/services/cursosService";
+import { usersGetAll } from "@/services/usersService";
 import { humanizeError } from "@/utils/humanizeError";
 import {Badge} from "@/components";
 
@@ -19,7 +21,7 @@ function InfoRow({ icon: Icon, label, value }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 0", borderBottom: "1px solid var(--color-border)" }}>
       <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-        <Icon style={{ width: 15, height: 15, color: "#0C6AC4" }} />
+        <Icon style={{ width: 15, height: 15, color: "var(--color-primary)" }} />
       </div>
       <div>
         <p style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>{label}</p>
@@ -94,7 +96,7 @@ export default function MiInstitucionPage() {
   if (error) {
     return (
       <div style={{ maxWidth: 700, margin: "40px auto", background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", padding: "40px 32px", textAlign: "center" }}>
-        <AlertCircle style={{ width: 36, height: 36, color: "#DC2626", margin: "0 auto 12px" }} />
+        <AlertCircle style={{ width: 36, height: 36, color: "var(--color-error-hover)", margin: "0 auto 12px" }} />
         <p style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text)" }}>{error}</p>
       </div>
     );
@@ -103,10 +105,10 @@ export default function MiInstitucionPage() {
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
-      {/* ── Page header ── */}
+      {/* ── Encabezado de página ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
         <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Building2 style={{ width: 19, height: 19, color: "#0C6AC4" }} />
+          <Building2 style={{ width: 19, height: 19, color: "var(--color-primary)" }} />
         </div>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>Mi institución</h1>
@@ -114,18 +116,18 @@ export default function MiInstitucionPage() {
         </div>
       </div>
 
-      {/* ── Stats row ── */}
+      {/* ── Fila de estadísticas ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 24 }}>
-        <StatCard icon={BookOpen}       label="Cursos activos"  value={stats.cursos}   color="#0C6AC4" bg="rgba(12,106,196,0.10)" loading={statsLoading} />
-        <StatCard icon={GraduationCap}  label="Docentes"        value={stats.docentes} color="#16A34A" bg="rgba(22,163,74,0.10)"  loading={statsLoading} />
+        <StatCard icon={BookOpen}       label="Cursos activos"  value={stats.cursos}   color="var(--color-primary)" bg="rgba(12,106,196,0.10)" loading={statsLoading} />
+        <StatCard icon={GraduationCap}  label="Docentes"        value={stats.docentes} color="var(--edu-green-600)" bg="rgba(22,163,74,0.10)"  loading={statsLoading} />
         <StatCard icon={Users}          label="Estudiantes"     value="—"              color="#6366F1" bg="rgba(99,102,241,0.10)" loading={false} />
         <StatCard icon={Shield}         label="Administradores" value="1"              color="#D97706" bg="rgba(217,119,6,0.10)"  loading={false} />
       </div>
 
-      {/* ── Main content grid ── */}
+      {/* ── Cuadrícula de contenido principal ── */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr)", gap: 20 }}>
 
-        {/* Institution info card */}
+        {/* Tarjeta de información institucional */}
         <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
           <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>Información institucional</h2>
@@ -156,16 +158,16 @@ export default function MiInstitucionPage() {
           </div>
         </div>
 
-        {/* Admin info + dates */}
+        {/* Info del administrador + fechas */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Admin card */}
+          {/* Tarjeta del administrador */}
           <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)" }}>
               <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>Tu cuenta</h2>
             </div>
             <div style={{ padding: "16px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #0C6AC4, #1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "white", flexShrink: 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, var(--color-primary), #1D4ED8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "white", flexShrink: 0 }}>
                   {user?.nombre?.[0]?.toUpperCase() ?? "A"}
                 </div>
                 <div>
@@ -179,7 +181,7 @@ export default function MiInstitucionPage() {
             </div>
           </div>
 
-          {/* System info card */}
+          {/* Tarjeta de información del sistema */}
           <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)" }}>
               <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>Estado del sistema</h2>

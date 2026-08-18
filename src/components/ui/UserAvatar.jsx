@@ -2,19 +2,21 @@
 import { memo, useMemo, useState } from "react";
 import useUserStore from "@/store/useUserStore";
 
+// UserAvatar solo se usa dentro del dashboard (no aparece en login/landing),
+// así que su morado se reemplaza directamente por el nuevo azul de marca.
 const PALETTE = [
-  "#8C38F0",
+  "var(--color-primary)",
   "#F23D7F",
   "#05C7F2",
   "#41D958",
   "#FCBD00",
-  "#A057F2",
+  "#46A8EA",
   "#F45194",
   "#25CEF5",
 ];
 
 const ROLE_BORDER = {
-  docente:       "#8C38F0",
+  docente:       "var(--color-primary)",
   estudiante:    "#41D958",
   familia:       "#FCBD00",
   padre:         "#FCBD00",
@@ -93,7 +95,10 @@ const UserAvatar = memo(function UserAvatar({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        border: `2px solid ${borderColor}`,
+        /* box-shadow en lugar de border: no afecta el box-model ni genera overflow */
+        boxShadow: borderColor !== "transparent"
+          ? `0 0 0 2px ${borderColor}, 0 0 0 3.5px rgba(255,255,255,0.85)`
+          : undefined,
         transition: "transform 0.15s ease",
         cursor: onClick ? "pointer" : "default",
         ...style,

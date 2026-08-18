@@ -1,7 +1,7 @@
 // src/hooks/useFCM.js
 // Solicita permiso de notificaciones y registra el FCM token con el backend.
 // Se llama una vez después del login exitoso desde AuthContext.
-// Los errores son siempre silenciosos: FCM es non-critical.
+// Los errores son siempre silenciosos: FCM no es crítico.
 import { useEffect, useRef } from 'react';
 import { fcmService } from '../services/fcmService';
 
@@ -20,7 +20,7 @@ export const useFCM = (isAuthenticated) => {
         await fcmService.registerToken(token);
         registered.current = true;
       } catch {
-        // FCM registration is non-critical, always silent
+        // El registro FCM no es crítico, siempre silencioso
       }
     };
 

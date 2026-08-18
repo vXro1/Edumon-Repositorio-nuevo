@@ -33,7 +33,7 @@ export const PublicOnlyRoute = ({ children }) => {
   if (loading) return <LoadingScreen message="Verificando sesión..." />;
 
   if (isAuthenticated) {
-    return <Navigate to={ROLE_HOME[user?.rol] ?? "/"} replace />;
+    return <Navigate to={ROLE_HOME[user?.rol] ?? "/dashboard"} replace />;
   }
 
   return children;

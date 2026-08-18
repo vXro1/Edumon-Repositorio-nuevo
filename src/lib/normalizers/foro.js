@@ -56,9 +56,37 @@ export function normalizeArchivosForo(archivos) {
 
 /**
  * Normaliza un mensaje individual del foro
+ *
+ * currentUserId: el backend (MensajeForo.js) guarda "likes" como un NÚMERO
+ * (contador) y "likedBy" como el array real de usuarios — nunca "totalLikes"
+ * ni "yaLeDioLike" en el listado (GET /mensajes-foro/foro/:foroId). Esos dos
+ * campos solo existen en la respuesta del toggle individual (POST .../like).
+ * Sin currentUserId, yaLeDioLike siempre caía a `false` después de cualquier
+ * recarga/invalidación de la lista — el corazón se "desmarcaba" solo aunque
+ * el like siguiera guardado en la base de datos.
  */
-export function normalizeMensaje(mensaje) {
+export function normalizeMensaje(mensaje, currentUserId = null) {
   if (!mensaje) return null;
+
+  const likedBy = Array.isArray(mensaje.likedBy) ? mensaje.likedBy : [];
+  const likedByIds = likedBy.map((u) =>
+    String(typeof u === "object" && u ? u._id ?? u.id : u)
+  );
+
+  const yaLeDioLike =
+    mensaje.yaLeDioLike !== undefined
+      ? mensaje.yaLeDioLike
+      : currentUserId != null
+      ? likedByIds.includes(String(currentUserId))
+      : false;
+
+  // mensaje.likes es el contador (Number) que guarda el backend — nunca un
+  // array. mensaje.totalLikes no existe en ninguna respuesta real; el
+  // fallback solo cubre datos ya normalizados que se vuelven a normalizar.
+  const totalLikes =
+    typeof mensaje.likes === "number"
+      ? mensaje.likes
+      : mensaje.totalLikes ?? likedBy.length;
 
   const id = mensaje._id || mensaje.id || null;
 
@@ -109,13 +137,9 @@ export function normalizeMensaje(mensaje) {
     updatedAt: mensaje.updatedAt || null,
 
     // Likes
-    likes: Array.isArray(mensaje.likes) ? mensaje.likes : [],
-
-    totalLikes:
-      mensaje.totalLikes ??
-      (Array.isArray(mensaje.likes) ? mensaje.likes.length : 0),
-
-    yaLeDioLike: mensaje.yaLeDioLike || false,
+    likedBy: likedByIds,
+    totalLikes,
+    yaLeDioLike,
 
     // Archivos
     archivos: normalizeArchivosForo(
@@ -126,7 +150,9 @@ export function normalizeMensaje(mensaje) {
     respuestaA: mensaje.respuestaA || null,
 
     respuestas: Array.isArray(mensaje.respuestas)
-      ? mensaje.respuestas.map(normalizeMensaje).filter(Boolean)
+      ? mensaje.respuestas
+          .map((r) => normalizeMensaje(r, currentUserId))
+          .filter(Boolean)
       : [],
 
     totalRespuestas:
@@ -143,9 +169,9 @@ export function normalizeMensaje(mensaje) {
 /**
  * Normaliza múltiples mensajes
  */
-export function normalizeMensajes(mensajes) {
+export function normalizeMensajes(mensajes, currentUserId = null) {
   if (!Array.isArray(mensajes)) return [];
-  return mensajes.map(normalizeMensaje).filter(Boolean);
+  return mensajes.map((m) => normalizeMensaje(m, currentUserId)).filter(Boolean);
 }
 
 /**
@@ -184,27 +210,42 @@ export function normalizeForo(foro) {
           foro.cursoId?.id ||
           null,
 
-    // Autor creador
+    // Autor creador — el backend (Foro.js) guarda esto en "docenteId", nunca
+    // en "creador"/"creadorId". Sin este fallback, el foro nunca sabía quién
+    // lo creó aunque el backend siempre lo popula (nombre apellido
+    // fotoPerfilUrl rol en crearForo/obtenerForoPorId/obtenerForosPorCurso).
     creador:
       foro.creador && typeof foro.creador === "object"
         ? normalizeUser(foro.creador)
         : foro.creadorId && typeof foro.creadorId === "object"
         ? normalizeUser(foro.creadorId)
+        : foro.docenteId && typeof foro.docenteId === "object"
+        ? normalizeUser(foro.docenteId)
         : null,
 
     creadorId:
       typeof foro.creadorId === "string"
         ? foro.creadorId
+        : typeof foro.docenteId === "string"
+        ? foro.docenteId
         : foro.creador?._id ||
           foro.creador?.id ||
           foro.creadorId?._id ||
           foro.creadorId?.id ||
+          foro.docenteId?._id ||
+          foro.docenteId?.id ||
           null,
+
+    // Materiales de apoyo — archivos adjuntados al FORO al crearlo (distinto
+    // de los archivos de cada mensaje). El backend los guarda en Foro.archivos
+    // y crearForo/obtenerForoPorId ya los devuelven, pero este normalizador
+    // nunca los exponía, así que no había forma de mostrarlos en ningún lado.
+    archivos: normalizeArchivosForo(foro.archivos),
 
     // Mensajes
     mensajes: Array.isArray(foro.mensajes)
       ? foro.mensajes
-          .map(normalizeMensaje)
+          .map((m) => normalizeMensaje(m))
           .filter(Boolean)
       : [],
 

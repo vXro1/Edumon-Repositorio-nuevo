@@ -1,7 +1,8 @@
 // src/features/familia/pages/FamiliaCalendarioPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { Calendar } from "lucide-react";
-import { cursosGetMine, calendarioGetByCurso } from "@/lib/apiClient";
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { calendarioGetByCurso } from "@/features/calendario/services/calendarioService";
 import CalendarWidget from "@/components/ui/CalendarWidget";
 import { Button } from "@/components";
 
@@ -68,7 +69,7 @@ export default function FamiliaCalendarioPage() {
           display: "flex", alignItems: "center", justifyContent: "center",
           flexShrink: 0,
         }}>
-          <Calendar size={20} style={{ color: "#16A34A" }} />
+          <Calendar size={20} style={{ color: "var(--edu-green-600)" }} />
         </div>
         <div>
           <h1 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "var(--color-text)" }}>
@@ -80,7 +81,7 @@ export default function FamiliaCalendarioPage() {
         </div>
       </div>
 
-      {/* Error */}
+      {/* Error de carga */}
       {apiError ? (
         <div style={{
           textAlign: "center", padding: "48px 24px",

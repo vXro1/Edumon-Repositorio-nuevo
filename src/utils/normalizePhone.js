@@ -1,36 +1,36 @@
 // src/utils/normalizePhone.js
-// Normalizes Colombian phone numbers to E.164 format (+57XXXXXXXXXX).
+// Normaliza números de teléfono colombianos al formato E.164 (+57XXXXXXXXXX).
 
 /**
- * Accepts any of these formats and returns "+57XXXXXXXXXX":
+ * Acepta cualquiera de estos formatos y retorna "+57XXXXXXXXXX":
  *   3001234567       → +573001234567
  *   +573001234567    → +573001234567
  *   57 300 123 4567  → +573001234567
  *   300-123-4567     → +573001234567
- * Returns null if the number is not recognizable as a valid 10-digit Colombian mobile.
+ * Retorna null si el número no puede reconocerse como un móvil colombiano válido de 10 dígitos.
  */
 export function normalizePhone(value) {
   if (!value) return null;
 
-  // Strip everything except digits and leading +
+  // Eliminar todo excepto dígitos y el + inicial
   const digits = String(value).replace(/\D/g, "");
 
-  // Already has country code: 57XXXXXXXXXX (12 digits)
+  // Ya tiene código de país: 57XXXXXXXXXX (12 dígitos)
   if (digits.length === 12 && digits.startsWith("57")) {
     return `+${digits}`;
   }
 
-  // 10-digit local number
+  // Número local de 10 dígitos
   if (digits.length === 10) {
     return `+57${digits}`;
   }
 
-  // 11-digit with redundant leading 0 (some users type 0300...)
+  // 11 dígitos con 0 inicial redundante (algunos usuarios escriben 0300...)
   if (digits.length === 11 && digits.startsWith("0")) {
     return `+57${digits.slice(1)}`;
   }
 
-  // Unrecognized — return as-is with +57 prefix if at least 7 digits
+  // No reconocido — retornar con prefijo +57 si tiene al menos 7 dígitos
   if (digits.length >= 7) {
     return `+57${digits.slice(-10)}`;
   }
@@ -39,8 +39,8 @@ export function normalizePhone(value) {
 }
 
 /**
- * Strips the +57 prefix for display inside a tel input that shows
- * the country code as a separate label.
+ * Elimina el prefijo +57 para mostrar el número en un input de teléfono
+ * que muestra el código de país como etiqueta separada.
  */
 export function stripCountryCode(value) {
   if (!value) return "";

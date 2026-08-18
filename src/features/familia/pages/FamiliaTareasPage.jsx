@@ -6,7 +6,8 @@ import {
   ClipboardList, Search, ChevronRight, AlertCircle,
   Calendar, Clock, BookOpen, CheckCircle2, XCircle,
 } from "lucide-react";
-import { tareasGetAll, cursosGetMine } from "@/lib/apiClient";
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { tareasGetAll } from "@/features/cursos/services/tareasService";
 import { normalizeTarea } from "@/lib/normalizers";
 
 import { Button, Input , Badge } from "@/components";
@@ -60,7 +61,7 @@ function TareaRow({ tarea, onClick }) {
         cursor: "pointer", transition: "background 150ms",
       }}
     >
-      {/* Icon */}
+      {/* Ícono */}
       <div style={{
         width: 38, height: 38, borderRadius: 10, flexShrink: 0,
         background: estado === "abierta"
@@ -69,12 +70,12 @@ function TareaRow({ tarea, onClick }) {
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {estado === "abierta"
-          ? <ClipboardList style={{ width: 16, height: 16, color: "#0C6AC4" }} />
+          ? <ClipboardList style={{ width: 16, height: 16, color: "var(--color-primary)" }} />
           : <CheckCircle2  style={{ width: 16, height: 16, color: "#6B7280" }} />
         }
       </div>
 
-      {/* Info */}
+      {/* Información */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{
           fontSize: 14, fontWeight: 600, margin: 0,
@@ -94,7 +95,7 @@ function TareaRow({ tarea, onClick }) {
           {tarea.fechaEntrega && (
             <span style={{
               display: "flex", gap: 4, fontSize: 12,
-              color: isVencida(tarea.fechaEntrega) ? "#DC2626" : "var(--color-text-muted)",
+              color: isVencida(tarea.fechaEntrega) ? "var(--color-error-hover)" : "var(--color-text-muted)",
             }}>
               <Clock style={{ width: 11, height: 11 }} />
               {formatFecha(tarea.fechaEntrega)}
@@ -158,7 +159,7 @@ export default function FamiliaTareasPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
 
-      {/* Header */}
+      {/* Encabezado */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 11,
@@ -169,14 +170,14 @@ export default function FamiliaTareasPage() {
         </div>
 
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Tareas</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Retos</h1>
           <p style={{ fontSize: 13 }}>
             {abiertas} abiertas · {cerradas} cerradas
           </p>
         </div>
       </div>
 
-      {/* Toolbar */}
+      {/* Barra de herramientas */}
       <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
 
         {/* Search — <input> nativo reemplazado; el <div> wrapper desaparece */}
@@ -185,7 +186,7 @@ export default function FamiliaTareasPage() {
             name="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar tarea…"
+            placeholder="Buscar reto…"
             leftIcon={<Search size={14} />}
           />
         </div>
@@ -200,7 +201,7 @@ export default function FamiliaTareasPage() {
               borderRadius: 8,
               fontWeight: 600,
               border: filtroEstado === e ? "none" : "1.5px solid var(--color-border)",
-              background: filtroEstado === e ? "#0C6AC4" : "var(--color-surface)",
+              background: filtroEstado === e ? "var(--color-primary)" : "var(--color-surface)",
               color: filtroEstado === e ? "white" : "var(--color-text-muted)",
             }}
           >
@@ -209,7 +210,7 @@ export default function FamiliaTareasPage() {
         ))}
       </div>
 
-      {/* Error */}
+      {/* Error de carga */}
       {apiError && (
         <div style={{ padding: 40, textAlign: "center" }}>
           <AlertCircle />
@@ -219,7 +220,7 @@ export default function FamiliaTareasPage() {
         </div>
       )}
 
-      {/* List */}
+      {/* Lista */}
       {!apiError && (
         <div style={{
           background: "var(--color-surface)",
@@ -235,7 +236,7 @@ export default function FamiliaTareasPage() {
           ) : filtered.length === 0 ? (
             <div style={{ padding: 60, textAlign: "center" }}>
               <AlertCircle />
-              <p>No hay tareas</p>
+              <p>No hay retos</p>
             </div>
           ) : (
             filtered.map(t => (

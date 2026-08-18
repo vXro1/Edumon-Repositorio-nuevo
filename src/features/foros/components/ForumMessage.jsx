@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Heart, MessageSquare, Pencil, Trash2, Check, X, FileText } from 'lucide-react';
 import { UserAvatar, Button } from '@/components';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Utilidades ──────────────────────────────────────────────────────────────
 
 const timeAgo = (iso) => {
   if (!iso) return '';
@@ -22,7 +22,7 @@ const authorName = (autor) =>
   [autor?.nombre, autor?.apellido].filter(Boolean).join(' ') || 'Usuario';
 
 const ROLE_STYLE = {
-  docente:       { bg: 'rgba(124,58,237,0.10)', color: '#6d28d9', label: 'Docente'    },
+  docente:       { bg: 'rgba(5,199,242,0.12)',  color: '#0392B4', label: 'Docente'    },
   estudiante:    { bg: 'rgba(37,99,235,0.10)',  color: '#1d4ed8', label: 'Estudiante' },
   padre:         { bg: 'rgba(5,150,105,0.10)',  color: '#047857', label: 'Padre'      },
   'padre/tutor': { bg: 'rgba(5,150,105,0.10)',  color: '#047857', label: 'Tutor'      },
@@ -80,7 +80,47 @@ const FilePreview = ({ archivo }) => {
   );
 };
 
-// ─── ForumReply ───────────────────────────────────────────────────────────────
+// ─── Botón de like animado ─────────────────────────────────────────────────
+// Antes el corazón cambiaba de outline a relleno sin ninguna transición —
+// un salto instantáneo. Este componente centraliza el "pop" (spring-easing)
+// al dar like, reutilizado por el mensaje raíz y por cada respuesta.
+const LikeButton = ({ liked, count, size = 14, onLike }) => {
+  const [popping, setPopping] = useState(false);
+
+  const handleClick = () => {
+    if (!liked) {
+      setPopping(true);
+      setTimeout(() => setPopping(false), 320);
+    }
+    onLike?.();
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleClick}
+      leftIcon={
+        <Heart
+          size={size}
+          fill={liked ? '#e11d48' : 'none'}
+          stroke={liked ? '#e11d48' : 'currentColor'}
+          style={{
+            transform: popping ? 'scale(1.4)' : 'scale(1)',
+            transition: popping
+              ? 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+              : 'transform 160ms ease-out',
+          }}
+        />
+      }
+      style={liked ? { color: '#e11d48' } : {}}
+    >
+      {count > 0 ? count : null}
+    </Button>
+  );
+};
+
+// ─── Respuesta del foro ───────────────────────────────────────────────────────
 
 const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdit }) => {
   const [editing,    setEditing]    = useState(false);
@@ -95,7 +135,7 @@ const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdi
 
   return (
     <div style={{ display: 'flex', gap: 10, paddingLeft: 12, position: 'relative', paddingTop: 10 }}>
-      {/* Thread line */}
+      {/* Línea de hilo */}
       <div style={{
         position: 'absolute', left: 0, top: 0, bottom: 0,
         width: 2, background: 'var(--color-border)', borderRadius: 2,
@@ -153,19 +193,12 @@ const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdi
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onLike?.(reply._id)}
-            leftIcon={
-              <Heart size={12}
-                fill={reply.yaLeDioLike ? '#e11d48' : 'none'}
-                stroke={reply.yaLeDioLike ? '#e11d48' : 'currentColor'} />
-            }
-            style={reply.yaLeDioLike ? { color: '#e11d48' } : {}}
-          >
-            {reply.totalLikes > 0 ? reply.totalLikes : null}
-          </Button>
+          <LikeButton
+            liked={reply.yaLeDioLike}
+            count={reply.totalLikes}
+            size={12}
+            onLike={() => onLike?.(reply._id)}
+          />
 
           {canEdit && !editing && (
             <Button variant="ghost" size="sm" onClick={() => setEditing(true)} leftIcon={<Pencil size={11} />}>
@@ -181,7 +214,7 @@ const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdi
 
           {delConfirm && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <span style={{ color: '#dc2626', fontWeight: 600 }}>¿Eliminar?</span>
+              <span style={{ color: 'var(--color-error-hover)', fontWeight: 600 }}>¿Eliminar?</span>
               <Button variant="danger" size="xs" onClick={() => { onDelete?.(reply._id); setDelConfirm(false); }}>
                 Sí
               </Button>
@@ -196,7 +229,7 @@ const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdi
   );
 };
 
-// ─── ForumMessage ─────────────────────────────────────────────────────────────
+// ─── Mensaje del foro ─────────────────────────────────────────────────────────
 
 const ForumMessage = ({
   msg,
@@ -240,7 +273,7 @@ const ForumMessage = ({
       <UserAvatar user={msg.autor} size={36} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Header row */}
+        {/* Fila de encabezado */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)' }}>
             {authorName(msg.autor)}
@@ -256,7 +289,7 @@ const ForumMessage = ({
           )}
         </div>
 
-        {/* Content or edit textarea */}
+        {/* Contenido o área de edición */}
         {editing ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <textarea
@@ -289,32 +322,25 @@ const ForumMessage = ({
           </p>
         )}
 
-        {/* File attachments */}
+        {/* Archivos adjuntos */}
         {!editing && msg.archivos?.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {msg.archivos.map((a, i) => <FilePreview key={a._id ?? i} archivo={a} />)}
           </div>
         )}
 
-        {/* Action bar */}
+        {/* Barra de acciones */}
         {!editing && (
           <div style={{
             display:    'flex', alignItems: 'center', gap: 4, marginTop: 8, flexWrap: 'wrap',
             opacity:    hovered ? 1 : 0.5, transition: 'opacity 0.15s',
           }}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onLike?.(msg._id)}
-              leftIcon={
-                <Heart size={14}
-                  fill={msg.yaLeDioLike ? '#e11d48' : 'none'}
-                  stroke={msg.yaLeDioLike ? '#e11d48' : 'currentColor'} />
-              }
-              style={msg.yaLeDioLike ? { color: '#e11d48' } : {}}
-            >
-              {msg.totalLikes > 0 ? msg.totalLikes : null}
-            </Button>
+            <LikeButton
+              liked={msg.yaLeDioLike}
+              count={msg.totalLikes}
+              size={14}
+              onLike={() => onLike?.(msg._id)}
+            />
 
             <Button
               variant="ghost"
@@ -348,7 +374,7 @@ const ForumMessage = ({
 
             {delConfirm && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <span style={{ color: '#dc2626', fontWeight: 600 }}>¿Eliminar?</span>
+                <span style={{ color: 'var(--color-error-hover)', fontWeight: 600 }}>¿Eliminar?</span>
                 <Button variant="danger" size="xs"
                   onClick={() => { onDelete?.(msg._id); setDelConfirm(false); }}>
                   Sí
@@ -361,7 +387,7 @@ const ForumMessage = ({
           </div>
         )}
 
-        {/* Nested replies */}
+        {/* Respuestas anidadas */}
         {msg.respuestas?.length > 0 && (
           <div style={{ marginTop: 12, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 0 }}>
             {msg.respuestas.map(reply => (

@@ -1,15 +1,18 @@
 // src/context/SearchContext.jsx
-import { createContext, useContext, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
 
 const SearchContext = createContext(null);
 
+const EMPTY_RESULTS = { cursos: [], tareas: [], eventos: [], foros: [], usuarios: [] };
+
 export const SearchProvider = ({ children }) => {
   const [query,   setQuery]   = useState("");
-  const [results, setResults] = useState({ cursos: [], tareas: [], eventos: [], foros: [], usuarios: [] });
+  const [results, setResults] = useState(EMPTY_RESULTS);
   const [isOpen,  setIsOpen]  = useState(false);
 
-  // useRef keeps the same Map across re-renders; plain `new Map()` would be discarded on each render
-  const handlersRef = useRef(new Map());
+  // useRef mantiene el mismo Map entre re-renders
+  const handlersRef   = useRef(new Map());
+  const searchTimer   = useRef(null);
 
   const registerSearchHandler = useCallback((key, handler) => {
     handlersRef.current.set(key, handler);
@@ -18,11 +21,11 @@ export const SearchProvider = ({ children }) => {
 
   const performSearch = useCallback((q) => {
     if (!q || q.trim().length < 2) {
-      setResults({ cursos: [], tareas: [], eventos: [], foros: [], usuarios: [] });
+      setResults(EMPTY_RESULTS);
       return;
     }
 
-    const newResults = { cursos: [], tareas: [], eventos: [], foros: [], usuarios: [] };
+    const newResults = { ...EMPTY_RESULTS };
 
     for (const [, handler] of handlersRef.current.entries()) {
       const categoryResults = handler(q);
@@ -36,20 +39,22 @@ export const SearchProvider = ({ children }) => {
 
   const handleSearch = useCallback((q) => {
     setQuery(q);
+    clearTimeout(searchTimer.current);
     if (q.trim().length === 0) {
-      setResults({ cursos: [], tareas: [], eventos: [], foros: [], usuarios: [] });
+      setResults(EMPTY_RESULTS);
     } else {
-      performSearch(q);
+      searchTimer.current = setTimeout(() => performSearch(q), 200);
     }
   }, [performSearch]);
 
   const clearSearch = useCallback(() => {
+    clearTimeout(searchTimer.current);
     setQuery("");
-    setResults({ cursos: [], tareas: [], eventos: [], foros: [], usuarios: [] });
+    setResults(EMPTY_RESULTS);
     setIsOpen(false);
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     query,
     results,
     isOpen,
@@ -57,7 +62,7 @@ export const SearchProvider = ({ children }) => {
     handleSearch,
     clearSearch,
     registerSearchHandler,
-  };
+  }), [query, results, isOpen, handleSearch, clearSearch, registerSearchHandler]);
 
   return (
     <SearchContext.Provider value={value}>

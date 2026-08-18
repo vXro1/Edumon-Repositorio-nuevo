@@ -40,7 +40,7 @@
   to   { transform: rotate(360deg); }
 }
 
-/* ─── ANIMATION UTILITIES ─── */
+/* ─── UTILIDADES DE ANIMACIÓN ─── */
 .edu-fade-in    { animation: edu-fade-in    0.2s ease both; }
 .edu-slide-down { animation: edu-slide-down 0.2s ease both; }
 .edu-slide-up   { animation: edu-slide-up   0.2s ease both; }

@@ -1,6 +1,6 @@
 // src/features/foros/components/ForumHeader.jsx
-// Sticky forum header: back navigation, breadcrumb, title, status, manage controls.
-// On mobile: breadcrumb/desc/activity-toggle hidden via CSS classes.
+// Encabezado fijo del foro: navegación hacia atrás, migas de pan, título, estado y controles de gestión.
+// En móvil: migas de pan, descripción y alternador de actividad se ocultan con clases CSS.
 import { ArrowLeft, MessageSquare, Lock, Unlock, ChevronRight,
          PanelLeft, PanelRight } from 'lucide-react';
 
@@ -39,10 +39,10 @@ const ForumHeader = ({
 
   return (
     <header style={HEADER_STYLE}>
-      {/* ── Left: back + breadcrumb + status + title ── */}
+      {/* ── Izquierda: volver + migas de pan + estado + título ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
 
-        {/* Back button — always visible */}
+        {/* Botón volver — siempre visible */}
         <button type="button" onClick={onBack}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
@@ -57,7 +57,7 @@ const ForumHeader = ({
           <ArrowLeft size={14} />
         </button>
 
-        {/* Breadcrumb — hidden on mobile via CSS */}
+        {/* Migas de pan — ocultas en móvil vía CSS */}
         {cursoNombre && (
           <div className="fm-breadcrumb"
             style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12.5,
@@ -71,17 +71,17 @@ const ForumHeader = ({
           </div>
         )}
 
-        {/* Status icon — always visible */}
+        {/* Ícono de estado — siempre visible */}
         <div style={{
           width: 30, height: 30, borderRadius: 8, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: isClosed ? 'rgba(220,38,38,0.08)' : 'rgba(5,150,105,0.08)',
-          color: isClosed ? '#dc2626' : '#059669',
+          color: isClosed ? 'var(--color-error-hover)' : '#059669',
         }}>
           {isClosed ? <Lock size={14} /> : <MessageSquare size={14} />}
         </div>
 
-        {/* Title + estado badge + description */}
+        {/* Título + insignia de estado + descripción */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'nowrap' }}>
             <h1 style={{
@@ -98,13 +98,13 @@ const ForumHeader = ({
               flexShrink: 0, fontSize: 10, fontWeight: 700,
               padding: '2px 7px', borderRadius: 9999,
               background: isClosed ? '#fee2e2' : '#d1fae5',
-              color: isClosed ? '#dc2626' : '#059669',
+              color: isClosed ? 'var(--color-error-hover)' : '#059669',
             }}>
               {isClosed ? 'Cerrado' : 'Abierto'}
             </span>
           </div>
 
-          {/* Description — hidden on mobile */}
+          {/* Descripción — oculta en móvil */}
           {foro?.descripcion && (
             <p className="fm-breadcrumb"
               style={{ margin: '1px 0 0', fontSize: 12, color: 'var(--color-text-muted)',
@@ -114,7 +114,7 @@ const ForumHeader = ({
           )}
         </div>
 
-        {/* Message count — hidden on mobile */}
+        {/* Conteo de mensajes — oculto en móvil */}
         {foro?.totalMensajes > 0 && (
           <div className="fm-breadcrumb"
             style={{
@@ -128,16 +128,16 @@ const ForumHeader = ({
         )}
       </div>
 
-      {/* ── Right: manage actions + panel toggles ── */}
+      {/* ── Derecha: acciones de gestión + alternadores de panel ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
 
-        {/* Toggle estado — icon + text (text hides on XS) */}
+        {/* Alternar estado — ícono + texto (el texto se oculta en XS) */}
         {canManage && (
           <button type="button" onClick={onToggleEstado} disabled={togglingEstado}
             style={{
               display:    'flex', alignItems: 'center', gap: 5,
               background: isClosed ? '#d1fae5' : '#fee2e2',
-              color:      isClosed ? '#059669' : '#dc2626',
+              color:      isClosed ? '#059669' : 'var(--color-error-hover)',
               border:     'none', borderRadius: 8,
               padding:    '6px 10px', cursor: 'pointer',
               fontSize:   12.5, fontWeight: 700,
@@ -150,7 +150,7 @@ const ForumHeader = ({
           </button>
         )}
 
-        {/* Toggle activity panel — hidden on mobile */}
+        {/* Alternar panel de actividad — oculto en móvil */}
         <button type="button"
           className="fm-toggle-activity"
           onClick={onToggleActivity}
@@ -159,7 +159,7 @@ const ForumHeader = ({
           <PanelRight size={16} />
         </button>
 
-        {/* Sidebar toggle — visible always, acts as hamburger on mobile */}
+        {/* Alternador del sidebar — siempre visible, actúa como hamburguesa en móvil */}
         <button type="button"
           onClick={onToggleSidebar}
           title={sidebarOpen ? 'Ocultar lista de foros' : 'Mostrar lista de foros'}
@@ -187,7 +187,7 @@ const HEADER_STYLE = {
 };
 
 const iconBtn = (active) => ({
-  background:   active ? 'rgba(140,56,240,0.08)' : 'none',
+  background:   active ? 'rgba(12,106,196,0.08)' : 'none',
   border:       'none',
   borderRadius: 8,
   padding:      '6px',

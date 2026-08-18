@@ -1,6 +1,6 @@
 // src/features/cursos/hooks/useCursoEntregas.js
 import { useState } from 'react';
-import { entregasGetByTarea } from '@/lib/apiClient';
+import { entregasGetByTarea } from '@/features/entregas/services/entregasService';
 import { normalizeEntrega } from '@/lib/normalizers';
 
 export default function useCursoEntregas() {

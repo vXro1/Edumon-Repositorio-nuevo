@@ -1,19 +1,16 @@
-// src/security/guards/withPermission.js (working copy)
 import React from "react";
-import { useAuthContext } from "../features/auth/context/AuthContext"; // relative to src root
-import { getPermissionsForRole } from "../roleMatrix"; // working copy path
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { getPermissionsForRole } from "@/security/roleMatrix";
 
 export const withPermission = (permission) => (Component) => {
   return function Guarded(props) {
-    const { user, loading } = useAuthContext();
+    const { user, loading } = useAuth();
     if (loading) return null;
     if (!user) return null;
-    const permissions = getPermissionsForRole(user.role ?? user.rol);
+    const permissions = getPermissionsForRole(user.rol ?? user.role);
     if (!permissions.includes(permission)) return null;
     return <Component {...props} />;
   };
 };
 
 export default withPermission;
-
-// NOTE: For final cleanup, move this file to src/security/guards/withPermission.js and update imports.

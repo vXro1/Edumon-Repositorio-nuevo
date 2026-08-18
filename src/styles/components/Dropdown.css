@@ -8,7 +8,7 @@
   display: inline-flex;
 }
 
-/* ── Menu panel ───────────────────────────────────────────────────────── */
+/* ── Panel del menú ───────────────────────────────────────────────────────── */
 .dropdown-menu {
   position: absolute;
   z-index: 150;
@@ -24,7 +24,7 @@
   animation: edu-dropdown-in 0.18s ease both;
 }
 
-/* ── Positioning ──────────────────────────────────────────────────────── */
+/* ── Posicionamiento ──────────────────────────────────────────────────────── */
 .dropdown-menu--bottom-left  { top: calc(100% + var(--space-2)); left: 0; }
 .dropdown-menu--bottom-right { top: calc(100% + var(--space-2)); right: 0; transform-origin: top right; }
 .dropdown-menu--top-left     { bottom: calc(100% + var(--space-2)); left: 0;  transform-origin: bottom left; }
@@ -49,7 +49,7 @@
 .dropdown-menu--top-left,
 .dropdown-menu--top-right    { animation-name: edu-dropdown-in-up; }
 
-/* Exit — add via JS */
+/* Salida — agregar vía JS */
 .dropdown-menu--exiting      { animation: edu-dropdown-out 0.14s ease forwards; }
 
 /* ── Section ──────────────────────────────────────────────────────────── */
@@ -69,7 +69,7 @@
   padding: var(--space-2) var(--space-3) var(--space-1);
 }
 
-/* ── Item base ────────────────────────────────────────────────────────── */
+/* ── Ítem base ────────────────────────────────────────────────────────── */
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -99,7 +99,7 @@
 .dropdown-item:active        { background: var(--color-surface-3); transform: scale(0.99); }
 .dropdown-item:focus-visible { outline: none; background: var(--color-primary-light); color: var(--color-primary); }
 
-/* Selected */
+/* Seleccionado */
 .dropdown-item--selected {
   background: var(--color-primary-light);
   color: var(--color-primary);
@@ -117,23 +117,23 @@
   transform: translateY(-65%) rotate(45deg);
 }
 
-/* Disabled */
+/* Desactivado */
 .dropdown-item--disabled {
   opacity: 0.45;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-/* Danger */
+/* Peligro */
 .dropdown-item--danger { color: var(--color-error); }
 .dropdown-item--danger:hover        { background: var(--color-error-light); }
 .dropdown-item--danger:focus-visible { background: var(--color-error-light); color: var(--color-error); }
 
-/* Primary accent */
+/* Acento primario */
 .dropdown-item--primary { color: var(--color-primary); }
 .dropdown-item--primary:hover { background: var(--color-primary-light); }
 
-/* ── Item icon ────────────────────────────────────────────────────────── */
+/* ── Ícono del ítem ────────────────────────────────────────────────────────── */
 .dropdown-item-icon {
   width: 1.125rem;
   height: 1.125rem;
@@ -150,7 +150,7 @@
 .dropdown-item--selected .dropdown-item-icon      { color: var(--color-primary); }
 .dropdown-item:focus-visible .dropdown-item-icon  { color: var(--color-primary); }
 
-/* ── Item content ─────────────────────────────────────────────────────── */
+/* ── Contenido del ítem ─────────────────────────────────────────────────────── */
 .dropdown-item-content { flex: 1; min-width: 0; }
 .dropdown-item-label   { overflow: hidden; text-overflow: ellipsis; }
 .dropdown-item-desc {
@@ -162,7 +162,7 @@
   line-height: var(--leading-snug);
 }
 
-/* ── Keyboard shortcut ────────────────────────────────────────────────── */
+/* ── Atajo de teclado ────────────────────────────────────────────────── */
 .dropdown-item-kbd {
   margin-left: auto;
   padding-left: var(--space-3);
@@ -187,7 +187,7 @@
   margin: var(--space-1) calc(-1 * var(--space-2));
 }
 
-/* ── Internal search ──────────────────────────────────────────────────── */
+/* ── Búsqueda interna ──────────────────────────────────────────────────── */
 .dropdown-search {
   padding: var(--space-2);
   border-bottom: 1px solid var(--color-border);
@@ -215,7 +215,7 @@
   background: var(--color-surface);
 }
 
-/* ── Empty state ──────────────────────────────────────────────────────── */
+/* ── Estado vacío ──────────────────────────────────────────────────────── */
 .dropdown-empty {
   padding: var(--space-5) var(--space-3);
   text-align: center;
@@ -223,7 +223,7 @@
   color: var(--color-text-subtle);
 }
 
-/* ── Avatar in item ───────────────────────────────────────────────────── */
+/* ── Avatar en ítem ───────────────────────────────────────────────────── */
 .dropdown-item-avatar {
   width: 1.75rem;
   height: 1.75rem;

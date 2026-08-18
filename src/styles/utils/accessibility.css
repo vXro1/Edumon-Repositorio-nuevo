@@ -6,6 +6,6 @@
 
 /* ─── SELECCIÓN DE TEXTO ─── */
 ::selection {
-  background: rgba(140, 56, 240, 0.18);
+  background: var(--color-selection);
   color: var(--color-text);
 }

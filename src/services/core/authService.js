@@ -1,3 +1,3 @@
 // src/services/core/authService.js
-// Proxy to central authService to avoid duplicated implementations
+// Proxy al authService central para evitar implementaciones duplicadas
 export * from '../authService';

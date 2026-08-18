@@ -1,14 +1,24 @@
 // src/features/auth/components/ForgotPasswordForm.jsx
 import { useState } from "react";
-import { Mail } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { Input } from "@/components";
 import AuthLayout from "./AuthLayout";
-const validate = ({ correo }) => {
+
+const validateEmail = ({ correo }) => {
   const e = {};
   if (!correo.trim())
     e.correo = "El correo es requerido";
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
     e.correo = "Ingresa un correo válido";
+  return e;
+};
+
+const validatePhone = ({ telefono }) => {
+  const e = {};
+  if (!telefono.trim())
+    e.telefono = "El número es requerido";
+  else if (!/^\+?\d{7,15}$/.test(telefono.replace(/\s/g, "")))
+    e.telefono = "Ingresa un número válido (ej: +573113014875)";
   return e;
 };
 
@@ -18,10 +28,12 @@ const ForgotPasswordForm = ({
   error = "",
   sent = false,
   emailSent = "",
+  phoneSent = "",
   onContinue,
   onBack,
 }) => {
-  const [form,   setForm]   = useState({ correo: "" });
+  const [method, setMethod] = useState("email");
+  const [form,   setForm]   = useState({ correo: "", telefono: "" });
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -32,19 +44,25 @@ const ForgotPasswordForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const ve = validate(form);
+    const ve = method === "email" ? validateEmail(form) : validatePhone(form);
     if (Object.keys(ve).length) { setErrors(ve); return; }
-    onSubmit(form);
+    if (method === "email") {
+      onSubmit({ correo: form.correo });
+    } else {
+      onSubmit({ telefono: form.telefono, method: "phone" });
+    }
   };
+
+  const sentLabel = method === "email"
+    ? `Revisa tu correo ${emailSent}`
+    : `Revisa tu WhatsApp ${phoneSent}`;
 
   return (
     <AuthLayout>
       <div className="auth-form-head">
         <h1>Recuperar contraseña</h1>
         <p>
-          {sent
-            ? `Revisa tu correo ${emailSent}`
-            : "Te enviaremos un código de verificación"}
+          {sent ? sentLabel : "Te enviaremos un código de verificación"}
         </p>
       </div>
 
@@ -53,10 +71,8 @@ const ForgotPasswordForm = ({
       )}
 
       {sent ? (
-        /* ── Estado: correo enviado ── */
         <>
-          <div className="auth-success" role="status">
-          </div>
+          <div className="auth-success" role="status" />
           <button className="auth-submit" onClick={onContinue}>
             Ingresar código
           </button>
@@ -67,20 +83,60 @@ const ForgotPasswordForm = ({
           </div>
         </>
       ) : (
-        /* ── Estado: ingresar correo ── */
         <form onSubmit={handleSubmit} noValidate className="auth-form">
-          <Input
-            label="Correo electrónico"
-            name="correo"
-            type="email"
-            placeholder="tucorreo@ejemplo.com"
-            value={form.correo}
-            onChange={handleChange}
-            leftIcon={<Mail size={16} />}
-            error={errors.correo}
-            autoComplete="email"
-            autoFocus
-          />
+          {/* Toggle método */}
+          <div style={{
+            display: "flex", borderRadius: 8, overflow: "hidden",
+            border: "1.5px solid var(--color-border)", marginBottom: 4,
+          }}>
+            {[
+              { key: "email", label: "Correo", icon: <Mail size={14} /> },
+              { key: "phone", label: "WhatsApp", icon: <Phone size={14} /> },
+            ].map(({ key, label, icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => { setMethod(key); setErrors({}); }}
+                style={{
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                  gap: 6, padding: "9px 0", fontSize: 13, fontWeight: 600, border: "none",
+                  cursor: "pointer", transition: "all 150ms",
+                  background: method === key ? "var(--color-primary)" : "transparent",
+                  color: method === key ? "#fff" : "var(--color-text-muted)",
+                }}
+              >
+                {icon} {label}
+              </button>
+            ))}
+          </div>
+
+          {method === "email" ? (
+            <Input
+              label="Correo electrónico"
+              name="correo"
+              type="email"
+              placeholder="tucorreo@ejemplo.com"
+              value={form.correo}
+              onChange={handleChange}
+              leftIcon={<Mail size={16} />}
+              error={errors.correo}
+              autoComplete="email"
+              autoFocus
+            />
+          ) : (
+            <Input
+              label="Número de WhatsApp"
+              name="telefono"
+              type="tel"
+              placeholder="+573113014875"
+              value={form.telefono}
+              onChange={handleChange}
+              leftIcon={<Phone size={16} />}
+              error={errors.telefono}
+              autoComplete="tel"
+              autoFocus
+            />
+          )}
 
           <button type="submit" disabled={loading} className="auth-submit">
             {loading

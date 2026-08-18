@@ -1,6 +1,6 @@
 /* ─── RESET & BASE ───────────────────────────────────────────────
-   Mobile-first. Prevents horizontal overflow, ensures touch targets,
-   sets fluid typography base.
+   Mobile-first. Previene desbordamiento horizontal, garantiza
+   tamaños táctiles mínimos y establece la tipografía base fluida.
    ─────────────────────────────────────────────────────────────── */
 
 *,
@@ -19,8 +19,8 @@ html {
   text-size-adjust: 100%;
   scroll-behavior: smooth;
   /*
-   * overflow-x: clip prevents horizontal scroll WITHOUT creating a scroll
-   * container — unlike 'hidden', it does NOT break position:sticky children.
+   * overflow-x: clip previene el scroll horizontal SIN crear un contenedor
+   * de scroll — a diferencia de 'hidden', NO rompe los hijos con position:sticky.
    */
   overflow-x: clip;
   min-height: 100dvh;
@@ -35,11 +35,11 @@ body {
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* clip: no scroll container created → sticky positioning works correctly */
+  /* clip: no crea contenedor de scroll → el posicionamiento sticky funciona correctamente */
   overflow-x: clip;
 }
 
-/* ── Headings ─────────────────────────────────────────────────── */
+/* ── Encabezados ─────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   line-height: var(--leading-tight);
@@ -47,7 +47,7 @@ h1, h2, h3, h4, h5, h6 {
   color: inherit;
 }
 
-/* ── Media ────────────────────────────────────────────────────── */
+/* ── Multimedia ──────────────────────────────────────────────── */
 img,
 video,
 svg,
@@ -57,13 +57,13 @@ canvas {
   height: auto;
 }
 
-/* ── Interactive ──────────────────────────────────────────────── */
+/* ── Interactivos ────────────────────────────────────────────── */
 button,
 [role="button"] {
   cursor: pointer;
 }
 
-/* Minimum touch target size (WCAG 2.5.8) */
+/* Tamaño mínimo de objetivo táctil (WCAG 2.5.8) */
 button,
 a,
 input[type="checkbox"],
@@ -73,7 +73,7 @@ select {
   min-height: 44px;
 }
 
-/* Exceptions: small inline buttons still need the min-height override */
+/* Excepciones: los botones inline pequeños aún necesitan la sobreescritura de min-height */
 .btn-xs { min-height: 30px; }
 .btn-sm { min-height: 36px; }
 
@@ -95,18 +95,18 @@ select {
   color: inherit;
 }
 
-/* ── Lists ────────────────────────────────────────────────────── */
+/* ── Listas ──────────────────────────────────────────────────── */
 ul, ol {
   list-style: none;
 }
 
-/* ── Table ────────────────────────────────────────────────────── */
+/* ── Tabla ───────────────────────────────────────────────────── */
 table {
   border-collapse: collapse;
   border-spacing: 0;
 }
 
-/* ── Scrollbar (global slim) ──────────────────────────────────── */
+/* ── Barra de desplazamiento (delgada, global) ───────────────── */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border) transparent;
@@ -118,7 +118,7 @@ table {
   border-radius: var(--radius-full);
 }
 
-/* ── Tailwind compatibility layer ─────────────────────────────── */
+/* ── Capa de compatibilidad con Tailwind ─────────────────────── */
 @layer base {
   * {
     border-color: var(--color-border);

@@ -7,22 +7,23 @@ import {
   Clock, Mail, MailOpen, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import {
-  usersGetAll, cursosGetAll, institucionesGetAll,
-  institucionesGetMine, eventosGetHoy,
-  notificacionesGetConteoNoLeidas,
-  buzonGetAll, buzonMarcarLeido,
-} from "@/lib/apiClient";
+import { usersGetAll } from "@/services/usersService";
+import { cursosGetAll } from "@/features/cursos/services/cursosService";
+import { institucionesGetAll, institucionesGetMine } from "@/services/institucionesService";
+import { eventosGetHoy } from "@/features/eventos/services/eventosService";
+import { notificacionesGetConteoNoLeidas } from "@/features/notificaciones/services/notificacionesService";
+import { buzonGetAll, buzonMarcarLeido } from "@/features/buzon/services/buzonService";
 import { normalizeCurso } from "@/lib/normalizers";
+import CursoCard from "@/features/cursos/components/CursoCard";
 import { Button } from "@/components";
 import { normalizeRole, ROLES } from "@/security/roleMatrix";
 
-/* ── Skeleton ──────────────────────────────────────────────────── */
+/* ── Esqueleto de carga ────────────────────────────────────────── */
 function Sk({ h = 14, w = "100%", r = "var(--radius-sm)" }) {
   return <span className="skeleton" style={{ height: h, width: w, borderRadius: r, display: "block" }} />;
 }
 
-/* ── Shared: Stat card ─────────────────────────────────────────── */
+/* ── Compartido: Tarjeta de estadística ────────────────────────── */
 function StatCard({ label, value, icon: Icon, colorClass, loading, sub }) {
   return (
     <div className="stat-card">
@@ -47,7 +48,7 @@ function StatCard({ label, value, icon: Icon, colorClass, loading, sub }) {
   );
 }
 
-/* ── Shared: Quick action card ─────────────────────────────────── */
+/* ── Compartido: Tarjeta de acción rápida ──────────────────────── */
 function ActionCard({ icon: Icon, label, desc, colorClass, onClick }) {
   return (
     <button
@@ -75,7 +76,7 @@ function ActionCard({ icon: Icon, label, desc, colorClass, onClick }) {
   );
 }
 
-/* ── Shared: Section header ────────────────────────────────────── */
+/* ── Compartido: Encabezado de sección ─────────────────────────── */
 function SectionHeader({ title, onAction, actionLabel }) {
   return (
     <div className="section-header">
@@ -89,8 +90,8 @@ function SectionHeader({ title, onAction, actionLabel }) {
   );
 }
 
-/* ── Shared: Welcome banner ────────────────────────────────────── */
-function WelcomeBanner({ roleLabel, gradient }) {
+/* ── Compartido: Banner de bienvenida ──────────────────────────── */
+function WelcomeBanner({ roleLabel, gradient, chips }) {
   const hora   = new Date().getHours();
   const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
   return (
@@ -99,20 +100,27 @@ function WelcomeBanner({ roleLabel, gradient }) {
       style={{ background: gradient ?? "var(--gradient-brand)" }}
       role="banner"
     >
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div style={{ position: "relative", zIndex: 1, width: "100%" }}>
         <span className="welcome-badge">
           <Sparkles size={10} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
           {roleLabel}
         </span>
         <h1 className="welcome-title">{saludo}</h1>
+        {chips && chips.length > 0 && (
+          <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginTop: "var(--space-3)" }}>
+            {chips.map((chip, i) => (
+              <span key={i} className="welcome-chip">{chip}</span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-/* ── Shared: List row (institution / course) ───────────────────── */
-const PALETTE = ["var(--edu-purple-500)","var(--edu-cyan-600)","var(--edu-green-600)","var(--edu-yellow-700)","var(--color-error)","var(--edu-pink-500)"];
-const PALETTE_BG = ["var(--edu-purple-50)","var(--edu-cyan-50)","var(--edu-green-50)","var(--edu-yellow-50)","var(--color-error-light)","var(--edu-pink-50)"];
+/* ── Compartido: Fila de lista (institución) ───────────────────── */
+const PALETTE = ["var(--edu-blue-500)","var(--edu-cyan-600)","var(--edu-green-600)","var(--edu-yellow-700)","var(--color-error)","var(--edu-pink-500)"];
+const PALETTE_BG = ["var(--edu-blue-50)","var(--edu-cyan-50)","var(--edu-green-50)","var(--edu-yellow-50)","var(--color-error-light)","var(--edu-pink-50)"];
 
 function ListRow({ index, icon: Icon, title, meta, badge, badgeBg, badgeColor, onClick }) {
   const fg = PALETTE[index % PALETTE.length];
@@ -147,7 +155,7 @@ function ListRow({ index, icon: Icon, title, meta, badge, badgeBg, badgeColor, o
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   SUPERADMIN DASHBOARD
+   PANEL DE SUPERADMINISTRADOR
    ══════════════════════════════════════════════════════════════════ */
 function SuperadminDashboard() {
   const navigate = useNavigate();
@@ -205,9 +213,17 @@ function SuperadminDashboard() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <WelcomeBanner roleLabel="Superadministrador — Vista global" gradient="var(--gradient-brand-full)" />
+      <WelcomeBanner
+        roleLabel="Superadministrador"
+        gradient="var(--gradient-brand-full)"
+        chips={loading ? [] : [
+          stats.instituciones > 0 ? `${stats.instituciones} instituciones` : null,
+          stats.usuarios > 0      ? `${stats.usuarios} usuarios`           : null,
+          stats.docentes > 0      ? `${stats.docentes} docentes`           : null,
+        ].filter(Boolean)}
+      />
 
-      {/* Stats */}
+      {/* Estadísticas */}
       <section aria-label="Resumen del sistema" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Resumen del sistema" />
         <div className="grid-stats">
@@ -218,7 +234,7 @@ function SuperadminDashboard() {
         </div>
       </section>
 
-      {/* Quick actions */}
+      {/* Acciones rápidas */}
       <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
         <div className="grid-auto-sm">
@@ -262,7 +278,7 @@ function SuperadminDashboard() {
                 style={{
                   alignItems: "flex-start",
                   gap: "var(--space-3)",
-                  background: msg.leido ? "transparent" : "var(--edu-purple-50)",
+                  background: msg.leido ? "transparent" : "var(--edu-blue-50)",
                   borderLeft: msg.leido ? "none" : "3px solid var(--color-primary)",
                   paddingLeft: msg.leido ? "var(--space-4)" : "calc(var(--space-4) - 3px)",
                 }}
@@ -270,7 +286,7 @@ function SuperadminDashboard() {
                 <div
                   className="list-card-item-icon"
                   style={{
-                    background: msg.leido ? "var(--edu-neutral-100)" : "var(--edu-purple-100)",
+                    background: msg.leido ? "var(--edu-neutral-100)" : "var(--edu-blue-100)",
                     color:      msg.leido ? "var(--color-text-muted)" : "var(--color-primary)",
                     flexShrink: 0,
                   }}
@@ -291,7 +307,7 @@ function SuperadminDashboard() {
                       </span>
                     )}
                     {!msg.leido && (
-                      <span className="list-card-item-badge" style={{ background: "var(--edu-purple-100)", color: "var(--color-primary)" }}>
+                      <span className="list-card-item-badge" style={{ background: "var(--edu-blue-100)", color: "var(--color-primary)" }}>
                         Nuevo
                       </span>
                     )}
@@ -368,7 +384,7 @@ function SuperadminDashboard() {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   ADMIN DASHBOARD
+   PANEL DE ADMINISTRADOR
    ══════════════════════════════════════════════════════════════════ */
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -407,9 +423,15 @@ function AdminDashboard() {
       <WelcomeBanner
         roleLabel={`Administrador${inst?.nombre ? ` · ${inst.nombre}` : ""}`}
         gradient="var(--gradient-cool)"
+        chips={loading ? [] : [
+          stats.cursos > 0     ? `${stats.cursos} cursos activos`     : null,
+          stats.docentes > 0   ? `${stats.docentes} docentes`         : null,
+          stats.eventosHoy > 0 ? `${stats.eventosHoy} eventos hoy`    : null,
+          stats.notifs > 0     ? `${stats.notifs} notificaciones`     : null,
+        ].filter(Boolean)}
       />
 
-      {/* Stats */}
+      {/* Estadísticas */}
       <section aria-label="Resumen de la institución" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Resumen de la institución" />
         <div className="grid-stats">
@@ -422,59 +444,58 @@ function AdminDashboard() {
         </div>
       </section>
 
-      {/* Quick actions */}
+      {/* Acciones rápidas */}
       <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
         <div className="grid-auto-sm">
-          <ActionCard icon={Plus}      label="Nuevo curso"        desc="Crear y asignar docente"  colorClass="stat-icon-cyan"   onClick={() => navigate("/cursos")} />
+          <ActionCard icon={Plus}      label="Gestionar cursos"   desc="Ver todos mis cursos"  colorClass="stat-icon-cyan"   onClick={() => navigate("/cursos")} />
           <ActionCard icon={UserCheck} label="Gestionar docentes" desc="Registrar o importar CSV" colorClass="stat-icon-green"  onClick={() => navigate("/docentes")} />
           <ActionCard icon={Users}     label="Usuarios"           desc="Ver todos los usuarios"   colorClass="stat-icon-purple" onClick={() => navigate("/usuarios")} />
           <ActionCard icon={Building2} label="Mi institución"     desc="Datos y configuración"    colorClass="stat-icon-yellow" onClick={() => navigate("/institucion")} />
         </div>
       </section>
 
-      {/* Courses + Events */}
+      {/* Cursos + Eventos */}
       <div className="layout-split">
+        {/* Cursos — ahora con CursoCard, igual que el panel de docente */}
         <section aria-label="Cursos recientes">
           <SectionHeader
             title="Cursos recientes"
             onAction={() => navigate("/cursos")}
             actionLabel="Ver todos"
           />
-          <div className="list-card">
-            {loading ? (
-              <div style={{ padding: "var(--space-4)" }}>
-                {[0, 1, 2, 3].map(i => (
-                  <div key={i} className="skeleton-list-item">
-                    <Sk h={38} w={38} r="var(--radius-md)" />
-                    <div style={{ flex: 1 }}>
-                      <Sk h={13} w="70%" />
-                      <div style={{ marginTop: 6 }}><Sk h={10} w="45%" /></div>
-                    </div>
+          {loading ? (
+            <div className="grid-auto-sm">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="skeleton-course-card">
+                  <div className="sk-cover skeleton" />
+                  <div className="sk-body">
+                    <Sk h={40} w={40} r="var(--radius-md)" />
+                    <Sk h={13} w="80%" />
+                    <Sk h={10} w="55%" />
                   </div>
-                ))}
-              </div>
-            ) : cursos.length === 0 ? (
-              <div className="empty-state" style={{ border: "none", borderRadius: 0 }}>
-                <div className="empty-state-icon"><BookOpen size={22} aria-hidden="true" /></div>
-                <p className="empty-state-title">Sin cursos todavía</p>
-              </div>
-            ) : (
-              cursos.map((c, i) => (
-                <ListRow
+                </div>
+              ))}
+            </div>
+          ) : cursos.length === 0 ? (
+            <div className="empty-state" style={{ border: "none", borderRadius: 0 }}>
+              <div className="empty-state-icon"><BookOpen size={22} aria-hidden="true" /></div>
+              <p className="empty-state-title">Sin cursos todavía</p>
+            </div>
+          ) : (
+            <div className="grid-auto-sm">
+              {cursos.map((c, i) => (
+                <CursoCard
                   key={c._id}
-                  index={i}
-                  icon={BookOpen}
-                  title={c.nombre}
-                  meta={[
-                    c.docente ? `${c.docente.nombre} ${c.docente.apellido}` : "Sin docente",
-                    `${c.participantes?.length ?? 0} participantes`,
-                  ].join(" · ")}
-                  onClick={() => navigate("/cursos")}
+                  curso={c}
+                  role="admin"
+                  idx={i}
+                  compact={true}
+                  onClick={() => navigate(`/cursos/${c._id}`)}
                 />
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section aria-label="Eventos de hoy">
@@ -519,7 +540,7 @@ function AdminDashboard() {
   );
 }
 
-/* ── Entry point ───────────────────────────────────────────────── */
+/* ── Punto de entrada ──────────────────────────────────────────── */
 export default function AdminHomePage() {
   const { user } = useAuth();
   const rol = normalizeRole(user?.rol);

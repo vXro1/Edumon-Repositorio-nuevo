@@ -1,5 +1,5 @@
 // src/features/foros/components/ForumInput.jsx
-// Message composer: reply context, auto-resize textarea, file attach, send.
+// Compositor de mensajes: contexto de respuesta, textarea con tamaño automático, adjuntar archivos y enviar.
 import { useRef, useState } from 'react';
 import { Send, Paperclip, X, Lock, FileText } from 'lucide-react';
 import { Button } from '@/components';
@@ -41,7 +41,7 @@ const ForumInput = ({
 
   const handleTextChange = (e) => {
     setText(e.target.value);
-    // Auto-resize
+    // Ajuste automático de tamaño
     const ta = textareaRef.current;
     if (ta) {
       ta.style.height = 'auto';
@@ -105,14 +105,14 @@ const ForumInput = ({
       padding:    '12px 16px 16px',
       background: 'var(--color-surface)',
     }}>
-      {/* Reply-to context strip */}
+      {/* Banda de contexto de respuesta */}
       {replyTo && (
         <div style={{
           display:        'flex',
           alignItems:     'center',
           justifyContent: 'space-between',
-          background:     'rgba(140,56,240,0.06)',
-          border:         '1px solid rgba(140,56,240,0.18)',
+          background:     'rgba(12,106,196,0.06)',
+          border:         '1px solid rgba(12,106,196,0.18)',
           borderLeft:     '3px solid var(--color-primary)',
           borderRadius:   8,
           padding:        '6px 12px',
@@ -137,14 +137,14 @@ const ForumInput = ({
         </div>
       )}
 
-      {/* File pills */}
+      {/* Pastillas de archivos */}
       {files.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
           {files.map((f, i) => <FilePill key={i} file={f} onRemove={removeFile} />)}
         </div>
       )}
 
-      {/* Input row */}
+      {/* Fila de entrada */}
       <div style={{
         display:      'flex',
         gap:          8,
@@ -182,7 +182,7 @@ const ForumInput = ({
           }}
         />
 
-        {/* Attach file */}
+        {/* Adjuntar archivo */}
         <Button
           variant="ghost"
           size="sm"
@@ -198,7 +198,7 @@ const ForumInput = ({
           multiple accept="image/*,video/mp4,.pdf"
           onChange={handleFileChange} />
 
-        {/* Send button */}
+        {/* Botón de envío */}
         <Button
           variant="primary"
           size="sm"

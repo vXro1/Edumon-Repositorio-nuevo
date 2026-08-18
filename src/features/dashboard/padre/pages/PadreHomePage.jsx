@@ -6,17 +6,18 @@ import {
   ChevronRight, Users, Clock, Heart,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { cursosGetMine, eventosGetHoy } from "@/lib/apiClient";
+import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { eventosGetHoy } from "@/features/eventos/services/eventosService";
 import { normalizeCurso } from "@/lib/normalizers";
 import CursoCard from "@/features/cursos/components/CursoCard";
 import { Button } from "@/components";
 
-/* ── Skeleton ──────────────────────────────────────────────────── */
+/* ── Esqueleto de carga ────────────────────────────────────────── */
 function Sk({ h = 14, w = "100%", r = "var(--radius-sm)" }) {
   return <span className="skeleton" style={{ height: h, width: w, borderRadius: r, display: "block" }} />;
 }
 
-/* ── Section header ────────────────────────────────────────────── */
+/* ── Encabezado de sección ─────────────────────────────────────── */
 function SectionHeader({ title, onAction, actionLabel }) {
   return (
     <div className="section-header">
@@ -30,7 +31,7 @@ function SectionHeader({ title, onAction, actionLabel }) {
   );
 }
 
-/* ── Stat card ─────────────────────────────────────────────────── */
+/* ── Tarjeta de estadística ────────────────────────────────────── */
 function StatCard({ value, label, icon: Icon, colorClass, loading }) {
   return (
     <div className="stat-card">
@@ -54,13 +55,13 @@ function StatCard({ value, label, icon: Icon, colorClass, loading }) {
   );
 }
 
-/* ── Event item ────────────────────────────────────────────────── */
+/* ── Ítem de evento ────────────────────────────────────────────── */
 function EventItem({ evento }) {
   return (
     <div className="list-card-item">
       <div
         className="list-card-item-icon"
-        style={{ background: "var(--edu-purple-50)", color: "var(--edu-purple-500)" }}
+        style={{ background: "var(--edu-blue-50)", color: "var(--edu-blue-500)" }}
       >
         <Calendar size={16} aria-hidden="true" />
       </div>
@@ -75,7 +76,7 @@ function EventItem({ evento }) {
   );
 }
 
-/* ── Quick action card ─────────────────────────────────────────── */
+/* ── Tarjeta de acción rápida ──────────────────────────────────── */
 function QuickActionCard({ icon: Icon, label, desc, colorClass, onClick }) {
   return (
     <button
@@ -103,7 +104,7 @@ function QuickActionCard({ icon: Icon, label, desc, colorClass, onClick }) {
   );
 }
 
-/* ── Course grid skeletons ─────────────────────────────────────── */
+/* ── Esqueletos de cuadrícula de cursos ────────────────────────── */
 function CourseSkeletons() {
   return (
     <div className="grid-auto-sm">
@@ -122,7 +123,7 @@ function CourseSkeletons() {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   MAIN PAGE
+   PÁGINA PRINCIPAL
    ══════════════════════════════════════════════════════════════════ */
 export default function PadreHomePage() {
   const { user }   = useAuth();
@@ -152,13 +153,13 @@ export default function PadreHomePage() {
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
-      {/* ── Welcome banner ── */}
+      {/* ── Banner de bienvenida ── */}
       <div
         className="welcome-banner edu-fade-in"
         style={{ background: "var(--gradient-berry)" }}
         role="banner"
       >
-        <div style={{ position: "relative", zIndex: 1 }}>
+        <div style={{ position: "relative", zIndex: 1, width: "100%" }}>
           <span className="welcome-badge">
             <Heart size={10} style={{ display: "inline", marginRight: 4 }} aria-hidden="true" />
             Padre / Tutor
@@ -166,13 +167,24 @@ export default function PadreHomePage() {
           <h1 className="welcome-title">
             {saludo}{user?.nombre ? `, ${user.nombre}` : ""}
           </h1>
-          <p className="welcome-sub">
-            Acompaña el proceso educativo de tu familia.
-          </p>
+          {!loading && (
+            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginTop: "var(--space-3)" }}>
+              {cursos.length > 0 && (
+                <span className="welcome-chip">
+                  {cursos.length} {cursos.length === 1 ? "curso activo" : "cursos activos"}
+                </span>
+              )}
+              {eventos.length > 0 && (
+                <span className="welcome-chip">
+                  {eventos.length} {eventos.length === 1 ? "evento hoy" : "eventos hoy"}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Stats ── */}
+      {/* ── Estadísticas ── */}
       <section aria-label="Resumen familiar" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Resumen" />
         <div className="grid-stats">
@@ -183,7 +195,7 @@ export default function PadreHomePage() {
         </div>
       </section>
 
-      {/* ── Quick actions ── */}
+      {/* ── Acciones rápidas ── */}
       <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
         <div className="grid-2-auto">
@@ -196,7 +208,7 @@ export default function PadreHomePage() {
             colorClass="stat-icon-cyan"   onClick={() => navigate("/familia/cursos")}
           />
           <QuickActionCard
-            icon={FileText} label="Ver entregas"        desc="Revisión de tareas enviadas"
+            icon={FileText} label="Ver entregas"        desc="Revisión de retos enviados"
             colorClass="stat-icon-green"  onClick={() => navigate("/familia/entregas")}
           />
           <QuickActionCard
@@ -206,7 +218,7 @@ export default function PadreHomePage() {
         </div>
       </section>
 
-      {/* ── Courses ── */}
+      {/* ── Cursos ── */}
       <section aria-label="Cursos de mis hijos" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader
           title="Cursos de mis hijos"
@@ -235,13 +247,14 @@ export default function PadreHomePage() {
                 idx={i}
                 showCover={true}
                 coverSrc={c.fotoPortada || null}
+                compact={true}
               />
             ))}
           </div>
         )}
       </section>
 
-      {/* ── Events today ── */}
+      {/* ── Eventos de hoy ── */}
       {!loading && eventos.length > 0 && (
         <section aria-label="Eventos de hoy">
           <SectionHeader
