@@ -112,8 +112,8 @@ export default function EdumonCard({
           ? "var(--color-primary)"
           : "var(--color-border)",
         boxShadow: hover
-          ? "var(--shadow-card-hover)"
-          : "var(--shadow-card)",
+          ? "var(--clay-card-hover)"
+          : "var(--clay-card)",
       }}
     >
       {/* BORDE DEGRADADO */}

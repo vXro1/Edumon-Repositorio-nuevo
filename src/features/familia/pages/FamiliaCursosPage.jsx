@@ -94,7 +94,7 @@ export default function FamiliaCursosPage() {
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       {/* HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800 }}>Mis cursos</h1>
           <p style={{ fontSize: 13 }}>

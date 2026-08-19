@@ -15,7 +15,7 @@ import {
   forosDelete,
 } from "@/features/foros/services/forosService";
 
-import { Modal, Toast, Button } from "@/components";
+import { Modal, Toast, Button, Badge } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { normalizeCurso } from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
@@ -35,7 +35,7 @@ function FieldGroup({ label, children }) {
 
 function StyledInput({ value, onChange, placeholder, type = "text", required, as: As = "input", rows }) {
   const [f, setF] = useState(false);
-  const props = { value, onChange, placeholder, required, onFocus: () => setF(true), onBlur: () => setF(false), style: { width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${f ? "var(--color-primary)" : "var(--color-border)"}`, outline: "none", background: "var(--color-surface)", color: "var(--color-text)", boxShadow: f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none", transition: "border-color 150ms, box-shadow 150ms", resize: As === "textarea" ? "vertical" : undefined } };
+  const props = { value, onChange, placeholder, required, onFocus: () => setF(true), onBlur: () => setF(false), style: { width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: "var(--radius-md)", border: `1.5px solid ${f ? "var(--color-primary)" : "var(--color-border)"}`, outline: "none", background: "var(--color-surface)", color: "var(--color-text)", boxShadow: f ? "var(--shadow-focus-soft)" : "var(--clay-shadow-sm)", transition: "border-color 150ms, box-shadow 150ms", resize: As === "textarea" ? "vertical" : undefined } };
   return As === "textarea" ? <textarea {...props} rows={rows ?? 3} /> : <input type={type} {...props} />;
 }
 
@@ -172,7 +172,7 @@ export default function ForosPage() {
       </div>
 
       {/* ── Selector de curso ────────────────────────────────────── */}
-      <div style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
         <BookOpen style={{ width: 15, height: 15, color: "var(--color-text-muted)", flexShrink: 0 }} />
         <select value={cursoSel} onChange={e => setCursoSel(e.target.value)} style={{ flex: 1, border: "none", outline: "none", fontSize: 13.5, color: "var(--color-text)", background: "transparent", cursor: "pointer", fontWeight: 500 }}>
           <option value="">-- Seleccionar curso --</option>
@@ -286,7 +286,7 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      style={{ background: "var(--color-surface)", borderRadius: 16, border: `1px solid ${hov ? "rgba(99,102,241,0.25)" : "var(--color-border)"}`, boxShadow: hov ? "var(--shadow-md)" : "var(--shadow-card)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, transition: "all 180ms" }}
+      style={{ background: "var(--color-surface)", borderRadius: "var(--radius-lg)", border: `1px solid ${hov ? "color-mix(in srgb, var(--color-primary) 20%, transparent)" : "var(--color-border)"}`, boxShadow: hov ? "var(--clay-card-hover)" : "var(--clay-card)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, transition: "all 180ms" }}
     >
       <div style={{ width: 42, height: 42, borderRadius: 12, background: abierto ? "rgba(99,102,241,0.10)" : "rgba(148,163,184,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <MessageCircle style={{ width: 19, height: 19, color: abierto ? "#6366F1" : "#94A3B8" }} />
@@ -295,13 +295,13 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <p style={{ fontSize: 14.5, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{foro.titulo}</p>
-          <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: abierto ? "rgba(22,163,74,0.10)" : "rgba(148,163,184,0.15)", color: abierto ? "var(--edu-green-600)" : "#64748B" }}>
+          <Badge variant={abierto ? "success" : "neutral"} size="sm">
             {abierto ? "Abierto" : "Cerrado"}
-          </span>
+          </Badge>
           {foro.publico !== false && (
-            <span style={{ padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700, background: "rgba(12,106,196,0.08)", color: "var(--color-primary)", display: "flex", alignItems: "center", gap: 3 }}>
-              <Globe style={{ width: 9, height: 9 }} /> Público
-            </span>
+            <Badge variant="info" size="sm" icon={<Globe style={{ width: 9, height: 9 }} />}>
+              Público
+            </Badge>
           )}
         </div>
         {foro.descripcion && (

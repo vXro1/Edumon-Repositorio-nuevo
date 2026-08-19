@@ -39,8 +39,8 @@ export function EmptyState({ icon: Icon, title, desc, action }) {
 
 export function SectionHeader({ title, action }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", margin: 0, overflowWrap: "anywhere" }}>
         {title}
       </h3>
       {action && (

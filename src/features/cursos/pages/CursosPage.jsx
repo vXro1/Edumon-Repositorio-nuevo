@@ -13,7 +13,7 @@ import {
 import letrasImg from "@/assets/img/letras.svg"; // fallback para cursos sin portada  
 
 import {
-  Modal, Button, UserAvatar, Toast,
+  Modal, Button, UserAvatar, Toast, Badge,
   Input, Textarea, Select,
 } from "@/components";
 
@@ -44,11 +44,16 @@ const ESTADO_META = {
 };
 
 // Paleta base de colores para el curso (coincide con el patrón hex del validador: #3B82F6, etc.)
+// Antes usaba var(--color-success)/var(--color-error)/var(--color-primary) —
+// el backend exige un hex literal, así que ese string llegaba tal cual al
+// validador y el POST /cursos fallaba con 400 siempre que se elegía uno de
+// esos tres swatches (o se dejaba el color por defecto: DEFAULT_COLOR
+// apuntaba justo a "var(--color-primary)").
 const COLOR_PALETTE = [
-  "#8B5CF6", "#06B6D4", "var(--color-success)", "#F59E0B", "#EC4899",
-  "var(--color-error)", "var(--color-primary)", "#6366F1", "#14B8A6", "#F97316",
+  "#8B5CF6", "#06B6D4", "#41D958", "#F59E0B", "#EC4899",
+  "#EF4444", "#0C6AC4", "#6366F1", "#14B8A6", "#F97316",
 ];
-const DEFAULT_COLOR = COLOR_PALETTE[6]; // var(--color-primary)
+const DEFAULT_COLOR = COLOR_PALETTE[6]; // #0C6AC4 — azul Edumon
 
 /* ── Esqueleto de carga ────────────────────────────────────────── */
 function Sk({ h = 16, w = "100%", r = 7 }) {
@@ -60,17 +65,13 @@ function Sk({ h = 16, w = "100%", r = 7 }) {
 }
 
 /* ── EstadoBadge ──────────────────────────────────────────────── */
+const ESTADO_VARIANT = { activo: "success", archivado: "warning" };
 function EstadoBadge({ estado }) {
-  const m = ESTADO_META[estado] ?? { label: estado, color: "#6B7280", bg: "rgba(107,114,128,0.1)" };
+  const label = ESTADO_META[estado]?.label ?? estado;
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 99,
-      background: m.bg, color: m.color,
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", flexShrink: 0 }} />
-      {m.label}
-    </span>
+    <Badge variant={ESTADO_VARIANT[estado] ?? "neutral"} size="sm" dot>
+      {label}
+    </Badge>
   );
 }
 
@@ -109,7 +110,10 @@ function ColorPickerField({ value, onChange }) {
               aria-label={`Elegir color ${c}`}
               title={c}
               style={{
-                width: 27, height: 27, borderRadius: "50%", background: c,
+                // min-width/min-height: la regla global button{min-height:44px}
+                // (accesibilidad táctil) le ganaba a este height:27 y dejaba
+                // el swatch ovalado (27px de ancho x 44px de alto).
+                width: 27, height: 27, minWidth: 27, minHeight: 27, borderRadius: "50%", background: c,
                 border: active ? "2px solid var(--color-surface)" : "2px solid transparent",
                 outline: active ? `2px solid ${c}` : "2px solid transparent",
                 outlineOffset: 2,
@@ -491,7 +495,7 @@ export default function CursosPage() {
       {/* ── Tabla ── */}
       <div style={{
         background: "var(--color-surface)", borderRadius: 16,
-        border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden",
+        border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", overflow: "hidden",
       }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -776,7 +780,7 @@ export default function CursosPage() {
         title={`Participantes — ${selected?.nombre ?? ""}`}
         size="lg"
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
           <Button variant="ghost" size="sm"
             onClick={() => { setParticipOpen(false); goToCurso(selected); }}
             style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--color-primary)" }}>
@@ -806,13 +810,14 @@ export default function CursosPage() {
               return (
                 <div key={u._id ?? p._id} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
+                  flexWrap: "wrap", gap: 8,
                   padding: "10px 14px", borderRadius: 10,
                   border: "1px solid var(--color-border)", background: "var(--color-bg)",
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
                     <UserAvatar user={u} size={36} />
-                    <div>
-                      <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {u.nombre} {u.apellido}
                       </p>
                       <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0 }}>

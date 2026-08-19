@@ -1,53 +1,42 @@
 // src/components/ui/Badge.jsx
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Duolingo-style badges:
-   • Sombra inferior gruesa = efecto "botón 3D"
-   • Colores sólidos, saturados, sin transparencias
-   • Borde inferior más oscuro que el fondo (la "base")
-   • Micro-animación bounce al montar
-   • Al hover: sube 1px (como si se presionara)
-   • Al active: baja a la base (press)
+   Badges — Soft UI:
+   • Relleno de color suave (10-15%) + borde fino del mismo tono
+   • box-shadow: var(--clay-pill) — una sombra suave fija, no una "base" 3D
+   • Sin bounce de entrada ni sombra que se hunde al presionar
+   • Todo sale de tokens (--color-..., --edu-...), nada hardcodeado
 ───────────────────────────────────────────────────────────────────────── */
 
 /* ── KEYFRAMES inyectados una sola vez ─────────────────────────────────── */
 const CSS = `
-@keyframes duo-bounce {
-  0%          { transform: scale(0.6);  opacity: 0; }
-  60%         { transform: scale(1.15); opacity: 1; }
-  80%         { transform: scale(0.95); }
-  100%        { transform: scale(1);   }
+@keyframes badge-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes duo-pulse-dot {
+@keyframes badge-pulse-dot {
   0%, 100%    { transform: scale(1);    opacity: 1; }
   50%         { transform: scale(0.55); opacity: 0.55; }
 }
-.duo-badge {
+.ui-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: "Nunito", "Fredoka One", system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  font-family: var(--font-sans);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.01em;
   white-space: nowrap;
   border-radius: 100px;
-  border: none;
   outline: none;
   cursor: default;
   user-select: none;
-  animation: duo-bounce 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
-  /* La sombra INFERIOR simula la "base" del badge */
-  transition: transform 90ms ease, box-shadow 90ms ease;
+  animation: badge-in 150ms ease both;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
-.duo-badge-interactive { cursor: pointer; }
-.duo-badge-interactive:hover {
-  transform: translateY(-2px);
-}
-.duo-badge-interactive:hover .duo-shadow { box-shadow: none; }
-.duo-badge-interactive:active {
-  transform: translateY(2px);
-}
-.duo-dot {
+.ui-badge-interactive { cursor: pointer; }
+.ui-badge-interactive:hover { transform: translateY(-1px); }
+.ui-badge-interactive:active { transform: scale(0.97); }
+.ui-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -55,62 +44,27 @@ const CSS = `
   background: currentColor;
   opacity: 0.75;
 }
-.duo-dot-pulse {
-  animation: duo-pulse-dot 1.5s ease-in-out infinite;
+.ui-dot-pulse {
+  animation: badge-pulse-dot 1.5s ease-in-out infinite;
 }
-.duo-badge-sm  { font-size: 10px; padding: 3px 9px;  }
-.duo-badge-md  { font-size: 11px; padding: 5px 12px; }
-.duo-badge-lg  { font-size: 13px; padding: 7px 16px; }
+.ui-badge-sm  { font-size: 10px; padding: 3px 9px;  }
+.ui-badge-md  { font-size: 11px; padding: 5px 12px; }
+.ui-badge-lg  { font-size: 13px; padding: 7px 16px; }
 `;
 
-/* ── PALETA (colores planos + sombra base, estilo Duolingo) ────────────── */
+/* ── PALETA — todo referencia tokens semánticos, nada hardcodeado ──────── */
 const PALETTE = {
-  success: {
-    bg:     "#58CC02",
-    shadow: "#46A302",
-    color:  "#fff",
-    dot:    "#fff",
-  },
-  error: {
-    bg:     "#FF4B4B",
-    shadow: "#CC2B2B",
-    color:  "#fff",
-    dot:    "#fff",
-  },
-  warning: {
-    bg:     "#FFC800",
-    shadow: "#CC9E00",
-    color:  "#7C5000",
-    dot:    "#7C5000",
-  },
-  info: {
-    bg:     "#1CB0F6",
-    shadow: "#0C8EC7",
-    color:  "#fff",
-    dot:    "#fff",
-  },
-  purple: {
-    bg:     "#CE82FF",
-    shadow: "#A35DD4",
-    color:  "#fff",
-    dot:    "#fff",
-  },
-  neutral: {
-    bg:     "#E5E5E5",
-    shadow: "#B0B0B0",
-    color:  "#5E5E5E",
-    dot:    "#5E5E5E",
-  },
-  dark: {
-    bg:     "#3C3C3C",
-    shadow: "#1A1A1A",
-    color:  "#fff",
-    dot:    "#fff",
-  },
+  success: { bg: "var(--color-success-light)", text: "var(--edu-green-700)",      ring: "var(--color-success)" },
+  error:   { bg: "var(--color-error-light)",   text: "var(--color-error-hover)",  ring: "var(--color-error)" },
+  warning: { bg: "var(--color-warning-light)", text: "var(--edu-yellow-700)",     ring: "var(--color-warning)" },
+  info:    { bg: "var(--color-info-light)",    text: "var(--edu-cyan-700)",       ring: "var(--color-info)" },
+  purple:  { bg: "var(--color-primary-light)", text: "var(--color-primary-hover)",ring: "var(--color-primary)" },
+  neutral: { bg: "var(--color-surface-3)",     text: "var(--color-text-muted)",   ring: "var(--color-border-strong)" },
+  dark:    { bg: "var(--edu-neutral-800)",     text: "#fff",                      ring: "var(--edu-neutral-900)" },
 };
 
 /* ── TAMAÑOS ────────────────────────────────────────────────────────────── */
-const SIZE_CLASS = { sm: "duo-badge-sm", md: "duo-badge-md", lg: "duo-badge-lg" };
+const SIZE_CLASS = { sm: "ui-badge-sm", md: "ui-badge-md", lg: "ui-badge-lg" };
 
 /* ── CSS ya inyectado? ──────────────────────────────────────────────────── */
 let injected = false;
@@ -151,23 +105,21 @@ export default function Badge({
   const p = PALETTE[variant] ?? PALETTE.info;
   const sizeClass = SIZE_CLASS[size] ?? SIZE_CLASS.md;
 
-  // Sombra inferior = "base" del badge (efecto 3D Duolingo)
-  const shadowHeight = size === "sm" ? "3px" : size === "lg" ? "5px" : "4px";
-
   return (
     <span
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       className={[
-        "duo-badge",
+        "ui-badge",
         sizeClass,
-        interactive ? "duo-badge-interactive" : "",
+        interactive ? "ui-badge-interactive" : "",
         className,
       ].filter(Boolean).join(" ")}
       style={{
         background: p.bg,
-        color:      p.color,
-        boxShadow:  `0 ${shadowHeight} 0 ${p.shadow}`,
+        color:      p.text,
+        border:     `1px solid color-mix(in srgb, ${p.ring} 22%, transparent)`,
+        boxShadow:  "var(--clay-pill)",
         ...style,
       }}
     >
@@ -175,8 +127,8 @@ export default function Badge({
 
       {(dot || pulse) && (
         <span
-          className={["duo-dot", pulse ? "duo-dot-pulse" : ""].filter(Boolean).join(" ")}
-          style={{ background: p.dot }}
+          className={["ui-dot", pulse ? "ui-dot-pulse" : ""].filter(Boolean).join(" ")}
+          style={{ background: p.ring }}
           aria-hidden="true"
         />
       )}
@@ -188,7 +140,7 @@ export default function Badge({
           onClick={(e) => { e.stopPropagation(); onClose(); }}
           aria-label="Eliminar"
           style={{
-            background:   "rgba(0,0,0,0.15)",
+            background:   "color-mix(in srgb, currentColor 15%, transparent)",
             border:       "none",
             borderRadius: "50%",
             width:        "14px",
@@ -198,9 +150,9 @@ export default function Badge({
             justifyContent: "center",
             cursor:       "pointer",
             padding:      0,
-            color:        p.color,
+            color:        p.text,
             fontSize:     "9px",
-            fontWeight:   900,
+            fontWeight:   700,
             lineHeight:   1,
             flexShrink:   0,
           }}
@@ -213,7 +165,7 @@ export default function Badge({
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   NotifBadge — contador de notificaciones (el bolita roja del ícono)
+   NotifBadge — contador de notificaciones (el punto rojo del ícono)
 ════════════════════════════════════════════════════════════════════════ */
 export function NotifBadge({ count = 0, variant = "error" }) {
   injectOnce();
@@ -231,42 +183,17 @@ export function NotifBadge({ count = 0, variant = "error" }) {
         height:         "18px",
         padding:        "0 4px",
         borderRadius:   "100px",
-        background:     p.bg,
-        boxShadow:      `0 3px 0 ${p.shadow}`,
-        color:          p.color,
+        background:     p.ring,
+        boxShadow:      "var(--clay-pill)",
+        color:          "#fff",
         fontSize:       "10px",
-        fontWeight:     900,
+        fontWeight:     700,
         lineHeight:     1,
-        fontFamily:     '"Nunito", system-ui, sans-serif',
-        animation:      "duo-bounce 0.35s cubic-bezier(0.34,1.56,0.64,1) both",
+        fontFamily:     "var(--font-sans)",
+        animation:      "badge-in 150ms ease both",
       }}
     >
       {label}
-    </span>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════════════════
-   XpBadge — badge especial de XP / streak / logro (estilo Duolingo puro)
-   Incluye llama o estrella opcional
-════════════════════════════════════════════════════════════════════════ */
-export function XpBadge({ xp, streak = false }) {
-  injectOnce();
-
-  return (
-    <span
-      className="duo-badge duo-badge-md"
-      style={{
-        background: streak ? "#FF9600" : "#FFC800",
-        color:      streak ? "#fff"    : "#7C5000",
-        boxShadow:  streak ? "0 4px 0 #C75C00" : "0 4px 0 #CC9E00",
-        fontFamily: '"Nunito", system-ui, sans-serif',
-        fontWeight: 900,
-        gap:        4,
-      }}
-    >
-      <span style={{ fontSize: "1.1em" }}>{streak ? "🔥" : "⭐"}</span>
-      {xp}
     </span>
   );
 }

@@ -12,6 +12,7 @@ import MainLayout                                        from "../components/lay
 // ── Páginas públicas ──────────────────────────────────────────────
 const LandingPage    = lazy(() => import("../pages/LandingPage"));
 const NotFoundPage   = lazy(() => import("../pages/NotFoundPage"));
+const DemoPage       = lazy(() => import("../pages/DemoPage"));
 
 // ── Autenticación ─────────────────────────────────────────────────
 const LoginPage          = lazy(() => import("../features/auth/pages/LoginPage")         .then(m => ({ default: m.LoginPage })));
@@ -77,6 +78,9 @@ export default function AppRoutes() {
 
           {/* ── RAÍZ PÚBLICA ── */}
           <Route path="/" element={<LandingPage />} />
+
+          {/* ── DEMO — vista previa del dashboard sin iniciar sesión ── */}
+          <Route path="/demo" element={<DemoPage />} />
 
           {/* ── AUTENTICACIÓN (solo sin sesión) ── */}
           <Route path="/login"           element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />

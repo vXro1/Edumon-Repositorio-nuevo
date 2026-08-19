@@ -3,6 +3,7 @@ const VARIANT = {
   secondary:       "btn btn-secondary",
   ghost:           "btn btn-ghost",
   "ghost-primary": "btn btn-ghost-primary",
+  "ghost-danger":  "btn btn-ghost-danger",
   danger:          "btn btn-danger",
   success:         "btn btn-success",
   warning:         "btn btn-warning",

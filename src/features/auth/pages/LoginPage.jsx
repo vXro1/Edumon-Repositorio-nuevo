@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { humanizeError } from "../../../utils/humanizeError";
 import { LoginForm } from "@/components";
 import { useToast } from "../../../context/ToastContext";
+import { stashLoginPassword } from "../utils/firstLoginPassword";
 
 const ROLE_REDIRECTS = {
   superadmin: "/admin",
@@ -33,10 +34,8 @@ export const LoginPage = () => {
     try {
       const data = await login(credentials);
       if (data?.primerInicioSesion) {
-        navigate("/primer-inicio", {
-          replace: true,
-          state: { loginPassword: credentials.contrasena },
-        });
+        stashLoginPassword(credentials.contrasena);
+        navigate("/primer-inicio", { replace: true });
         return;
       }
 

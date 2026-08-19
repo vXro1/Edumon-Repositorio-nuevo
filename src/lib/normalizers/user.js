@@ -45,6 +45,7 @@ export function normalizeUser(user) {
 
       // Seguridad / sesión
       ultimoAcceso: null,
+      primerInicioSesion: false,
 
       // Fechas
       fechaRegistro: null,
@@ -164,6 +165,8 @@ export function normalizeUser(user) {
     ultimoAcceso:
       user.ultimoAcceso ||
       null,
+
+    primerInicioSesion: !!user.primerInicioSesion,
 
     // Fechas
     fechaRegistro:

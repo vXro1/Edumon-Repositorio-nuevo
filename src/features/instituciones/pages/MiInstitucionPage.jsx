@@ -33,7 +33,7 @@ function InfoRow({ icon: Icon, label, value }) {
 
 function StatCard({ icon: Icon, label, value, color, bg, loading }) {
   return (
-    <div style={{ background: "var(--color-surface)", borderRadius: 14, padding: "18px 20px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", display: "flex", alignItems: "center", gap: 14 }}>
+    <div style={{ background: "var(--color-surface)", borderRadius: 14, padding: "18px 20px", border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", display: "flex", alignItems: "center", gap: 14 }}>
       <div style={{ width: 42, height: 42, borderRadius: 11, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <Icon style={{ width: 19, height: 19, color }} />
       </div>
@@ -124,12 +124,15 @@ export default function MiInstitucionPage() {
         <StatCard icon={Shield}         label="Administradores" value="1"              color="#D97706" bg="rgba(217,119,6,0.10)"  loading={false} />
       </div>
 
-      {/* ── Cuadrícula de contenido principal ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr)", gap: 20 }}>
+      {/* ── Cuadrícula de contenido principal — .layout-split ya resuelve el
+           colapso a una columna en pantallas angostas (min-width:768px es
+           donde pasa a 2 columnas); un grid inline aquí no podría reaccionar
+           a ningún breakpoint. ── */}
+      <div className="layout-split">
 
         {/* Tarjeta de información institucional */}
-        <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
             <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>Información institucional</h2>
             {loading && <div className="animate-pulse" style={{ width: 80, height: 20, borderRadius: 6, background: "var(--color-border)" }} />}
           </div>
@@ -161,7 +164,7 @@ export default function MiInstitucionPage() {
         {/* Info del administrador + fechas */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Tarjeta del administrador */}
-          <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)" }}>
+          <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)" }}>
               <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>Tu cuenta</h2>
             </div>
@@ -182,7 +185,7 @@ export default function MiInstitucionPage() {
           </div>
 
           {/* Tarjeta de información del sistema */}
-          <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)" }}>
+          <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--color-border)" }}>
               <h2 style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>Estado del sistema</h2>
             </div>

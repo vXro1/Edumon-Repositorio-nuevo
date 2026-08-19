@@ -99,14 +99,16 @@ function TareaEntregasBlock({ tarea, userId, esPadre, onGrade }) {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "flex-start",
+        flexWrap: "wrap",
+        gap: 10,
         marginBottom: 10,
         padding: "10px 14px",
         background: "var(--color-background-secondary)",
         borderRadius: 10,
         border: "0.5px solid var(--color-border-tertiary)",
       }}>
-        <div>
-          <p style={{ margin: 0, fontWeight: 500, fontSize: 14 }}>{tarea.titulo}</p>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontWeight: 500, fontSize: 14, overflowWrap: "anywhere" }}>{tarea.titulo}</p>
           {tarea.fechaEntrega && (
             <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-secondary)" }}>
               Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString("es-CO", {

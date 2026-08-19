@@ -194,7 +194,7 @@ export default function ForosTab({ cursoId: cursoIdProp, cursoNombre: cursoNombr
 
       {/* Fila de encabezado */}
       <div style={{ display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', marginBottom: 14 }}>
+        alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         <SectionHeader title="Foros" />
         {canCreate && (
           <Button size="sm" onClick={() => setShowCrear(true)}>

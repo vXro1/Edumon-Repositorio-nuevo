@@ -325,7 +325,7 @@ export default function DocentesPage() {
         background: "var(--color-surface)",
         border: "1px solid var(--color-border)",
         borderRadius: "var(--radius-xl)",
-        boxShadow: "var(--shadow-card)",
+        boxShadow: "var(--clay-card)",
         overflow: "hidden",
       }}>
         {!loading && filtered.length === 0 ? (
@@ -336,27 +336,30 @@ export default function DocentesPage() {
             action={!search ? { label: "Registrar docente", onClick: () => { setForm(INIT); setShowCreate(true); } } : undefined}
           />
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "var(--color-surface-2)", borderBottom: "1px solid var(--color-border)" }}>
-                {["Docente", "Correo", "Teléfono", "Estado"].map(h => (
-                  <th key={h} style={{
-                    padding: "10px 16px", textAlign: "left",
-                    fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-                    letterSpacing: "0.06em", color: "var(--color-text-muted)",
-                  }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading
-                ? [0, 1, 2, 3, 4].map(i => <SkRow key={i} />)
-                : filtered.map(d => <DocenteRow key={d._id} docente={d} />)
-              }
-            </tbody>
-          </table>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "var(--color-surface-2)", borderBottom: "1px solid var(--color-border)" }}>
+                  {["Docente", "Correo", "Teléfono", "Estado"].map(h => (
+                    <th key={h} style={{
+                      padding: "10px 16px", textAlign: "left",
+                      fontSize: 11, fontWeight: 700, textTransform: "uppercase",
+                      letterSpacing: "0.06em", color: "var(--color-text-muted)",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading
+                  ? [0, 1, 2, 3, 4].map(i => <SkRow key={i} />)
+                  : filtered.map(d => <DocenteRow key={d._id} docente={d} />)
+                }
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

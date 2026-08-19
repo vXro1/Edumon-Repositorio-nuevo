@@ -15,15 +15,6 @@ export const usersUpdateMyPhoto = (formData) =>
 
 export const usersGetDefaultPhotos = () => apiFetch('/users/fotos-predeterminadas');
 
-export const usersPatchFotoDefault = (fotoPredeterminadaUrl) =>
-  apiFetch('/users/foto-perfil', { method: 'PATCH', body: JSON.stringify({ fotoPredeterminadaUrl }) });
-
-export const usersPatchFotoFile = (file) => {
-  const fd = new FormData();
-  fd.append('file', file);
-  return apiFetchFormData('/users/foto-perfil', { method: 'PATCH', body: fd });
-};
-
 export const usersGetById = (id) => apiFetch(`/users/${id}`);
 
 export const usersGetPadreInfo = (padreId) => apiFetch(`/users/padre/${padreId}/info`);

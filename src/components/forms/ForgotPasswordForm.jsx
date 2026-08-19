@@ -32,7 +32,7 @@ const ForgotPasswordForm = ({
   onContinue,
   onBack,
 }) => {
-  const [method, setMethod] = useState("email");
+  const [method, setMethod] = useState("phone");
   const [form,   setForm]   = useState({ correo: "", telefono: "" });
   const [errors, setErrors] = useState({});
 
@@ -62,7 +62,7 @@ const ForgotPasswordForm = ({
       <div className="auth-form-head">
         <h1>Recuperar contraseña</h1>
         <p>
-          {sent ? sentLabel : "Te enviaremos un código de verificación"}
+          {sent ? sentLabel : "Ingresa tu número de teléfono y te enviaremos un código para restablecer tu contraseña."}
         </p>
       </div>
 
@@ -76,7 +76,7 @@ const ForgotPasswordForm = ({
           <button className="auth-submit" onClick={onContinue}>
             Ingresar código
           </button>
-          <div className="auth-row-between" style={{ marginTop: 12 }}>
+          <div className="auth-row-between" style={{ marginTop: 12, justifyContent: "center" }}>
             <button type="button" className="auth-link-btn" onClick={onBack}>
               ← Volver al inicio de sesión
             </button>
@@ -86,22 +86,23 @@ const ForgotPasswordForm = ({
         <form onSubmit={handleSubmit} noValidate className="auth-form">
           {/* Toggle método */}
           <div style={{
-            display: "flex", borderRadius: 8, overflow: "hidden",
-            border: "1.5px solid var(--color-border)", marginBottom: 4,
+            display: "flex", borderRadius: 10, overflow: "hidden",
+            border: "1.5px solid var(--color-border)", marginBottom: 2,
           }}>
             {[
+              { key: "phone", label: "Teléfono", icon: <Phone size={14} /> },
               { key: "email", label: "Correo", icon: <Mail size={14} /> },
-              { key: "phone", label: "WhatsApp", icon: <Phone size={14} /> },
             ].map(({ key, label, icon }) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => { setMethod(key); setErrors({}); }}
+                aria-pressed={method === key}
                 style={{
                   flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
                   gap: 6, padding: "9px 0", fontSize: 13, fontWeight: 600, border: "none",
-                  cursor: "pointer", transition: "all 150ms",
-                  background: method === key ? "var(--color-primary)" : "transparent",
+                  cursor: "pointer", transition: "background 150ms, color 150ms",
+                  background: method === key ? "var(--edu-blue-500, #0C6AC4)" : "transparent",
                   color: method === key ? "#fff" : "var(--color-text-muted)",
                 }}
               >
@@ -125,7 +126,7 @@ const ForgotPasswordForm = ({
             />
           ) : (
             <Input
-              label="Número de WhatsApp"
+              label="Número de teléfono"
               name="telefono"
               type="tel"
               placeholder="+573113014875"
@@ -145,7 +146,7 @@ const ForgotPasswordForm = ({
             }
           </button>
 
-          <div className="auth-row-between">
+          <div className="auth-row-between" style={{ justifyContent: "center" }}>
             <button type="button" className="auth-link-btn" onClick={onBack}>
               ← Volver al inicio de sesión
             </button>

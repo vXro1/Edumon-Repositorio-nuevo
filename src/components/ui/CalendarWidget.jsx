@@ -414,7 +414,7 @@ export default function CalendarWidget({
           flex: "0 0 340px", minWidth: 280,
           background: "var(--color-surface)",
           borderRadius: 16, border: "1px solid var(--color-border)",
-          overflow: "hidden", boxShadow: "var(--shadow-card)",
+          overflow: "hidden", boxShadow: "var(--clay-card)",
         }}>
           {/* Navegación de mes */}
           <div style={{
@@ -554,22 +554,23 @@ export default function CalendarWidget({
             <div style={{
               background: "var(--color-surface)", borderRadius: 14,
               border: "1px solid var(--color-border)", overflow: "hidden",
-              boxShadow: "var(--shadow-card)",
+              boxShadow: "var(--clay-card)",
             }}>
               <div style={{
                 padding: "12px 16px", borderBottom: "1px solid var(--color-border)",
                 background: "var(--color-bg)",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
+                flexWrap: "wrap", gap: 6,
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <CalendarDays size={15} style={{ color: "var(--color-primary)" }} />
-                  <span style={{ fontWeight: 700, fontSize: 14, color: "var(--color-text)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <CalendarDays size={15} style={{ color: "var(--color-primary)", flexShrink: 0 }} />
+                  <span style={{ fontWeight: 700, fontSize: 14, color: "var(--color-text)", overflowWrap: "anywhere" }}>
                     {selected.toLocaleDateString("es-CO", {
                       weekday: "long", day: "numeric", month: "long",
                     })}
                   </span>
                 </div>
-                <span style={{ fontSize: 11.5, color: "var(--color-text-muted)", fontWeight: 600 }}>
+                <span style={{ fontSize: 11.5, color: "var(--color-text-muted)", fontWeight: 600, flexShrink: 0 }}>
                   {itemsDelDia.length} item{itemsDelDia.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -597,7 +598,7 @@ export default function CalendarWidget({
           <div style={{
             background: "var(--color-surface)", borderRadius: 14,
             border: "1px solid var(--color-border)", overflow: "hidden",
-            boxShadow: "var(--shadow-card)",
+            boxShadow: "var(--clay-card)",
           }}>
             <div style={{
               padding: "12px 16px", borderBottom: "1px solid var(--color-border)",

@@ -33,6 +33,19 @@ export const ResetPasswordPage = () => {
     }
   };
 
+  // Reenviar código: reutiliza el mismo endpoint de envío inicial
+  // (forgotPassword/forgotPasswordPhone) — no hay una ruta separada de
+  // "solo reenviar", así que volver a pedir el código es exactamente eso.
+  const handleResend = async () => {
+    if (method === "phone") {
+      if (!defaultPhone) return;
+      await authService.forgotPasswordPhone({ telefono: defaultPhone });
+    } else {
+      if (!defaultEmail) return;
+      await authService.forgotPassword({ correo: defaultEmail });
+    }
+  };
+
   return (
     <ResetPasswordForm
       onSubmit={handleSubmit}
@@ -44,6 +57,7 @@ export const ResetPasswordPage = () => {
       method={method}
       onBack={() => navigate("/login")}
       onGoLogin={() => navigate("/login", { replace: true })}
+      onResend={handleResend}
     />
   );
 };

@@ -232,12 +232,12 @@ export default function EventosPage() {
       <Toast msg={toast.msg} type={toast.type} />
 
       {/* HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800 }}>Eventos</h1>
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <IconBtn color="var(--color-text-muted)" onClick={load}>
             <RefreshCw />
           </IconBtn>
@@ -270,7 +270,7 @@ export default function EventosPage() {
               <div key={ev._id} style={{
                 background: "var(--color-surface)", borderRadius: 14,
                 border: "1px solid var(--color-border)", overflow: "hidden",
-                boxShadow: "var(--shadow-card)",
+                boxShadow: "var(--clay-card)",
                 display: "flex",
               }}>
                 {portadaUrl && (
@@ -282,8 +282,9 @@ export default function EventosPage() {
                 <div style={{ flex: 1, padding: "14px 16px", minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                     <span style={{
-                      display: "inline-block", fontSize: 11, fontWeight: 700, padding: "2px 8px",
-                      borderRadius: 99, background: cfg.bg, color: cfg.color, flexShrink: 0,
+                      display: "inline-block", fontSize: 11, fontWeight: 600, padding: "2px 8px",
+                      borderRadius: 999, background: cfg.bg, color: cfg.color, flexShrink: 0,
+                      boxShadow: "var(--clay-pill)",
                     }}>
                       {cfg.label}
                     </span>

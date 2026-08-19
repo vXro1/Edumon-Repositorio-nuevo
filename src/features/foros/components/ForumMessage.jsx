@@ -35,8 +35,9 @@ const RoleBadge = ({ rol }) => {
   if (!s) return null;
   return (
     <span style={{
-      fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 9999,
-      background: s.bg, color: s.color, letterSpacing: '0.03em',
+      fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 9999,
+      background: s.bg, color: s.color, letterSpacing: '0.01em',
+      boxShadow: 'var(--clay-pill)',
     }}>
       {s.label}
     </span>

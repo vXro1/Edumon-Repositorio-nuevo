@@ -3,6 +3,7 @@
 // archivos adjuntos recientes de los mensajes.
 import { useState } from 'react';
 import { Users, BarChart2, Paperclip, FileText, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { Badge } from '@/components';
 
 const timeAgo = (iso) => {
   if (!iso) return '';
@@ -143,19 +144,9 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
 
         {/* Estado */}
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{
-            display:      'inline-flex', alignItems: 'center', gap: 5,
-            padding:      '3px 10px', borderRadius: 9999, fontSize: 11.5, fontWeight: 700,
-            background:   foro?.estado === 'cerrado' ? '#fee2e2' : '#d1fae5',
-            color:        foro?.estado === 'cerrado' ? 'var(--color-error-hover)' : '#059669',
-          }}>
-            <span style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: foro?.estado === 'cerrado' ? 'var(--color-error-hover)' : '#10b981',
-              display: 'inline-block',
-            }} />
+          <Badge variant={foro?.estado === 'cerrado' ? 'error' : 'success'} size="sm" dot>
             {foro?.estado === 'cerrado' ? 'Cerrado' : 'Abierto'}
-          </span>
+          </Badge>
           {lastActivity && (
             <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
               Última actividad {timeAgo(lastActivity)}

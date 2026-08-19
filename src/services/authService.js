@@ -19,7 +19,15 @@ export const authService = {
     return data.user ?? data;
   },
 
-  changePassword: async (body) => apiFetch('/auth/change-password', { method: 'POST', body: JSON.stringify(body) }),
+  // El backend espera contraseñaActual/contraseñaNueva (con ñ) — se remapea
+  // aquí porque ambos call sites (FirstLoginScreen, PerfilPage) usan las
+  // claves sin ñ, y el mismatch hacía que change-password devolviera 400
+  // ("La contraseña actual y la nueva son obligatorias") en cada intento.
+  changePassword: async ({ contrasenaActual, contrasenaNueva }) =>
+    apiFetch('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ contraseñaActual: contrasenaActual, contraseñaNueva: contrasenaNueva }),
+    }),
 
   logout: async () => {
     try {

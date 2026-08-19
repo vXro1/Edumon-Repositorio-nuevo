@@ -384,6 +384,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
                         fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999,
                         background: "var(--color-primary-light)", color: "var(--color-primary)",
                         display: "inline-flex", alignItems: "center", gap: 4,
+                        boxShadow: "var(--clay-pill)",
                       }}>
                         <Layers style={{ width: 10, height: 10 }} />
                         {moduloNombre}

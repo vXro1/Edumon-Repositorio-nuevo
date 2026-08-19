@@ -4,7 +4,7 @@ import {
   Mail, MailOpen, Inbox, RefreshCw, Building2,
   Phone, AtSign, MessageSquare, Clock, CheckCheck,
 } from "lucide-react";
-import { AppModal, Button } from "@/components";
+import { AppModal, Button, Badge } from "@/components";
 import { buzonGetAll, buzonMarcarLeido } from "@/features/buzon/services/buzonService";
 import { normalizePhone } from "@/utils/normalizePhone";
 
@@ -141,12 +141,7 @@ function MensajeRow({ msg, onClick }) {
             <span style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>· {msg.institucion}</span>
           )}
           {!msg.leido && (
-            <span style={{
-              fontSize: 10, fontWeight: 800, padding: "1px 8px", borderRadius: 99,
-              background: "rgba(12,106,196,0.12)", color: "var(--color-primary)",
-            }}>
-              Nuevo
-            </span>
+            <Badge variant="purple" size="sm">Nuevo</Badge>
           )}
         </div>
         <p style={{
@@ -285,7 +280,7 @@ export default function BuzonPage() {
       <div style={{
         background: "var(--color-surface)",
         border: "1px solid var(--color-border)",
-        borderRadius: 16, boxShadow: "var(--shadow-card)", overflow: "hidden",
+        borderRadius: 16, boxShadow: "var(--clay-card)", overflow: "hidden",
       }}>
         {loading ? (
           <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>

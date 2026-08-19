@@ -1,22 +1,23 @@
 /* ════════════════════════════════════════════════════════════════════
-   EDUMON — BADGES  (estilo Duolingo)
+   EDUMON — BADGES (Soft UI)
    ════════════════════════════════════════════════════════════════════
+   NOTA: estas clases standalone no tienen consumidores hoy — Badge.jsx
+   arma sus propios estilos inline con tokens (mismo criterio que aquí).
+   Se mantienen coherentes por si algún día se usan directamente.
+
    Concepto visual:
-   • Sombra inferior gruesa = "base" que da efecto 3D press
-   • Colores sólidos, saturados — sin transparencias ni soft-fills
-   • Hover sube, active baja (feedback táctil)
-   • Bounce de entrada en cada badge
+   • Relleno de color suave + borde fino del mismo tono
+   • box-shadow: var(--clay-pill) — sombra suave fija, no una "base" 3D
+   • Sin bounce de entrada
    ════════════════════════════════════════════════════════════════════ */
 
 /* ── Keyframes ────────────────────────────────────────────────────────── */
-@keyframes duo-badge-bounce {
-  0%        { transform: scale(0.6);  opacity: 0; }
-  60%       { transform: scale(1.15); opacity: 1; }
-  80%       { transform: scale(0.95); }
-  100%      { transform: scale(1);   }
+@keyframes badge-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes duo-pulse-dot {
+@keyframes badge-pulse-dot {
   0%, 100%  { transform: scale(1);    opacity: 1; }
   50%       { transform: scale(0.5);  opacity: 0.5; }
 }
@@ -26,16 +27,16 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: "Nunito", "Fredoka One", system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  font-family: var(--font-sans);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.01em;
   white-space: nowrap;
   border-radius: 100px;
-  border: none;
   line-height: 1;
   vertical-align: middle;
-  animation: duo-badge-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  transition: transform 90ms ease, box-shadow 90ms ease;
+  box-shadow: var(--clay-pill);
+  animation: badge-in 150ms ease both;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
 /* ── Tamaños ──────────────────────────────────────────────────────────── */
@@ -43,66 +44,50 @@
 .badge    { font-size: 11px; padding: 5px  12px; }   /* md (predeterminado) */
 .badge-lg { font-size: 13px; padding: 7px  16px; }
 
-/* ── Variantes de color ───────────────────────────────────────────────── */
-/* Cada una define: bg, base-shadow (más oscura) y color de texto */
-
+/* ── Variantes de color — relleno suave + borde + texto del tono fuerte ── */
 .badge-success {
-  background: #58CC02;
-  box-shadow: 0 4px 0 #46A302;
-  color: #fff;
+  background: var(--color-success-light);
+  border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent);
+  color: var(--edu-green-700);
 }
 .badge-error,
 .badge-danger {
-  background: #FF4B4B;
-  box-shadow: 0 4px 0 #CC2B2B;
-  color: #fff;
+  background: var(--color-error-light);
+  border: 1px solid color-mix(in srgb, var(--color-error) 22%, transparent);
+  color: var(--color-error-hover);
 }
 .badge-warning {
-  background: #FFC800;
-  box-shadow: 0 4px 0 #CC9E00;
-  color: #7C5000;
+  background: var(--color-warning-light);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 22%, transparent);
+  color: var(--edu-yellow-700);
 }
 .badge-info,
 .badge-primary {
-  background: #1CB0F6;
-  box-shadow: 0 4px 0 #0C8EC7;
-  color: #fff;
+  background: var(--color-info-light);
+  border: 1px solid color-mix(in srgb, var(--color-info) 22%, transparent);
+  color: var(--edu-cyan-700);
 }
 .badge-purple,
 .badge-secondary {
-  background: #CE82FF;
-  box-shadow: 0 4px 0 #A35DD4;
-  color: #fff;
+  background: var(--color-primary-light);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+  color: var(--color-primary-hover);
 }
 .badge-neutral {
-  background: #E5E5E5;
-  box-shadow: 0 4px 0 #B0B0B0;
-  color: #5E5E5E;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
 }
 .badge-dark {
-  background: #3C3C3C;
-  box-shadow: 0 4px 0 #1A1A1A;
+  background: var(--edu-neutral-800);
+  border: 1px solid var(--edu-neutral-900);
   color: #fff;
-}
-
-/* Tamaño pequeño — sombra más fina */
-.badge-sm.badge-success,
-.badge-sm.badge-error,
-.badge-sm.badge-danger,
-.badge-sm.badge-warning,
-.badge-sm.badge-info,
-.badge-sm.badge-primary,
-.badge-sm.badge-purple,
-.badge-sm.badge-secondary,
-.badge-sm.badge-neutral,
-.badge-sm.badge-dark {
-  box-shadow: 0 3px 0 inherit;
 }
 
 /* ── Gradiente especial ───────────────────────────────────────────────── */
 .badge-gradient {
-  background: linear-gradient(135deg, #58CC02 0%, #1CB0F6 100%);
-  box-shadow: 0 4px 0 #3A8D00;
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-info) 100%);
+  border: none;
   color: #fff;
 }
 
@@ -120,7 +105,7 @@
 
 /* ── Dot pulsante (en vivo) ───────────────────────────────────────────── */
 .badge-pulse::before {
-  animation: duo-pulse-dot 1.5s ease-in-out infinite;
+  animation: badge-pulse-dot 1.5s ease-in-out infinite;
 }
 
 /* ── Interactivo (clicable) ─────────────────────────────────────────── */
@@ -128,11 +113,8 @@
   cursor: pointer;
   user-select: none;
 }
-.badge-interactive:hover  { transform: translateY(-2px); }
-.badge-interactive:active {
-  transform: translateY(3px);
-  box-shadow: none !important;   /* al presionar, la base "desaparece" */
-}
+.badge-interactive:hover  { transform: translateY(-1px); }
+.badge-interactive:active { transform: scale(0.97); }
 
 /* ── Botón de cierre (chip removible) ───────────────────────────────────── */
 .badge-close {
@@ -142,19 +124,19 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.15);
+  background: color-mix(in srgb, currentColor 15%, transparent);
   border: none;
   cursor: pointer;
   color: inherit;
   font-size: 9px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
   padding: 0;
   margin-left: 2px;
   flex-shrink: 0;
   transition: background 120ms ease;
 }
-.badge-close:hover { background: rgba(0, 0, 0, 0.28); }
+.badge-close:hover { background: color-mix(in srgb, currentColor 28%, transparent); }
 
 /* ── Contador de notificaciones ───────────────────────────────────────── */
 .badge-count {
@@ -162,11 +144,12 @@
   height: 18px;
   padding: 0 4px;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 700;
   border-radius: 100px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  font-family: "Nunito", system-ui, sans-serif;
+  font-family: var(--font-sans);
+  box-shadow: var(--clay-pill);
 }

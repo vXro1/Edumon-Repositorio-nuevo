@@ -87,6 +87,7 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
           className="nav-icon-btn"
           onClick={() => navigate("/notificaciones")}
           title="Notificaciones"
+          aria-label="Notificaciones"
         >
           <Bell size={18} />
         </button>
@@ -98,6 +99,8 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
             className="nav-avatar-trigger"
             onClick={() => setProfileOpen((p) => !p)}
             aria-expanded={profileOpen}
+            aria-haspopup="menu"
+            aria-label="Menu de perfil"
           >
             <UserAvatar user={user} size={32} />
             <div className="nav-avatar-info">
@@ -111,12 +114,16 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
           </button>
 
           {profileOpen && (
-            <div className="nav-dropdown">
+            <div className="nav-dropdown" role="menu">
               <div className="nav-dropdown-header">
-                <p className="nav-dropdown-name">{user?.nombre}</p>
-                <p className="nav-dropdown-email">{user?.correo ?? user?.telefono ?? ""}</p>
+                <UserAvatar user={user} size={36} />
+                <div className="nav-dropdown-header-text">
+                  <p className="nav-dropdown-name">{user?.nombre}</p>
+                  <p className="nav-dropdown-email">{user?.correo ?? user?.telefono ?? ""}</p>
+                </div>
               </div>
               <button
+                role="menuitem"
                 className="nav-dropdown-item"
                 onClick={() => { navigate("/perfil"); setProfileOpen(false); }}
               >
@@ -125,6 +132,7 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
               </button>
               <div className="nav-dropdown-sep" />
               <button
+                role="menuitem"
                 className="nav-dropdown-item nav-dropdown-item--danger"
                 onClick={logout}
               >

@@ -12,13 +12,13 @@ import { entregasGetMineByTarea, entregasCreate, entregasUpdate, entregasEnviar 
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { normalizeTarea, normalizeEntrega }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
-import { Toast } from "@/components";
+import { Toast, Badge } from "@/components";
 
 const ESTADO_ENTREGA = {
-  borrador:  { label: "Borrador",   color: "#6B7280", bg: "rgba(107,114,128,0.10)" },
-  enviada:   { label: "Enviada",    color: "var(--color-primary)", bg: "rgba(12,106,196,0.10)" },
-  tarde:     { label: "Tarde",      color: "#D97706", bg: "rgba(217,119,6,0.10)" },
-  calificada:{ label: "Calificada", color: "var(--edu-green-600)", bg: "rgba(22,163,74,0.10)" },
+  borrador:   { label: "Borrador",   variant: "neutral" },
+  enviada:    { label: "Enviada",    variant: "purple" },
+  tarde:      { label: "Tarde",      variant: "warning" },
+  calificada: { label: "Calificada", variant: "success" },
 };
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
@@ -26,16 +26,11 @@ function Sk({ h = 14, w = "100%", r = 6 }) {
 }
 
 function EstadoBadge({ estado }) {
-  const m = ESTADO_ENTREGA[estado] ?? { label: estado, color: "#6B7280", bg: "rgba(107,114,128,0.10)" };
+  const m = ESTADO_ENTREGA[estado] ?? { label: estado, variant: "neutral" };
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99,
-      background: m.bg, color: m.color,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor" }} />
+    <Badge variant={m.variant} size="sm" dot>
       {m.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -133,7 +128,7 @@ function TareaCard({ tarea, user }) {
       border: "1px solid var(--color-border)",
       borderRadius: 14, overflow: "hidden",
       marginBottom: 12,
-      boxShadow: "var(--shadow-card)",
+      boxShadow: "var(--clay-card)",
     }}>
       <Toast msg={toast.msg} type={toast.type} />
 
@@ -509,7 +504,7 @@ export default function FamiliaEntregasPage() {
       ) : filtered.length === 0 ? (
         <div style={{
           background: "var(--color-surface)", borderRadius: 16,
-          border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+          border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)",
           padding: "60px 24px",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
         }}>

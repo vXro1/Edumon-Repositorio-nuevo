@@ -12,18 +12,20 @@ import { tareasGetById } from "@/features/cursos/services/tareasService";
 
 import { normalizeEntregas, normalizeEntrega } from "@/lib/normalizers/entrega";
 import { normalizeTarea } from "@/lib/normalizers/tarea";
-import { Modal, Toast, Button, Input } from "@/components";
+import { Modal, Toast, Button, Input, Badge } from "@/components";
 import { Sk, EmptyState, Field, StarRating, StarRatingInput } from "../../cursos/components/shared/ui";
 import { humanizeError } from "@/utils/humanizeError";
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
 const ESTADO_CFG = {
-  enviada:    { bg: "rgba(12,106,196,0.10)",  color: "var(--color-primary)",  label: "Enviada"    },
-  tarde:      { bg: "rgba(220,38,38,0.10)",   color: "var(--color-error-hover)",  label: "Tarde"      },
-  calificada: { bg: "rgba(22,163,74,0.10)",   color: "var(--edu-green-600)",  label: "Calificada" },
-  borrador:   { bg: "rgba(148,163,184,0.15)", color: "#64748B",  label: "Borrador"   },
+  enviada:    { label: "Enviada"    },
+  tarde:      { label: "Tarde"      },
+  calificada: { label: "Calificada" },
+  borrador:   { label: "Borrador"   },
 };
+
+const ESTADO_BADGE = { enviada: "info", tarde: "error", calificada: "success", borrador: "neutral" };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -191,7 +193,7 @@ export default function EntregasPage() {
           { value: stats.tarde      ?? 0,           label: "Tarde",      color: "var(--color-error-hover)"           },
           { value: stats.calificadas ?? 0,          label: "Calificadas",color: "var(--edu-green-600)"           },
         ].map(({ value, label, color }) => (
-          <div key={label} style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "14px 20px", textAlign: "center", minWidth: 110 }}>
+          <div key={label} style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", padding: "14px 20px", textAlign: "center", minWidth: 110 }}>
             <p style={{ fontSize: 26, fontWeight: 800, color, margin: 0 }}>{value}</p>
             <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "2px 0 0" }}>{label}</p>
           </div>
@@ -201,7 +203,7 @@ export default function EntregasPage() {
       {/* ── Filtros ────────────────────────────────────────────── */}
       <div style={{
         background: "var(--color-surface)", borderRadius: 14,
-        border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+        border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)",
         padding: "12px 16px", marginBottom: 16,
         display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
       }}>
@@ -350,20 +352,10 @@ function EntregaCard({ entrega: e, onCalificar }) {
   const fecha    = e.fechaEnvio ?? e.createdAt;
   const archivos = e.archivos ?? e.archivosAdjuntos ?? [];
 
-  // Estilos de botón de acción (mismo patrón que TareasPage)
-  const actionBtn = (color = "var(--color-text-muted)") => ({
-    display: "inline-flex", alignItems: "center", gap: 5,
-    padding: "6px 11px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-    border: "1px solid var(--color-border)",
-    background: "var(--color-surface)",
-    color, cursor: "pointer",
-    transition: "background 150ms, border-color 150ms",
-  });
-
   return (
     <div style={{
-      background: "var(--color-surface)", borderRadius: 16,
-      border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+      background: "var(--color-surface)", borderRadius: "var(--radius-lg)",
+      border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)",
       overflow: "hidden",
     }}>
       <div
@@ -384,11 +376,11 @@ function EntregaCard({ entrega: e, onCalificar }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>{padreNombre}</p>
-            <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, background: estadoCfg.bg, color: estadoCfg.color }}>
+            <Badge variant={ESTADO_BADGE[e.estado] ?? "info"} size="sm">
               {estadoCfg.label}
-            </span>
+            </Badge>
             {e.calificacion && (
-              <span style={{ display: "flex", alignItems: "center", gap: 3, padding: "2px 9px", borderRadius: 99, background: "rgba(22,163,74,0.10)" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 3, padding: "2px 9px", borderRadius: 999, background: "var(--color-success-light)", boxShadow: "var(--clay-pill)" }}>
                 <StarRating value={e.calificacion.valoracion} size={11} />
               </span>
             )}
@@ -402,14 +394,16 @@ function EntregaCard({ entrega: e, onCalificar }) {
         </div>
 
         {/* Acciones */}
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          <button
+        <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={ev => { ev.stopPropagation(); onCalificar(); }}
-            style={actionBtn(e.calificacion ? "var(--edu-green-600)" : "var(--color-primary)")}
+            style={{ color: e.calificacion ? "var(--edu-green-600)" : "var(--color-primary)" }}
           >
             <Star style={{ width: 12, height: 12 }} />
             {e.calificacion ? "Actualizar" : "Calificar"}
-          </button>
+          </Button>
           {expanded
             ? <ChevronUp style={{ width: 16, height: 16, color: "var(--color-text-muted)" }} />
             : <ChevronDown style={{ width: 16, height: 16, color: "var(--color-text-muted)" }} />}

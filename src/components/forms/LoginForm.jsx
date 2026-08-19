@@ -1,9 +1,10 @@
 // src/features/auth/components/LoginForm.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Phone, Lock, AlertTriangle, X, ArrowLeft, BookOpen } from "lucide-react";
+import { Phone, Lock, AlertTriangle, X, ArrowLeft } from "lucide-react";
 import { Input } from "@/components";
 import AuthLayout from "./AuthLayout";
+
 const normalizePhone = (v) =>
   v.replace(/^\+?57/, "").replace(/\D/g, "").slice(0, 10);
 
@@ -38,47 +39,21 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
   };
 
   return (
-    <AuthLayout>
-      {/* Volver al inicio */}
-      <button
-        type="button"
-        onClick={() => navigate("/")}
-        style={{
-          display:     "flex",
-          alignItems:  "center",
-          gap:         5,
-          background:  "none",
-          border:      "none",
-          cursor:      "pointer",
-          fontSize:    12,
-          fontWeight:  600,
-          color:       "var(--color-text-muted)",
-          padding:     "0 0 18px 0",
-          transition:  "color 0.15s",
-        }}
-        onMouseEnter={e => e.currentTarget.style.color = "var(--color-text)"}
-        onMouseLeave={e => e.currentTarget.style.color = "var(--color-text-muted)"}
-      >
-        <ArrowLeft size={13} />
-        Volver al inicio
-      </button>
-
+    <AuthLayout
+      topAction={
+        // "Volver al inicio" ahora vive FUERA de la tarjeta, en su propia
+        // fila (ver AuthLayout: topAction), así no compite con el logo
+        // por espacio arriba del todo.
+        <button type="button" className="auth-back-link" onClick={() => navigate("/")}>
+          <ArrowLeft size={13} />
+          Volver al inicio
+        </button>
+      }
+    >
       {/* Encabezado */}
       <div className="auth-form-head">
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <span style={{
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            width: 32, height: 32, borderRadius: 9, background: "rgba(255,107,53,0.10)",
-          }}>
-            <BookOpen size={15} style={{ color: "#FF6B35" }} />
-          </span>
-          <h1 style={{ margin: 0, fontSize: "1.55rem", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--color-text)" }}>
-            Bienvenido de nuevo
-          </h1>
-        </div>
-        <p style={{ margin: 0, fontSize: 13.5, color: "var(--color-text-muted)" }}>
-          Accede con tu número de teléfono y contraseña
-        </p>
+        <h1>¡Bienvenido !</h1>
+        <p>Accede con tu número de teléfono y contraseña</p>
       </div>
 
       {/* Alertas */}
@@ -167,6 +142,8 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
           }
         </button>
       </form>
+
+
     </AuthLayout>
   );
 };

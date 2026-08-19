@@ -154,7 +154,7 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
       display: "flex", flexDirection: "column", alignItems: "center",
       gap: 12, textAlign: "center", position: "relative",
       transition: "border-color 200ms, box-shadow 200ms",
-      boxShadow: isSelected ? "0 0 0 3px rgba(12,106,196,0.15)" : "var(--shadow-card)",
+      boxShadow: isSelected ? "0 0 0 3px rgba(12,106,196,0.15)" : "var(--clay-card)",
     }}>
       {/* Marca de seleccionado */}
       {isSelected && (
@@ -195,7 +195,7 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
         )}
       </div>
 
-      <p style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--color-text)" }}>{name}</p>
+      <p style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--color-text)", overflowWrap: "anywhere", maxWidth: "100%" }}>{name}</p>
 
       {/* Acciones */}
       <div style={{ display: "flex", gap: 8 }}>

@@ -69,6 +69,7 @@ const MaterialPill = ({ file, onRemove }) => (
     display: 'inline-flex', alignItems: 'center', gap: 5,
     background: 'var(--color-surface-2, #f3f4f6)', border: '1px solid var(--color-border)',
     borderRadius: 20, padding: '3px 10px', fontSize: 12,
+    boxShadow: 'var(--clay-pill)',
   }}>
     <FileText size={11} style={{ flexShrink: 0 }} />
     <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

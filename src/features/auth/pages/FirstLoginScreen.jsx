@@ -1,10 +1,12 @@
 // src/features/auth/pages/FirstLoginScreen.jsx
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { usersGetDefaultPhotos, usersPatchFotoDefault, usersPatchFotoFile, usersUpdate } from "@/services/usersService";
+import { usersGetDefaultPhotos, usersUpdateMyPhoto, usersUpdate } from "@/services/usersService";
 import { authChangePassword } from "@/services/authService";
 import { humanizeError } from "@/utils/humanizeError";
+import logoSvg from "@/assets/icons/logo.svg";
+import { readLoginPassword, clearLoginPassword } from "../utils/firstLoginPassword";
 import {
   CheckCircle2,
   Eye,
@@ -12,8 +14,22 @@ import {
   RefreshCw,
   AlertCircle,
   Camera,
-  Upload,
+  ArrowLeft,
+  User,
+  Mail,
 } from "lucide-react";
+import circulo1  from "@/assets/img/circulos/circulo1.svg";
+import circulo2  from "@/assets/img/circulos/circulo2.svg";
+import circulo3  from "@/assets/img/circulos/circulo3.svg";
+import circulo4  from "@/assets/img/circulos/circulo4.svg";
+import circulo5  from "@/assets/img/circulos/circulo5.svg";
+import circulo6  from "@/assets/img/circulos/circulo6.svg";
+import circulo7  from "@/assets/img/circulos/circulo7.svg";
+import circulo8  from "@/assets/img/circulos/circulo8.svg";
+import circulo9  from "@/assets/img/circulos/circulo9.svg";
+import circulo10 from "@/assets/img/circulos/circulo10.svg";
+import circulo11 from "@/assets/img/circulos/circulo11.svg";
+import circulo12 from "@/assets/img/circulos/circulo12.svg";
 
 const ROLE_REDIRECTS = {
   superadmin:    "/admin",
@@ -49,52 +65,229 @@ function validateDataForm(form) {
   return e;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Estilos y animaciones inyectados una única vez — puramente
+   presentacionales, no tocan lógica ni estado.
+   ══════════════════════════════════════════════════════════════ */
+const FLS_CSS = `
+@keyframes fls-pop-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fls-ring-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(99,102,241,0.38); }
+  70%  { box-shadow: 0 0 0 12px rgba(99,102,241,0); }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+@keyframes fls-idle-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.16); }
+  50%      { box-shadow: 0 0 0 9px rgba(99,102,241,0.04); }
+}
+@keyframes fls-preview-in {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fls-check-in {
+  0%   { opacity: 0; transform: scale(0) rotate(-50deg); }
+  65%  { transform: scale(1.3) rotate(10deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes fls-skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+@keyframes fls-step-glow {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(99,102,241,0.15), 0 4px 14px rgba(99,102,241,0.22); }
+  50%      { box-shadow: 0 0 0 7px rgba(99,102,241,0.08), 0 4px 18px rgba(99,102,241,0.30); }
+}
+@keyframes fls-alert-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fls-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fls-float-a {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-14px) rotate(5deg); }
+}
+@keyframes fls-float-b {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50%      { transform: translateY(10px) translateX(-8px); }
+}
+@keyframes fls-float-c {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-8px) rotate(-4deg); }
+}
+
+.fls-avatar-skeleton { animation: fls-skeleton-pulse 1.3s ease-in-out infinite; }
+
+.fls-preview-ring { transition: border-color 250ms, box-shadow 250ms; }
+.fls-preview-ring.idle { animation: fls-idle-glow 2.4s ease-in-out infinite; }
+.fls-preview-ring img { animation: fls-preview-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+.fls-avatar-option {
+  animation: fls-pop-in 360ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms, background 180ms;
+}
+.fls-avatar-option:hover  { transform: scale(1.08); }
+.fls-avatar-option:active { transform: scale(0.95); }
+.fls-avatar-option.selected { animation: fls-pop-in 360ms cubic-bezier(0.34, 1.56, 0.64, 1) both, fls-ring-pulse 1.5s ease-out 1; }
+.fls-check-badge { animation: fls-check-in 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+.fls-step-btn.active { animation: fls-step-glow 2.2s ease-in-out infinite; }
+
+.fls-alert { animation: fls-alert-in 220ms ease both; }
+.fls-panel { animation: fls-fade-up 320ms ease both; }
+
+.fls-bg-decor { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.fls-bubble { position: absolute; user-select: none; }
+.fls-bubble--a { animation: fls-float-a 8s ease-in-out infinite; }
+.fls-bubble--b { animation: fls-float-b 10s ease-in-out infinite; }
+.fls-bubble--c { animation: fls-float-c 12s ease-in-out infinite; }
+
+@media (max-width: 420px) {
+  .fls-step-line { width: 34px !important; }
+}
+
+/* Los usuarios que prefieren menos movimiento siguen viendo los mismos
+   estados (seleccionado, activo, error) — solo se apagan las animaciones. */
+@media (prefers-reduced-motion: reduce) {
+  .fls-avatar-skeleton, .fls-preview-ring.idle, .fls-preview-ring img,
+  .fls-avatar-option, .fls-avatar-option.selected, .fls-check-badge,
+  .fls-step-btn.active, .fls-alert, .fls-panel, .fls-bubble--a, .fls-bubble--b, .fls-bubble--c {
+    animation: none !important;
+  }
+  * { transition-duration: 0.01ms !important; }
+}
+`;
+
+/* Círculos decorativos — mismos assets que LandingPage.jsx
+   (src/assets/img/circulos/circuloN.svg), concentrados en los bordes
+   inferiores para no interferir con el contenido. width/height iguales +
+   aspect-ratio explícito evitan que se vean ovalados. */
+const CIRCULO_SRC = {
+  1: circulo1, 2: circulo2, 3: circulo3, 4: circulo4, 5: circulo5, 6: circulo6,
+  7: circulo7, 8: circulo8, 9: circulo9, 10: circulo10, 11: circulo11, 12: circulo12,
+};
+const BG_BUBBLES = [
+  // clúster inferior — el más denso, usa los 12 colores disponibles
+  { circulo: 1,  bottom: "-7%",  left: "-2%",  size: 120, opacity: 0.45, anim: "a" },
+  { circulo: 4,  bottom: "0%",   left: "8%",   size: 34,  opacity: 0.4,  anim: "b" },
+  { circulo: 5,  bottom: "-9%",  left: "15%",  size: 62,  opacity: 0.35, anim: "c" },
+  { circulo: 9,  bottom: "4%",   left: "25%",  size: 26,  opacity: 0.35, anim: "a" },
+  { circulo: 12, bottom: "-4%",  left: "32%",  size: 46,  opacity: 0.35, anim: "b" },
+  { circulo: 6,  bottom: "6%",   left: "43%",  size: 24,  opacity: 0.3,  anim: "c" },
+  { circulo: 10, bottom: "-6%",  left: "51%",  size: 52,  opacity: 0.35, anim: "a" },
+  { circulo: 3,  bottom: "-8%",  left: "60%",  size: 70,  opacity: 0.4,  anim: "b" },
+  { circulo: 7,  bottom: "5%",   left: "71%",  size: 34,  opacity: 0.35, anim: "c" },
+  { circulo: 2,  bottom: "-5%",  left: "79%",  size: 58,  opacity: 0.35, anim: "a" },
+  { circulo: 8,  bottom: "3%",   right: "10%", size: 36,  opacity: 0.35, anim: "b" },
+  { circulo: 11, bottom: "-12%", right: "-4%", size: 140, opacity: 0.4,  anim: "c" },
+
+  // acentos superiores — muy sutiles, no compiten con el contenido
+  { circulo: 4,  top: "4%",  left: "-5%",  size: 76, opacity: 0.12, anim: "a" },
+  { circulo: 6,  top: "8%",  left: "6%",   size: 30, opacity: 0.14, anim: "b" },
+  { circulo: 8,  top: "3%",  right: "-5%", size: 68, opacity: 0.12, anim: "c" },
+  { circulo: 12, top: "9%",  right: "5%",  size: 32, opacity: 0.14, anim: "a" },
+
+  // laterales medios — dan profundidad sin invadir el contenido central
+  { circulo: 9,  top: "42%", left: "-3%",  size: 40, opacity: 0.16, anim: "b" },
+  { circulo: 10, top: "48%", right: "-3%", size: 44, opacity: 0.16, anim: "c" },
+];
+
+function BackgroundDecor() {
+  return (
+    <div className="fls-bg-decor" aria-hidden="true">
+      {BG_BUBBLES.map((b, i) => (
+        <img
+          key={i}
+          src={CIRCULO_SRC[b.circulo]}
+          alt=""
+          draggable={false}
+          className={`fls-bubble fls-bubble--${b.anim}`}
+          style={{
+            top: b.top, left: b.left, right: b.right, bottom: b.bottom,
+            width: b.size, height: b.size, aspectRatio: "1 / 1",
+            opacity: b.opacity,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 /* ── Micro-componentes ──────────────────────────────────────── */
-function Stepper({ step }) {
+// maxStep = paso más lejano ya alcanzado. Los pasos ya completados (num <
+// maxStep) se pueden reabrir haciendo clic para corregir algo; los que aún
+// no se han completado (num > maxStep) no son clicables — se avanza solo
+// terminando el paso actual, nunca saltando adelante.
+function Stepper({ step, maxStep, onStepClick }) {
   const steps = ["Foto", "Datos", "Listo"];
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", marginBottom: 32 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", marginBottom: 36 }}>
       {steps.map((label, i) => {
-        const num  = i + 1;
-        const done = step > num;
-        const active = step === num;
+        const num       = i + 1;
+        const done      = maxStep > num;
+        const active    = step === num;
+        const clickable = num <= maxStep && num !== step;
         return (
           <div key={i} style={{ display: "flex", alignItems: "center" }}>
             {i > 0 && (
-              <div style={{
-                width: 52,
-                height: 2,
-                marginTop: -16,
-                background: step > i ? "#6366F1" : "var(--color-border)",
-                transition: "background 300ms",
-              }} />
+              <div
+                className="fls-step-line"
+                style={{
+                  width: 56,
+                  height: 3,
+                  borderRadius: 2,
+                  marginTop: -18,
+                  background: maxStep > i ? "linear-gradient(90deg, #6366F1, var(--edu-blue-500))" : "var(--color-border)",
+                  transition: "background 450ms ease",
+                }}
+              />
             )}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{
-                width: 34,
-                height: 34,
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: done
-                  ? "var(--edu-green-600)"
-                  : active
-                  ? "linear-gradient(135deg, #6366F1, var(--edu-blue-500))"
-                  : "var(--color-border)",
-                color: (done || active) ? "white" : "var(--color-text-muted)",
-                fontSize: 13,
-                fontWeight: 700,
-                transition: "background 300ms",
-                boxShadow: active ? "0 0 0 4px rgba(99,102,241,0.15)" : "none",
-              }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+              <button
+                type="button"
+                onClick={() => clickable && onStepClick(num)}
+                disabled={!clickable}
+                aria-label={`Paso ${num}: ${label}${clickable ? " (volver)" : ""}`}
+                aria-current={active ? "step" : undefined}
+                className={active ? "fls-step-btn active" : "fls-step-btn"}
+                style={{
+                  width: 36,
+                  height: 36,
+                  minWidth: 36,
+                  minHeight: 36,
+                  borderRadius: "50%",
+                  border: "none",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: done
+                    ? "var(--edu-green-600)"
+                    : active
+                    ? "linear-gradient(135deg, #6366F1, var(--edu-blue-500))"
+                    : "var(--color-border)",
+                  color: (done || active) ? "white" : "var(--color-text-muted)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  transition: "background 300ms, transform 150ms",
+                  boxShadow: active ? "0 0 0 4px rgba(99,102,241,0.15), 0 4px 14px rgba(99,102,241,0.22)" : "none",
+                  cursor: clickable ? "pointer" : "default",
+                }}
+                onMouseEnter={e => { if (clickable) e.currentTarget.style.transform = "scale(1.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+              >
                 {done
-                  ? <CheckCircle2 style={{ width: 16, height: 16 }} />
+                  ? <CheckCircle2 style={{ width: 17, height: 17 }} />
                   : num
                 }
-              </div>
+              </button>
               <span style={{
-                fontSize: 11,
+                fontSize: 11.5,
                 fontWeight: active ? 700 : 500,
                 color: active ? "#6366F1" : done ? "var(--edu-green-600)" : "var(--color-text-muted)",
                 transition: "color 300ms",
@@ -115,7 +308,7 @@ function Field({ label, error, children }) {
         fontSize: 11.5,
         fontWeight: 700,
         color: "var(--color-text-muted)",
-        marginBottom: 5,
+        marginBottom: 6,
         textTransform: "uppercase",
         letterSpacing: "0.05em",
       }}>
@@ -131,36 +324,47 @@ function Field({ label, error, children }) {
   );
 }
 
-function TextInput({ value, onChange, placeholder, type = "text", disabled = false, hasError = false }) {
+function TextInput({ value, onChange, placeholder, type = "text", disabled = false, hasError = false, icon = null }) {
   const [focused, setFocused] = useState(false);
   const border = hasError ? "var(--color-error-hover)" : focused ? "#6366F1" : "var(--color-border)";
   const shadow = hasError
     ? "0 0 0 3px rgba(220,38,38,0.12)"
     : focused ? "0 0 0 3px rgba(99,102,241,0.12)" : "none";
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      disabled={disabled}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={{
-        width: "100%",
-        padding: "10px 13px",
-        fontSize: 14,
-        borderRadius: 10,
-        border: `1.5px solid ${border}`,
-        outline: "none",
-        background: disabled ? "var(--color-bg)" : "var(--color-surface)",
-        color: disabled ? "var(--color-text-muted)" : "var(--color-text)",
-        boxShadow: shadow,
-        transition: "border-color 150ms, box-shadow 150ms",
-        cursor: disabled ? "not-allowed" : "text",
-        boxSizing: "border-box",
-      }}
-    />
+    <div style={{ position: "relative" }}>
+      {icon && (
+        <span style={{
+          position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)",
+          color: focused ? "#6366F1" : "var(--color-text-subtle)",
+          display: "flex", pointerEvents: "none", transition: "color 150ms",
+        }}>
+          {icon}
+        </span>
+      )}
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          width: "100%",
+          padding: icon ? "11px 13px 11px 38px" : "11px 13px",
+          fontSize: 14,
+          borderRadius: 12,
+          border: `1.5px solid ${border}`,
+          outline: "none",
+          background: disabled ? "var(--color-bg)" : "var(--color-surface)",
+          color: disabled ? "var(--color-text-muted)" : "var(--color-text)",
+          boxShadow: shadow,
+          transition: "border-color 150ms, box-shadow 150ms",
+          cursor: disabled ? "not-allowed" : "text",
+          boxSizing: "border-box",
+        }}
+      />
+    </div>
   );
 }
 
@@ -182,9 +386,9 @@ function PasswordInput({ value, onChange, placeholder, hasError = false }) {
         onBlur={() => setFocused(false)}
         style={{
           width: "100%",
-          padding: "10px 42px 10px 13px",
+          padding: "11px 42px 11px 13px",
           fontSize: 14,
-          borderRadius: 10,
+          borderRadius: 12,
           border: `1.5px solid ${border}`,
           outline: "none",
           background: "var(--color-surface)",
@@ -198,6 +402,7 @@ function PasswordInput({ value, onChange, placeholder, hasError = false }) {
         type="button"
         onClick={() => setShow(s => !s)}
         tabIndex={-1}
+        aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
         style={{
           position: "absolute",
           right: 12,
@@ -267,8 +472,8 @@ function PasswordStrength({ password }) {
 function AvatarSkeleton() {
   return (
     <div
-      className="animate-pulse"
-      style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--color-border)", flexShrink: 0 }}
+      className="fls-avatar-skeleton"
+      style={{ width: 60, height: 60, minWidth: 60, minHeight: 60, borderRadius: "50%", background: "var(--color-border)", flexShrink: 0 }}
     />
   );
 }
@@ -276,18 +481,24 @@ function AvatarSkeleton() {
 function ErrorBanner({ message }) {
   if (!message) return null;
   return (
-    <div style={{
+    <div className="fls-alert" style={{
       display: "flex",
       alignItems: "center",
-      gap: 8,
-      padding: "10px 14px",
-      borderRadius: 10,
+      gap: 9,
+      padding: "11px 14px",
+      borderRadius: 12,
       background: "rgba(220,38,38,0.06)",
-      border: "1px solid rgba(220,38,38,0.2)",
+      border: "1px solid rgba(220,38,38,0.18)",
+      boxShadow: "0 2px 10px rgba(220,38,38,0.06)",
       marginBottom: 16,
     }}>
-      <AlertCircle style={{ width: 15, height: 15, color: "var(--color-error-hover)", flexShrink: 0 }} />
-      <p style={{ fontSize: 13, color: "var(--color-error-hover)", margin: 0 }}>{message}</p>
+      <span style={{
+        width: 24, height: 24, minWidth: 24, minHeight: 24, borderRadius: "50%", flexShrink: 0,
+        background: "rgba(220,38,38,0.12)", display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <AlertCircle style={{ width: 14, height: 14, color: "var(--color-error-hover)" }} />
+      </span>
+      <p style={{ fontSize: 13, color: "var(--color-error-hover)", margin: 0, lineHeight: 1.4 }}>{message}</p>
     </div>
   );
 }
@@ -300,8 +511,8 @@ function PrimaryButton({ onClick, disabled, loading, children }) {
       disabled={disabled || loading}
       style={{
         width: "100%",
-        padding: "13px",
-        borderRadius: 12,
+        padding: "14px",
+        borderRadius: 14,
         border: "none",
         background: (disabled || loading)
           ? "var(--color-border)"
@@ -314,9 +525,13 @@ function PrimaryButton({ onClick, disabled, loading, children }) {
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-        transition: "opacity 150ms, background 150ms",
-        boxShadow: (disabled || loading) ? "none" : "0 4px 14px rgba(99,102,241,0.28)",
+        transition: "opacity 150ms, background 150ms, transform 150ms",
+        boxShadow: (disabled || loading) ? "none" : "0 6px 18px rgba(99,102,241,0.30)",
       }}
+      onMouseEnter={e => { if (!disabled && !loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}
+      onMouseDown={e => { if (!disabled && !loading) e.currentTarget.style.transform = "scale(0.98)"; }}
+      onMouseUp={e => { if (!disabled && !loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
     >
       {loading ? "Guardando..." : children}
     </button>
@@ -331,12 +546,9 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [photosError,   setPhotosError]   = useState(false);
   const [selected,      setSelected]      = useState(null); // cadena URL
-  const [uploadedFile,  setUploadedFile]  = useState(null); // File (archivo)
   const [previewUrl,    setPreviewUrl]    = useState(currentPhotoUrl ?? null);
   const [saving,        setSaving]        = useState(false);
   const [error,         setError]         = useState("");
-  const fileInputRef = useRef(null);
-  const objUrlRef    = useRef(null);
 
   const fetchPhotos = useCallback(async () => {
     setLoadingPhotos(true);
@@ -358,54 +570,34 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 
   useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
-  // Revocar la URL de objeto anterior al desmontar
-  useEffect(() => () => {
-    if (objUrlRef.current) URL.revokeObjectURL(objUrlRef.current);
-  }, []);
-
   const handleSelectDefault = (url) => {
-    if (objUrlRef.current) { URL.revokeObjectURL(objUrlRef.current); objUrlRef.current = null; }
-    setUploadedFile(null);
     setSelected(prev => prev === url ? null : url);
     setPreviewUrl(prev => prev === url ? (currentPhotoUrl ?? null) : url);
     setError("");
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (objUrlRef.current) URL.revokeObjectURL(objUrlRef.current);
-    const url = URL.createObjectURL(file);
-    objUrlRef.current = url;
-    setUploadedFile(file);
-    setSelected(null);
-    setPreviewUrl(url);
-    setError("");
-    // Resetear el input para que el mismo archivo pueda volver a seleccionarse
-    e.target.value = "";
-  };
+  const hasSelection = selected !== null;
 
-  const hasSelection = selected !== null || uploadedFile !== null;
-
+  // Los avatares son predeterminados (vienen del backend) — no se permite
+  // subir una foto propia en este paso, así que solo se guarda la URL
+  // elegida. usersUpdateMyPhoto (PUT /users/me/foto-perfil) es el mismo
+  // endpoint que ya usa PerfilPage para esto; el intento anterior llamaba a
+  // PATCH /users/foto-perfil, una ruta que no existe (404).
   const handleContinue = async () => {
     if (!hasSelection) {
-      setError("Debes seleccionar o subir una foto para continuar.");
+      setError("Debes seleccionar un avatar para continuar.");
       return;
     }
     setSaving(true);
     setError("");
     try {
-      let updatedUser = null;
-      if (uploadedFile) {
-        const data = await usersPatchFotoFile(uploadedFile);
-        updatedUser = data?.user ?? null;
-      } else {
-        const data = await usersPatchFotoDefault(selected);
-        updatedUser = data?.user ?? null;
-      }
-      onComplete(updatedUser, previewUrl);
+      const fd = new FormData();
+      fd.append("fotoPredeterminadaUrl", selected);
+      const data   = await usersUpdateMyPhoto(fd);
+      const newUrl = data?.fotoPerfilUrl ?? selected;
+      onComplete({ fotoPerfilUrl: newUrl }, newUrl);
     } catch (err) {
-      setError(humanizeError(err, "Error al guardar la foto. Intenta de nuevo."));
+      setError(humanizeError(err, "Error al guardar el avatar. Intenta de nuevo."));
     } finally {
       setSaving(false);
     }
@@ -413,48 +605,64 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 
   return (
     <div>
-      {/* Vista previa del avatar actual */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
-        <div style={{
-          width: 96,
-          height: 96,
-          borderRadius: "50%",
-          overflow: "hidden",
-          border: `3px solid ${hasSelection ? "#6366F1" : "var(--color-border)"}`,
-          background: "var(--color-bg)",
-          boxShadow: hasSelection ? "0 0 0 5px rgba(99,102,241,0.14)" : "none",
-          transition: "border-color 250ms, box-shadow 250ms",
-          flexShrink: 0,
-        }}>
-          {previewUrl
-            ? <img src={previewUrl} alt="Vista previa" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            : <div style={{ width: "100%", height: "100%", background: "var(--color-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Camera style={{ width: 28, height: 28, color: "var(--color-text-muted)" }} />
-              </div>
-          }
+      {/* Vista previa del avatar actual — object-fit: contain (no cover) para
+          que ningún personaje quede cortado sin importar la proporción
+          original de la imagen; el fondo detrás del avatar rellena el
+          espacio sobrante en vez de recortar. */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28 }}>
+        <div
+          className={`fls-preview-ring${!hasSelection ? " idle" : ""}`}
+          style={{
+            width: 108,
+            height: 108,
+            minWidth: 108,
+            minHeight: 108,
+            borderRadius: "50%",
+            overflow: "hidden",
+            padding: hasSelection ? 6 : 0,
+            border: hasSelection ? "3px solid transparent" : "3px solid var(--color-border)",
+            backgroundImage: hasSelection ? "linear-gradient(var(--color-bg), var(--color-bg)), linear-gradient(135deg, #6366F1, var(--edu-blue-500))" : "none",
+            backgroundOrigin: "border-box",
+            backgroundClip: "content-box, border-box",
+            background: hasSelection ? undefined : "var(--edu-neutral-100, #F3F4F6)",
+            boxShadow: hasSelection ? "0 8px 22px rgba(99,102,241,0.25)" : "none",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", background: "var(--edu-neutral-100, #F3F4F6)" }}>
+            {previewUrl
+              ? <img key={previewUrl} src={previewUrl} alt="Vista previa" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Camera style={{ width: 28, height: 28, color: "var(--color-text-muted)" }} />
+                </div>
+            }
+          </div>
         </div>
         <p style={{
-          fontSize: 12,
+          fontSize: 12.5,
           fontWeight: hasSelection ? 700 : 400,
           color: hasSelection ? "#6366F1" : "var(--color-text-muted)",
-          marginTop: 10,
+          marginTop: 12,
           transition: "color 200ms",
         }}>
-          {uploadedFile ? `📷 ${uploadedFile.name}` : hasSelection ? "Avatar seleccionado ✓" : "Sin foto seleccionada"}
+          {hasSelection ? "Avatar seleccionado ✓" : "Sin avatar seleccionado"}
         </p>
       </div>
 
-      <p style={{ fontSize: 13, color: "var(--color-text-muted)", textAlign: "center", marginBottom: 18 }}>
-        Elige un avatar o sube tu propia foto
+      <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", textAlign: "center", marginBottom: 20, fontWeight: 500 }}>
+        Elige el avatar que te represente
       </p>
 
-      {/* Grid de avatares predeterminados */}
+      {/* Grid de avatares predeterminados — cada tile tiene un fondo suave
+          propio y usa object-fit:contain, así ningún avatar (cuadrado,
+          vertical, horizontal, redondo, con personajes grandes o
+          pequeños) se recorta ni se deforma. */}
       {loadingPhotos ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", marginBottom: 24 }}>
           {Array.from({ length: 8 }).map((_, i) => <AvatarSkeleton key={i} />)}
         </div>
       ) : photosError ? (
-        <div style={{ textAlign: "center", padding: "10px 0", marginBottom: 20 }}>
+        <div style={{ textAlign: "center", padding: "10px 0", marginBottom: 24 }}>
           <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginBottom: 8 }}>
             No se pudieron cargar los avatares
           </p>
@@ -467,41 +675,49 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
           </button>
         </div>
       ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 20 }}>
-          {defaultPhotos.map((foto) => {
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center", marginBottom: 26 }}>
+          {defaultPhotos.map((foto, i) => {
             const active = selected === foto.url;
             return (
               <button
                 key={foto.publicId}
                 type="button"
                 onClick={() => handleSelectDefault(foto.url)}
+                aria-label={`Elegir avatar ${foto.nombre ?? ""}`}
+                aria-pressed={active}
+                className={`fls-avatar-option${active ? " selected" : ""}`}
                 style={{
                   position: "relative",
-                  width: 56,
-                  height: 56,
+                  width: 60,
+                  height: 60,
+                  minWidth: 60,
+                  minHeight: 60,
                   borderRadius: "50%",
-                  padding: 0,
+                  padding: 6,
                   border: `${active ? "2.5px" : "1.5px"} solid ${active ? "#6366F1" : "var(--color-border)"}`,
-                  background: active ? "rgba(99,102,241,0.07)" : "transparent",
+                  background: active ? "rgba(99,102,241,0.08)" : "var(--edu-neutral-100, #F3F4F6)",
                   cursor: "pointer",
-                  transition: "transform 200ms ease, border-color 200ms, background 200ms",
-                  transform: active ? "scale(1.12)" : "scale(1)",
                   flexShrink: 0,
                   overflow: "visible",
+                  animationDelay: `${i * 45}ms`,
                 }}
               >
-                <img
-                  src={foto.url}
-                  alt={foto.nombre}
-                  style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block" }}
-                />
+                <span style={{ display: "block", width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden" }}>
+                  <img
+                    src={foto.url}
+                    alt={foto.nombre}
+                    style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                  />
+                </span>
                 {active && (
-                  <span style={{
+                  <span className="fls-check-badge" style={{
                     position: "absolute",
                     bottom: -2,
                     right: -2,
-                    width: 18,
-                    height: 18,
+                    width: 20,
+                    height: 20,
+                    minWidth: 20,
+                    minHeight: 20,
                     borderRadius: "50%",
                     background: "var(--edu-green-600)",
                     border: "2px solid var(--color-surface)",
@@ -509,7 +725,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
                     alignItems: "center",
                     justifyContent: "center",
                   }}>
-                    <CheckCircle2 style={{ width: 10, height: 10, color: "white" }} />
+                    <CheckCircle2 style={{ width: 11, height: 11, color: "white" }} />
                   </span>
                 )}
               </button>
@@ -517,46 +733,6 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
           })}
         </div>
       )}
-
-      {/* Separador */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
-        <span style={{ fontSize: 12, color: "var(--color-text-muted)", flexShrink: 0 }}>o</span>
-        <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
-      </div>
-
-      {/* Subir foto propia */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        style={{ display: "none" }}
-      />
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        style={{
-          width: "100%",
-          padding: "10px",
-          borderRadius: 10,
-          border: `1.5px dashed ${uploadedFile ? "#6366F1" : "var(--color-border)"}`,
-          background: uploadedFile ? "rgba(99,102,241,0.05)" : "transparent",
-          color: uploadedFile ? "#6366F1" : "var(--color-text-muted)",
-          fontSize: 13.5,
-          fontWeight: 600,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          transition: "border-color 200ms, color 200ms, background 200ms",
-          marginBottom: 20,
-        }}
-      >
-        <Upload style={{ width: 15, height: 15 }} />
-        {uploadedFile ? "Cambiar imagen subida" : "Subir mi propia foto"}
-      </button>
 
       <ErrorBanner message={error} />
 
@@ -574,7 +750,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 /* ══════════════════════════════════════════════════════════════
    Paso 2 — Actualización de datos (correo + contraseña)
    ══════════════════════════════════════════════════════════════ */
-function StepData({ user, loginPassword, onComplete }) {
+function StepData({ user, loginPassword, onComplete, onBack }) {
   const [form, setForm] = useState({
     nombre:          user?.nombre    ?? "",
     apellido:        user?.apellido  ?? "",
@@ -611,13 +787,18 @@ function StepData({ user, loginPassword, onComplete }) {
       };
       const userData = await usersUpdate(user.id, updateBody);
 
-      // 2. Cambiar contraseña
+      // 2. Cambiar contraseña — el backend pone primerInicioSesion en false
+      // al cambiarla, pero su respuesta no trae el usuario actualizado (solo
+      // un mensaje), así que el merge de abajo lo refleja a mano; si no,
+      // ProtectedRoute seguiría viendo primerInicioSesion:true y devolvería
+      // al usuario a este mismo wizard en cuanto navegue a otra pantalla.
       await authChangePassword({
         contrasenaActual: loginPassword,
         contrasenaNueva:  form.contraseñaNueva,
       });
+      clearLoginPassword();
 
-      onComplete(userData?.user ?? null);
+      onComplete({ ...(userData?.user ?? {}), primerInicioSesion: false });
     } catch (err) {
       setSubmitError(humanizeError(err, "Error al guardar. Intenta de nuevo."));
     } finally {
@@ -627,7 +808,7 @@ function StepData({ user, loginPassword, onComplete }) {
 
   return (
     <div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Nombre y Apellido */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -637,6 +818,7 @@ function StepData({ user, loginPassword, onComplete }) {
               onChange={f("nombre")}
               placeholder="Juan"
               hasError={!!errors.nombre}
+              icon={<User style={{ width: 15, height: 15 }} />}
             />
           </Field>
           <Field label="Apellido *" error={errors.apellido}>
@@ -645,6 +827,7 @@ function StepData({ user, loginPassword, onComplete }) {
               onChange={f("apellido")}
               placeholder="Pérez"
               hasError={!!errors.apellido}
+              icon={<User style={{ width: 15, height: 15 }} />}
             />
           </Field>
         </div>
@@ -657,11 +840,12 @@ function StepData({ user, loginPassword, onComplete }) {
             type="email"
             placeholder="usuario@correo.com"
             hasError={!!errors.correo}
+            icon={<Mail style={{ width: 15, height: 15 }} />}
           />
         </Field>
 
         {/* Separador contraseña */}
-        <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 14 }}>
+        <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)", marginBottom: 14 }}>
             Crea tu contraseña
           </p>
@@ -688,11 +872,42 @@ function StepData({ user, loginPassword, onComplete }) {
         </div>
       </div>
 
-      <div style={{ marginTop: 24 }}>
+      <div style={{ marginTop: 26 }}>
         <ErrorBanner message={submitError} />
-        <PrimaryButton onClick={handleSubmit} loading={saving}>
-          Guardar y finalizar →
-        </PrimaryButton>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={saving}
+            aria-label="Volver al paso anterior"
+            style={{
+              flex: "0 0 auto",
+              padding: "14px 18px",
+              borderRadius: 14,
+              border: "1.5px solid var(--color-border)",
+              background: "var(--color-surface)",
+              color: "var(--color-text-muted)",
+              fontSize: 14,
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: saving ? "not-allowed" : "pointer",
+              opacity: saving ? 0.6 : 1,
+              transition: "background 150ms, color 150ms, border-color 150ms",
+            }}
+            onMouseEnter={e => { if (!saving) { e.currentTarget.style.background = "var(--color-bg)"; e.currentTarget.style.color = "var(--color-text)"; e.currentTarget.style.borderColor = "#6366F1"; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--color-surface)"; e.currentTarget.style.color = "var(--color-text-muted)"; e.currentTarget.style.borderColor = "var(--color-border)"; }}
+          >
+            <ArrowLeft style={{ width: 15, height: 15 }} />
+            Volver
+          </button>
+          <div style={{ flex: 1 }}>
+            <PrimaryButton onClick={handleSubmit} loading={saving}>
+              Guardar y finalizar →
+            </PrimaryButton>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -715,24 +930,27 @@ function StepDone({ userRol }) {
   }, [countdown, userRol, navigate]);
 
   return (
-    <div style={{ textAlign: "center", padding: "24px 0" }}>
+    <div className="fls-panel" style={{ textAlign: "center", padding: "28px 0" }}>
       <div style={{
-        width: 72,
-        height: 72,
+        width: 84,
+        height: 84,
+        minWidth: 84,
+        minHeight: 84,
         borderRadius: "50%",
         background: "rgba(22,163,74,0.1)",
         border: "2px solid var(--edu-green-600)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        margin: "0 auto 20px",
+        margin: "0 auto 22px",
+        boxShadow: "0 8px 24px rgba(22,163,74,0.18)",
       }}>
-        <CheckCircle2 style={{ width: 36, height: 36, color: "var(--edu-green-600)" }} />
+        <CheckCircle2 style={{ width: 40, height: 40, color: "var(--edu-green-600)" }} />
       </div>
-      <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--color-text)", margin: "0 0 10px" }}>
+      <h2 style={{ fontSize: 23, fontWeight: 800, color: "var(--color-text)", margin: "0 0 10px" }}>
         ¡Todo listo!
       </h2>
-      <p style={{ fontSize: 14, color: "var(--color-text-muted)", margin: "0 0 20px", lineHeight: 1.6 }}>
+      <p style={{ fontSize: 14, color: "var(--color-text-muted)", margin: "0 0 22px", lineHeight: 1.6 }}>
         Tu perfil está configurado. Bienvenido a Edumon.
       </p>
       <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
@@ -752,14 +970,18 @@ const STEP_TITLES = [
 ];
 
 export default function FirstLoginScreen() {
-  const { user, updateUser } = useAuth();
-  const navigate   = useNavigate();
-  const location   = useLocation();
-  const loginPassword = location.state?.loginPassword ?? null;
+  const { user, updateUser, logout } = useAuth();
+  // Ver utils/firstLoginPassword.js — se lee de sessionStorage en vez de
+  // location.state porque el bloqueo del botón "atrás" (más abajo) toca el
+  // History API nativo y puede dejar el state de la ruta en null.
+  const [loginPassword] = useState(() => readLoginPassword());
 
-  const [step, setStep] = useState(1);
+  const [step, setStep]       = useState(1);
+  const [maxStep, setMaxStep] = useState(1);
 
-  // Prevenir la navegación hacia atrás del navegador durante el flujo
+  // Prevenir la navegación hacia atrás del navegador durante el flujo — la
+  // salida real ahora es el botón "Salir" de la cabecera, que sí cierra
+  // sesión de forma explícita en vez de dejar al usuario a medio autenticar.
   useEffect(() => {
     window.history.pushState(null, document.title, window.location.href);
     const handlePop = () => {
@@ -769,14 +991,21 @@ export default function FirstLoginScreen() {
     return () => window.removeEventListener("popstate", handlePop);
   }, []);
 
+  // Ir a un paso ya alcanzado (retroceder para corregir algo). Nunca permite
+  // adelantar: goToStep se llama solo desde controles que ya validan
+  // num <= maxStep (Stepper, botón "Volver").
+  const goToStep = (n) => setStep(n);
+
   const handlePhotoComplete = (updatedUser, _photoUrl) => {
     if (updatedUser) updateUser(updatedUser);
     setStep(2);
+    setMaxStep(m => Math.max(m, 2));
   };
 
   const handleDataComplete = (updatedUser) => {
     if (updatedUser) updateUser(updatedUser);
     setStep(3);
+    setMaxStep(m => Math.max(m, 3));
   };
 
   const { title, subtitle } = STEP_TITLES[step - 1];
@@ -784,81 +1013,129 @@ export default function FirstLoginScreen() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "var(--color-bg)",
-      display: "flex",
-      alignItems: "flex-start",
-      justifyContent: "center",
-      padding: "40px 16px 60px",
+      background: "linear-gradient(180deg, #FFFFFF 0%, var(--edu-blue-50, #EFF6FF) 100%)",
+      position: "relative",
+      overflowX: "hidden",
     }}>
-      <div style={{ width: "100%", maxWidth: 520 }}>
+      <style>{FLS_CSS}</style>
+      <BackgroundDecor />
 
-        {/* ── Logo / Cabecera ── */}
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{
-            width: 52,
-            height: 52,
-            borderRadius: 14,
-            background: "linear-gradient(135deg, #6366F1 0%, var(--edu-blue-500) 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 16px",
-            boxShadow: "0 8px 24px rgba(99,102,241,0.25)",
-          }}>
-            <CheckCircle2 style={{ width: 26, height: 26, color: "white" }} />
-          </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--color-text)", margin: "0 0 6px" }}>
-            {step === 1 ? "¡Bienvenido a Edumon!" : "Configura tu cuenta"}
-          </h1>
-          <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", margin: 0 }}>
-            Completa estos pasos antes de continuar
-          </p>
-        </div>
-
-        {/* ── Tarjeta ── */}
-        <div style={{
+      {/* Botón de salida — fijo, siempre visible y alcanzable sin importar
+          el scroll ni el paso en el que esté el usuario. */}
+      <button
+        type="button"
+        onClick={() => { clearLoginPassword(); logout(); }}
+        title="Cancelar y cerrar sesión"
+        aria-label="Cancelar y cerrar sesión"
+        style={{
+          position: "fixed",
+          top: 18,
+          right: 18,
+          zIndex: 2,
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          padding: "9px 16px",
+          borderRadius: 999,
+          border: "1.5px solid var(--color-border)",
           background: "var(--color-surface)",
-          borderRadius: 18,
-          border: "1px solid var(--color-border)",
-          boxShadow: "var(--shadow-card)",
-          padding: "28px",
-        }}>
-          {/* Indicador de pasos */}
-          <Stepper step={step} />
+          color: "var(--color-text-muted)",
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: "pointer",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+          transition: "background 150ms, color 150ms, border-color 150ms, transform 150ms",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(220,38,38,0.06)"; e.currentTarget.style.color = "var(--color-error-hover)"; e.currentTarget.style.borderColor = "rgba(220,38,38,0.3)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "var(--color-surface)"; e.currentTarget.style.color = "var(--color-text-muted)"; e.currentTarget.style.borderColor = "var(--color-border)"; }}
+        onMouseDown={e => { e.currentTarget.style.transform = "scale(0.96)"; }}
+        onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; }}
+      >
+        <ArrowLeft style={{ width: 15, height: 15 }} />
+        Salir
+      </button>
 
-          {/* Título del paso */}
-          {step < 3 && (
-            <div style={{ marginBottom: 22 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--color-text)", margin: "0 0 4px" }}>
-                {title}
-              </h2>
-              {subtitle && (
-                <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
-                  {subtitle}
-                </p>
-              )}
+      <div style={{
+        position: "relative",
+        zIndex: 1,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        padding: "48px 20px 80px",
+      }}>
+        <div style={{ width: "100%", maxWidth: 540 }}>
+
+          {/* ── Logo / Cabecera ── */}
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{
+              width: 60,
+              height: 60,
+              minWidth: 60,
+              minHeight: 60,
+              borderRadius: 18,
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 18px",
+              boxShadow: "0 10px 26px rgba(99,102,241,0.16)",
+            }}>
+              <img src={logoSvg} alt="Edumon" style={{ width: 38, height: 38, objectFit: "contain" }} />
             </div>
-          )}
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text)", margin: "0 0 7px", letterSpacing: "-0.01em" }}>
+              {step === 1 ? "¡Bienvenido a Edumon!" : "Configura tu cuenta"}
+            </h1>
+            <p style={{ fontSize: 14, color: "var(--color-text-muted)", margin: 0 }}>
+              Completa estos pasos antes de continuar
+            </p>
+          </div>
 
-          {/* Contenido del paso */}
-          {step === 1 && (
-            <StepAvatar
-              currentPhotoUrl={user?.fotoPerfilUrl ?? null}
-              onComplete={handlePhotoComplete}
-            />
-          )}
-          {step === 2 && (
-            <StepData
-              user={user}
-              loginPassword={loginPassword}
-              onComplete={handleDataComplete}
-            />
-          )}
-          {step === 3 && (
-            <StepDone userRol={user?.rol} />
-          )}
+          {/* ── Tarjeta única: pasos + título + contenido del paso ── */}
+          <div className="fls-panel" style={{
+            background: "var(--color-surface)",
+            borderRadius: 24,
+            border: "1px solid var(--color-border)",
+            boxShadow: "var(--clay-card)",
+            padding: "32px 28px",
+          }}>
+            <Stepper step={step} maxStep={maxStep} onStepClick={goToStep} />
+
+            {/* Título del paso */}
+            {step < 3 && (
+              <div style={{ textAlign: "center", marginBottom: 22 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: "var(--color-text)", margin: "0 0 4px" }}>
+                  {title}
+                </h2>
+                {subtitle && (
+                  <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", margin: 0 }}>
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Contenido del paso */}
+            {step === 1 && (
+              <StepAvatar
+                currentPhotoUrl={user?.fotoPerfilUrl ?? null}
+                onComplete={handlePhotoComplete}
+              />
+            )}
+            {step === 2 && (
+              <StepData
+                user={user}
+                loginPassword={loginPassword}
+                onComplete={handleDataComplete}
+                onBack={() => goToStep(1)}
+              />
+            )}
+            {step === 3 && (
+              <StepDone userRol={user?.rol} />
+            )}
+          </div>
+
         </div>
-
       </div>
     </div>
   );

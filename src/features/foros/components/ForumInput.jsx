@@ -11,6 +11,7 @@ const FilePill = ({ file, onRemove }) => (
     display: 'inline-flex', alignItems: 'center', gap: 5,
     background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
     borderRadius: 20, padding: '3px 10px', fontSize: 12,
+    boxShadow: 'var(--clay-pill)',
   }}>
     <FileText size={11} style={{ flexShrink: 0 }} />
     <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -119,7 +120,7 @@ const ForumInput = ({
           marginBottom:   10,
           fontSize:       12.5,
         }}>
-          <span style={{ color: 'var(--color-text-muted)' }}>
+          <span style={{ color: 'var(--color-text-muted)', flex: 1, minWidth: 0, overflowWrap: 'break-word' }}>
             ↩ Respondiendo a{' '}
             <strong style={{ color: 'var(--color-text)' }}>
               {replyTo.autor?.nombre} {replyTo.autor?.apellido}
@@ -131,7 +132,7 @@ const ForumInput = ({
             )}
           </span>
           <Button variant="ghost" size="sm" type="button" onClick={onClearReply}
-            style={{ padding: '2px 4px', marginLeft: 8 }}>
+            style={{ padding: '2px 4px', marginLeft: 8, flexShrink: 0 }}>
             <X size={13} />
           </Button>
         </div>

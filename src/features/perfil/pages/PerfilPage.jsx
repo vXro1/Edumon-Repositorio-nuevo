@@ -29,21 +29,21 @@ function SectionCard({ icon, iconBg = "rgba(12,106,196,0.10)", title, action, ch
   return (
     <div style={{
       background: "var(--color-surface)", borderRadius: 18,
-      border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden",
+      border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", overflow: "hidden",
     }}>
       <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10,
         padding: "18px 24px 14px", borderBottom: "1px solid var(--color-border)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <div style={{ width: 32, height: 32, minWidth: 32, minHeight: 32, borderRadius: 9, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             {icon}
           </div>
-          <span style={{ fontSize: 14.5, fontWeight: 700, color: "var(--color-text)" }}>{title}</span>
+          <span style={{ fontSize: 14.5, fontWeight: 700, color: "var(--color-text)", overflowWrap: "anywhere" }}>{title}</span>
         </div>
         {action}
       </div>
-      <div style={{ padding: "20px 24px 24px" }}>{children}</div>
+      <div style={{ padding: "20px 24px 24px", minWidth: 0 }}>{children}</div>
     </div>
   );
 }
@@ -70,7 +70,7 @@ function ReadField({ label, value, icon }) {
 // ─── Role badge ────────────────────────────────────────────────────────────
 function InfoBadge({ label, color, bg }) {
   return (
-    <span style={{ padding: "3px 12px", borderRadius: 99, fontSize: 11.5, fontWeight: 700, background: bg, color }}>
+    <span style={{ padding: "3px 12px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, background: bg, color, boxShadow: "var(--clay-pill)" }}>
       {label}
     </span>
   );
@@ -429,7 +429,7 @@ export default function PerfilPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* ── HEADER ── */}
-          <div style={{ background: "var(--color-surface)", borderRadius: 18, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: 28 }}>
+          <div style={{ background: "var(--color-surface)", borderRadius: 18, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", padding: 28 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
 
               {/* Avatar */}

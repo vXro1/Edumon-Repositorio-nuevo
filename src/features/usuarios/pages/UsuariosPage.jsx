@@ -14,21 +14,21 @@ import { normalizeUser }from "@/lib/normalizers";
 import { usersGetAll, usersGetById, usersCreate, usersUpdate, usersDelete } from "@/services/usersService";
 import { institucionesGetMine, institucionesGetAll } from "@/services/institucionesService";
 
-import { Modal, Toast, UserAvatar } from "@/components";
+import { Modal, Toast, UserAvatar, Badge } from "@/components";
 
 import { humanizeError } from "@/utils/humanizeError";
 import { normalizePhone } from "@/utils/normalizePhone";
 /* ── Roles config ─────────────────────────────────────────────── */
 const ROL_META = {
-  superadmin:    { label: "Super Admin",   color: "#F87171", bg: "rgba(248,113,113,0.12)" },
-  administrador: { label: "Administrador", color: "#60A5FA", bg: "rgba(96,165,250,0.12)"  },
-  docente:       { label: "Docente",       color: "#34D399", bg: "rgba(52,211,153,0.12)"  },
+  superadmin:    { label: "Super Admin",   variant: "error" },
+  administrador: { label: "Administrador", variant: "info" },
+  docente:       { label: "Docente",       variant: "success" },
   // Backend stores and returns "padre" — alias "padre/tutor" for display
-  "padre":       { label: "Padre/Tutor",   color: "#FBBF24", bg: "rgba(251,191,36,0.12)"  },
-  "padre/tutor": { label: "Padre/Tutor",   color: "#FBBF24", bg: "rgba(251,191,36,0.12)"  },
+  "padre":       { label: "Padre/Tutor",   variant: "warning" },
+  "padre/tutor": { label: "Padre/Tutor",   variant: "warning" },
 };
 
-// Options shown in the select — use backend role values
+// Options shown en el select — use backend role values
 const ROL_LABELS = [
   { value: "administrador", label: "Administrador" },
   { value: "docente",       label: "Docente" },
@@ -37,21 +37,16 @@ const ROL_LABELS = [
 
 /* ── Micro-components ─────────────────────────────────────────── */
 function RolBadge({ rol }) {
-  const m = ROL_META[rol] ?? { label: rol, color: "#94A3B8", bg: "rgba(148,163,184,0.12)" };
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: m.bg, color: m.color }}>
-      {m.label}
-    </span>
-  );
+  const m = ROL_META[rol] ?? { label: rol, variant: "neutral" };
+  return <Badge variant={m.variant} size="sm">{m.label}</Badge>;
 }
 
 function EstadoBadge({ estado }) {
   const ok = estado === "activo";
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: ok ? "rgba(22,163,74,0.10)" : "rgba(220,38,38,0.10)", color: ok ? "var(--edu-green-600)" : "var(--color-error-hover)" }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor" }} />
+    <Badge variant={ok ? "success" : "error"} size="sm" dot>
       {ok ? "Activo" : "Suspendido"}
-    </span>
+    </Badge>
   );
 }
 
@@ -417,7 +412,7 @@ export default function UsuariosPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Search style={{ width: 16, height: 16, color: "var(--color-text-muted)", flexShrink: 0 }} />
         <input type="search" placeholder="Buscar por nombre, correo, cédula o teléfono..." value={search} onChange={e => setSearch(e.target.value)}
           style={{ flex: 1, minWidth: 200, border: "none", outline: "none", fontSize: 13.5, color: "var(--color-text)", background: "transparent" }} />
@@ -443,7 +438,7 @@ export default function UsuariosPage() {
       </div>
 
       {/* Table */}
-      <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -488,7 +483,7 @@ export default function UsuariosPage() {
         </div>
 
         {!debSearch && !loading && pagination.totalPages > 1 && (
-          <div style={{ padding: "12px 16px", borderTop: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "12px 16px", borderTop: "1px solid var(--color-border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
             <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>Página {page} de {pagination.totalPages} · {pagination.totalUsers} usuarios</span>
             <div style={{ display: "flex", gap: 8 }}>
               <PagBtn onClick={() => setPage(p => p - 1)} disabled={page <= 1}><ChevronLeft style={{ width: 15, height: 15 }} /></PagBtn>
@@ -542,7 +537,7 @@ export default function UsuariosPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, padding: "10px 12px", borderRadius: 9, background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.15)" }}>
             <Hash style={{ width: 13, height: 13, color: "var(--color-primary)", flexShrink: 0 }} />
             <p style={{ fontSize: 12.5, color: "var(--color-primary)", margin: 0 }}>
-              Contraseña inicial: <strong>"Edu" + cédula</strong> — ej: <strong>{"Edu" + (form.cedula || "12345678")}</strong>. El usuario debe cambiarla al ingresar.
+              Contraseña inicial: <strong>"Cc" + cédula</strong> — ej: <strong>{"Cc" + (form.cedula || "12345678")}</strong>. El usuario debe cambiarla al ingresar.
             </p>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>

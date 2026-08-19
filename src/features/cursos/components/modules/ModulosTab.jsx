@@ -132,13 +132,13 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
 
       {/* ── Encabezado ── */}
       <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16,
+        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16,
       }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", margin: 0, overflowWrap: "anywhere" }}>
           Módulos del curso
         </h3>
         {canManage && (
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Button variant="secondary" size="sm" onClick={() => setCsvOpen(true)}>
               <Upload style={{ width: 13, height: 13 }} /> Carga CSV
             </Button>

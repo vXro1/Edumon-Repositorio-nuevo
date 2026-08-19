@@ -414,6 +414,8 @@ export default function NotificacionesPage() {
         <div style={{
           display: "flex",
           justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 10,
           marginTop: 20,
         }}>
           <span style={{ fontSize: 12.5, color: "#64748B" }}>

@@ -95,10 +95,11 @@ const ForumHeader = ({
 
             {/* Estado badge */}
             <span style={{
-              flexShrink: 0, fontSize: 10, fontWeight: 700,
+              flexShrink: 0, fontSize: 10, fontWeight: 600,
               padding: '2px 7px', borderRadius: 9999,
-              background: isClosed ? '#fee2e2' : '#d1fae5',
-              color: isClosed ? 'var(--color-error-hover)' : '#059669',
+              background: isClosed ? 'var(--color-error-light)' : 'var(--color-success-light)',
+              color: isClosed ? 'var(--color-error-hover)' : 'var(--edu-green-700)',
+              boxShadow: 'var(--clay-pill)',
             }}>
               {isClosed ? 'Cerrado' : 'Abierto'}
             </span>

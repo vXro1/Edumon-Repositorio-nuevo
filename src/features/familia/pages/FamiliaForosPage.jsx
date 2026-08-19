@@ -97,7 +97,7 @@ function CursoForosGroup({ curso, foros, onOpenForo }) {
   return (
     <div style={{
       background: "var(--color-surface)", borderRadius: 16,
-      border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+      border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)",
       overflow: "hidden", marginBottom: 16,
     }}>
       <div style={{

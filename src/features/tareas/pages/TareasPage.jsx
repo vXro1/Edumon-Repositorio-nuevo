@@ -25,7 +25,7 @@ import { normalizeTarea } from "@/lib/normalizers/tarea";
 import { humanizeError } from "@/utils/humanizeError";
 
 // Shared UI — componentes del sistema
-import { Toast, AppModal, Modal, Button, Input, Select } from "@/components";
+import { Toast, AppModal, Modal, Button, Badge, Input, Select } from "@/components";
 import { Sk, EmptyState, Field } from "../../cursos/components/shared/ui";
 import { makeNotify } from "@/features/cursos/components/shared/helpers";
 
@@ -46,7 +46,8 @@ function FileChip({ file, onRemove }) {
       display: "flex", alignItems: "center", gap: 10,
       padding: isImage ? "4px 10px 4px 4px" : "7px 10px",
       border: "1px solid var(--color-border)",
-      borderRadius: 8, background: "var(--color-bg)",
+      borderRadius: "var(--radius-md)", background: "var(--color-bg)",
+      boxShadow: "var(--clay-pill)",
     }}>
       {isImage ? (
         <img
@@ -97,9 +98,10 @@ function ExistingFileRow({ archivo, marcado, onToggle }) {
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
       padding: "7px 10px",
-      border: `1px solid ${marcado ? "rgba(220,38,38,0.35)" : "var(--color-border)"}`,
-      borderRadius: 8,
-      background: marcado ? "rgba(220,38,38,0.06)" : "var(--color-bg)",
+      border: `1px solid ${marcado ? "color-mix(in srgb, var(--color-error) 35%, transparent)" : "var(--color-border)"}`,
+      borderRadius: "var(--radius-md)",
+      background: marcado ? "var(--color-error-light)" : "var(--color-bg)",
+      boxShadow: "var(--clay-pill)",
       opacity: marcado ? 0.65 : 1,
     }}>
       <div style={{
@@ -138,17 +140,6 @@ function ExistingFileRow({ archivo, marcado, onToggle }) {
 }
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
-
-const ESTADO_CFG = {
-  activa:  { bg: "rgba(22,163,74,0.10)",   color: "var(--edu-green-600)", label: "Activa"  },
-  cerrada: { bg: "rgba(148,163,184,0.15)", color: "#64748B", label: "Cerrada" },
-  vencida: { bg: "rgba(220,38,38,0.10)",   color: "var(--color-error-hover)", label: "Vencida" },
-};
-
-const ASIG_CFG = {
-  todos:         { label: "Todos",         color: "var(--color-primary)" },
-  seleccionados: { label: "Seleccionados", color: "#6366F1" },
-};
 
 const TIPO_ENTREGA_OPTS = [
   { value: "archivo",     label: "Archivo / Documento"  },
@@ -602,7 +593,7 @@ export default function TareasPage() {
       {/* ── Filtros ── */}
       <div style={{
         background: "var(--color-surface)", borderRadius: 14,
-        border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
+        border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)",
         padding: "12px 16px", marginBottom: 16,
         display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
       }}>
@@ -1262,11 +1253,11 @@ export default function TareasPage() {
 
 // ─── TareaCard ────────────────────────────────────────────────────────────────
 
+const ESTADO_BADGE = { activa: "success", cerrada: "neutral", vencida: "error" };
+const ASIG_BADGE    = { todos: "info", seleccionados: "purple" };
+
 function TareaCard({ tarea: t, onVerEntregas, onEditar, onCerrar, onDelete }) {
   const [hov, setHov] = useState(false);
-
-  const estadoCfg = ESTADO_CFG[t.estado]         ?? ESTADO_CFG.activa;
-  const asigCfg   = ASIG_CFG[t.asignacionTipo]   ?? ASIG_CFG.todos;
 
   const cursoNombre =
     t.curso?.nombre ??
@@ -1292,25 +1283,15 @@ function TareaCard({ tarea: t, onVerEntregas, onEditar, onCerrar, onDelete }) {
   const totalArchivos = todosAdjuntos.filter(a => a.tipo !== "enlace").length;
   const totalEnlaces  = todosAdjuntos.filter(a => a.tipo === "enlace").length;
 
-  // Estilos de botones de acción inline (pequeños, sin variante dedicada)
-  const actionBtn = (color = "var(--color-text-muted)") => ({
-    display: "inline-flex", alignItems: "center", gap: 5,
-    padding: "6px 11px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-    border: "1px solid var(--color-border)",
-    background: "var(--color-surface)",
-    color, cursor: "pointer",
-    transition: "background 150ms, border-color 150ms",
-  });
-
   return (
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
         background: "var(--color-surface)",
-        borderRadius: 16,
-        border: `1px solid ${hov ? "rgba(12,106,196,0.20)" : "var(--color-border)"}`,
-        boxShadow: hov ? "var(--shadow-md)" : "var(--shadow-card)",
+        borderRadius: "var(--radius-lg)",
+        border: `1px solid ${hov ? "color-mix(in srgb, var(--color-primary) 20%, transparent)" : "var(--color-border)"}`,
+        boxShadow: hov ? "var(--clay-card-hover)" : "var(--clay-card)",
         padding: "16px 20px",
         display: "flex", alignItems: "center", gap: 16,
         transition: "all 180ms",
@@ -1331,20 +1312,12 @@ function TareaCard({ tarea: t, onVerEntregas, onEditar, onCerrar, onDelete }) {
           <p style={{ fontWeight: 700, margin: 0, fontSize: 14, color: "var(--color-text)" }}>
             {t.titulo}
           </p>
-          <span style={{
-            padding: "2px 9px", borderRadius: 99,
-            background: estadoCfg.bg, color: estadoCfg.color,
-            fontSize: 10.5, fontWeight: 700,
-          }}>
-            {estadoCfg.label}
-          </span>
-          <span style={{
-            padding: "2px 9px", borderRadius: 99,
-            background: "rgba(99,102,241,0.08)", color: asigCfg.color,
-            fontSize: 10.5, fontWeight: 700,
-          }}>
-            {asigCfg.label}
-          </span>
+          <Badge variant={ESTADO_BADGE[t.estado] ?? "success"} size="sm">
+            {t.estado === "activa" ? "Activa" : t.estado === "cerrada" ? "Cerrada" : t.estado === "vencida" ? "Vencida" : t.estado}
+          </Badge>
+          <Badge variant={ASIG_BADGE[t.asignacionTipo] ?? "info"} size="sm">
+            {t.asignacionTipo === "seleccionados" ? "Seleccionados" : "Todos"}
+          </Badge>
         </div>
 
         <div style={{
@@ -1376,27 +1349,23 @@ function TareaCard({ tarea: t, onVerEntregas, onEditar, onCerrar, onDelete }) {
 
       {/* Acciones */}
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        <button onClick={onVerEntregas} style={actionBtn("var(--color-primary)")}>
+        <Button variant="ghost" size="sm" onClick={onVerEntregas} style={{ color: "var(--color-primary)" }}>
           Entregas <ChevronRight size={13} />
-        </button>
+        </Button>
 
-        <button onClick={onEditar} style={actionBtn("#6366F1")} title="Editar reto">
+        <Button variant="ghost" size="sm" onClick={onEditar} title="Editar reto" style={{ color: "#6366F1" }}>
           <Pencil size={13} /> Editar
-        </button>
+        </Button>
 
         {t.estado === "activa" && (
-          <button onClick={onCerrar} style={actionBtn("#64748B")}>
+          <Button variant="ghost" size="sm" onClick={onCerrar} style={{ color: "#64748B" }}>
             <Lock size={13} /> Cerrar
-          </button>
+          </Button>
         )}
 
-        <button
-          onClick={onDelete}
-          style={actionBtn("var(--color-error)")}
-          title="Eliminar reto"
-        >
+        <Button variant="ghost-danger" size="sm" onClick={onDelete} title="Eliminar reto">
           <Trash2 size={13} />
-        </button>
+        </Button>
       </div>
     </div>
   );
