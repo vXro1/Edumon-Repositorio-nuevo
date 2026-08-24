@@ -47,7 +47,7 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
       <div className="nav-search">
         <span className="search-icon"><Search size={14} /></span>
         <input
-          placeholder="Buscar cursos, tareas..."
+          placeholder="Buscar cursos, retos..."
           value={query}
           onChange={(e) => { handleSearch(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}

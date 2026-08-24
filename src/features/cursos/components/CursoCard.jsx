@@ -3,7 +3,7 @@ import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookOpen, ClipboardList, CheckSquare,
-  TrendingUp, Users, ArrowUpRight,
+  TrendingUp, Users, ChevronRight,
 } from "lucide-react";
 import { getCourseActionsByRole, getCourseMainPath } from "../utils/courseActions";
 import { Button } from "@/components";
@@ -136,7 +136,16 @@ export default memo(function CursoCard({
             {curso.participantes?.length ?? curso.totalParticipantes ?? 0}
             {" "}{role === "padre" ? "participantes" : "alumnos"}
           </span>
-          <ArrowUpRight size={14} style={{ color: cursoColor }} aria-hidden="true" />
+          {/* Antes era solo una flecha diagonal (ArrowUpRight): un ícono sin
+              texto no le dice a un usuario adulto que la tarjeta se puede
+              abrir. "Ver curso" dice exactamente qué pasa al hacer clic. */}
+          <span style={{
+            display: "flex", alignItems: "center", gap: 2,
+            fontSize: 11.5, fontWeight: 700, color: cursoColor,
+          }}>
+            Ver curso
+            <ChevronRight size={13} aria-hidden="true" />
+          </span>
         </div>
 
         {/* Acciones rápidas */}

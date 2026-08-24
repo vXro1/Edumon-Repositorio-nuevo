@@ -98,28 +98,41 @@ export function InfoBlock({ label, children }) {
   );
 }
 
-export function IconBtn({ color, onClick, title, children }) {
+// `label`: texto visible junto al ícono. Omitirlo solo para acciones de
+// significado verdaderamente universal (actualizar, cerrar "X") — cualquier
+// acción específica del dominio (editar, eliminar, ver, archivar,
+// participantes, responder...) debe pasar `label` para no depender de que
+// el usuario adivine qué hace el ícono (ver plan de corrección UX/UI).
+export function IconBtn({ color, onClick, title, label, children, disabled = false }) {
   return (
     <button
       onClick={onClick}
-      title={title}
+      title={title ?? label}
+      disabled={disabled}
       style={{
         background: `color-mix(in srgb, ${color} 12%, transparent)`,
         color,
         borderRadius: 7,
-        padding: 7,
+        padding: label ? "7px 12px" : 7,
         border: "none",
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        gap: label ? 6 : 0,
+        fontSize: 12.5,
+        fontWeight: 700,
+        fontFamily: "inherit",
         transition: "background var(--transition-fast)",
         flexShrink: 0,
+        whiteSpace: "nowrap",
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = `color-mix(in srgb, ${color} 22%, transparent)`)}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = `color-mix(in srgb, ${color} 22%, transparent)`; }}
       onMouseLeave={e => (e.currentTarget.style.background = `color-mix(in srgb, ${color} 12%, transparent)`)}
     >
       {children}
+      {label && <span>{label}</span>}
     </button>
   );
 }

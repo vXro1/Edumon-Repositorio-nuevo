@@ -1,8 +1,9 @@
 // src/features/auth/components/ForgotPasswordForm.jsx
 import { useState } from "react";
 import { Mail, Phone } from "lucide-react";
-import { Input } from "@/components";
+import { Input, PhoneInput } from "@/components";
 import AuthLayout from "./AuthLayout";
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 
 const validateEmail = ({ correo }) => {
   const e = {};
@@ -17,8 +18,8 @@ const validatePhone = ({ telefono }) => {
   const e = {};
   if (!telefono.trim())
     e.telefono = "El número es requerido";
-  else if (!/^\+?\d{7,15}$/.test(telefono.replace(/\s/g, "")))
-    e.telefono = "Ingresa un número válido (ej: +573113014875)";
+  else if (!isValidPhone(telefono))
+    e.telefono = PHONE_ERROR;
   return e;
 };
 
@@ -49,7 +50,8 @@ const ForgotPasswordForm = ({
     if (method === "email") {
       onSubmit({ correo: form.correo });
     } else {
-      onSubmit({ telefono: form.telefono, method: "phone" });
+      // Al backend siempre viaja "+57XXXXXXXXXX", igual que en el login.
+      onSubmit({ telefono: normalizePhone(form.telefono), method: "phone" });
     }
   };
 
@@ -125,16 +127,12 @@ const ForgotPasswordForm = ({
               autoFocus
             />
           ) : (
-            <Input
+            <PhoneInput
               label="Número de teléfono"
               name="telefono"
-              type="tel"
-              placeholder="+573113014875"
               value={form.telefono}
               onChange={handleChange}
-              leftIcon={<Phone size={16} />}
               error={errors.telefono}
-              autoComplete="tel"
               autoFocus
             />
           )}

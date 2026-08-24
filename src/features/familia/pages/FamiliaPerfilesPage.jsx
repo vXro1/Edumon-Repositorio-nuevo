@@ -212,10 +212,10 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
         )}
         {!isTitular && (
           <>
-            <IconBtn color="#6366F1" onClick={onEdit} title="Editar">
+            <IconBtn label="Editar" color="#6366F1" onClick={onEdit}>
               <Edit2 size={13} />
             </IconBtn>
-            <IconBtn color="var(--color-error-hover)" onClick={onDelete} title="Eliminar">
+            <IconBtn label="Eliminar" color="var(--color-error-hover)" onClick={onDelete}>
               <Trash2 size={13} />
             </IconBtn>
           </>

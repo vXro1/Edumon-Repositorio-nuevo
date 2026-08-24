@@ -2,9 +2,9 @@
 //src/features/cursos/components/tareas/TareasTab.jsx
 import { useState, useEffect, useCallback, useContext } from "react";
 import CursoContext from "../../context/CursoContext";
-import { ClipboardList, Clock, Eye, Pencil, Trash2, Layers } from "lucide-react";
+import { ClipboardList, Clock, Eye, Pencil, Lock, Layers } from "lucide-react";
 
-import { tareasGetAll, tareasCreate, tareasUpdate, tareasDelete } from "@/features/cursos/services/tareasService";
+import { tareasGetAll, tareasGetById, tareasCreate, tareasUpdate, tareasDelete } from "@/features/cursos/services/tareasService";
 import { cursosGetParticipantes, modulosGetByCurso } from "@/features/cursos/services/cursosService";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
@@ -15,6 +15,8 @@ import {
   SectionHeader,
 } from "../shared/ui";
 import { normalizeTarea } from "@/lib/normalizers/tarea";
+import { humanizeError } from "@/utils/humanizeError";
+import { parseValidationErrors, summarizeValidationErrors } from "@/utils/parseValidationErrors";
 
 import { fmt, fmtHour, esPasada, makeNotify } from "../shared/helpers";
 
@@ -142,11 +144,11 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     await Promise.all([loadParticipantes(), loadModulos()]);
   };
 
-  const openEdit = async (t) => {
-    setCreating(false);
-    setEditTarget(t);
-    setViewTarget(null);
-
+  // Construye el estado del form de edición a partir de una tarea normalizada.
+  // Extraído para poder aplicarlo dos veces: primero con el dato (posiblemente
+  // parcial) que ya está en la lista, y de nuevo cuando llega la versión
+  // completa desde el servidor (ver fetch de abajo).
+  const buildEditForm = (t) => {
     const selIds = (t.participantesSeleccionados ?? [])
       .map(p => String(typeof p === "object" ? p._id ?? "" : p))
       .filter(Boolean);
@@ -154,7 +156,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     const enlacesExistentes = (t.adjuntos ?? t.archivosAdjuntos ?? [])
       .filter(a => a.tipo === "enlace");
 
-    setForm({
+    return {
       titulo: t.titulo ?? "",
       descripcion: t.descripcion ?? "",
       criterios: typeof t.criterios === "string" ? t.criterios : "",
@@ -168,12 +170,34 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
       archivosEliminar: [],
       enlacesNuevos: [],
       enlacesExistentes,
-    });
+    };
+  };
 
+  const openEdit = async (t) => {
+    setCreating(false);
+    setEditTarget(t);
+    setViewTarget(null);
+    setForm(buildEditForm(t));
     setErrors({});
     setViewMode("detail");
     setModalOpen(true);
-    await Promise.all([loadParticipantes(), loadModulos()]);
+
+    // La fila que abrió el modal viene de la lista paginada (tareasGetAll),
+    // que puede quedar desactualizada si la tarea se editó desde otra
+    // pestaña/sesión. Se vuelve a pedir por ID para garantizar que el form
+    // de edición siempre parta de TODOS los datos reales — adjuntos y
+    // enlaces incluidos — en vez de lo que haya quedado en memoria.
+    const fetchFresh = tareasGetById(t._id ?? t.id)
+      .then(fresh => {
+        const normalized = normalizeTarea(fresh);
+        setEditTarget(normalized);
+        setForm(buildEditForm(normalized));
+      })
+      .catch(() => {
+        // Si falla, se sigue trabajando con los datos de la lista (ya cargados arriba)
+      });
+
+    await Promise.all([loadParticipantes(), loadModulos(), fetchFresh]);
   };
   const openDetail = (t) => {
     setCreating(false);
@@ -208,8 +232,13 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
 
     const nextErrors = {};
 
+    // Mismo mínimo que createTareaValidator (backend): sin este chequeo, un
+    // título de 1-2 caracteres pasaba el cliente y el servidor lo rechazaba
+    // con un 400 que antes no se mostraba en ningún lado (ver fix de abajo).
     if (!form.titulo.trim()) {
       nextErrors.titulo = "El título es requerido";
+    } else if (form.titulo.trim().length < 3) {
+      nextErrors.titulo = "El título debe tener al menos 3 caracteres";
     }
     if (!form.fechaEntrega) {
       nextErrors.fechaEntrega = "La fecha de entrega es requerida";
@@ -290,20 +319,39 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
       handleClose();
       load();
     } catch (err) {
-      notify(err.message ?? "Error al guardar reto", "error");
+      // Antes solo se mostraba un toast genérico ("Error al guardar reto")
+      // y encima con "undefined" en el detalle (ver fix en apiClient.js —
+      // leía nombres de propiedad que express-validator nunca usa). Ahora
+      // cada mensaje se pinta debajo de su campo, igual que en EventosPage.
+      const fieldErrors = parseValidationErrors(err);
+      if (fieldErrors) {
+        // El validator del backend usa "participantesSeleccionados";
+        // TareaForm pinta ese error bajo la key "participantes".
+        if (fieldErrors.participantesSeleccionados && !fieldErrors.participantes) {
+          fieldErrors.participantes = fieldErrors.participantesSeleccionados;
+        }
+        setErrors(fieldErrors);
+        notify(summarizeValidationErrors(fieldErrors), "error");
+      } else {
+        notify(humanizeError(err, "Error al guardar reto"), "error");
+      }
     } finally {
       setSaving(false);
     }
   };
 
+  // NOTA: tareasDelete (DELETE /tareas/:id) en el backend no borra el reto —
+  // solo lo cierra y limpia sus archivos adjuntos. El botón se etiqueta y
+  // confirma como "cerrar", no "eliminar", para no prometer algo que el
+  // backend no hace (el reto sigue existiendo, solo pasa a estado "cerrada").
   const handleDelete = async (id) => {
-    if (!confirm("¿Eliminar este reto?")) return;
+    if (!confirm("¿Cerrar este reto? No se podrá reabrir y se eliminarán sus archivos adjuntos.")) return;
     try {
       await tareasDelete(id);
-      notify("Reto eliminado");
+      notify("Reto cerrado");
       load();
     } catch {
-      notify("Error al eliminar el reto", "error");
+      notify("Error al cerrar el reto", "error");
     }
   };
 
@@ -393,12 +441,12 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap" }}>
                   <IconActionButton icon={Eye} color="var(--color-primary)" title="Ver" onClick={() => openDetail(t)} />
                   {canManage && (
                     <>
                       <IconActionButton icon={Pencil} color="#6366F1" title="Editar" onClick={() => openEdit(t)} />
-                      <IconActionButton icon={Trash2} color="var(--color-error)" title="Eliminar" onClick={() => handleDelete(t._id)} />
+                      <IconActionButton icon={Lock} color="#64748B" title="Cerrar reto" onClick={() => handleDelete(t._id)} />
                     </>
                   )}
                 </div>

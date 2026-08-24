@@ -16,14 +16,22 @@ const STATUS_MESSAGES = {
 
 const PATTERN_MESSAGES = [
   [/credencial|contrase|passw/i,       "Usuario o contraseña incorrectos"],
-  [/token.*expir|expir.*token/i,       "Tu sesión ha expirado. Vuelve a iniciar sesión"],
+  [/token.*expir|expir.*token/i,       "Tu sesión terminó. Inicia sesión nuevamente"],
   [/no autorizado|unauthorized/i,      "No tienes permiso para realizar esta acción"],
-  [/forbidden/i,                       "Acceso no permitido"],
-  [/not found/i,                       "El recurso solicitado no existe"],
+  [/forbidden/i,                       "No tienes permiso para realizar esta acción"],
+  [/not found/i,                       "No pudimos encontrar lo que buscabas"],
   [/duplicate key|ya existe/i,         "Ya existe un registro con esos datos"],
   [/cast error|invalid.*id/i,          "Uno de los campos tiene un formato inválido"],
-  [/network error|failed to fetch|networkerror/i, "Sin conexión. Revisa tu internet e intenta de nuevo"],
+  [/network error|failed to fetch|networkerror|request failed/i, "Sin conexión. Revisa tu internet e intenta de nuevo"],
   [/timeout/i,                         "La solicitud tardó demasiado. Intenta de nuevo"],
+  // Tipo de archivo no permitido (multer fileFilter / validaciones de adjuntos)
+  [/file type|tipo de archivo|mimetype/i, "Este tipo de archivo no es compatible. Prueba con una imagen, PDF o documento permitido"],
+  // Mensajes técnicos genéricos que no traen su propio texto específico —
+  // si el backend ya manda un mensaje concreto (ej. "El título debe tener
+  // entre 3 y 200 caracteres"), esos NUNCA caen aquí: no calzan con ningún
+  // patrón y se muestran tal cual más abajo.
+  [/internal server error|server error|^error$/i, "Ocurrió un error de nuestro lado. Intenta más tarde"],
+  [/bad request|invalid input/i,       "Revisa la información ingresada"],
   [/validation/i,                      "Revisa los datos ingresados"],
 ];
 

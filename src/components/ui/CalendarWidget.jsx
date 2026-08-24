@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   ChevronLeft, ChevronRight, CalendarDays, Clock, MapPin,
   BookOpen, AlertCircle, ClipboardList, Users, School,
-  Plus, RefreshCw, Pencil, Trash2, CheckCircle2,
+  Plus, RefreshCw, Pencil, Trash2, CheckCircle2, MousePointerClick,
 } from "lucide-react";
 import { Modal, Button, Badge } from "@/components";
 import { fmt, fmtHour, esPasada } from "@/features/cursos/components/shared/helpers";
@@ -19,7 +19,7 @@ const MESES = [
 ];
 const CATEGORIA_LABEL = {
   escuela_padres: "Escuela de padres",
-  tarea:          "Tarea",
+  tarea:          "Reto",
   institucional:  "Institucional",
 };
 const CATEGORIA_COLOR = {
@@ -95,9 +95,10 @@ function ItemRow({ item, idx, onClick }) {
   return (
     <button
       onClick={onClick}
+      title="Ver detalles"
       style={{
         width: "100%", border: "none", background: "transparent",
-        cursor: "pointer", padding: "12px 16px", textAlign: "left",
+        cursor: "pointer", padding: "14px 16px", textAlign: "left",
         borderTop: idx > 0 ? "1px solid var(--color-border)" : "none",
         display: "flex", alignItems: "flex-start", gap: 12,
         transition: "background 120ms",
@@ -148,9 +149,21 @@ function ItemRow({ item, idx, onClick }) {
         )}
       </div>
 
-      <Badge variant={itemBadgeVariant(item)} size="sm" style={{ flexShrink: 0, marginTop: 2 }}>
-        {item.tipo === "tarea" ? "Tarea" : "Evento"}
-      </Badge>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        {/* Con palabras, no solo un ícono: una flecha sola no le dice a
+            todo el mundo "esto se puede abrir". */}
+        <span style={{
+          display: "flex", alignItems: "center", gap: 2,
+          fontSize: 11, fontWeight: 700, color: "var(--color-primary)",
+          whiteSpace: "nowrap",
+        }}>
+          Ver más
+          <ChevronRight size={13} style={{ flexShrink: 0 }} />
+        </span>
+        <Badge variant={itemBadgeVariant(item)} size="sm">
+          {item.tipo === "tarea" ? "Reto" : "Evento"}
+        </Badge>
+      </div>
     </button>
   );
 }
@@ -171,7 +184,7 @@ function DetalleModal({ item, onClose, canManage, onEdit, onDelete, deleting }) 
       title={item.titulo}
       description={
         esTarea
-          ? `Tarea · ${item.modulo ?? item.cursoNombre ?? "Sin módulo"}`
+          ? `Reto · ${item.modulo ?? item.cursoNombre ?? "Sin módulo"}`
           : `Evento · ${CATEGORIA_LABEL[item.categoria] ?? item.categoria ?? "Evento"}`
       }
     >
@@ -249,17 +262,19 @@ function DetalleModal({ item, onClose, canManage, onEdit, onDelete, deleting }) 
 
         {/* Acciones — solo para eventos y solo si canManage */}
         {canManage && !esTarea && (
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}>
-            <Button variant="ghost" size="sm" onClick={() => onEdit(item)}>
-              <Pencil size={13} /> Editar
+          <div style={{
+            display: "flex", gap: 10, justifyContent: "flex-end",
+            paddingTop: 14, marginTop: 4, borderTop: "1px solid var(--color-border)",
+          }}>
+            <Button variant="outline" onClick={() => onEdit(item)}>
+              <Pencil size={14} /> Editar evento
             </Button>
             <Button
               variant="danger"
-              size="sm"
               onClick={() => onDelete(item._id ?? item.id)}
               disabled={deleting}
             >
-              <Trash2 size={13} />
+              <Trash2 size={14} />
               {deleting ? "Eliminando…" : "Eliminar"}
             </Button>
           </div>
@@ -374,7 +389,7 @@ export default function CalendarWidget({
         {/* Stats chips */}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {stats && [
-            { label: "Tareas",   val: stats.totalTareas,     color: "#6366f1" },
+            { label: "Retos",    val: stats.totalTareas,     color: "#6366f1" },
             { label: "Eventos",  val: stats.totalEventos,    color: "var(--color-primary)" },
             { label: "Vencidas", val: stats.tareasVencidas,  color: "var(--color-error)" },
             { label: "Próximos", val: stats.eventosProximos, color: "#22c55e" },
@@ -419,40 +434,72 @@ export default function CalendarWidget({
           {/* Navegación de mes */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 16px", borderBottom: "1px solid var(--color-border)",
-            background: "var(--color-bg)",
+            padding: "16px 18px", borderBottom: "1px solid var(--color-border)",
+            background: "var(--color-bg)", gap: 8,
           }}>
             <button
               onClick={prevMonth}
+              title="Mes anterior"
               style={{
-                background: "none", border: "none", cursor: "pointer",
-                padding: 6, borderRadius: 8, color: "var(--color-text-muted)",
-                display: "flex", alignItems: "center",
+                background: "var(--color-surface)", border: "1px solid var(--color-border)", cursor: "pointer",
+                width: 34, height: 34, borderRadius: 10, color: "var(--color-text-muted)",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}
             >
               <ChevronLeft size={18} />
             </button>
-            <span style={{ fontWeight: 800, fontSize: 15, color: "var(--color-text)" }}>
-              {MESES[month]} {year}
-            </span>
+
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 0 }}>
+              <span style={{ fontWeight: 800, fontSize: 16, color: "var(--color-text)", whiteSpace: "nowrap" }}>
+                {MESES[month]} {year}
+              </span>
+              {/* Botón "Hoy": salta directo al mes actual y selecciona el día de
+                  hoy — sin esto, si el usuario navega a otro mes no hay forma
+                  rápida de volver ni de saber en qué fecha está parado. */}
+              <button
+                onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); setSelected(now); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--color-primary)", fontSize: 11.5, fontWeight: 700,
+                  padding: "1px 6px", borderRadius: 6,
+                }}
+              >
+                Ir a hoy
+              </button>
+            </div>
+
             <button
               onClick={nextMonth}
+              title="Mes siguiente"
               style={{
-                background: "none", border: "none", cursor: "pointer",
-                padding: 6, borderRadius: 8, color: "var(--color-text-muted)",
-                display: "flex", alignItems: "center",
+                background: "var(--color-surface)", border: "1px solid var(--color-border)", cursor: "pointer",
+                width: 34, height: 34, borderRadius: 10, color: "var(--color-text-muted)",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}
             >
               <ChevronRight size={18} />
             </button>
           </div>
 
+          {/* Aviso de cómo interactuar — para que nadie tenga que adivinar
+              que los días y los eventos son clicables. */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 7,
+            padding: "9px 16px", background: "rgba(12,106,196,0.06)",
+            borderBottom: "1px solid var(--color-border)",
+          }}>
+            <MousePointerClick size={13} style={{ color: "var(--color-primary)", flexShrink: 0 }} />
+            <span style={{ fontSize: 11.5, color: "var(--color-primary)", fontWeight: 600 }}>
+              Toca un día para ver sus eventos y retos
+            </span>
+          </div>
+
           {/* Cabecera de días */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "10px 10px 2px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", padding: "12px 10px 2px" }}>
             {DIAS.map(d => (
               <div key={d} style={{
-                textAlign: "center", fontSize: 10, fontWeight: 800,
-                color: "var(--color-text-muted)", paddingBottom: 4, letterSpacing: "0.06em",
+                textAlign: "center", fontSize: 11.5, fontWeight: 800,
+                color: "var(--color-text-muted)", paddingBottom: 6, letterSpacing: "0.04em",
               }}>
                 {d}
               </div>
@@ -461,11 +508,11 @@ export default function CalendarWidget({
 
           {/* Grid de días */}
           {loading ? (
-            <div style={{ padding: "12px 10px" }}><Sk h={200} r={8} /></div>
+            <div style={{ padding: "12px 10px" }}><Sk h={240} r={8} /></div>
           ) : (
             <div style={{
               display: "grid", gridTemplateColumns: "repeat(7,1fr)",
-              gap: 2, padding: "0 10px 12px",
+              gap: 6, padding: "0 10px 14px",
             }}>
               {grid.map((day, i) => {
                 if (!day) return <div key={i} />;
@@ -473,53 +520,64 @@ export default function CalendarWidget({
                 const dayItems = byDay[key] ?? [];
                 const isToday  = isSameDay(day, today);
                 const isSel    = selected && isSameDay(day, selected);
+                const hasItems = dayItems.length > 0;
 
                 return (
                   <button
                     key={i}
                     onClick={() => setSelected(isSel ? null : day)}
+                    title={
+                      hasItems
+                        ? `${day.getDate()} de ${MESES[month]}${isToday ? " · Hoy" : ""} — ${dayItems.length} actividad${dayItems.length !== 1 ? "es" : ""}, toca para ver`
+                        : `${day.getDate()} de ${MESES[month]}${isToday ? " · Hoy" : ""}`
+                    }
+                    aria-label={`${day.getDate()} de ${MESES[month]}${isToday ? ", hoy" : ""}${hasItems ? `, ${dayItems.length} actividades` : ""}`}
                     style={{
                       position: "relative",
-                      background: isSel
-                        ? "var(--color-primary)"
-                        : isToday
-                          ? "rgba(12,106,196,0.10)"
-                          : "transparent",
-                      border: `1.5px solid ${
-                        isSel    ? "var(--color-primary)"
-                        : isToday ? "var(--color-primary)"
-                        : "transparent"
-                      }`,
-                      borderRadius: 9, padding: "6px 0",
+                      minHeight: 48,
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                      background: isSel ? "var(--color-primary)" : "transparent",
+                      border: `1.5px solid ${isSel ? "var(--color-primary)" : "transparent"}`,
+                      borderRadius: 12,
                       cursor: "pointer", textAlign: "center",
                       transition: "all 120ms",
                     }}
+                    onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = "var(--color-bg)"; }}
+                    onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
                   >
                     <span style={{
-                      fontSize: 13,
-                      fontWeight: isToday || isSel ? 800 : 400,
-                      color: isSel ? "#fff" : isToday ? "var(--color-primary)" : "var(--color-text)",
+                      width: 28, height: 28, borderRadius: "50%",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 14.5, fontWeight: isToday || isSel ? 800 : 500,
+                      // "Hoy" siempre se marca con un círculo sólido — no un tinte
+                      // suave que se puede pasar por alto. Si además está
+                      // seleccionado, el círculo se invierte a blanco para que
+                      // ambos estados sigan siendo distinguibles.
+                      background: isToday ? (isSel ? "#fff" : "var(--color-primary)") : "transparent",
+                      color: isToday ? (isSel ? "var(--color-primary)" : "#fff") : (isSel ? "#fff" : "var(--color-text)"),
                     }}>
                       {day.getDate()}
                     </span>
 
-                    {dayItems.length > 0 && (
-                      <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 2 }}>
+                    {hasItems ? (
+                      <div style={{ display: "flex", gap: 3, justifyContent: "center", alignItems: "center", height: 8 }}>
                         {dayItems.slice(0, 3).map((item, ti) => (
                           <div key={ti} style={{
-                            width: 5, height: 5, borderRadius: "50%",
-                            background: isSel ? "rgba(255,255,255,0.85)" : itemColor(item),
+                            width: 6.5, height: 6.5, borderRadius: "50%",
+                            background: isSel ? "rgba(255,255,255,0.9)" : itemColor(item),
                           }} />
                         ))}
                         {dayItems.length > 3 && (
                           <span style={{
-                            fontSize: 7,
-                            color: isSel ? "rgba(255,255,255,0.7)" : "var(--color-text-muted)",
+                            fontSize: 9, fontWeight: 700, lineHeight: 1,
+                            color: isSel ? "rgba(255,255,255,0.85)" : "var(--color-text-muted)",
                           }}>
-                            +
+                            +{dayItems.length - 3}
                           </span>
                         )}
                       </div>
+                    ) : (
+                      <div style={{ height: 8 }} />
                     )}
                   </button>
                 );
@@ -529,8 +587,8 @@ export default function CalendarWidget({
 
           {/* Leyenda */}
           <div style={{
-            padding: "10px 14px 14px", borderTop: "1px solid var(--color-border)",
-            display: "flex", gap: 10, flexWrap: "wrap",
+            padding: "12px 16px 16px", borderTop: "1px solid var(--color-border)",
+            display: "flex", gap: 12, flexWrap: "wrap",
           }}>
             {[
               { color: "var(--color-error)", label: "Vencida"  },
@@ -538,9 +596,9 @@ export default function CalendarWidget({
               { color: "#22c55e", label: "Próxima"  },
               { color: "#2196F3", label: "Evento"   },
             ].map(({ color, label }) => (
-              <div key={label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: color }} />
-                <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>{label}</span>
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />
+                <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{label}</span>
               </div>
             ))}
           </div>
@@ -548,6 +606,32 @@ export default function CalendarWidget({
 
         {/* ── PANEL DERECHO ─────────────────────────────────────────── */}
         <div style={{ flex: 1, minWidth: 260, display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* Sin día seleccionado: en vez de dejar este espacio vacío (que
+              hacía parecer que no había nada que hacer), se explica el paso
+              a paso completo — ver día → ver evento → editar/eliminar. */}
+          {!selected && !loading && (
+            <div style={{
+              background: "var(--color-surface)", borderRadius: 14,
+              border: "1.5px dashed var(--color-border)",
+              padding: "28px 20px", textAlign: "center",
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: "50%", margin: "0 auto 12px",
+                background: "rgba(12,106,196,0.10)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <CalendarDays size={20} style={{ color: "var(--color-primary)" }} />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--color-text)" }}>
+                Aquí verás los detalles de cada día
+              </p>
+              <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "var(--color-text-muted)", lineHeight: 1.5 }}>
+                Toca cualquier día del calendario para ver sus eventos y retos.
+                Luego toca uno de ellos para ver más información{canManage ? " o editarlo" : ""}.
+              </p>
+            </div>
+          )}
 
           {/* Detalle del día seleccionado */}
           {selected && (
@@ -629,11 +713,13 @@ export default function CalendarWidget({
                   const isSel = selected && isSameDay(d, selected);
 
                   return (
-                    <div
+                    <button
                       key={item._id ?? item.id ?? i}
                       onClick={() => { setSelected(isSel ? null : d); setDetail(item); }}
+                      title="Ver detalles"
                       style={{
-                        padding: "11px 16px", cursor: "pointer",
+                        width: "100%", border: "none", textAlign: "left",
+                        padding: "13px 16px", cursor: "pointer",
                         borderTop: i > 0 ? "1px solid var(--color-border)" : "none",
                         background: isSel ? "rgba(12,106,196,0.05)" : "transparent",
                         display: "flex", alignItems: "center", gap: 12,
@@ -679,10 +765,20 @@ export default function CalendarWidget({
                         </p>
                       </div>
 
-                      <Badge variant={itemBadgeVariant(item)} size="sm" style={{ flexShrink: 0 }}>
-                        {item.tipo === "tarea" ? "Tarea" : "Evento"}
-                      </Badge>
-                    </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <span style={{
+                          display: "flex", alignItems: "center", gap: 2,
+                          fontSize: 11, fontWeight: 700, color: "var(--color-primary)",
+                          whiteSpace: "nowrap",
+                        }}>
+                          Ver más
+                          <ChevronRight size={13} style={{ flexShrink: 0 }} />
+                        </span>
+                        <Badge variant={itemBadgeVariant(item)} size="sm">
+                          {item.tipo === "tarea" ? "Reto" : "Evento"}
+                        </Badge>
+                      </div>
+                    </button>
                   );
                 })}
               </div>

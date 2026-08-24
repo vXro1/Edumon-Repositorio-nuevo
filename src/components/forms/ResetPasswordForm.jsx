@@ -1,15 +1,18 @@
 // src/features/auth/components/forms/ResetPasswordForm.jsx
 import { useState, useRef, useEffect } from "react";
 import { Mail, Phone, Lock } from "lucide-react";
-import { Input } from "@/components";
+import { Input, PhoneInput } from "@/components";
 import AuthLayout from "./AuthLayout";
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
+import { validarContrasenaNueva, TEXTO_REQUISITOS_CONTRASENA } from "@/utils/credenciales";
 
 const CODE_LENGTH = 6;
 
 const validate = ({ correo, telefono, codigo, contrasenaNueva, confirmar, method }) => {
   const e = {};
   if (method === "phone") {
-    if (!telefono?.trim()) e.telefono = "El número es requerido";
+    if (!telefono?.trim())          e.telefono = "El número es requerido";
+    else if (!isValidPhone(telefono)) e.telefono = PHONE_ERROR;
   } else {
     if (!correo?.trim())
       e.correo = "El correo es requerido";
@@ -20,10 +23,9 @@ const validate = ({ correo, telefono, codigo, contrasenaNueva, confirmar, method
     e.codigo = "El código es requerido";
   else if (!/^\d{4,8}$/.test(codigo.trim()))
     e.codigo = "El código debe tener entre 4 y 8 dígitos";
-  if (!contrasenaNueva)
-    e.contrasenaNueva = "La contraseña es requerida";
-  else if (contrasenaNueva.length < 6)
-    e.contrasenaNueva = "Mínimo 6 caracteres";
+  // Mismas reglas que el backend y que el wizard de primer ingreso
+  const pwError = validarContrasenaNueva(contrasenaNueva);
+  if (pwError) e.contrasenaNueva = pwError;
   if (confirmar !== contrasenaNueva)
     e.confirmar = "Las contraseñas no coinciden";
   return e;
@@ -160,7 +162,12 @@ const ResetPasswordForm = ({
     const ve = validate({ ...form, method });
     if (Object.keys(ve).length) { setErrors(ve); return; }
     const { confirmar, ...rest } = form;
-    onSubmit({ ...rest, method });
+    onSubmit({
+      ...rest,
+      // "+57XXXXXXXXXX" siempre, sin importar cómo lo haya escrito el usuario
+      telefono: rest.telefono ? normalizePhone(rest.telefono) ?? rest.telefono : rest.telefono,
+      method,
+    });
   };
 
   const handleResend = async () => {
@@ -217,16 +224,12 @@ const ResetPasswordForm = ({
               esta pantalla como punto de entrada directo. */}
           {!contactValue && (
             method === "phone" ? (
-              <Input
+              <PhoneInput
                 label="Número de teléfono"
                 name="telefono"
-                type="tel"
-                placeholder="+573113014875"
                 value={form.telefono}
                 onChange={handleChange}
-                leftIcon={<Phone size={16} />}
                 error={errors.telefono}
-                autoComplete="tel"
               />
             ) : (
               <Input
@@ -263,7 +266,8 @@ const ResetPasswordForm = ({
               label="Nueva contraseña"
               name="contrasenaNueva"
               type="password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Nueva contraseña"
+              hint={TEXTO_REQUISITOS_CONTRASENA}
               value={form.contrasenaNueva}
               onChange={handleChange}
               leftIcon={<Lock size={16} />}

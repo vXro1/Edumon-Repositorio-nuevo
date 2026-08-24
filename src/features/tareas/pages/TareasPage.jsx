@@ -13,7 +13,7 @@ import { cursosGetMine, cursosGetParticipantes, modulosGetByCurso } from "@/feat
 // del service (tareasCreate, tareasCerrar, tareasDelete). Debe hacer
 // PUT /api/tareas/:id enviando el FormData tal cual (sin fijar
 // Content-Type a mano, para que el browser agregue el boundary correcto).
-import { tareasGetAll, tareasCreate, tareasUpdate, tareasCerrar, tareasDelete } from "@/features/cursos/services/tareasService";
+import { tareasGetAll, tareasGetById, tareasCreate, tareasUpdate, tareasCerrar, tareasDelete } from "@/features/cursos/services/tareasService";
 
 // Hooks & Context
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -43,8 +43,8 @@ function FileChip({ file, onRemove }) {
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: isImage ? "4px 10px 4px 4px" : "7px 10px",
+      display: "flex", alignItems: "center", gap: 12,
+      padding: isImage ? "6px 12px 6px 6px" : "10px 12px",
       border: "1px solid var(--color-border)",
       borderRadius: "var(--radius-md)", background: "var(--color-bg)",
       boxShadow: "var(--clay-pill)",
@@ -53,38 +53,42 @@ function FileChip({ file, onRemove }) {
         <img
           src={url}
           alt={file.name}
-          style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, flexShrink: 0 }}
+          style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 8, flexShrink: 0 }}
         />
       ) : (
         <div style={{
-          width: 36, height: 36, borderRadius: 6, flexShrink: 0,
+          width: 56, height: 56, borderRadius: 8, flexShrink: 0,
           background: "rgba(99,102,241,0.10)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <Paperclip size={15} style={{ color: "#6366F1" }} />
+          <Paperclip size={22} style={{ color: "#6366F1" }} />
         </div>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{
-          margin: 0, fontSize: 12, fontWeight: 600, color: "var(--color-text)",
+          margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
           {file.name}
         </p>
-        <p style={{ margin: 0, fontSize: 11, color: "var(--color-text-muted)" }}>
+        <p style={{ margin: 0, fontSize: 11.5, color: "var(--color-text-muted)" }}>
           {(file.size / 1024).toFixed(1)} KB
         </p>
       </div>
+      {/* Botón con texto, no solo un ícono — que "quitar este archivo" sea
+          obvio sin tener que pasar el mouse encima para leer un title. */}
       <button
         type="button"
         onClick={onRemove}
         style={{
-          background: "none", border: "none", cursor: "pointer",
-          color: "var(--color-text-muted)", padding: 2, display: "flex",
-          borderRadius: 4, flexShrink: 0,
+          background: "var(--color-error-light)", border: "none", cursor: "pointer",
+          color: "var(--color-error-hover)", padding: "7px 12px", display: "flex",
+          alignItems: "center", gap: 5, fontSize: 12, fontWeight: 700,
+          borderRadius: 8, flexShrink: 0,
         }}
       >
-        <X style={{ width: 14, height: 14 }} />
+        <Trash2 style={{ width: 14, height: 14 }} />
+        Quitar
       </button>
     </div>
   );
@@ -126,14 +130,16 @@ function ExistingFileRow({ archivo, marcado, onToggle }) {
       <button
         type="button"
         onClick={onToggle}
-        title={marcado ? "Deshacer" : "Marcar para eliminar"}
         style={{
           background: "none", border: "none", cursor: "pointer",
-          color: marcado ? "var(--color-error-hover)" : "var(--color-text-muted)", padding: 2, display: "flex",
+          color: marcado ? "var(--color-error-hover)" : "var(--color-text-muted)",
+          padding: "4px 6px", display: "flex", alignItems: "center", gap: 5,
+          fontSize: 11.5, fontWeight: 700,
           borderRadius: 4, flexShrink: 0,
         }}
       >
-        <Trash2 style={{ width: 14, height: 14 }} />
+        <Trash2 style={{ width: 14, height: 14, flexShrink: 0 }} />
+        {marcado ? "Deshacer" : "Eliminar"}
       </button>
     </div>
   );
@@ -409,11 +415,13 @@ export default function TareasPage() {
   };
 
   // ── Abrir modal de edición, precargando datos de la tarea ────────────────
-  const openEdit = (t) => {
+  // Extraído para poder aplicarlo dos veces: con el dato (posiblemente
+  // parcial) que ya trae la lista, y de nuevo cuando llega la versión
+  // completa desde el servidor (ver fetch en openEdit).
+  const applyEditTarea = (t) => {
     const cursoId = t.curso?._id ?? t.curso?.id ?? (typeof t.cursoId === "object" ? t.cursoId?._id : t.cursoId) ?? "";
     const moduloId = t.modulo?._id ?? t.modulo?.id ?? (typeof t.moduloId === "object" ? t.moduloId?._id : t.moduloId) ?? "";
 
-    setEditingId(t._id);
     setEditForm({
       titulo:          t.titulo ?? "",
       descripcion:     t.descripcion ?? "",
@@ -436,11 +444,27 @@ export default function TareasPage() {
     const adjuntos = t.adjuntos ?? t.archivosAdjuntos ?? [];
     setEditArchivosExistentes(adjuntos.filter(a => a.tipo === "archivo"));
     setEditEnlacesExistentes(adjuntos.filter(a => a.tipo === "enlace"));
+  };
+
+  const openEdit = async (t) => {
+    setEditingId(t._id);
+    applyEditTarea(t);
     setEditArchivosAEliminar([]);
     setEditArchivosNuevos([]);
     setEditEnlacesNuevos([]);
 
     setShowEdit(true);
+
+    // La fila que abrió el modal viene de la lista paginada (tareasGetAll),
+    // que puede quedar desactualizada. Se vuelve a pedir por ID para que el
+    // form de edición siempre parta de TODOS los datos reales — adjuntos y
+    // enlaces incluidos — en vez de lo que haya quedado en memoria.
+    try {
+      const fresh = await tareasGetById(t._id);
+      applyEditTarea(normalizeTarea(fresh));
+    } catch {
+      // Si falla, se sigue trabajando con los datos de la lista (ya cargados arriba)
+    }
   };
 
   // ── Guardar edición ───────────────────────────────────────────────────────
@@ -521,17 +545,20 @@ export default function TareasPage() {
     }
   };
 
-  // ── Eliminar tarea ────────────────────────────────────────────────────────
+  // NOTA: tareasDelete (DELETE /tareas/:id) en el backend no borra el reto —
+  // solo lo cierra y limpia sus archivos adjuntos. Se etiqueta como "cerrar",
+  // no "eliminar", para no prometer algo que el backend no hace (el reto
+  // sigue existiendo, solo pasa a estado "cerrada" sin sus archivos).
   const handleDelete = async () => {
     setDeleting(true);
     try {
       await tareasDelete(deletingId);
-      notify("Reto eliminado");
+      notify("Reto cerrado");
       setShowDelete(false);
       setDeletingId(null);
       load();
     } catch (err) {
-      notify(humanizeError(err, "Error al eliminar"), "error");
+      notify(humanizeError(err, "Error al cerrar el reto"), "error");
     } finally {
       setDeleting(false);
     }
@@ -1226,16 +1253,16 @@ export default function TareasPage() {
       </AppModal>
 
       {/* ══════════════════════════════════════════════
-          Modal — Confirmar eliminación
+          Modal — Confirmar cierre (con limpieza de archivos)
       ══════════════════════════════════════════════ */}
       <Modal
         isOpen={showDelete}
         onClose={() => setShowDelete(false)}
-        title="Eliminar reto"
+        title="Cerrar reto"
         size="sm"
       >
         <p style={{ fontSize: 13.5, color: "var(--color-text-secondary)", marginBottom: 20 }}>
-          Esta acción eliminará el reto y todos sus archivos adjuntos. ¿Deseas continuar?
+          Esta acción cerrará el reto (no se podrá reabrir) y eliminará todos sus archivos adjuntos. ¿Deseas continuar?
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <Button variant="ghost" onClick={() => setShowDelete(false)}>
@@ -1243,7 +1270,7 @@ export default function TareasPage() {
           </Button>
           <Button variant="danger" onClick={handleDelete} disabled={deleting}>
             {deleting && <Loader2 style={{ width: 15, height: 15, animation: "edu-spin 0.6s linear infinite" }} />}
-            Eliminar
+            Cerrar reto
           </Button>
         </div>
       </Modal>
@@ -1363,7 +1390,11 @@ function TareaCard({ tarea: t, onVerEntregas, onEditar, onCerrar, onDelete }) {
           </Button>
         )}
 
-        <Button variant="ghost-danger" size="sm" onClick={onDelete} title="Eliminar reto">
+        {/* Distinto del botón "Cerrar" de arriba: este también borra los
+            archivos adjuntos del reto (backend: tareasDelete). No borra el
+            reto en sí — sigue existiendo, solo cerrado — por eso el título
+            lo deja explícito en vez de decir "Eliminar reto". */}
+        <Button variant="ghost-danger" size="sm" onClick={onDelete} title="Cerrar reto y eliminar sus archivos adjuntos">
           <Trash2 size={13} />
         </Button>
       </div>

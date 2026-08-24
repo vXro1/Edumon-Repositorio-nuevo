@@ -48,6 +48,7 @@ const FilePreview = ({ archivo }) => {
   const tipo = (archivo.tipoArchivo ?? archivo.tipo ?? '').toLowerCase();
   const isImg = tipo.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(archivo.url ?? '');
   const isVid = tipo.startsWith('video/');
+  const isPdf = tipo.includes('pdf') || /\.pdf$/i.test(archivo.url ?? '');
 
   if (isImg) return (
     <a href={archivo.url} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: 6 }}>
@@ -63,19 +64,36 @@ const FilePreview = ({ archivo }) => {
         border: '1px solid var(--color-border)' }} />
   );
 
+  // PDF u otro archivo sin vista previa nativa en el navegador: no basta con
+  // el nombre como enlace — debe quedar claro qué TIPO de archivo es y qué
+  // acción hace el clic ("Ver archivo"), no solo un texto azul suelto.
+  const ext = (archivo.nombre ?? '').split('.').pop()?.toUpperCase() || (isPdf ? 'PDF' : 'ARCHIVO');
   return (
     <a href={archivo.url} target="_blank" rel="noreferrer"
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6,
-        padding: '6px 12px', borderRadius: 8,
-        background: 'var(--color-surface-2, #f3f4f6)',
+        display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 6,
+        padding: '7px 12px 7px 8px', borderRadius: 8,
+        background: isPdf ? '#FEE2E2' : 'var(--color-surface-2, #f3f4f6)',
         border: '1px solid var(--color-border)',
-        color: 'var(--color-text)', fontSize: 12.5, fontWeight: 500,
-        textDecoration: 'none',
+        color: 'var(--color-text)', fontSize: 12.5,
+        textDecoration: 'none', maxWidth: '100%', boxSizing: 'border-box',
       }}>
-      <FileText size={14} style={{ flexShrink: 0 }} />
-      <span style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {archivo.nombre ?? 'Archivo'}
+      <span style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+        background: isPdf ? '#FCA5A5' : 'var(--color-border)',
+        color: isPdf ? '#7F1D1D' : 'var(--color-text-muted)',
+        fontSize: 8.5, fontWeight: 800,
+      }}>
+        {isPdf ? <FileText size={13} /> : ext.slice(0, 4)}
+      </span>
+      <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+          {archivo.nombre ?? 'Archivo adjunto'}
+        </span>
+        <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600 }}>
+          Ver archivo
+        </span>
       </span>
     </a>
   );
@@ -114,9 +132,12 @@ const LikeButton = ({ liked, count, size = 14, onLike }) => {
           }}
         />
       }
-      style={liked ? { color: '#e11d48' } : {}}
+      style={liked ? { color: '#e11d48', fontWeight: 700 } : {}}
     >
-      {count > 0 ? count : null}
+      {/* Nunca solo el número: sin la palabra "Me gusta" el botón (icono +
+          número suelto) es ambiguo — no queda claro qué acción hace ni si
+          ya se presionó. */}
+      Me gusta{count > 0 ? ` ${count}` : ''}
     </Button>
   );
 };

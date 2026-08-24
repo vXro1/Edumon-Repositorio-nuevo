@@ -10,6 +10,13 @@ export const usersGetAll = (params = {}) => {
 
 export const usersGetMyProfile = () => apiFetch('/users/me/profile');
 
+// Para editar el PROPIO perfil (cualquier rol) — PUT /users/:id está
+// restringido a administrador/superadmin en el backend, así que un docente o
+// padre editando sus propios datos debe pasar por /users/me/profile o recibe
+// 403 aunque esté editando su propia cuenta.
+export const usersUpdateMyProfile = (body) =>
+  apiFetch('/users/me/profile', { method: 'PUT', body: JSON.stringify(body) });
+
 export const usersUpdateMyPhoto = (formData) =>
   apiFetchFormData('/users/me/foto-perfil', { method: 'PUT', body: formData });
 

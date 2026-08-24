@@ -8,7 +8,7 @@ import { parseValidationErrors, summarizeValidationErrors } from "@/utils/parseV
 
 const CATEGORIAS = [
   { value: "escuela_padres", label: "Escuela de padres" },
-  { value: "tarea",          label: "Tarea"             },
+  { value: "tarea",          label: "Reto"              },
   { value: "institucional",  label: "Institucional"     },
 ];
 const EMPTY_FORM = {

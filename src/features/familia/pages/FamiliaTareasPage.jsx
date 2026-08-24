@@ -108,7 +108,7 @@ function TareaRow({ tarea, onClick }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <EstadoBadge estado={estado} />
 
-        <IconBtn color="var(--color-text-muted)" onClick={onClick}>
+        <IconBtn label="Ver" color="var(--color-text-muted)" onClick={onClick}>
           <ChevronRight style={{ width: 14, height: 14 }} />
         </IconBtn>
       </div>

@@ -25,7 +25,7 @@ const DIAS_LIMPIEZA = 30;
 
 // Coincide con el enum real definido en createNotificacionValidator (tipo)
 const TIPO_META = {
-  tarea:        { variant: "info",    label: "Tarea" },
+  tarea:        { variant: "info",    label: "Reto" },
   entrega:      { variant: "success", label: "Entrega" },
   calificacion: { variant: "purple",  label: "Calificación" },
   foro:         { variant: "warning", label: "Foro" },
@@ -384,23 +384,23 @@ export default function NotificacionesPage() {
                   </p>
                 </div>
 
-                <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {!n.leido && (
                     <IconBtn
+                      label="Marcar como leída"
                       color="var(--edu-green-600)"
                       onClick={() => handleMarkRead(n._id)}
-                      title="Marcar como leída"
                     >
-                      <Check />
+                      <Check size={14} />
                     </IconBtn>
                   )}
 
                   <IconBtn
+                    label="Eliminar"
                     color="var(--color-error-hover)"
                     onClick={() => handleDelete(n._id)}
-                    title="Eliminar"
                   >
-                    <Trash2 />
+                    <Trash2 size={14} />
                   </IconBtn>
                 </div>
               </div>

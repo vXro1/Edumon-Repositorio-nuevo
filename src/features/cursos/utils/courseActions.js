@@ -30,7 +30,7 @@ export function getCourseActionsByRole(role, courseId) {
         },
         {
           key:     "tareas",
-          label:   "Tareas",
+          label:   "Retos",
           icon:    "ClipboardList",
           path:    `/cursos/${courseId}?tab=tareas`,
           variant: "outline",
@@ -58,7 +58,7 @@ export function getCourseActionsByRole(role, courseId) {
         },
         {
           key:     "tareas",
-          label:   "Tareas",
+          label:   "Retos",
           icon:    "ClipboardList",
           path:    `/cursos/${courseId}?tab=tareas`,
           variant: "outline",
@@ -86,7 +86,7 @@ export function getCourseActionsByRole(role, courseId) {
         },
         {
           key:     "tareas",
-          label:   "Mis tareas",
+          label:   "Mis retos",
           icon:    "ClipboardList",
           path:    `/cursos/${courseId}?tab=tareas`,
           variant: "outline",

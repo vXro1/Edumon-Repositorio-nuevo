@@ -140,6 +140,74 @@
   color: var(--color-primary);
 }
 
+/* ── Campo de teléfono: ícono + "+57" fijo + input, en un solo flexbox ──
+   A propósito NO usa position:absolute con padding-left calculado a mano
+   (así era antes: dos reglas de padding competían por el mismo elemento
+   y el "+57" terminaba pegado al texto, a veces encima). Con flexbox cada
+   segmento — ícono, prefijo, campo — reserva su propio espacio, así que
+   nunca pueden solaparse sea cual sea la fuente o el ancho disponible.
+   Ver src/components/ui/PhoneInput.jsx, el único componente que la usa. */
+.phone-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phone-field-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
+  transition: color 150ms ease;
+}
+.phone-field-icon svg { width: 16px; height: 16px; }
+
+.phone-field-prefix {
+  display: flex;
+  align-items: center;
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-right: 8px;
+  border-right: 1.5px solid var(--color-border);
+  user-select: none;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.phone-field-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: var(--color-text);
+}
+.phone-field-input::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: var(--font-regular);
+}
+.phone-field-input:disabled { cursor: not-allowed; }
+
+/* El foco cae en el <input> interno, no en el contenedor .phone-field:
+   replicamos aquí el estado de foco de .input con :focus-within, sin
+   tocar las reglas genéricas (que siguen sirviendo a los inputs normales) */
+.phone-field:focus-within:not(.input-error):not(.input-success) {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-soft);
+}
+.phone-field.input-error:focus-within {
+  box-shadow: var(--shadow-focus-error) !important;
+}
+.phone-field:focus-within .phone-field-icon,
+.phone-field:focus-within .phone-field-prefix { color: var(--color-text); }
+
+.input-sm.phone-field  { gap: 6px; }
+.input-lg.phone-field  { gap: 10px; }
+
+
 /* ── Adornment clickeable (eye password) ──────────────────────────────── */
 .input-adornment-btn {
   pointer-events: all;

@@ -1,8 +1,12 @@
 // src/features/cursos/pages/AgregarParticipanteModal.refactor.jsx
 import { useState } from 'react';
-import { Modal, Button, Input, Toast } from '@/components';
+import { Modal, Button, Input, Toast, PhoneInput } from '@/components';
 import { cursosAddParticipante } from '@/features/cursos/services/cursosService';
-import { normalizePhone } from '@/utils/normalizePhone';
+import { normalizePhone, isValidPhone, PHONE_ERROR } from '@/utils/normalizePhone';
+import {
+  contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
+  isValidCedula, CEDULA_ERROR, toCedula,
+} from '@/utils/credenciales';
 import { humanizeError } from '@/utils/humanizeError';
 
 const EMPTY_FORM = { nombre: '', apellido: '', cedula: '', telefono: '' };
@@ -38,19 +42,21 @@ export default function AgregarParticipanteModal({ open, onClose, onAdded, curso
       notify('No se especificó el curso', 'error');
       return;
     }
+    if (!isValidCedula(cedula))  { notify(CEDULA_ERROR, 'error'); return; }
+    if (!isValidPhone(telefono)) { notify(PHONE_ERROR, 'error'); return; }
 
     setSaving(true);
     try {
-      // No se envía "contraseña": el backend la define como la cédula por defecto.
-      // Nunca se manda un valor distinto (ni prefijos como "EDU") para garantizar
-      // que la contraseña inicial del participante sea siempre su cédula.
+      // No se envía "contraseña": el backend aplica la regla única del sistema
+      // (contraseña inicial = cédula). Nunca se manda un valor distinto ni un
+      // prefijo propio, para que ningún flujo de creación pueda divergir.
       await cursosAddParticipante(cursoId, {
         nombre,
         apellido,
         cedula,
-        telefono: normalizePhone(telefono) || telefono,
+        telefono: normalizePhone(telefono),
       });
-      notify('Participante agregado');
+      notify(`Participante agregado. Contraseña inicial: ${contrasenaInicial(cedula)}`);
       setForm(EMPTY_FORM);
       onAdded && onAdded();
       handleClose();
@@ -78,16 +84,18 @@ export default function AgregarParticipanteModal({ open, onClose, onAdded, curso
           />
           <Input
             placeholder="Cédula *"
+            inputMode="numeric"
             value={form.cedula}
-            onChange={e => setForm(f => ({ ...f, cedula: e.target.value }))}
+            onChange={e => setForm(f => ({ ...f, cedula: toCedula(e.target.value) }))}
           />
-          <Input
-            placeholder="Teléfono *"
+          <PhoneInput
+            label={null}
+            hint={null}
             value={form.telefono}
             onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))}
           />
           <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '0 0 4px' }}>
-            Si el padre no existe, se creará con contraseña igual a su cédula.
+            Si el padre no existe, se creará automáticamente. {TEXTO_CONTRASENA_INICIAL}
           </p>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
             <Button variant="ghost" type="button" onClick={handleClose}>Cancelar</Button>

@@ -29,6 +29,7 @@
 @font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-SemiBold.woff2')  format('woff2'); font-weight: 600; font-display: swap; }
 @font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Bold.woff2')      format('woff2'); font-weight: 700; font-display: swap; }
 @font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Black.woff2')     format('woff2'); font-weight: 900; font-display: swap; }
 :root {
   /* ──────────────────────────────────────────────────────────────────
      PALETA DE MARCA EN BRUTO
@@ -297,13 +298,17 @@
      TIPOGRAFÍA
      ────────────────────────────────────────────────────────────────── */
   /* Una sola familia en todo el sitio (incluye login/landing — esto no es
-     "color" y se aplica igual en todas partes). Antes los títulos usaban
-     Poppins y el resto del texto Inter: dos fuentes distintas mezcladas en
-     la misma pantalla. Inter tiene pesos hasta 900 (ver @font-face arriba),
-     así que --font-extrabold/--font-black siguen viéndose "gruesos" en
-     títulos sin cambiar de familia — más legible para adultos mayores, que
-     es el público de esta app. */
-  --font-sans:    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+     "color" y se aplica igual en todas partes). Antes era Inter: legible,
+     pero de trazo recto y angular — sentía "fría"/corporativa para el
+     público real de esta app (adultos, muchos sin experiencia técnica).
+     Poppins es geométrica y redondeada (círculos reales en o/e/c/a) sin
+     sacrificar legibilidad, y ya estaba cargada localmente (login/landing
+     la usaban parcialmente) — unificar en ella además resuelve el "dos
+     fuentes mezcladas" que advertía este comentario antes. Pesos 400-900
+     disponibles vía @font-face arriba, así que --font-extrabold/--font-black
+     se siguen viendo "gruesos" en títulos sin cambiar de familia. Inter
+     queda como respaldo si Poppins no carga por algún motivo. */
+  --font-sans:    "Poppins", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: var(--font-sans);
   --font-body:    var(--font-sans);
   --font-heading: var(--font-display);

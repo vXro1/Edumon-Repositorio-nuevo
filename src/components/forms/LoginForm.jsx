@@ -1,19 +1,17 @@
 // src/features/auth/components/LoginForm.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Phone, Lock, AlertTriangle, X, ArrowLeft } from "lucide-react";
-import { Input } from "@/components";
+import { Lock, AlertTriangle, X, ArrowLeft } from "lucide-react";
+import { Input, PhoneInput } from "@/components";
 import AuthLayout from "./AuthLayout";
-
-const normalizePhone = (v) =>
-  v.replace(/^\+?57/, "").replace(/\D/g, "").slice(0, 10);
+import { toLocalPhone, normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 
 const validate = ({ telefono, contrasena }) => {
   const e = {};
-  if (!telefono.trim())                e.telefono   = "El teléfono es requerido";
-  else if (!/^\d{10}$/.test(telefono)) e.telefono   = "Ingresa los 10 dígitos sin +57";
-  if (!contrasena)                     e.contrasena = "La contraseña es requerida";
-  else if (contrasena.length < 6)      e.contrasena = "Mínimo 6 caracteres";
+  if (!telefono.trim())           e.telefono   = "El teléfono es requerido";
+  else if (!isValidPhone(telefono)) e.telefono = PHONE_ERROR;
+  if (!contrasena)                e.contrasena = "La contraseña es requerida";
+  else if (contrasena.length < 6) e.contrasena = "Mínimo 6 caracteres";
   return e;
 };
 
@@ -26,7 +24,9 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const v = name === "telefono" ? normalizePhone(value) : value;
+    // El usuario puede escribir o pegar "+57 300 123 4567", "573001234567" o
+    // "3001234567": toLocalPhone deja siempre los 10 dígitos que muestra el input.
+    const v = name === "telefono" ? toLocalPhone(value) : value;
     setForm(p => ({ ...p, [name]: v }));
     if (errors[name]) setErrors(p => ({ ...p, [name]: "" }));
   };
@@ -35,7 +35,7 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
     e.preventDefault();
     const ve = validate(form);
     if (Object.keys(ve).length) { setErrors(ve); return; }
-    onSubmit({ ...form, telefono: `+57${form.telefono.trim()}` });
+    onSubmit({ ...form, telefono: normalizePhone(form.telefono) });
   };
 
   return (
@@ -78,29 +78,14 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
       <form onSubmit={handleSubmit} noValidate className="auth-form">
 
         {/* Teléfono */}
-        <div className="field">
-          <label className="field-label">Teléfono</label>
-          <div className="input-wrapper">
-            <span className="input-adornment input-adornment-left">
-              <Phone size={16} />
-            </span>
-            <span className="auth-prefix">+57</span>
-            <input
-              name="telefono"
-              type="tel"
-              inputMode="numeric"
-              placeholder="3001234567"
-              value={form.telefono}
-              onChange={handleChange}
-              autoComplete="tel"
-              autoFocus
-              className={`input input-icon-left auth-input-prefix${errors.telefono ? " input-error" : ""}`}
-            />
-          </div>
-          {errors.telefono && (
-            <span className="field-error" role="alert">{errors.telefono}</span>
-          )}
-        </div>
+        <PhoneInput
+          name="telefono"
+          value={form.telefono}
+          onChange={handleChange}
+          error={errors.telefono}
+          hint={null}
+          autoFocus
+        />
 
         {/* Contraseña */}
         <Input

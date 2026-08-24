@@ -28,6 +28,7 @@ import ForumActivity from '../components/ForumActivity';
 import { Modal, Button } from '@/components';
 import { forosCreate } from '@/features/foros/services/forosService';
 import { Field } from '../../cursos/components/shared/ui';
+import { humanizeError } from '@/utils/humanizeError';
 
 // ─── Esqueletos de carga ──────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
       onCreated?.();
       onClose();
     } catch (err) {
-      setError(err?.message ?? 'Error al crear el foro');
+      setError(humanizeError(err, 'No pudimos crear el foro. Intenta nuevamente.'));
     } finally {
       setLoading(false);
     }
@@ -277,27 +278,30 @@ const ForumPage = () => {
         setReplyTo(null);
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 150);
       },
-      onError: (err) => notify(err?.message ?? 'No se pudo enviar el mensaje', 'error'),
+      onError: (err) => notify(
+        humanizeError(err, 'No pudimos publicar tu mensaje. Comprueba tu conexión e intenta nuevamente.'),
+        'error'
+      ),
     });
   };
 
   const handleLike = (msgId) => {
     likeMutation.mutate(msgId, {
-      onError: () => notify('No se pudo actualizar el like', 'error'),
+      onError: (err) => notify(humanizeError(err, 'No pudimos guardar tu "Me gusta". Intenta de nuevo.'), 'error'),
     });
   };
 
   const handleDelete = (msgId) => {
     deleteMutation.mutate(msgId, {
       onSuccess: () => notify('Mensaje eliminado', 'info'),
-      onError:   (err) => notify(err?.message ?? 'No se pudo eliminar', 'error'),
+      onError:   (err) => notify(humanizeError(err, 'No pudimos eliminar el mensaje. Intenta de nuevo.'), 'error'),
     });
   };
 
   const handleEdit = ({ id, contenido }) => {
     editMutation.mutate({ id, contenido }, {
       onSuccess: () => notify('Mensaje actualizado', 'success'),
-      onError:   (err) => notify(err?.message ?? 'No se pudo editar', 'error'),
+      onError:   (err) => notify(humanizeError(err, 'No pudimos guardar los cambios. Intenta de nuevo.'), 'error'),
     });
   };
 
@@ -305,7 +309,7 @@ const ForumPage = () => {
     const nuevoEstado = foro?.estado === 'cerrado' ? 'abierto' : 'cerrado';
     estadoMutation.mutate({ estado: nuevoEstado }, {
       onSuccess: () => notify(`Foro ${nuevoEstado}`, 'success'),
-      onError:   (err) => notify(err?.message ?? 'Error al cambiar estado', 'error'),
+      onError:   (err) => notify(humanizeError(err, 'No pudimos cambiar el estado del foro. Intenta de nuevo.'), 'error'),
     });
   };
 
@@ -334,22 +338,9 @@ const ForumPage = () => {
         />
 
         <div className="fm-body">
-          {/* Capa de oscurecimiento en pantallas compactas — atenúa el
-              contenido detrás de CUALQUIERA de los dos paneles overlay */}
-          {isCompact && (sidebarOpen || activityOpen) && (
-            <div
-              onClick={() => { setSidebarOpen(false); setActivityOpen(false); }}
-              style={{
-                position:       'fixed',
-                inset:          0,
-                zIndex:         39,
-                background:     'rgba(0,0,0,0.45)',
-                backdropFilter: 'blur(1px)',
-              }}
-            />
-          )}
-
-          {/* Sidebar izquierdo — siempre en el DOM para que funcione la transición CSS */}
+          {/* Sidebar izquierdo — columna fija (sticky) en escritorio; sección
+              normal del documento en pantallas angostas, nunca un overlay
+              flotante encima del contenido. */}
           <div className={`fm-sidebar${sidebarOpen ? ' open' : ''}`}>
             <ForumSidebar
               forums={forums}
@@ -400,25 +391,9 @@ const ForumPage = () => {
             )}
           </main>
 
-          {/* Panel derecho — siempre en el DOM (mismo motivo que el sidebar):
-              por debajo de 1100px se vuelve un overlay deslizante en vez de
-              desaparecer con display:none sin forma de reabrirlo. */}
+          {/* Panel de actividad — misma lógica que el sidebar: columna fija
+              en escritorio, sección normal (no overlay) en angosto. */}
           <div className={`fm-activity${activityOpen ? ' open' : ''}`}>
-            {isCompact && (
-              <button
-                type="button"
-                onClick={() => setActivityOpen(false)}
-                aria-label="Cerrar panel de actividad"
-                style={{
-                  position: 'absolute', top: 10, right: 10, zIndex: 1,
-                  background: 'var(--color-surface-2)', border: 'none',
-                  borderRadius: 8, padding: 6, cursor: 'pointer',
-                  color: 'var(--color-text-muted)', display: 'flex',
-                }}
-              >
-                <X size={16} />
-              </button>
-            )}
             <ForumActivity foro={foro} mensajes={mensajes} />
           </div>
         </div>
@@ -445,128 +420,265 @@ export default ForumPage;
 
 // ─── Estilos CSS ──────────────────────────────────────────────────────────────
 //
-// Modelo responsivo (>=1100px vs <1100px "compacto"):
-//   - Escritorio: sidebar y actividad son columnas fijas dentro del layout de
-//     3 paneles. El botón de alternar cada uno los saca/mete del flujo
-//     (antes el toggle no tenía ningún efecto visual en escritorio).
-//   - Compacto (tableta y móvil, <1100px): ambos paneles se despegan del
-//     flujo y se vuelven overlays deslizantes (sidebar desde la izquierda,
-//     actividad desde la derecha), con fondo oscurecido — el mismo patrón
-//     que ya tenía el sidebar en móvil, ahora aplicado también a actividad.
-//     Antes, por debajo de 1100px, .fm-activity se ocultaba con
-//     display:none SIN ninguna forma de reabrirlo — estadísticas,
-//     participantes y materiales de apoyo eran inaccesibles en tablet/móvil.
+// Rediseño (v2): el problema reportado no era el layout de 3 columnas en sí
+// (eso ya se había arreglado antes — ver historial), sino que el ENCABEZADO
+// era una barra sticky con su propio fondo/borde/sombra, una segunda barra
+// flotando justo debajo de la navbar real de la app, dentro del padding de
+// `.page` — el foro se sentía como una app aparte pegada al dashboard, no
+// como una pantalla más de Edumon. Además `.fm-body` reimplementaba su
+// propio max-width + padding cuando `.page` (el contenedor real de toda
+// página del dashboard) ya hace exactamente eso — el resultado era relleno
+// duplicado entre la navbar y el contenido real.
+//
+// Ahora: no hay ninguna barra sticky. El encabezado es una tarjeta más,
+// con el mismo lenguaje visual (borde, radio, sombra) que las columnas de
+// abajo — pertenece a la misma familia visual en vez de destacarse como
+// "chrome" de aplicación. `.fm-body` ya no fija su propio ancho/relleno:
+// hereda el de `.page`, igual que cualquier otra página del dashboard.
 const FORUM_CSS = `
 @keyframes fm-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 @keyframes fm-spin   { to { transform: rotate(360deg); } }
 
-/* ── Raíz ── */
 .fm-root {
   display:        flex;
   flex-direction: column;
-  height:         calc(100dvh - 64px);
+}
+
+/* ── Volver — mismo botón de texto simple que el resto de la app (ver
+   CursoHubPage.jsx: <Button variant="ghost"><ArrowLeft/> Volver</Button>) ── */
+.fm-back {
+  display:      flex;
+  align-items:  center;
+  gap:          6px;
+  background:   none;
+  border:       none;
+  cursor:       pointer;
+  padding:      6px 4px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  color:        var(--color-text-muted);
+  font-size:    13px;
+  font-weight:  600;
+  transition:   color 0.15s;
+}
+.fm-back:hover { color: var(--color-text); }
+
+/* ── Encabezado — tarjeta normal, misma familia visual que las columnas
+   de abajo (border + radius + clay-card), NUNCA sticky ni con su propio
+   fondo de "barra". ── */
+.fm-header {
+  display:        flex;
+  align-items:    flex-start;
+  justify-content: space-between;
+  flex-wrap:      wrap;
+  gap:            16px;
+  background:     var(--color-surface);
+  border:         1px solid var(--color-border);
+  border-radius:  16px;
+  box-shadow:     var(--clay-card, 0 1px 3px rgba(0,0,0,0.06));
+  padding:        20px 22px;
+  margin-bottom:  16px;
+}
+
+.fm-header-icon {
+  width:          44px;
+  height:         44px;
+  border-radius:  12px;
+  flex-shrink:    0;
+  display:        flex;
+  align-items:    center;
+  justify-content: center;
+  background:     var(--edu-pink-50, rgba(242,61,127,0.10));
+  color:          var(--edu-pink-600, #D42B68);
+}
+.fm-header-icon[data-closed] {
+  background: var(--color-error-light, rgba(220,38,38,0.10));
+  color:      var(--color-error-hover);
+}
+
+.fm-eyebrow {
+  margin:         0 0 3px;
+  font-size:      11.5px;
+  font-weight:    700;
+  letter-spacing: 0.04em;
+  color:          var(--color-text-muted);
   overflow:       hidden;
-  background:     var(--color-bg);
-  position:       relative;
+  text-overflow:  ellipsis;
+  white-space:    nowrap;
 }
 
-/* ── Cuerpo ── */
-.fm-body {
-  display:  flex;
-  flex:     1;
-  overflow: hidden;
-  position: relative;
+.fm-title {
+  margin:         0;
+  font-size:      clamp(1.05rem, 2.4vw, 1.35rem);
+  font-weight:    800;
+  color:          var(--color-text);
+  font-family:    var(--font-display);
+  letter-spacing: -0.02em;
+  overflow-wrap:  anywhere;
 }
 
-/* ── Barra lateral ── */
-.fm-sidebar {
-  width:        240px;
+.fm-status {
+  flex-shrink:    0;
+  font-size:      10.5px;
+  font-weight:    700;
+  padding:        3px 9px;
+  border-radius:  9999px;
+  background:     var(--color-success-light);
+  color:          var(--edu-green-700, #15803d);
+}
+.fm-status[data-closed] {
+  background: var(--color-error-light);
+  color:      var(--color-error-hover);
+}
+
+.fm-desc {
+  margin:   6px 0 0;
+  font-size: 13px;
+  color:    var(--color-text-muted);
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
+.fm-count {
+  display:      flex;
+  align-items:  center;
+  gap:          5px;
+  margin:       8px 0 0;
+  font-size:    12px;
+  font-weight:  600;
+  color:        var(--color-text-muted);
+}
+
+.fm-header-actions {
+  display:      flex;
+  align-items:  center;
+  gap:          8px;
+  flex-wrap:    wrap;
   flex-shrink:  0;
-  border-right: 1px solid var(--color-border);
-  overflow-y:   auto;
+}
+
+.fm-action {
+  display:      flex;
+  align-items:  center;
+  gap:          6px;
+  background:   var(--color-bg);
+  border:       1.5px solid var(--color-border);
+  border-radius: 9px;
+  padding:      7px 12px;
+  cursor:       pointer;
+  color:        var(--color-text-muted);
+  font-size:    12.5px;
+  font-weight:  700;
+  transition:   background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.fm-action:hover { color: var(--color-text); border-color: var(--color-text-muted); }
+.fm-action[data-active] {
+  background:   rgba(12,106,196,0.08);
+  border-color: rgba(12,106,196,0.3);
+  color:        var(--color-primary);
+}
+.fm-action[data-variant="close"] { background: var(--color-error-light); border-color: transparent; color: var(--color-error-hover); }
+.fm-action[data-variant="open"]  { background: var(--color-success-light); border-color: transparent; color: var(--edu-green-700, #15803d); }
+.fm-action:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Cuerpo: grilla de 3 columnas en escritorio — hereda ancho/relleno de
+   .page, no vuelve a fijarlos. ── */
+.fm-body {
+  display:               grid;
+  grid-template-columns: 240px minmax(0, 1fr) 280px;
+  align-items:           start;
+  gap:                   16px;
+  width:                 100%;
+}
+
+/* ── Barra lateral — sticky, no flotante ──
+   min-height: sin esto, con poco contenido (un foro, un mensaje) las tres
+   columnas quedaban cortas y el resto de la página se veía como un vacío
+   gris sin terminar, con los bordes inferiores de las columnas en
+   escalera (la de actividad mucho más alta que las otras dos) — el efecto
+   "a medio cargar" que se reportó. Un piso común de altura hace que las
+   tres columnas compongan una sola fila pareja, como cualquier layout de
+   3 columnas real, sin importar cuánto contenido tenga cada una todavía. */
+.fm-sidebar {
+  border:       1px solid var(--color-border);
+  border-radius: 14px;
   background:   var(--color-surface);
-  transition:   transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:   var(--clay-card, 0 1px 3px rgba(0,0,0,0.06));
+  position:     sticky;
+  top:          16px;
+  min-height:   clamp(320px, calc(100vh - 260px), 640px);
+  max-height:   calc(100vh - 32px);
+  overflow-y:   auto;
 }
 .fm-sidebar:not(.open) { display: none; }
 
-/* ── Centro principal ── */
+/* ── Centro principal — fluye con la página, sin recorte propio ── */
 .fm-main {
-  flex:           1;
   display:        flex;
   flex-direction: column;
   min-width:      0;
-  overflow:       hidden;
+  min-height:     clamp(320px, calc(100vh - 260px), 640px);
   background:     var(--color-surface);
+  border:         1px solid var(--color-border);
+  border-radius:  14px;
+  box-shadow:     var(--clay-card, 0 1px 3px rgba(0,0,0,0.06));
+  overflow:       hidden;
 }
 
+/* flex:1 empuja el compositor (ForumInput) al fondo de la tarjeta cuando
+   hay pocos mensajes, en vez de dejarlo pegado justo debajo del último
+   mensaje con un vacío suelto entre el compositor y el borde de la tarjeta. */
 .fm-messages-scroll {
-  flex:            1;
-  overflow-y:      auto;
-  padding:         12px 16px 8px;
-  scroll-behavior: smooth;
+  flex:    1;
+  padding: 14px 18px 10px;
 }
 
-/* ── Panel de actividad ── */
+/* ── Panel de actividad — sticky, no flotante ── */
 .fm-activity {
-  width:        260px;
-  flex-shrink:  0;
-  border-left:  1px solid var(--color-border);
-  overflow-y:   auto;
-  background:   var(--color-surface);
-  position:     relative;
-  transition:   transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  border:        1px solid var(--color-border);
+  border-radius: 14px;
+  background:    var(--color-surface);
+  box-shadow:    var(--clay-card, 0 1px 3px rgba(0,0,0,0.06));
+  position:      sticky;
+  top:           16px;
+  min-height:    clamp(320px, calc(100vh - 260px), 640px);
+  max-height:    calc(100vh - 32px);
+  overflow-y:    auto;
 }
 .fm-activity:not(.open) { display: none; }
 
-/* ── Compacto: tableta y móvil, <1100px ── */
+/* ── Compacto: tableta y móvil, <1100px ──
+   Sidebar y actividad dejan de ser columnas: pasan a ser SECCIONES del
+   documento (la página sigue desplazándose normalmente), controladas por
+   el mismo botón con texto del header — nunca un overlay que tape el
+   contenido. */
 @media (max-width: 1100px) {
-  .fm-sidebar {
-    position:     fixed;
-    top:          64px;
-    left:         0;
-    bottom:       0;
-    width:        280px;
-    max-width:    85vw;
-    z-index:      40;
-    display:      block;
-    transform:    translateX(-100%);
-    border-right: none;
+  .fm-body {
+    display: flex;
+    flex-direction: column;
   }
-  .fm-sidebar.open {
-    transform:  translateX(0);
-    box-shadow: 6px 0 24px rgba(0,0,0,0.18);
+  .fm-sidebar, .fm-activity {
+    position:   static;
+    max-height: none;
+    min-height: 0;
+    width:      100%;
   }
-
-  .fm-activity {
-    position:    fixed;
-    top:         64px;
-    right:       0;
-    bottom:      0;
-    width:       300px;
-    max-width:   85vw;
-    z-index:     40;
-    display:     block;
-    transform:   translateX(100%);
-    border-left: none;
-    padding-top: 36px; /* deja sitio al botón de cerrar */
-  }
-  .fm-activity.open {
-    transform:  translateX(0);
-    box-shadow: -6px 0 24px rgba(0,0,0,0.18);
+  /* El piso de altura de escritorio (pensado para que 3 columnas compongan
+     una fila pareja) no aplica apiladas en una sola columna — ahí solo
+     dejaría un hueco vacío enorme dentro de cada sección. */
+  .fm-main {
+    min-height: 0;
   }
 }
 
 /* ── Móvil < 768 ── */
 @media (max-width: 767px) {
   .fm-messages-scroll {
-    padding: 8px 10px 4px;
+    padding: 10px 12px 4px;
   }
-  .fm-breadcrumb { display: none !important; }
-}
-
-/* ── Móvil XS < 400 ── */
-@media (max-width: 400px) {
+  .fm-header {
+    padding: 16px;
+  }
   .fm-action-label { display: none; }
-  .fm-sidebar, .fm-activity { width: 100vw; max-width: 100vw; }
 }
 `;

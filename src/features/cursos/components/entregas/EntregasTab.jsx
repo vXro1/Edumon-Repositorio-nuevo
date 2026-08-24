@@ -83,7 +83,7 @@ export default function EntregasTab({ tarea, canGrade, esPadre, onGrade, onBack,
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10,
             padding: "8px 0" }}>
             <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", margin: 0 }}>
-              {esPadre ? "Aún no has entregado esta tarea." : "Ningún alumno ha entregado."}
+              {esPadre ? "Aún no has entregado este reto." : "Ningún alumno ha entregado."}
             </p>
             {esPadre && onRealizarEntrega && (
               <Button size="sm" variant="primary" onClick={onRealizarEntrega}
@@ -151,7 +151,7 @@ export default function EntregasTab({ tarea, canGrade, esPadre, onGrade, onBack,
       {/* Volver */}
       <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 10,
         borderTop: "1px solid var(--color-border)", marginTop: 10 }}>
-        <Button variant="ghost" onClick={onBack}>← Volver a tarea</Button>
+        <Button variant="ghost" onClick={onBack}>← Volver a reto</Button>
       </div>
     </div>
   );

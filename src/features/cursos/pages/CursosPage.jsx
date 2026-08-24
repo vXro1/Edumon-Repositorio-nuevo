@@ -14,8 +14,14 @@ import letrasImg from "@/assets/img/letras.svg"; // fallback para cursos sin por
 
 import {
   Modal, Button, UserAvatar, Toast, Badge,
-  Input, Textarea, Select,
+  Input, Textarea, Select, PhoneInput,
 } from "@/components";
+
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
+import {
+  contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
+  isValidCedula, CEDULA_ERROR, toCedula,
+} from "@/utils/credenciales";
 
 import {
   cursosGetAll,
@@ -439,10 +445,19 @@ export default function CursosPage() {
     if (!nombre.trim() || !apellido.trim() || !cedula.trim() || !telefono.trim()) {
       notify("Todos los campos son requeridos", "error"); return;
     }
+    if (!isValidCedula(cedula))  { notify(CEDULA_ERROR, "error"); return; }
+    if (!isValidPhone(telefono)) { notify(PHONE_ERROR, "error"); return; }
+
     setSaving(true);
     try {
-      await cursosAddParticipante(selected._id, { ...addForm, contrasena: cedula });
-      notify("Participante agregado");
+      // No se envía contraseña: el backend aplica la regla única (= cédula).
+      await cursosAddParticipante(selected._id, {
+        nombre:   nombre.trim(),
+        apellido: apellido.trim(),
+        cedula:   cedula.trim(),
+        telefono: normalizePhone(telefono),
+      });
+      notify(`Participante agregado. Contraseña inicial: ${contrasenaInicial(cedula)}`);
       setAddPartOpen(false);
       setAddForm({ nombre: "", apellido: "", cedula: "", telefono: "" });
       loadParts(selected._id);
@@ -578,24 +593,21 @@ export default function CursosPage() {
                       <EstadoBadge estado={c.estado ?? "activo"} />
                     </td>
 
-                    {/* Acciones */}
+                    {/* Acciones — con texto: los íconos solos no dicen qué
+                        hace cada botón (ver plan de corrección UX/UI) */}
                     <td style={{ padding: "13px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <Button variant="ghost" size="sm" title="Abrir curso"
-                          onClick={() => goToCurso(c)}>
-                          <ExternalLink style={{ width: 14, height: 14, color: "var(--color-primary)" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <Button variant="ghost" size="sm" onClick={() => goToCurso(c)}>
+                          <ExternalLink style={{ width: 14, height: 14, color: "var(--color-primary)" }} /> Abrir
                         </Button>
-                        <Button variant="ghost" size="sm" title="Participantes"
-                          onClick={() => openParts(c)}>
-                          <Users style={{ width: 14, height: 14, color: "#6366F1" }} />
+                        <Button variant="ghost" size="sm" onClick={() => openParts(c)}>
+                          <Users style={{ width: 14, height: 14, color: "#6366F1" }} /> Participantes
                         </Button>
-                        <Button variant="ghost" size="sm" title="Editar"
-                          onClick={() => openEdit(c)}>
-                          <Edit2 style={{ width: 14, height: 14, color: "var(--edu-green-600)" }} />
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+                          <Edit2 style={{ width: 14, height: 14, color: "var(--edu-green-600)" }} /> Editar
                         </Button>
-                        <Button variant="ghost" size="sm" title="Archivar"
-                          onClick={() => openArchive(c)}>
-                          <Archive style={{ width: 14, height: 14, color: "#D97706" }} />
+                        <Button variant="ghost" size="sm" onClick={() => openArchive(c)}>
+                          <Archive style={{ width: 14, height: 14, color: "#D97706" }} /> Archivar
                         </Button>
                       </div>
                     </td>
@@ -851,16 +863,16 @@ export default function CursosPage() {
                 onChange={e => setAddForm(f => ({ ...f, apellido: e.target.value }))} />
             </Field>
             <Field label="Cédula *">
-              <Input name="cedula" required value={addForm.cedula}
-                onChange={e => setAddForm(f => ({ ...f, cedula: e.target.value }))} />
+              <Input name="cedula" required inputMode="numeric" placeholder="1020304050" value={addForm.cedula}
+                onChange={e => setAddForm(f => ({ ...f, cedula: toCedula(e.target.value) }))} />
             </Field>
             <Field label="Teléfono *">
-              <Input name="telefono" required value={addForm.telefono}
+              <PhoneInput label={null} hint={null} required value={addForm.telefono}
                 onChange={e => setAddForm(f => ({ ...f, telefono: e.target.value }))} />
             </Field>
           </div>
           <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "4px 0 16px" }}>
-            Si el padre no existe, se creará con contraseña igual a su cédula.
+            Si el padre no existe, se creará automáticamente. {TEXTO_CONTRASENA_INICIAL}
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
             <Button variant="ghost" type="button" onClick={() => setAddPartOpen(false)}>Cancelar</Button>

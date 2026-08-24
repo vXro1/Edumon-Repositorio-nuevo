@@ -481,7 +481,7 @@ export default function FamiliaEntregasPage() {
           display: "flex", flexDirection: "column", alignItems: "center", gap: 10, textAlign: "center",
         }}>
           <AlertCircle style={{ width: 32, height: 32, color: "var(--color-error-hover)" }} />
-          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>No se pudieron cargar las tareas</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>No se pudieron cargar los retos</p>
           <button onClick={loadTareas} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "var(--color-primary)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 4 }}>Reintentar</button>
         </div>
       )}

@@ -33,8 +33,8 @@ const CIRCULOS = [
 ];
 
 /* ─── Iconos SVG inline ─── */
-const IconSparkles = ({ size = 14 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+const IconSparkles = ({ size = 14, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 3l1.88 5.76L20 10l-5.76 1.88L12 18l-1.88-5.76L4 10l5.76-1.88z" />
     <path d="M5 3v4M3 5h4M19 17v4M17 19h4" />
@@ -158,8 +158,8 @@ const IconShare = ({ size = 16 }) => (
   </svg>
 );
 
-const IconStar = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+const IconStar = ({ size = 16, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   </svg>
@@ -276,18 +276,18 @@ const NAV_LINKS = [
 const PILARES = [
   {
     icon: <IconHome size={40} />,
-    title: "Formación integral en un solo espacio",
-    desc: "Crea y asigna actividades sobre valores, bienestar emocional, convivencia familiar y prevención, todo desde un panel intuitivo. No solo académico, sino humano.",
+    title: "Educación completa, en un solo lugar",
+    desc: "Crea y comparte actividades sobre valores, emociones, convivencia familiar y prevención, todo desde un solo lugar fácil de usar. Porque educar es más que solo materias.",
   },
   {
     icon: <IconUsers size={40} />,
     title: "La familia como parte activa del aprendizaje",
-    desc: "Los padres y tutores reciben notificaciones, entregan actividades y hacen seguimiento al proceso formativo de sus hijos en tiempo real, desde cualquier dispositivo.",
+    desc: "Los padres y tutores reciben avisos, entregan actividades y siguen de cerca el proceso de sus hijos en tiempo real, desde cualquier dispositivo.",
   },
   {
     icon: <IconAward size={40} />,
     title: "Motivación que se ve y se siente",
-    desc: "Edumon gamifica el aprendizaje para mantener a estudiantes y familias comprometidos con su formación a través de recompensas y logros.",
+    desc: "Edumon convierte el aprendizaje en un juego, con premios y logros que animan a los estudiantes y a toda la familia a seguir participando.",
   },
 ];
 
@@ -404,12 +404,18 @@ function useIntersect(ref, threshold = 0.15) {
 /* ── Tarjeta individual del carrusel ── */
 function ModuloCard({ m }) {
   return (
-    <article className="modulo-card">
+    <article
+      className="modulo-card"
+      style={{
+        "--m-color": m.color,
+        background: `linear-gradient(165deg, ${m.color}16 0%, #ffffff 55%)`,
+      }}
+    >
       <div className="modulo-card__bar" style={{ background: m.color }} />
       <div className="modulo-card__body">
         <div
           className="modulo-card__icon"
-          style={{ background: `${m.color}1f`, color: m.color }}
+          style={{ background: `${m.color}1f`, color: m.color, boxShadow: `0 10px 22px ${m.color}40` }}
         >
           {m.icon}
         </div>
@@ -458,7 +464,7 @@ function useEmblaTween(emblaApi) {
 function ModuloCarousel() {
   const reduceMotion = useRef(
     typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
   );
 
   const autoplay = useRef(
@@ -470,45 +476,95 @@ function ModuloCarousel() {
     })
   );
 
+  /* ─────────────────────────────────────────
+     EMBLA — CARRUSEL INFINITO
+  ───────────────────────────────────────── */
+
   const [emblaRef, emblaApi] = useEmblaCarousel(
-    { align: "center", loop: false, skipSnaps: false },
+    {
+      align: "center",
+
+      /* 🔥 CARRUSEL INFINITO */
+      loop: true,
+
+      skipSnaps: false,
+    },
     [autoplay.current]
   );
 
   const tweenValues = useEmblaTween(emblaApi);
+
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(true);
+
+
+  /* ─────────────────────────────────────────
+     ACTUALIZAR CARD ACTIVA
+  ───────────────────────────────────────── */
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
+
     setSelectedIndex(emblaApi.selectedScrollSnap());
-    setCanPrev(emblaApi.canScrollPrev());
-    setCanNext(emblaApi.canScrollNext());
   }, [emblaApi]);
+
 
   useEffect(() => {
     if (!emblaApi) return;
+
     onSelect();
+
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
+
     return () => {
       emblaApi.off("select", onSelect);
       emblaApi.off("reInit", onSelect);
     };
   }, [emblaApi, onSelect]);
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-  const scrollTo = useCallback((i) => emblaApi?.scrollTo(i), [emblaApi]);
+
+  /* ─────────────────────────────────────────
+     NAVEGACIÓN
+  ───────────────────────────────────────── */
+
+  const scrollPrev = useCallback(() => {
+    emblaApi?.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    emblaApi?.scrollNext();
+  }, [emblaApi]);
+
+  const scrollTo = useCallback(
+    (i) => {
+      emblaApi?.scrollTo(i);
+    },
+    [emblaApi]
+  );
+
+
+  /* ─────────────────────────────────────────
+     TECLADO
+  ───────────────────────────────────────── */
 
   const onViewportKeyDown = (e) => {
-    if (e.key === "ArrowLeft") { e.preventDefault(); scrollPrev(); }
-    if (e.key === "ArrowRight") { e.preventDefault(); scrollNext(); }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      scrollPrev();
+    }
+
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      scrollNext();
+    }
   };
+
 
   return (
     <div className="modulo-embla">
+
+      {/* ───────────────── VIEWPORT ───────────────── */}
+
       <div
         className="modulo-embla__viewport"
         ref={emblaRef}
@@ -518,12 +574,37 @@ function ModuloCarousel() {
         aria-label="Módulos de aprendizaje"
         onKeyDown={onViewportKeyDown}
       >
+
         <div className="modulo-embla__container">
+
           {MODULOS.map((m, i) => {
+
+            /*
+              Embla proporciona la posición de cada card.
+
+              Esto permite crear el efecto de:
+              - card activa = grande
+              - cards laterales = más pequeñas
+              - cards laterales = ligeramente transparentes
+            */
+
             const diff = tweenValues[i] ?? 0;
-            const scale = clamp(1 - Math.abs(diff) * 0.24, 0.82, 1);
-            const opacity = clamp(1 - Math.abs(diff) * 0.65, 0.4, 1);
+
+            const scale = clamp(
+              1 - Math.abs(diff) * 0.24,
+              0.82,
+              1
+            );
+
+            const opacity = clamp(
+              1 - Math.abs(diff) * 0.65,
+              0.4,
+              1
+            );
+
             const isActive = i === selectedIndex;
+
+
             return (
               <div
                 className="modulo-embla__slide"
@@ -532,62 +613,109 @@ function ModuloCarousel() {
                 aria-roledescription="slide"
                 aria-label={`${i + 1} de ${MODULOS.length}: ${m.title}`}
               >
+
                 <div
-                  className={`modulo-embla__slide__inner ${isActive ? "is-active" : ""}`}
-                  style={{ transform: `scale(${scale})`, opacity }}
-                  onClick={() => { if (!isActive) scrollTo(i); }}
+                  className={`modulo-embla__slide__inner ${
+                    isActive ? "is-active" : ""
+                  }`}
+
+                  /*
+                    Importante:
+                    mantenemos el efecto de zoom
+                    controlado por JS.
+                  */
+                  style={{
+                    transform: `scale(${scale})`,
+                    opacity,
+                  }}
+
+                  onClick={() => {
+                    if (!isActive) {
+                      scrollTo(i);
+                    }
+                  }}
+
                   tabIndex={isActive ? -1 : 0}
+
                   onKeyDown={(e) => {
-                    if (!isActive && (e.key === "Enter" || e.key === " ")) {
+                    if (
+                      !isActive &&
+                      (e.key === "Enter" || e.key === " ")
+                    ) {
                       e.preventDefault();
                       scrollTo(i);
                     }
                   }}
                 >
+
                   <ModuloCard m={m} />
+
                 </div>
               </div>
             );
           })}
+
         </div>
       </div>
+
+
+      {/* ───────────────── FLECHA ANTERIOR ───────────────── */}
 
       <button
         type="button"
         className="modulo-embla__arrow modulo-embla__arrow--prev"
         onClick={scrollPrev}
-        disabled={!canPrev}
         aria-label="Módulo anterior"
       >
         <IconChevronLeft size={20} />
       </button>
+
+
+      {/* ───────────────── FLECHA SIGUIENTE ───────────────── */}
+
       <button
         type="button"
         className="modulo-embla__arrow modulo-embla__arrow--next"
         onClick={scrollNext}
-        disabled={!canNext}
         aria-label="Siguiente módulo"
       >
         <IconChevronRight size={20} />
       </button>
 
-      <div className="modulo-embla__dots" role="tablist" aria-label="Selecciona un módulo">
+
+      {/* ───────────────── DOTS ───────────────── */}
+
+      <div
+        className="modulo-embla__dots"
+        role="tablist"
+        aria-label="Selecciona un módulo"
+      >
+
         {MODULOS.map((m, i) => (
+
           <button
             type="button"
             key={m.title}
             role="tab"
+
             aria-selected={i === selectedIndex}
+
             aria-label={`Ir al módulo ${i + 1}: ${m.title}`}
-            className={`modulo-embla__dot ${i === selectedIndex ? "is-active" : ""}`}
+
+            className={`modulo-embla__dot ${
+              i === selectedIndex ? "is-active" : ""
+            }`}
+
             onClick={() => scrollTo(i)}
           />
+
         ))}
+
       </div>
+
     </div>
   );
 }
-
 export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuthContext();
@@ -742,20 +870,14 @@ export default function LandingPage() {
 
         <div className="landing-hero__content-row">
           <div className="landing-hero__content">
-            <div className="landing-hero__badge">
-              <IconSparkles size={13} />
-              Plataforma educativa integral · Colombia 2026
-            </div>
-
             <h1 className="landing-hero__title">
-              Educación conectada,{" "}
-              <span className="gradient-word">familias unidas</span>
+              <span className="gradient-word">Pequeños pasos, grandes aprendizajes.</span>
             </h1>
 
             <p className="landing-hero__subtitle">
-              Edumon es la plataforma que une a docentes, estudiantes y familias
-              en un solo espacio para impulsar el desarrollo académico, emocional
-              y social de cada niño.
+              Edumon junta a profesores, estudiantes y familias en un solo
+              lugar, para ayudar a cada niño a crecer bien en sus estudios,
+              sus emociones y su convivencia.
             </p>
 
             <div className="landing-hero__actions">
@@ -778,6 +900,8 @@ export default function LandingPage() {
 
           <div className="edumon-mascot-visual" aria-hidden="true">
             <div className="edumon-mascot-ring" />
+            <IconSparkles size={26} className="edumon-mascot-sparkle edumon-mascot-sparkle--1" />
+            <IconStar size={18} className="edumon-mascot-sparkle edumon-mascot-sparkle--2" />
             <img
               src={mascota}
               alt="Mascota Edumon"
@@ -799,12 +923,11 @@ export default function LandingPage() {
         <div className="pilares-content">
           <div className="pilares-label">
             <IconSparkles size={13} />
-            Características
+            Pilares
           </div>
 
           <h2 className="pilares-title">
-            Aprende de forma{" "}
-            <span className="pilares-rainbow">integral</span>
+            <span className="pilares-rainbow"> Aprende de forma integral</span>
           </h2>
 
           <div className="pilares-divider" />
@@ -833,32 +956,71 @@ export default function LandingPage() {
         id="aprende"
         className="landing-aprende"
         ref={aprendeRef}
-        style={{ opacity: aprendeVis ? 1 : 0, transition: "opacity 0.8s ease 0.1s" }}
+        style={{
+          opacity: aprendeVis ? 1 : 0,
+          transition: "opacity 0.8s ease 0.1s",
+        }}
       >
         <DecoBubbles items={APRENDE_BUBBLES} />
 
         <div className="aprende-content">
-          <div style={{ textAlign: "center", maxWidth: 640, margin: "0 auto", padding: "0 1.5rem 8px" }}>
+
+          <div
+            style={{
+              textAlign: "center",
+              maxWidth: 640,
+              margin: "0 auto",
+              padding: "0 1.5rem 8px",
+            }}
+          >
+
+            {/* Etiqueta */}
             <div
               style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                fontSize: "0.8rem", fontWeight: 700, color: "#7c3aed",
-                textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                color: "var(--edumon-blue-700)",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                marginBottom: 10,
               }}
             >
               <IconSparkles size={13} />
               Módulos de aprendizaje
             </div>
-            <h2 style={{ fontSize: "clamp(1.6rem, 3vw, 2.1rem)", fontWeight: 800, color: "#0f172a", margin: "0 0 10px" }}>
+
+            {/* Título */}
+            <h2
+              style={{
+                fontSize: "clamp(1.6rem, 3vw, 2.1rem)",
+                fontWeight: 800,
+                color: "var(--edumon-ink)",
+                margin: "0 0 10px",
+              }}
+            >
               ¿Qué podrás aprender en Edumon?
             </h2>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, color: "#64748b", margin: 0 }}>
+
+            {/* Descripción */}
+            <p
+              style={{
+                fontSize: "0.95rem",
+                lineHeight: 1.6,
+                color: "var(--edumon-muted)",
+                margin: 0,
+              }}
+            >
               Cada módulo trae retos prácticos para aplicar con tus hijos desde
               el primer día — nada de teoría complicada.
             </p>
+
           </div>
 
           <ModuloCarousel />
+
         </div>
       </section>
 
@@ -972,9 +1134,10 @@ export default function LandingPage() {
             </h2>
 
             <p className="contacto-left__text">
-              Nuestro equipo acompaña a cada institución durante todo el proceso de
-              implementación. Te ayudamos con la configuración, capacitación y soporte
-              continuo para que comiences rápidamente.
+              Nuestro equipo te acompaña en todo el proceso, desde el primer
+              día: configuramos la plataforma contigo, capacitamos a tus
+              docentes y te damos soporte continuo para que empieces rápido
+              y sin complicaciones.
             </p>
 
             <div className="contacto-beneficios">
@@ -1128,31 +1291,9 @@ export default function LandingPage() {
               edumon@gmail.com
             </div>
             <div className="footer-contact-item">
-              <IconPhone size={15} />
-              +57 000 000 0000
-            </div>
-            <div className="footer-contact-item">
               <IconMapPin size={15} />
               Popayán, Cauca, Colombia
             </div>
-          </div>
-
-          <div className="footer-col">
-            <div className="footer-col__title">
-              <IconShare size={15} />
-              Redes sociales
-            </div>
-            <a href="#" className="footer-social-btn footer-social-btn--fb">
-              <IconFacebook size={16} />
-              Facebook
-            </a>
-            <a href="#" className="footer-social-btn footer-social-btn--ig">
-              <IconInstagram size={16} />
-              Instagram
-            </a>
-            <p className="footer-social-sub">
-              Síguenos y mantente al día con las novedades de Edumon.
-            </p>
           </div>
         </div>
 

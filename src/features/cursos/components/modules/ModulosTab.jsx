@@ -190,16 +190,16 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
                   </p>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                <IconBtn title="Ver" color="var(--color-primary)" onClick={() => openDetail(m)}>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap" }}>
+                <IconBtn label="Ver" color="var(--color-primary)" onClick={() => openDetail(m)}>
                   <Eye style={{ width: 14, height: 14 }} />
                 </IconBtn>
                 {canManage && (
                   <>
-                    <IconBtn title="Editar" color="#6366F1" onClick={() => openEdit(m)}>
+                    <IconBtn label="Editar" color="#6366F1" onClick={() => openEdit(m)}>
                       <Pencil style={{ width: 13, height: 13 }} />
                     </IconBtn>
-                    <IconBtn title="Eliminar" color="var(--color-error)" onClick={() => handleDelete(m._id)}>
+                    <IconBtn label="Eliminar" color="var(--color-error)" onClick={() => handleDelete(m._id)}>
                       <Trash2 style={{ width: 13, height: 13 }} />
                     </IconBtn>
                   </>

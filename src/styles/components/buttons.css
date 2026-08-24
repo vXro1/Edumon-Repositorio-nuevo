@@ -55,6 +55,23 @@
 }
 
 
+/* ── Contenido del botón ──────────────────────────────────────────────
+   .btn-text envuelve TODO lo que el botón recibe como children (ver
+   Button.jsx). En la mayoría de usos reales del proyecto eso es un ícono
+   y texto escritos juntos como children — ej. <Trash2/> Eliminar — en vez
+   de pasar el ícono por la prop leftIcon. Sin este flex, .btn-text es un
+   <span> normal (inline) y el reset global fuerza `svg { display: block }`
+   (ver base/reset.css / Tailwind preflight): un SVG en modo bloque corta
+   el flujo de línea, así que el ícono queda en su propia "línea" arriba
+   del texto en vez de al lado. Con flex, cualquier ícono+texto dentro se
+   alinea en fila sin importar si llegó por leftIcon/rightIcon o como
+   children sueltos. */
+.btn-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 /* ── Capa de brillo ───────────────────────────────────────────────── */
 
 .btn::before {

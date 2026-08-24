@@ -7,6 +7,11 @@ import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
    Props nuevos vs versión anterior:
    - successMsg : string — mensaje de éxito con checkmark animado
    - success    : bool   — solo borde verde sin mensaje
+
+   Nota: el campo de teléfono con prefijo "+57" NO se resuelve aquí — ver
+   src/components/ui/PhoneInput.jsx, que usa un layout de flexbox propio
+   en vez de padding-left calculado a mano (esa versión anterior hacía que
+   el prefijo y el placeholder terminaran pegados o superpuestos).
    ══════════════════════════════════════════════════════════════ */
 export const Input = forwardRef(function Input({
   label,

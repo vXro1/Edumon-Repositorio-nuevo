@@ -319,7 +319,7 @@ export default function DemoPage() {
             <div className="nav-search">
               <span className="search-icon"><Search size={14} /></span>
               <input
-                placeholder="Buscar cursos, tareas..."
+                placeholder="Buscar cursos, retos..."
                 readOnly
                 onFocus={(e) => { e.target.blur(); notify("La búsqueda está disponible en tu cuenta", "info"); }}
                 aria-label="Buscador global (demo)"

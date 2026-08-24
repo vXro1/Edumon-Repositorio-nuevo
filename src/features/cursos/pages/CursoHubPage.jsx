@@ -22,7 +22,7 @@ import CalendarioTab    from "../components/calendario/CalendarioTab";
 // ─── Definición de tabs ───────────────────────────────────────────────────────
 const TAB_CONFIG = [
   { key: "modulos",       label: "Módulos",       icon: BookOpen,      always: true },
-  { key: "tareas",        label: "Tareas",        icon: ClipboardList, perm: PERMISSIONS.VIEW_TASKS },
+  { key: "tareas",        label: "Retos",         icon: ClipboardList, perm: PERMISSIONS.VIEW_TASKS },
   { key: "calendario",    label: "Calendario",    icon: Calendar,      perm: PERMISSIONS.VIEW_TASKS },
   { key: "foros",         label: "Foros",         icon: MessageSquare, perm: PERMISSIONS.VIEW_FOROS },
   { key: "participantes", label: "Participantes", icon: Users,         perm: PERMISSIONS.VIEW_COURSE_PARTICIPANTS },

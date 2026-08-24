@@ -152,8 +152,22 @@ async function runRequest(endpoint, finalUrl, finalOpts, { silentAuth, isRetry =
   if (!res.ok) {
     const errorMsg = data.message || data.error || `Error ${res.status}`;
     if (res.status === 400 && Array.isArray(data.errors)) {
-      const details = data.errors.map(e => (e.field ? `${e.field}: ${e.message}` : e.message)).join(", ");
-      throw new Error(`${errorMsg} - ${details}`);
+      // express-validator (todos los validators del backend) devuelve
+      // { msg, path, ... } por cada error — NUNCA { message, field }. Leer
+      // esos nombres producía un mensaje literal "undefined, undefined" en
+      // el toast, sin decirle al usuario qué campo falló. Además, adjuntar
+      // el array crudo al Error (validationErrors/errors) es lo que permite
+      // pintar el mensaje justo debajo del input correspondiente — ver
+      // parseValidationErrors.js (usado en Eventos/Calendario) y los catch
+      // de creación de usuario/docente en Usuarios/DocentesPage.
+      const details = data.errors
+        .map((e) => (e.path ? `${e.path}: ${e.msg}` : e.msg))
+        .filter(Boolean)
+        .join(" · ");
+      const error = new Error(details ? `${errorMsg}: ${details}` : errorMsg);
+      error.validationErrors = data.errors; // [{ path, msg, ... }]
+      error.errors = data.errors;           // alias esperado por parseValidationErrors.js
+      throw error;
     }
     throw new Error(errorMsg);
   }

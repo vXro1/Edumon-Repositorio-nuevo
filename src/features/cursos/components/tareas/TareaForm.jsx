@@ -1,6 +1,6 @@
 // src/features/cursos/components/tareas/TareaForm.jsx
 import { useRef, useEffect, useState } from "react";
-import { FileText, Upload, X, Globe, Users, Link2, Calendar, Clock, Eye, ZoomIn, ZoomOut, RotateCcw, ExternalLink, Check } from "lucide-react";
+import { FileText, Upload, X, Globe, Users, Link2, Calendar, Clock, Eye, ZoomIn, ZoomOut, RotateCcw, ExternalLink, Check, Trash2 } from "lucide-react";
 import { Input, Textarea, Select, Checkbox } from "@/components";
 import { Field, Sk } from "../shared/ui";
 
@@ -255,27 +255,27 @@ function FileCard({ name, sizeLabel, isImage, isPdf, imageUrl, href, marked = fa
   const thumb = (
     <>
       <div style={{
-        height: 72, display: "flex", alignItems: "center", justifyContent: "center",
+        height: 132, display: "flex", alignItems: "center", justifyContent: "center",
         background: isImage ? "var(--color-bg)" : badge.bg,
       }}>
         {isImage ? (
           <img src={imageUrl} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <span style={{ fontSize: 12.5, fontWeight: 800, color: badge.fg, letterSpacing: 0.3 }}>
+          <span style={{ fontSize: 15, fontWeight: 800, color: badge.fg, letterSpacing: 0.3 }}>
             {badge.label}
           </span>
         )}
       </div>
-      <div style={{ padding: "6px 8px" }}>
+      <div style={{ padding: "8px 10px" }}>
         <p title={name} style={{
-          margin: 0, fontSize: 11.5, fontWeight: 600,
+          margin: 0, fontSize: 12.5, fontWeight: 600,
           color: href ? "var(--color-primary)" : "var(--color-text)",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
           {name}
         </p>
         {sizeLabel && (
-          <p style={{ margin: 0, fontSize: 10.5, color: "var(--color-text-muted)" }}>{sizeLabel}</p>
+          <p style={{ margin: 0, fontSize: 11, color: "var(--color-text-muted)" }}>{sizeLabel}</p>
         )}
       </div>
     </>
@@ -285,9 +285,10 @@ function FileCard({ name, sizeLabel, isImage, isPdf, imageUrl, href, marked = fa
     <div style={{
       position: "relative",
       border: `1.5px solid ${marked ? "var(--color-error)" : "var(--color-border)"}`,
-      borderRadius: 10, overflow: "hidden",
+      borderRadius: 12, overflow: "hidden",
       background: marked ? "rgba(239,68,68,0.04)" : "var(--color-bg)",
       opacity: marked ? 0.55 : 1,
+      boxShadow: "var(--clay-pill, none)",
       transition: "all 150ms",
     }}>
       {onPreview && (
@@ -296,30 +297,36 @@ function FileCard({ name, sizeLabel, isImage, isPdf, imageUrl, href, marked = fa
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPreview(); }}
           title="Vista previa"
           style={{
-            position: "absolute", top: 6, left: 6, zIndex: 1,
-            width: 22, height: 22, borderRadius: "50%",
+            position: "absolute", top: 8, left: 8, zIndex: 1,
+            width: 30, height: 30, borderRadius: "50%",
             display: "flex", alignItems: "center", justifyContent: "center",
             border: "none", cursor: "pointer",
-            background: "rgba(0,0,0,0.55)", color: "#fff",
+            background: "rgba(0,0,0,0.6)", color: "#fff",
           }}
         >
-          <Eye size={12} />
+          <Eye size={15} />
         </button>
       )}
 
+      {/* Botón de eliminar: rojo y con texto siempre visible (no solo un
+          ícono en una esquina) para que "borrar este archivo" sea obvio de
+          un vistazo, no algo que haya que descubrir pasando el mouse. */}
       <button
         type="button"
         onClick={onAction}
         title={actionTitle}
         style={{
-          position: "absolute", top: 6, right: 6, zIndex: 1,
-          width: 22, height: 22, borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          position: "absolute", top: 8, right: 8, zIndex: 1,
+          height: 30, padding: "0 10px", borderRadius: 15,
+          display: "flex", alignItems: "center", gap: 5,
           border: "none", cursor: "pointer",
-          background: marked ? "var(--color-error)" : "rgba(0,0,0,0.55)", color: "#fff",
+          background: marked ? "var(--color-text-muted)" : "var(--color-error)",
+          color: "#fff", fontSize: 12, fontWeight: 700,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
         }}
       >
-        <X size={12} />
+        {marked ? <RotateCcw size={14} /> : <Trash2 size={14} />}
+        {marked ? "Deshacer" : "Eliminar"}
       </button>
 
       {href ? (
@@ -931,7 +938,7 @@ export default function TareaForm({
         {/* Archivos existentes (edición) */}
         {editTarget && archivosExistentes.length > 0 && (
           <Field label="Archivos existentes">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 12 }}>
               {archivosExistentes.map((adj, i) => {
                 const marcado = form.archivosEliminar.includes(adj.publicId);
                 const esImagen = isImageName(adj.nombre);
@@ -983,7 +990,7 @@ export default function TareaForm({
           </div>
 
           {form.archivosNuevos.length > 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8, marginTop: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 12, marginTop: 10 }}>
               {form.archivosNuevos.map((f, i) => (
                 <NewFilePreview key={i} file={f} onRemove={() => removeArchivoNuevo(i)} onPreview={setPreviewItem} />
               ))}

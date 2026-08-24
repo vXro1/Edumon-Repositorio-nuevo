@@ -14,10 +14,14 @@ import { normalizeUser }from "@/lib/normalizers";
 import { usersGetAll, usersGetById, usersCreate, usersUpdate, usersDelete } from "@/services/usersService";
 import { institucionesGetMine, institucionesGetAll } from "@/services/institucionesService";
 
-import { Modal, Toast, UserAvatar, Badge } from "@/components";
+import { Modal, Toast, UserAvatar, Badge, PhoneInput } from "@/components";
 
 import { humanizeError } from "@/utils/humanizeError";
-import { normalizePhone } from "@/utils/normalizePhone";
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
+import {
+  contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
+  isValidCedula, CEDULA_ERROR, toCedula,
+} from "@/utils/credenciales";
 /* ── Roles config ─────────────────────────────────────────────── */
 const ROL_META = {
   superadmin:    { label: "Super Admin",   variant: "error" },
@@ -64,12 +68,12 @@ function FieldGroup({ label, children, error }) {
   );
 }
 
-function StyledInput({ value, onChange, placeholder, type = "text", required = false, disabled = false, hasError = false }) {
+function StyledInput({ value, onChange, placeholder, type = "text", required = false, disabled = false, hasError = false, inputMode }) {
   const [f, setF] = useState(false);
   const borderColor = hasError ? "var(--color-error-hover)" : f ? "var(--color-primary)" : "var(--color-border)";
   const shadow = hasError ? "0 0 0 3px rgba(220,38,38,0.10)" : f ? "0 0 0 3px rgba(12,106,196,0.12)" : "none";
   return (
-    <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required} disabled={disabled}
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required} disabled={disabled} inputMode={inputMode}
       onFocus={() => setF(true)} onBlur={() => setF(false)}
       style={{ width: "100%", padding: "9px 12px", fontSize: 13.5, borderRadius: 10, border: `1.5px solid ${borderColor}`, outline: "none", background: disabled ? "var(--color-bg)" : "var(--color-surface)", color: "var(--color-text)", boxShadow: shadow, transition: "border-color 150ms, box-shadow 150ms", cursor: disabled ? "not-allowed" : "text" }} />
   );
@@ -224,6 +228,13 @@ export default function UsuariosPage() {
     if (createErrors[key]) setCreateErrors((p) => ({ ...p, [key]: "" }));
   };
 
+  // La cédula es solo dígitos (6-10) en todo el sistema: se limpia al escribir
+  const fCedula = (e) => {
+    const value = toCedula(e.target.value);
+    setForm((p) => ({ ...p, cedula: value }));
+    if (createErrors.cedula) setCreateErrors((p) => ({ ...p, cedula: "" }));
+  };
+
   /* ── View detail ── */
   const openView = async (u) => {
     setViewTarget(u);
@@ -249,12 +260,11 @@ export default function UsuariosPage() {
     if (!form.nombre.trim())                           clientErrors.nombre   = "El nombre es requerido";
     if (!form.apellido.trim())                         clientErrors.apellido = "El apellido es requerido";
     if (!cedula)                                       clientErrors.cedula   = "La cédula es requerida";
-    else if (!/^\d{6,10}$/.test(cedula))               clientErrors.cedula   = "La cédula debe tener entre 6 y 10 dígitos numéricos";
+    else if (!isValidCedula(cedula))                   clientErrors.cedula   = CEDULA_ERROR;
     if (!form.correo.trim())                           clientErrors.correo    = "El correo es requerido";
     else if (!/\S+@\S+\.\S+/.test(form.correo.trim())) clientErrors.correo   = "Ingresa un correo válido";
-    const rawPhone = form.telefono.trim().replace(/\s/g, "");
-    if (!rawPhone)                                     clientErrors.telefono  = "El teléfono es requerido";
-    else if (!/^\d{10}$/.test(rawPhone))               clientErrors.telefono  = "Ingresa 10 dígitos sin el +57 (ej: 3001234567)";
+    if (!form.telefono.trim())                         clientErrors.telefono  = "El teléfono es requerido";
+    else if (!isValidPhone(form.telefono))             clientErrors.telefono  = PHONE_ERROR;
 
     if (Object.keys(clientErrors).length) {
       setCreateErrors(clientErrors);
@@ -265,14 +275,15 @@ export default function UsuariosPage() {
     setSaving(true);
     try {
       const rolApi = toApiRol(form.rol);
-      const tempPassword = `Cc${cedula}`;
+      // No se envía "contraseña": el backend aplica la regla única del sistema
+      // (contraseña inicial = cédula), igual que al crear docentes, admins de
+      // institución o participantes. Así ningún flujo puede volver a divergir.
       const body = {
         nombre:     form.nombre.trim(),
         apellido:   form.apellido.trim(),
         cedula:     cedula,
         correo:     form.correo.trim(),
         rol:        rolApi,
-        contraseña: tempPassword,
       };
       if (form.telefono) body.telefono = normalizePhone(form.telefono);
 
@@ -292,7 +303,7 @@ export default function UsuariosPage() {
       }
 
       await usersCreate(body);
-      notify(`Usuario creado. Contraseña inicial: Cc${cedula}`);
+      notify(`Usuario creado. Contraseña inicial: ${contrasenaInicial(cedula)}`);
       setShowCreate(false);
       setCreateErrors({});
       setForm(INIT);
@@ -322,10 +333,16 @@ export default function UsuariosPage() {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!editTarget) return;
+
+    if (form.cedula.trim() && !isValidCedula(form.cedula)) { notify(CEDULA_ERROR, "error"); return; }
+    if (form.telefono.trim() && !isValidPhone(form.telefono)) { notify(PHONE_ERROR, "error"); return; }
+
     setSaving(true);
     try {
       const body = { nombre: form.nombre.trim(), apellido: form.apellido.trim(), cedula: form.cedula.trim(), correo: form.correo.trim(), rol: toApiRol(form.rol) };
-      if (form.telefono) body.telefono = normalizePhone(form.telefono);
+      // Solo se manda el teléfono si quedó en el formato del sistema (+57XXXXXXXXXX)
+      const telefono = normalizePhone(form.telefono);
+      if (telefono) body.telefono = telefono;
       await usersUpdate(editTarget._id, body);
       notify("Usuario actualizado");
       setEditTarget(null);
@@ -499,8 +516,15 @@ export default function UsuariosPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <FieldGroup label="Nombre *" error={createErrors.nombre}><StyledInput value={form.nombre} onChange={f("nombre")} placeholder="Juan" hasError={!!createErrors.nombre} /></FieldGroup>
             <FieldGroup label="Apellido *" error={createErrors.apellido}><StyledInput value={form.apellido} onChange={f("apellido")} placeholder="Pérez" hasError={!!createErrors.apellido} /></FieldGroup>
-            <FieldGroup label="Cédula *" error={createErrors.cedula}><StyledInput value={form.cedula} onChange={f("cedula")} placeholder="12345678" hasError={!!createErrors.cedula} /></FieldGroup>
-            <FieldGroup label="Teléfono *" error={createErrors.telefono}><StyledInput value={form.telefono} onChange={f("telefono")} placeholder="3001234567" hasError={!!createErrors.telefono} /></FieldGroup>
+            <FieldGroup label="Cédula *" error={createErrors.cedula}><StyledInput value={form.cedula} onChange={fCedula} placeholder="12345678" inputMode="numeric" hasError={!!createErrors.cedula} /></FieldGroup>
+            <FieldGroup label="Teléfono *" error={createErrors.telefono}>
+              {/* FieldGroup ya pinta el mensaje de error: aquí solo el borde rojo */}
+              <PhoneInput
+                size="sm" label={null} hint={null}
+                value={form.telefono} onChange={f("telefono")}
+                className={createErrors.telefono ? "input-error" : ""}
+              />
+            </FieldGroup>
             <div style={{ gridColumn: "1 / -1" }}>
               <FieldGroup label="Correo *" error={createErrors.correo}><StyledInput value={form.correo} onChange={f("correo")} type="email" placeholder="usuario@correo.com" hasError={!!createErrors.correo} /></FieldGroup>
             </div>
@@ -537,7 +561,7 @@ export default function UsuariosPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, padding: "10px 12px", borderRadius: 9, background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.15)" }}>
             <Hash style={{ width: 13, height: 13, color: "var(--color-primary)", flexShrink: 0 }} />
             <p style={{ fontSize: 12.5, color: "var(--color-primary)", margin: 0 }}>
-              Contraseña inicial: <strong>"Cc" + cédula</strong> — ej: <strong>{"Cc" + (form.cedula || "12345678")}</strong>. El usuario debe cambiarla al ingresar.
+              {TEXTO_CONTRASENA_INICIAL} Ej: <strong>{contrasenaInicial(form.cedula) || "12345678"}</strong>
             </p>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
@@ -554,9 +578,11 @@ export default function UsuariosPage() {
             <FieldGroup label="Nombre *"><StyledInput value={form.nombre} onChange={f("nombre")} placeholder="Juan" required /></FieldGroup>
             <FieldGroup label="Apellido *"><StyledInput value={form.apellido} onChange={f("apellido")} placeholder="Pérez" required /></FieldGroup>
             <FieldGroup label="Cédula">
-              <StyledInput value={form.cedula} onChange={f("cedula")} placeholder="12345678" />
+              <StyledInput value={form.cedula} onChange={fCedula} placeholder="12345678" inputMode="numeric" />
             </FieldGroup>
-            <FieldGroup label="Teléfono"><StyledInput value={form.telefono} onChange={f("telefono")} placeholder="3001234567 (+57 se agrega automáticamente)" /></FieldGroup>
+            <FieldGroup label="Teléfono">
+              <PhoneInput size="sm" label={null} hint={null} value={form.telefono} onChange={f("telefono")} />
+            </FieldGroup>
             <div style={{ gridColumn: "1 / -1" }}>
               <FieldGroup label="Correo *"><StyledInput value={form.correo} onChange={f("correo")} type="email" placeholder="usuario@correo.com" required /></FieldGroup>
             </div>
@@ -709,8 +735,8 @@ function UserRow({ user: u, onView, onEdit, onSuspend, onActivate }) {
       <td style={{ padding: "12px 16px" }}><RolBadge rol={u.rol} /></td>
       <td style={{ padding: "12px 16px" }}><EstadoBadge estado={u.estado} /></td>
       <td style={{ padding: "12px 16px" }}>
-        <div style={{ display: "flex", gap: 5 }}>
-          <ActionIconBtn icon={Eye}       title="Ver detalles"  color="#6366F1" bg="rgba(99,102,241,0.08)"  onClick={onView} />
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          <ActionIconBtn icon={Eye}       title="Ver"  color="#6366F1" bg="rgba(99,102,241,0.08)"  onClick={onView} />
           <ActionIconBtn icon={Edit2}     title="Editar"        color="var(--color-primary)" bg="rgba(12,106,196,0.08)"  onClick={onEdit} />
           {suspended
             ? <ActionIconBtn icon={UserCheck} title="Activar"   color="var(--edu-green-600)" bg="rgba(22,163,74,0.08)"  onClick={onActivate} />
@@ -733,9 +759,10 @@ function PagBtn({ onClick, disabled, children }) {
 function ActionIconBtn({ icon: Icon, title, color, bg, onClick }) {
   const [hov, setHov] = useState(false);
   return (
-    <button onClick={onClick} title={title} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${hov ? color : "var(--color-border)"}`, background: hov ? bg : "var(--color-surface)", color: hov ? color : "var(--color-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 150ms" }}>
-      <Icon style={{ width: 14, height: 14 }} />
+    <button onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ height: 32, padding: "0 10px", borderRadius: 8, border: `1px solid ${hov ? color : "var(--color-border)"}`, background: hov ? bg : "var(--color-surface)", color: hov ? color : "var(--color-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", transition: "all 150ms" }}>
+      <Icon style={{ width: 14, height: 14, flexShrink: 0 }} />
+      {title}
     </button>
   );
 }

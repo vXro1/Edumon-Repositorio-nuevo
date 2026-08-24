@@ -12,7 +12,7 @@ import { Modal, Button } from "@/components";
 
 const CATEGORIAS = [
   { value: "escuela_padres", label: "Escuela de padres" },
-  { value: "tarea",          label: "Tarea"             },
+  { value: "tarea",          label: "Reto"              },
   { value: "institucional",  label: "Institucional"     },
 ];
 

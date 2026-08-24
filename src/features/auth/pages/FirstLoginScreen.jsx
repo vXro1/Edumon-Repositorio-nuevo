@@ -2,9 +2,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { usersGetDefaultPhotos, usersUpdateMyPhoto, usersUpdate } from "@/services/usersService";
+import { usersGetDefaultPhotos, usersUpdateMyPhoto, usersUpdateMyProfile } from "@/services/usersService";
 import { authChangePassword } from "@/services/authService";
 import { humanizeError } from "@/utils/humanizeError";
+import { validarContrasenaNueva, PASSWORD_RULES } from "@/utils/credenciales";
 import logoSvg from "@/assets/icons/logo.svg";
 import { readLoginPassword, clearLoginPassword } from "../utils/firstLoginPassword";
 import {
@@ -46,17 +47,9 @@ function validateDataForm(form) {
   if (!form.apellido.trim()) e.apellido = "Este campo es requerido";
   if (!form.correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim()))
     e.correo = "Ingresa un correo válido";
-  if (!form.contraseñaNueva) {
-    e.contraseñaNueva = "Este campo es requerido";
-  } else if (form.contraseñaNueva.length < 6) {
-    e.contraseñaNueva = "Mínimo 6 caracteres";
-  } else if (!/[A-Z]/.test(form.contraseñaNueva)) {
-    e.contraseñaNueva = "Debe contener al menos una mayúscula";
-  } else if (!/[a-z]/.test(form.contraseñaNueva)) {
-    e.contraseñaNueva = "Debe contener al menos una minúscula";
-  } else if (!/[0-9]/.test(form.contraseñaNueva)) {
-    e.contraseñaNueva = "Debe contener al menos un número";
-  }
+  // Reglas compartidas con el backend, el perfil y la recuperación de contraseña
+  const pwError = validarContrasenaNueva(form.contraseñaNueva);
+  if (pwError) e.contraseñaNueva = pwError;
   if (!form.confirmar) {
     e.confirmar = "Confirma tu contraseña";
   } else if (form.confirmar !== form.contraseñaNueva) {
@@ -428,12 +421,8 @@ function PasswordInput({ value, onChange, placeholder, hasError = false }) {
 
 function PasswordStrength({ password }) {
   if (!password) return null;
-  const checks = [
-    { label: "6+ caracteres", ok: password.length >= 6 },
-    { label: "Mayúscula",     ok: /[A-Z]/.test(password) },
-    { label: "Minúscula",     ok: /[a-z]/.test(password) },
-    { label: "Número",        ok: /[0-9]/.test(password) },
-  ];
+  // Mismos requisitos que valida el backend (ver utils/credenciales.js)
+  const checks = PASSWORD_RULES.map(r => ({ label: r.label, ok: r.test(password) }));
   const score = checks.filter(c => c.ok).length;
   const barColor = ["var(--color-error-hover)", "var(--color-error-hover)", "#F59E0B", "var(--edu-green-600)", "var(--edu-green-600)"][score];
   const strengthLabel = ["", "Débil", "Regular", "Buena", "Fuerte"][score];
@@ -785,7 +774,11 @@ function StepData({ user, loginPassword, onComplete, onBack }) {
         nombre:   form.nombre.trim(),
         apellido: form.apellido.trim(),
       };
-      const userData = await usersUpdate(user.id, updateBody);
+      // PUT /users/me/profile, no PUT /users/:id: ese último es admin-only,
+      // y este paso lo ejecuta CUALQUIER usuario nuevo (docente, padre...)
+      // en su primer ingreso — con el endpoint admin-only, todo el mundo salvo
+      // administradores recibía 403 al intentar completar el wizard.
+      const userData = await usersUpdateMyProfile(updateBody);
 
       // 2. Cambiar contraseña — el backend pone primerInicioSesion en false
       // al cambiarla, pero su respuesta no trae el usuario actualizado (solo

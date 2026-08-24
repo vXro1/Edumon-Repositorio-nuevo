@@ -23,6 +23,7 @@ export { default as Dropdown }         from "./ui/Dropdown";
 export { default as FileUpload }       from "./ui/FileUpload";
 export { default as Footer }           from "./ui/footer";
 export { default as Input, Textarea, Select, Checkbox } from "./ui/Input";
+export { default as PhoneInput }       from "./ui/PhoneInput";
 export { default as LoadingScreen }    from "./ui/LoadingScreen";
 export { default as AppModal }         from "./ui/AppModal";
 export { default as Modal }            from "./ui/Modal";

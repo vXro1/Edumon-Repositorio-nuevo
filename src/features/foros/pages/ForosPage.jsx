@@ -215,7 +215,7 @@ export default function ForosPage() {
         <form onSubmit={handleCreate}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <FieldGroup label="Título *">
-              <StyledInput value={form.titulo} onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))} placeholder="Ej: Dudas sobre la tarea de esta semana" required />
+              <StyledInput value={form.titulo} onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))} placeholder="Ej: Dudas sobre el reto de esta semana" required />
             </FieldGroup>
             <FieldGroup label="Descripción *">
               <StyledInput as="textarea" value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Contexto del foro para los participantes..." rows={4} required />
@@ -323,8 +323,7 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
           Ver foro <ChevronRight style={{ width: 13, height: 13 }} />
         </Button>
 
-        {/* Solo ícono papelera → IconBtn */}
-        <IconBtn color="var(--color-error-hover)" onClick={onDelete} title="Eliminar">
+        <IconBtn label="Eliminar" color="var(--color-error-hover)" onClick={onDelete}>
           <Trash2 style={{ width: 13, height: 13 }} />
         </IconBtn>
       </div>

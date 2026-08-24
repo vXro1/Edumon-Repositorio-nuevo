@@ -24,7 +24,12 @@
 @import "./components/skeleton.css";
 
 /* ── 4. PAGES ── */
-@import "./pages/landing.css";
+/* NOTA: rediseño de landing (paleta azul minimalista) vive en
+   src/pages/LandingPage.css, importado por el propio componente.
+   El landing.css legacy (paleta morada/rosa "capturas Figma") se
+   dejó de usar y colisionaba en cascada con las mismas clases
+   (.landing-hero, .pilares-grid, .landing-nav, etc.), rompiendo
+   la responsividad. No importar ambos a la vez. */
 
 /* ── 5. LAYOUT ── */
 @import "./layout/Layout.css";

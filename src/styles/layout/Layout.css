@@ -825,6 +825,11 @@
 /* ──────────────────────────────────────────────────────────────────────
    TARJETA DE ESTADÍSTICA — píldora elevada Soft UI
    ────────────────────────────────────────────────────────────────────── */
+/* Sin :hover/:active — esta tarjeta es puramente informativa (ningún
+   StatCard del dashboard tiene onClick). Antes se elevaba, agrandaba
+   sombra y hacía girar el ícono al pasar el mouse — exactamente las
+   señales visuales de un botón, lo que llevaba a un usuario a esperar que
+   hiciera algo al hacer clic. Ver plan de corrección UX/UI, sección 1. */
 .stat-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -834,18 +839,8 @@
   align-items: flex-start;
   gap: var(--space-3);
   box-shadow: var(--clay-card);
-  transition:
-    box-shadow  var(--transition-base),
-    transform   var(--transition-spring),
-    border-color var(--transition-base);
   cursor: default;
 }
-.stat-card:hover {
-  box-shadow: var(--clay-card-hover);
-  transform: translateY(-3px);
-  border-color: var(--color-border-strong);
-}
-.stat-card:active { transform: translateY(0); }
 
 .stat-card-icon {
   width: 44px;
@@ -856,9 +851,7 @@
   justify-content: center;
   flex-shrink: 0;
   font-size: 1.15rem;
-  transition: transform var(--transition-spring);
 }
-.stat-card:hover .stat-card-icon { transform: scale(1.1) rotate(-3deg); }
 
 .stat-card-body { flex: 1; min-width: 0; }
 

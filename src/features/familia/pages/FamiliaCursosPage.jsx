@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 import { cursosGetMine } from "@/features/cursos/services/cursosService";
-import letrasImg from "@/assets/img/letras.png";
+import letrasImg from "@/assets/img/letras.svg";
 import { normalizeCurso } from "@/lib/normalizers";
 import CourseCard from "@/features/cursos/components/CursoCard";
 

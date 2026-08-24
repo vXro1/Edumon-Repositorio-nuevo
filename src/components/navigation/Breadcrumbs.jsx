@@ -9,7 +9,7 @@ const SEGMENT_LABELS = {
   padre:          "Inicio",
   cursos:         "Cursos",
   curso:          "Cursos",
-  tareas:         "Tareas",
+  tareas:         "Retos",
   entregas:       "Entregas",
   foros:          "Foros",
   foro:           "Foro",
@@ -32,7 +32,7 @@ const SEGMENT_LABELS = {
 const TAB_LABELS = {
   general:       "General",
   modulos:       "Módulos",
-  tareas:        "Tareas",
+  tareas:        "Retos",
   foros:         "Foros",
   participantes: "Participantes",
   entregas:      "Entregas",

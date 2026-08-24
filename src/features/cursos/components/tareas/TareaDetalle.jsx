@@ -8,9 +8,9 @@ import {
   FileText,
   FolderOpen,
   Link as LinkIcon,
+  Lock,
   Pencil,
   Tag,
-  Trash2,
   User,
   Users,
 } from "lucide-react";
@@ -483,9 +483,9 @@ export default function TareaDetalle({
               Editar
             </Button>
 
-            <Button variant="ghost" onClick={() => onDelete(t._id)} style={{ color: "var(--color-error-hover)" }}>
-              <Trash2 size={15} />
-              Eliminar
+            <Button variant="ghost" onClick={() => onDelete(t._id)} style={{ color: "var(--color-text-muted)" }}>
+              <Lock size={15} />
+              Cerrar reto
             </Button>
           </>
         )}

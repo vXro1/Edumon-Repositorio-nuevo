@@ -36,22 +36,24 @@ const ForumSidebar = ({
         </span>
         {canCreate && (
           <button type="button" onClick={onCreateClick}
-            title="Nuevo foro"
             style={{
               background:   'rgba(12,106,196,0.10)',
               border:       'none',
-              borderRadius: 6,
-              padding:      '4px 6px',
+              borderRadius: 7,
+              padding:      '5px 10px',
               cursor:       'pointer',
               color:        'var(--color-primary)',
               display:      'flex',
               alignItems:   'center',
+              gap:          5,
+              fontSize:     12,
+              fontWeight:   700,
               transition:   'background 0.15s',
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,106,196,0.18)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(12,106,196,0.10)'}
           >
-            <Plus size={14} />
+            <Plus size={14} /> Nuevo foro
           </button>
         )}
       </div>

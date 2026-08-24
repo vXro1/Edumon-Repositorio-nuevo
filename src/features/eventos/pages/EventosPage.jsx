@@ -38,7 +38,7 @@ const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto"
 const DIAS_SEMANA = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 
 const CATEGORIA_CFG = {
-  tarea:          { color: "#6366F1", bg: "rgba(99,102,241,0.10)",  label: "Tarea" },
+  tarea:          { color: "#6366F1", bg: "rgba(99,102,241,0.10)",  label: "Reto" },
   escuela_padres: { color: "#D97706", bg: "rgba(217,119,6,0.10)",   label: "Escuela de padres" },
   reunion:        { color: "var(--color-primary)", bg: "rgba(12,106,196,0.10)",  label: "Reunión" },
   actividad:      { color: "var(--edu-green-600)", bg: "rgba(22,163,74,0.10)",   label: "Actividad" },
@@ -324,8 +324,8 @@ export default function EventosPage() {
                   <Button variant="outline" size="sm" onClick={() => openEdit(ev)}>
                     <Edit2 size={14} /> Editar
                   </Button>
-                  <IconBtn color="var(--color-error-hover)" onClick={() => { setDeletingId(ev._id); setShowDelete(true); }}>
-                    <Trash2 />
+                  <IconBtn label="Eliminar" color="var(--color-error-hover)" onClick={() => { setDeletingId(ev._id); setShowDelete(true); }}>
+                    <Trash2 size={14} />
                   </IconBtn>
                 </div>
               </div>

@@ -337,18 +337,10 @@ export const AUTH_CSS = `
 /* ══ FORM ══ */
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
 
-.auth-prefix {
-  position: absolute;
-  left: 40px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  pointer-events: none;
-  z-index: 1;
-}
-.auth-input-prefix { padding-left: 4.5rem !important; }
+/* El teléfono con prefijo "+57" usa el componente PhoneInput (flexbox,
+   ver src/components/ui/PhoneInput.jsx) — ya no hay clases propias de
+   login para eso, evita que dos hojas de estilo definan el mismo campo
+   con números distintos y terminen empujándose entre sí. */
 
 .auth-row-between {
   display: flex;

@@ -3,16 +3,21 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Search, GraduationCap, X, Loader2, RefreshCw,
   Upload, CheckCircle2, AlertCircle, Download, Trash2, FileSpreadsheet,
+  User, Hash, Mail,
 } from "lucide-react";
 
 import { usersGetAll } from "@/services/usersService";
 import { institucionesCreateDocente, institucionesCreateDocentesCsv } from "@/services/institucionesService";
-import { Modal, UserAvatar, Toast, Button, Badge, Avatar } from "@/components";
-import { Sk, EmptyState, Field } from "@/features/cursos/components/shared/ui";
+import { Modal, UserAvatar, Toast, Button, Badge, Avatar, Input, PhoneInput } from "@/components";
+import { Sk, EmptyState } from "@/features/cursos/components/shared/ui";
 import { normalizeUser } from "@/lib/normalizers";
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
-import { normalizePhone } from "@/utils/normalizePhone";
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
+import {
+  contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
+  isValidCedula, CEDULA_ERROR, toCedula,
+} from "@/utils/credenciales";
 import { descargarPlantillaDocentesCSV, CSV_COLUMNAS_DOCENTES } from "@/components/ui/DocentesCsvTemplate";
 
 /* ── Fila esqueleto ─────────────────────────────────────────────────── */
@@ -61,35 +66,6 @@ function DocenteRow({ docente: d }) {
         </Badge>
       </td>
     </tr>
-  );
-}
-
-/* ── Campo de formulario ────────────────────────────────────────────── */
-function FormInput({ value, onChange, placeholder, type = "text", required = false }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      required={required}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={{
-        width: "100%",
-        padding: "9px 12px",
-        fontSize: 13.5,
-        borderRadius: "var(--radius-md)",
-        border: `1.5px solid ${focused ? "var(--color-primary)" : "var(--color-border)"}`,
-        outline: "none",
-        background: "var(--color-surface)",
-        color: "var(--color-text)",
-        boxShadow: focused ? "var(--shadow-focus)" : "none",
-        transition: "border-color var(--transition-fast), box-shadow var(--transition-fast)",
-        boxSizing: "border-box",
-      }}
-    />
   );
 }
 
@@ -160,6 +136,7 @@ export default function DocentesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showCsv,    setShowCsv]   = useState(false);
   const [form,       setForm]      = useState(INIT);
+  const [createErrors, setCreateErrors] = useState({});
 
   const fileRef   = useRef(null);
   const [csvFile,    setCsvFile]   = useState(null);
@@ -212,25 +189,69 @@ export default function DocentesPage() {
   });
 
   /* ── Crear ── */
-  const f = key => e => setForm(p => ({ ...p, [key]: e.target.value }));
+  const f = key => e => {
+    setForm(p => ({ ...p, [key]: e.target.value }));
+    if (createErrors[key]) setCreateErrors(p => ({ ...p, [key]: "" }));
+  };
+  const fCedula = e => {
+    setForm(p => ({ ...p, cedula: toCedula(e.target.value) }));
+    if (createErrors.cedula) setCreateErrors(p => ({ ...p, cedula: "" }));
+  };
 
   const handleCreate = async e => {
     e.preventDefault();
+
+    // Mismas reglas de validación que en el resto de creaciones de usuario,
+    // mostradas junto a cada campo en vez de solo en un toast genérico
+    const cedula = form.cedula.trim();
+    const errors = {};
+    if (!form.nombre.trim())              errors.nombre   = "El nombre es requerido";
+    if (!form.apellido.trim())            errors.apellido = "El apellido es requerido";
+    if (!cedula || !isValidCedula(cedula)) errors.cedula   = CEDULA_ERROR;
+    if (!isValidPhone(form.telefono))      errors.telefono = PHONE_ERROR;
+    if (!form.correo.trim())                            errors.correo = "El correo es requerido";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim())) errors.correo = "Ingresa un correo válido";
+
+    if (Object.keys(errors).length) {
+      setCreateErrors(errors);
+      notify("Corrige los campos marcados en rojo", "error");
+      return;
+    }
+
     setSaving(true);
     try {
-      await institucionesCreateDocente({ ...form, telefono: normalizePhone(form.telefono) });
-      notify("Docente registrado correctamente");
+      // No se envía "contraseña": el backend aplica la regla única (= cédula)
+      await institucionesCreateDocente({
+        ...form,
+        cedula,
+        telefono: normalizePhone(form.telefono),
+      });
+      notify(`Docente registrado. Contraseña inicial: ${contrasenaInicial(cedula)}`);
       setShowCreate(false);
       setForm(INIT);
+      setCreateErrors({});
       load();
     } catch (err) {
+      // Errores de validación del backend (ej. cédula/correo duplicados) se
+      // muestran junto al campo correspondiente, igual que en Usuarios
+      if (err.validationErrors?.length) {
+        const serverErrors = {};
+        for (const ve of err.validationErrors) serverErrors[ve.path] = ve.msg;
+        setCreateErrors(serverErrors);
+      }
       notify(humanizeError(err, "Error al registrar docente"), "error");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ── Importación CSV ── */
+  /* ── Importación CSV ──
+     El backend (preregistrarDocentesCSV) responde con los conteos anidados
+     bajo "resumen" ({ resumen: {total, exitosos, duplicados, errores},
+     detalles: {...} }) — guardar esa respuesta tal cual dejaba a este
+     componente leyendo res.exitosos/res.errores, campos que nunca existían
+     a ese nivel, así que el resultado siempre mostraba "undefined exitosos"
+     y nunca refrescaba la lista aunque la importación sí hubiera funcionado. */
   const handleCsvUpload = async () => {
     if (!csvFile) return;
     setCsvLoading(true);
@@ -238,9 +259,27 @@ export default function DocentesPage() {
       const fd = new FormData();
       fd.append("archivoCSV", csvFile);
       const res = await institucionesCreateDocentesCsv(fd);
-      setCsvResult(res);
-      notify(`Importación completada: ${res.exitosos} exitosos`);
-      if (res.exitosos > 0) load();
+
+      const resumen  = res?.resumen ?? {};
+      const detalles = res?.detalles ?? {};
+      const errores = [
+        ...(detalles.errores ?? []).map((e) =>
+          `${e.datos?.nombre ?? "Registro"} ${e.datos?.apellido ?? ""}: ${e.error ?? "Error al crear el docente."}`.trim()
+        ),
+        ...(detalles.duplicados ?? []).map((d) =>
+          `${d.nombre ?? "Registro"}: ${d.motivo ?? "Duplicado."}`
+        ),
+      ];
+
+      const resultado = {
+        exitosos: resumen.exitosos ?? 0,
+        fallidos: (resumen.errores ?? 0) + (resumen.duplicados ?? 0),
+        errores,
+      };
+
+      setCsvResult(resultado);
+      notify(`Importación completada: ${resultado.exitosos} exitosos`);
+      if (resultado.exitosos > 0) load();
     } catch (err) {
       notify(humanizeError(err, "Error en la importación"), "error");
     } finally {
@@ -276,7 +315,7 @@ export default function DocentesPage() {
           <Button variant="outline" size="sm" onClick={() => { setShowCsv(true); resetCsv(); }}>
             <Upload size={15} /> Importar CSV
           </Button>
-          <Button size="sm" onClick={() => { setForm(INIT); setShowCreate(true); }}>
+          <Button size="sm" onClick={() => { setForm(INIT); setCreateErrors({}); setShowCreate(true); }}>
             <Plus size={15} /> Registrar docente
           </Button>
         </div>
@@ -333,7 +372,7 @@ export default function DocentesPage() {
             icon={GraduationCap}
             title="No hay docentes"
             desc={search ? "Ningún docente coincide con la búsqueda." : "Registra el primer docente de la institución."}
-            action={!search ? { label: "Registrar docente", onClick: () => { setForm(INIT); setShowCreate(true); } } : undefined}
+            action={!search ? { label: "Registrar docente", onClick: () => { setForm(INIT); setCreateErrors({}); setShowCreate(true); } } : undefined}
           />
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -386,25 +425,49 @@ export default function DocentesPage() {
         description="El docente recibirá sus credenciales por correo."
         size="md"
       >
-        <form onSubmit={handleCreate}>
+        <form onSubmit={handleCreate} noValidate>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
-            <Field label="Nombre">
-              <FormInput value={form.nombre}   onChange={f("nombre")}   placeholder="Ej. María" required />
-            </Field>
-            <Field label="Apellido">
-              <FormInput value={form.apellido} onChange={f("apellido")} placeholder="Ej. García" required />
-            </Field>
-            <Field label="Cédula">
-              <FormInput value={form.cedula}   onChange={f("cedula")}   placeholder="Número de cédula" />
-            </Field>
-            <Field label="Teléfono">
-              <FormInput value={form.telefono} onChange={f("telefono")} placeholder="+57 300 000 0000" type="tel" />
-            </Field>
+            <Input
+              label="Nombre" required
+              value={form.nombre} onChange={f("nombre")}
+              placeholder="Ej. María" leftIcon={<User size={16} />}
+              error={createErrors.nombre}
+            />
+            <Input
+              label="Apellido" required
+              value={form.apellido} onChange={f("apellido")}
+              placeholder="Ej. García" leftIcon={<User size={16} />}
+              error={createErrors.apellido}
+            />
+            <Input
+              label="Cédula" required
+              value={form.cedula} onChange={fCedula}
+              placeholder="1020304050" inputMode="numeric" leftIcon={<Hash size={16} />}
+              error={createErrors.cedula}
+            />
+            <PhoneInput
+              label="Teléfono" required
+              value={form.telefono} onChange={f("telefono")}
+              error={createErrors.telefono}
+            />
           </div>
           <div style={{ marginTop: "var(--space-4)" }}>
-            <Field label="Correo electrónico">
-              <FormInput value={form.correo} onChange={f("correo")} placeholder="correo@institución.edu" type="email" required />
-            </Field>
+            <Input
+              label="Correo electrónico" required
+              value={form.correo} onChange={f("correo")}
+              placeholder="correo@institución.edu" type="email" leftIcon={<Mail size={16} />}
+              error={createErrors.correo}
+            />
+          </div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6, marginTop: "var(--space-4)",
+            padding: "10px 12px", borderRadius: 9,
+            background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.15)",
+          }}>
+            <Hash style={{ width: 13, height: 13, color: "var(--color-primary)", flexShrink: 0 }} />
+            <p style={{ fontSize: 12.5, color: "var(--color-primary)", margin: 0 }}>
+              {TEXTO_CONTRASENA_INICIAL} Ej: <strong>{contrasenaInicial(form.cedula) || "12345678"}</strong>
+            </p>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)", marginTop: "var(--space-6)" }}>
             <Button variant="outline" type="button" onClick={() => setShowCreate(false)}>
@@ -449,8 +512,9 @@ export default function DocentesPage() {
 
               <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.5 }}>
                 La primera fila debe ser el encabezado exacto (<code>nombre,apellido,telefono,cedula</code>),
-                en ese orden. No incluyas una columna de correo: el sistema la genera automáticamente
-                con la cédula. La contraseña inicial de cada docente será su número de cédula.
+                en ese orden. El teléfono va en 10 dígitos (el +57 se agrega automáticamente).
+                No incluyas una columna de correo: el sistema la genera automáticamente
+                con la cédula. {TEXTO_CONTRASENA_INICIAL}
               </p>
             </div>
 

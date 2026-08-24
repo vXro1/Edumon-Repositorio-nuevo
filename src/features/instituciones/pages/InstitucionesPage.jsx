@@ -7,11 +7,15 @@ import {
 import { institucionesGetAll, institucionesCreate, institucionesUpdate } from "@/services/institucionesService";
 import { usersGetById } from "@/services/usersService";
 import { Modal, Toast, Button } from "@/components";
-import { Input } from "@/components";
+import { Input, PhoneInput } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { normalizeUser } from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
-import { normalizePhone } from "@/utils/normalizePhone";
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
+import {
+  contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
+  isValidCedula, CEDULA_ERROR, toCedula,
+} from "@/utils/credenciales";
 
 // ── Fila esqueleto ────────────────────────────────────────────
 function SkRow() {
@@ -190,19 +194,28 @@ export default function InstitucionesPage() {
       notify("Completa los datos del administrador (nombre, apellido, cédula y correo)", "error");
       return;
     }
+    if (!isValidCedula(adminCedula)) { notify(CEDULA_ERROR, "error"); return; }
+    if (form.telefono && !isValidPhone(form.telefono)) {
+      notify(`Teléfono de la institución: ${PHONE_ERROR}`, "error"); return;
+    }
+    if (form.adminTelefono && !isValidPhone(form.adminTelefono)) {
+      notify(`Teléfono del administrador: ${PHONE_ERROR}`, "error"); return;
+    }
 
     setSaving(true);
     try {
+      // Teléfonos siempre en "+57XXXXXXXXXX"; la contraseña inicial del admin
+      // la define el backend con la regla única del sistema (= cédula).
       await institucionesCreate({
         ...form,
         nombre,
         nit,
         adminCedula,
         adminCorreo,
-        telefono: form.telefono ? normalizePhone(form.telefono) : "",
-        adminTelefono: form.adminTelefono ? normalizePhone(form.adminTelefono) : "",
+        telefono: normalizePhone(form.telefono) ?? "",
+        adminTelefono: normalizePhone(form.adminTelefono) ?? "",
       });
-      notify("Institución creada correctamente");
+      notify(`Institución creada. Contraseña inicial del admin: ${contrasenaInicial(adminCedula)}`);
       setShowCreate(false);
       setForm(INIT_FORM);
       load();
@@ -226,9 +239,13 @@ export default function InstitucionesPage() {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!editTarget) return;
+    if (editForm.telefono && !isValidPhone(editForm.telefono)) { notify(PHONE_ERROR, "error"); return; }
     setSaving(true);
     try {
-      await institucionesUpdate(editTarget._id, editForm);
+      await institucionesUpdate(editTarget._id, {
+        ...editForm,
+        telefono: normalizePhone(editForm.telefono) ?? "",
+      });
       notify("Institución actualizada");
       setEditTarget(null);
       load();
@@ -401,13 +418,10 @@ export default function InstitucionesPage() {
                 onChange={f("direccion")}
                 leftIcon={<MapPin size={16} />}
               />
-              <Input
+              <PhoneInput
                 label="Teléfono"
-                type="tel"
-                placeholder="+57 300 000 0000"
                 value={form.telefono}
                 onChange={f("telefono")}
-                leftIcon={<Phone size={16} />}
               />
               <div style={{ gridColumn: "1 / -1" }}>
                 <Input
@@ -443,18 +457,16 @@ export default function InstitucionesPage() {
               <Input
                 label="Cédula"
                 placeholder="12345678"
+                inputMode="numeric"
                 value={form.adminCedula}
-                onChange={f("adminCedula")}
+                onChange={(e) => setForm((p) => ({ ...p, adminCedula: toCedula(e.target.value) }))}
                 leftIcon={<Hash size={16} />}
                 required
               />
-              <Input
+              <PhoneInput
                 label="Teléfono"
-                type="tel"
-                placeholder="+57 300 000 0000"
                 value={form.adminTelefono}
                 onChange={f("adminTelefono")}
-                leftIcon={<Phone size={16} />}
               />
               <div style={{ gridColumn: "1 / -1" }}>
                 <Input
@@ -470,7 +482,7 @@ export default function InstitucionesPage() {
             </div>
             <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 10, display: "flex", alignItems: "center", gap: 5 }}>
               <Hash style={{ width: 11, height: 11 }} />
-              La contraseña inicial del administrador será su número de cédula.
+              {TEXTO_CONTRASENA_INICIAL}
             </p>
           </div>
 
@@ -503,13 +515,10 @@ export default function InstitucionesPage() {
               onChange={ef("direccion")}
               leftIcon={<MapPin size={16} />}
             />
-            <Input
+            <PhoneInput
               label="Teléfono"
-              type="tel"
-              placeholder="Teléfono"
               value={editForm.telefono}
               onChange={ef("telefono")}
-              leftIcon={<Phone size={16} />}
             />
             <Input
               label="Correo"

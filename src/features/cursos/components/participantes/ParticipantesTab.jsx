@@ -12,11 +12,17 @@ import {
   cursosAddParticipantesCsv,
 } from "@/features/cursos/services/cursosService";
 import { usersGetById } from "@/services/usersService";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { normalizeUser } from "@/lib/normalizers";
-import { Badge, Button, Input, AppModal, UserAvatar, Toast, CsvUploadModal } from "@/components";
+import { Badge, Button, Input, AppModal, UserAvatar, Toast, CsvUploadModal, PhoneInput } from "@/components";
 import { Sk, EmptyState, Field, iconBtn } from "../shared/ui";
 import { makeNotify } from "../shared/helpers";
 import { descargarPlantillaPadresCSV, CSV_COLUMNAS_PADRES } from "@/components/ui/PadresCsvTemplate";
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
+import {
+  contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
+  isValidCedula, CEDULA_ERROR, toCedula,
+} from "@/utils/credenciales";
 
 const EMPTY_FORM = { nombre: "", apellido: "", cedula: "", telefono: "" };
 
@@ -28,8 +34,13 @@ const ROL_META = {
   "padre/tutor": { label: "Padre/Tutor", color: "#FBBF24" },
 };
 
+// Sin fecha real, devuelve null (no "—"): InfoRow ya oculta filas con
+// valor falsy — un placeholder aquí rompía ese comportamiento y dejaba
+// filas vacías tipo "Registro —" para roles (docente) a los que el backend
+// nunca les manda fechaRegistro/ultimoAcceso (ver GET /api/users/:id,
+// restringido a administrador/superadmin en userRoutes.js).
 function formatDate(iso) {
-  if (!iso) return "—";
+  if (!iso) return null;
   return new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -66,6 +77,12 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
   const ctx = useContext(CursoContext);
   const cursoId = ctx?.cursoId ?? cursoIdProp;
   const canManage = ctx?.canManageParticipants ?? canManageProp;
+  const { user } = useAuth();
+  // GET /api/users/:id (usado para traer el detalle completo) está
+  // restringido a administrador/superadmin en el backend (userRoutes.js) —
+  // para cualquier otro rol es un 403 garantizado, así que ni se intenta:
+  // se muestra directo el dato ya disponible de la lista de participantes.
+  const puedeVerDetalleCompleto = user?.rol === "administrador" || user?.rol === "superadmin";
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -117,13 +134,18 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
     if (!nombre || !apellido || !cedula || !telefono) {
       notify("Todos los campos son requeridos", "error"); return;
     }
+    if (!isValidCedula(cedula)) { notify(CEDULA_ERROR, "error"); return; }
+    if (!isValidPhone(telefono)) { notify(PHONE_ERROR, "error"); return; }
+
     setSaving(true);
     try {
-      // No se envía "contraseña": el backend la define como la cédula por defecto
-      // (contraseña?.trim() || cedula.trim()). Nunca se manda un valor propio para
-      // garantizar que la contraseña inicial del participante sea siempre su cédula.
-      await cursosAddParticipante(cursoId, { nombre, apellido, cedula, telefono });
-      notify("Participante agregado");
+      // No se envía "contraseña": el backend aplica la regla única del sistema
+      // (contraseña inicial = cédula). El teléfono siempre viaja como +57XXXXXXXXXX.
+      await cursosAddParticipante(cursoId, {
+        nombre, apellido, cedula,
+        telefono: normalizePhone(telefono),
+      });
+      notify(`Participante agregado. Contraseña inicial: ${contrasenaInicial(cedula)}`);
       closeAddModal();
       load();
     } catch { notify("Error al agregar participante", "error"); }
@@ -131,12 +153,39 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
   };
 
   // ── Carga masiva CSV ──────────────────────────────────────────────────────
+  // El backend (registrarUsuariosMasivo → procesarUsuariosCSV) responde con
+  // los conteos anidados bajo "resumen" y el detalle bajo "detalles"
+  // ({ resumen: {total, exitosos, errores, duplicados}, detalles: {...} }) —
+  // devolver esa respuesta tal cual (como hacía antes) dejaba a SuccessPanel
+  // (en CsvUploadModal) leyendo campos de nivel superior que nunca existían,
+  // por eso el resumen se veía como "Total —, Creados 0" sin importar el
+  // resultado real. Se adapta aquí a la misma forma plana que ya usa
+  // ModulosTab.jsx: { total, exitosos, fallidos, detalle[] }.
   const handleCsvUpload = async (file) => {
     const formData = new FormData();
     formData.append("archivoCSV", file);
     const res = await cursosAddParticipantesCsv(cursoId, formData);
     load(); // refresca lista aunque haya errores parciales
-    return res; // { total, exitosos, fallidos, detalle[] } → lo muestra CsvUploadModal
+
+    const resumen  = res?.resumen ?? {};
+    const detalles = res?.detalles ?? {};
+    const detalle = [
+      ...(detalles.errores ?? []).map((e) => ({
+        fila: e.datos?.nombre ? `${e.datos.nombre} ${e.datos.apellido ?? ""}`.trim() : (e.datos?.cedula ?? "—"),
+        error: e.error ?? "Error al crear el usuario.",
+      })),
+      ...(detalles.duplicados ?? []).map((d) => ({
+        fila: d.nombre ?? d.cedula ?? "—",
+        error: d.motivo ?? "Duplicado.",
+      })),
+    ];
+
+    return {
+      total:    resumen.total ?? 0,
+      exitosos: resumen.exitosos ?? 0,
+      fallidos: (resumen.errores ?? 0) + (resumen.duplicados ?? 0),
+      detalle,
+    };
   };
 
   // ── Eliminar ──────────────────────────────────────────────────────────────
@@ -158,6 +207,15 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
   const openView = async (u) => {
     setViewTarget(u);
     setViewDetail(null);
+
+    if (!puedeVerDetalleCompleto) {
+      // Docente: no tiene permiso para GET /api/users/:id — usar directo
+      // los datos que ya trae la lista, sin disparar una petición que
+      // sabemos que va a fallar con 403.
+      setViewDetail(normalizeUser(u));
+      return;
+    }
+
     setViewLoading(true);
     try {
       const res = await usersGetById(u._id ?? u.id);
@@ -189,7 +247,7 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
 
         {canManage && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {/* Botón: carga masiva CSV */}
+            {/* Botón: carga masiva */}
             <button
               onClick={() => setCsvOpen(true)}
               style={{
@@ -266,9 +324,10 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
                 {canManage && !esDocente && (
                   <button
                     onClick={(e) => { e.stopPropagation(); askRemove(u._id ?? p._id, nombreCompleto); }}
-                    style={iconBtn("var(--color-error)")}
+                    style={{ ...iconBtn("var(--color-error)"), padding: "7px 10px", gap: 6, fontSize: 12, fontWeight: 700 }}
                   >
-                    <UserMinus style={{ width: 14, height: 14 }} />
+                    <UserMinus style={{ width: 14, height: 14, flexShrink: 0 }} />
+                    Eliminar
                   </button>
                 )}
               </div>
@@ -302,12 +361,16 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
               <Field label="Cédula *">
                 <Input
                   value={form.cedula}
-                  onChange={(e) => setForm((f) => ({ ...f, cedula: e.target.value }))}
+                  inputMode="numeric"
+                  placeholder="1020304050"
+                  onChange={(e) => setForm((f) => ({ ...f, cedula: toCedula(e.target.value) }))}
                   required
                 />
               </Field>
               <Field label="Teléfono *">
-                <Input
+                <PhoneInput
+                  label={null}
+                  hint={null}
                   value={form.telefono}
                   onChange={(e) => setForm((f) => ({ ...f, telefono: e.target.value }))}
                   required
@@ -315,7 +378,7 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
               </Field>
             </div>
             <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "4px 0 0" }}>
-              Si el padre no existe, se creará con contraseña igual a su cédula.
+              Si el padre no existe, se creará automáticamente. {TEXTO_CONTRASENA_INICIAL}
             </p>
           </form>
         </AppModal.Body>
@@ -394,62 +457,6 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
                   </div>
                 </div>
               </div>
-              {/* Foto de perfil, si tiene */}
-              {d.fotoPerfilUrl && (
-                <div style={{ marginBottom: 4 }}>
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: "var(--color-text-muted)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Foto de perfil
-                  </p>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      alignItems: "center",
-                    }}
-                  >
-                    <img
-                      src={d.fotoPerfilUrl}
-                      alt="Foto de perfil"
-                      style={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: 12,
-                        objectFit: "cover",
-                        border: "2px solid var(--color-border)",
-                      }}
-                    />
-
-                    <a
-                      href={d.fotoPerfilUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        fontSize: 12.5,
-                        color: "var(--color-primary)",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <Eye style={{ width: 13, height: 13 }} />
-                      Ver imagen completa
-                    </a>
-                  </div>
-                </div>
-              )}
-
               {/* Filas de información */}
               <InfoRow icon={Mail} label="Correo" value={d.correo} />
               <InfoRow icon={Phone} label="Teléfono" value={d.telefono} />

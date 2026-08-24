@@ -7,15 +7,17 @@ import {
   BookOpen, GraduationCap, Key, Info, Clock, Hash, Loader2, Check,
 } from "lucide-react";
 
-import { usersGetMyProfile, usersUpdateMyPhoto, usersGetDefaultPhotos, usersUpdate } from "@/services/usersService";
+import { usersGetMyProfile, usersUpdateMyPhoto, usersGetDefaultPhotos, usersUpdateMyProfile } from "@/services/usersService";
 import { cursosGetAll, cursosGetMine } from "@/features/cursos/services/cursosService";
 import { perfilesGetAll } from "@/features/familia/services/perfilesService";
 import { authChangePassword } from "@/services/authService";
 
-import { Modal, Toast, UserAvatar, Button, Input } from "@/components";
+import { Modal, Toast, UserAvatar, Button, Input, PhoneInput } from "@/components";
 import getRoleStyle from "@/utils/getRoleStyle";
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
+import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
+import { validarContrasenaNueva, TEXTO_REQUISITOS_CONTRASENA } from "@/utils/credenciales";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────
 function Sk({ h = 14, r = 6 }) {
@@ -319,13 +321,23 @@ export default function PerfilPage() {
     if (editForm.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.correo)) {
       notify("El correo no es válido", "error"); return;
     }
+    if (editForm.telefono && !isValidPhone(editForm.telefono)) {
+      notify(PHONE_ERROR, "error"); return;
+    }
     setSavingProfile(true);
     try {
-      const userId = profile?._id ?? profile?.id;
       const body = Object.fromEntries(
-        Object.entries(editForm).filter(([, v]) => v !== "")
+        Object.entries({
+          ...editForm,
+          // El backend siempre recibe "+57XXXXXXXXXX"
+          telefono: normalizePhone(editForm.telefono) ?? "",
+        }).filter(([, v]) => v !== "")
       );
-      const data   = await usersUpdate(userId, body);
+      // PUT /users/me/profile: el backend identifica al usuario por el token
+      // (req.user.userId), nunca por :id en la URL — así cualquier rol puede
+      // editar SU PROPIO perfil sin pasar por el endpoint admin-only
+      // PUT /users/:id (que devolvía 403 a docentes/padres editando lo suyo).
+      const data   = await usersUpdateMyProfile(body);
       const updated = data.user ?? data.usuario ?? data;
       setProfile(p => ({ ...p, ...updated }));
       setUser({ ...profile, ...updated });
@@ -392,7 +404,9 @@ export default function PerfilPage() {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (passForm.nueva !== passForm.confirmar) { notify("Las contraseñas nuevas no coinciden", "error"); return; }
-    if (passForm.nueva.length < 6)             { notify("La contraseña debe tener al menos 6 caracteres", "error"); return; }
+    // Mismas reglas que el backend y que el wizard de primer ingreso
+    const pwError = validarContrasenaNueva(passForm.nueva);
+    if (pwError) { notify(pwError, "error"); return; }
     setSavingPass(true);
     try {
       await authChangePassword({ contrasenaActual: passForm.actual, contrasenaNueva: passForm.nueva });
@@ -529,14 +543,10 @@ export default function PerfilPage() {
                     placeholder="correo@ejemplo.com"
                     leftIcon={<Mail size={14} />}
                   />
-                  <Input
+                  <PhoneInput
                     label="Teléfono"
                     value={editForm.telefono}
                     onChange={setField("telefono")}
-                    type="tel"
-                    placeholder="+57XXXXXXXXXX"
-                    hint="Debe iniciar con +57 seguido de 10 dígitos"
-                    leftIcon={<Phone size={14} />}
                   />
                 </Grid2>
               </div>
@@ -770,7 +780,7 @@ export default function PerfilPage() {
           </div>
 
           <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(99,102,241,0.06)", borderRadius: 10, border: "1px solid rgba(99,102,241,0.15)" }}>
-            <p style={{ fontSize: 12, color: "#6366F1", margin: 0 }}>La nueva contraseña debe tener al menos 6 caracteres.</p>
+            <p style={{ fontSize: 12, color: "#6366F1", margin: 0 }}>{TEXTO_REQUISITOS_CONTRASENA}</p>
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>

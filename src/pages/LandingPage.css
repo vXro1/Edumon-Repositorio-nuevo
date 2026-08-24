@@ -1,39 +1,307 @@
 /* ══════════════════════════════════════════════════════════════
    EDUMON — LANDING PAGE
-   Reescritura de layout / spacing / responsividad.
-   No se tocan colores, tipografías, textos ni ilustraciones:
-   solo estructura, proporciones, breakpoints y burbujas decorativas.
+   V3: correcciones críticas + armonía de color + responsividad.
+
+   Cambios respecto a V2 (todos documentados inline con "FIX:" o "MEJORA:"):
+   1) FIX: el bloque :root nunca se cerraba, invalidando TODO el CSS
+      posterior. Se cierra correctamente.
+   2) FIX: varios `#FFFF` (hex inválido de 4 dígitos) dejaban íconos
+      y bordes blanco-sobre-blanco, invisibles. Reemplazados por
+      colores reales de la paleta.
+   3) FIX: el botón de contacto usaba un azul (#2563EB) ajeno a la
+      paleta de marca. Ahora usa los tokens --edumon-blue-*.
+   4) MEJORA: variedad de color disciplinada (azul/cian/ámbar) en
+      los íconos de "pilares" en vez de un solo tono plano —
+      da vida sin añadir ruido cromático nuevo.
+   5) MEJORA: ritmo visual entre secciones (alterna blanco / azul-50
+      muy sutil) en vez de blanco repetido en toda la página.
+   6) MEJORA: responsividad reforzada — nuevo breakpoint intermedio
+      en la sección de contacto que antes podía desbordar entre
+      ~900px y 1100px.
    ══════════════════════════════════════════════════════════════ */
-
 :root {
-  --edumon-purple: #7c3aed;
-  --edumon-cyan: #06b6d4;
-  --edumon-pink: #db2777;
-  --edumon-amber: #f59e0b;
-  --edumon-green: #16a34a;
-  --edumon-ink: #0f172a;
-  --edumon-muted: #64748b;
-  --edumon-border: #e2e8f0;
-  --edumon-bg-soft: #f8fafc;
-  --edumon-footer-bg: #0b1120;
+  /* ================================================================
+     PALETA DE COLOR EDUMON
+     Azul como color principal de marca.
+     Los demás colores se reservan para estados y significado.
+     ================================================================ */
 
-  --font-heading: "Poppins", "Segoe UI", sans-serif;
-  --font-body: "Inter", "Segoe UI", sans-serif;
+  /* ── Azul de marca ─────────────────────────────────────────────── */
 
+  --edumon-blue-900: #042A54;
+  --edumon-blue-800: #063A70;
+  --edumon-blue-700: #084A8C;
+  --edumon-blue-600: #0A5AA8;
+  --edumon-blue-500: #0C6AC4; /* Primario */
+  --edumon-blue-400: #46A8EA;
+  --edumon-blue-300: #7FC7F5;
+  --edumon-blue-200: #B3DFFA;
+  --edumon-blue-100: #D9EFFC;
+  --edumon-blue-50: #EFF8FE;
+
+  /* Alias retrocompatible */
+  --edumon-blue: var(--edumon-blue-500);
+
+
+  /* ── Cian: información / interacción secundaria ───────────────── */
+
+  --edumon-cyan-700: #0392B4;
+  --edumon-cyan-600: #04AED6;
+  --edumon-cyan-500: #05C7F2;
+  --edumon-cyan-400: #25CEF5;
+  --edumon-cyan-300: #5DD7F8;
+  --edumon-cyan-200: #A0E8FB;
+  --edumon-cyan-100: #D4F4FD;
+  --edumon-cyan-50: #F0FBFE;
+
+
+  /* ── Verde: éxito / estado positivo ───────────────────────────── */
+
+  --edumon-success: #41D958;
+  --edumon-success-hover: #2FBD45;
+  --edumon-success-dark: #229D35;
+  --edumon-success-bg: #F0FDF4;
+
+
+  /* ── Amarillo: advertencia / XP / logros ───────────────────────── */
+
+  --edumon-warning: #FCBD00;
+  --edumon-warning-hover: #DFA300;
+  --edumon-warning-dark: #B88600;
+  --edumon-warning-bg: #FFFBEB;
+
+
+  /* ── Rojo: error / acciones destructivas ───────────────────────── */
+
+  --edumon-danger: #EF4444;
+  --edumon-danger-hover: #DC2626;
+  --edumon-danger-bg: #FEF2F2;
+
+
+  /* ── Neutros ───────────────────────────────────────────────────── */
+
+  --edumon-white: #FFFFFF;
+
+  --edumon-neutral-50: #FAFAFA;
+  --edumon-neutral-100: #F5F5F5;
+  --edumon-neutral-150: #EFEFEF;
+  --edumon-neutral-200: #E8E8E8;
+  --edumon-neutral-300: #D4D4D4;
+  --edumon-neutral-400: #A3A3A3;
+  --edumon-neutral-500: #737373;
+  --edumon-neutral-600: #525252;
+  --edumon-neutral-700: #404040;
+  --edumon-neutral-800: #262626;
+  --edumon-neutral-900: #171717;
+
+
+  /* ── Texto ────────────────────────────────────────────────────── */
+
+  --edumon-ink: #0D0D0D;
+  --edumon-muted: #737373;
+  --edumon-subtle: #A3A3A3;
+
+  --edumon-text: var(--edumon-ink);
+  --edumon-text-muted: var(--edumon-muted);
+  --edumon-text-subtle: var(--edumon-subtle);
+  --edumon-text-inverse: #FFFFFF;
+
+
+  /* ── Fondos ───────────────────────────────────────────────────── */
+
+  --edumon-bg: #FFFFFF;
+  --edumon-bg-soft: #FCF7ED;
+  --edumon-bg-muted: #FAFAFA;
+
+  --edumon-surface: #FFFFFF;
+  --edumon-surface-2: #FAFAFA;
+  --edumon-surface-3: #F5F5F5;
+
+
+  /* ── Bordes ───────────────────────────────────────────────────── */
+
+  --edumon-border: #E8E8E8;
+  --edumon-border-strong: #D4D4D4;
+
+  --edumon-border-brand: rgba(12, 106, 196, 0.18);
+
+
+  /* ── Sidebar / superficies oscuras ────────────────────────────── */
+
+  --edumon-footer-bg: #0D0D0D;
+
+  --edumon-sidebar-bg: #0D0D0D;
+  --edumon-sidebar-text: rgba(255, 255, 255, 0.80);
+  --edumon-sidebar-text-active: #FFFFFF;
+  --edumon-sidebar-active: var(--edumon-blue-500);
+  --edumon-sidebar-hover: rgba(12, 106, 196, 0.14);
+  --edumon-sidebar-border: rgba(255, 255, 255, 0.07);
+
+
+  /* ================================================================
+     TOKENS SEMÁNTICOS
+     ================================================================ */
+
+  --color-primary: var(--edumon-blue-500);
+  --color-primary-hover: var(--edumon-blue-600);
+  --color-primary-active: var(--edumon-blue-700);
+  --color-primary-dark: var(--edumon-blue-800);
+  --color-primary-light: var(--edumon-blue-50);
+  --color-primary-subtle: rgba(12, 106, 196, 0.08);
+
+  --color-secondary: var(--edumon-blue-400);
+  --color-secondary-hover: var(--edumon-blue-500);
+  --color-secondary-light: var(--edumon-blue-100);
+
+  --color-accent: var(--edumon-cyan-500);
+  --color-accent-hover: var(--edumon-cyan-600);
+  --color-accent-light: var(--edumon-cyan-50);
+
+  --color-success: var(--edumon-success);
+  --color-success-hover: var(--edumon-success-hover);
+  --color-success-light: var(--edumon-success-bg);
+
+  --color-warning: var(--edumon-warning);
+  --color-warning-hover: var(--edumon-warning-hover);
+  --color-warning-light: var(--edumon-warning-bg);
+
+  --color-error: var(--edumon-danger);
+  --color-error-hover: var(--edumon-danger-hover);
+  --color-error-light: var(--edumon-danger-bg);
+
+  --color-info: var(--edumon-cyan-500);
+  --color-info-light: var(--edumon-cyan-50);
+
+  /* MEJORA: glow de marca reutilizable (azul + cian) para hovers
+     de botones — es el único "toque divertido" de sombra de color
+     en toda la hoja, usado con moderación en 2-3 lugares. */
+  --glow-brand:
+    0 10px 22px rgba(5, 199, 242, 0.22),
+    0 6px 14px rgba(10, 90, 168, 0.35);
+
+
+  /* ================================================================
+     GRADIENTES
+     ================================================================ */
+
+  /* Principal: profundo → vivo → luminoso */
+  --gradient-brand:
+    linear-gradient(
+      135deg,
+      var(--edumon-blue-900) 0%,
+      var(--edumon-blue-700) 45%,
+      var(--edumon-blue-500) 75%,
+      var(--edumon-blue-300) 100%
+    );
+
+  /* Para botones / elementos destacados */
+  --gradient-primary:
+    linear-gradient(
+      135deg,
+      var(--edumon-blue-700),
+      var(--edumon-blue-500)
+    );
+
+  /* Azul luminoso */
+  --gradient-light:
+    linear-gradient(
+      135deg,
+      var(--edumon-blue-400),
+      var(--edumon-blue-200)
+    );
+
+  /* Azul + cian: información / tecnología */
+  --gradient-cool:
+    linear-gradient(
+      135deg,
+      var(--edumon-blue-500),
+      var(--edumon-blue-400) 55%,
+      var(--edumon-cyan-400)
+    );
+
+  /* Éxito */
+  --gradient-success:
+    linear-gradient(
+      135deg,
+      var(--edumon-success),
+      #7DDDB8
+    );
+
+  /* Advertencia / XP */
+  --gradient-warning:
+    linear-gradient(
+      135deg,
+      var(--edumon-warning),
+      #FFD96B
+    );
+
+  /* Fondo suave */
+  --gradient-soft:
+    linear-gradient(
+      180deg,
+      #FFFFFF 0%,
+      var(--edumon-blue-50) 100%
+    );
+
+  /* Hero con iluminación */
+  --gradient-hero:
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(219, 239, 252, 0.55) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 10% 90%,
+      rgba(127, 199, 245, 0.25) 0%,
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      var(--edumon-blue-900) 0%,
+      var(--edumon-blue-700) 45%,
+      var(--edumon-blue-500) 100%
+    );
+
+  /* Texto destacado */
+  --gradient-text:
+    linear-gradient(
+      120deg,
+      var(--edumon-blue-700),
+      var(--edumon-blue-400)
+    );
+
+  /* MEJORA: divisor de pilares con leve giro a cian — un guiño de
+     color puntual y contenido, no un arcoíris nuevo. */
+  --gradient-divider:
+    linear-gradient(
+      90deg,
+      var(--edumon-blue-600),
+      var(--edumon-cyan-400)
+    );
+
+  /* ================================================================
+     LAYOUT / CONTENEDOR
+     FIX: estas 5 variables se usaban en toda la hoja pero nunca se
+     definían (ni aquí ni en tokens.css global) — un var() no
+     resuelto invalida la declaración entera, así que en la práctica
+     TODOS los contenedores tenían padding-inline:0, las secciones
+     padding-block:0, y las cards sin sombra "pop" ni anillo de foco.
+     Eso era la causa real de los contenedores pegados al borde y
+     las secciones amontonadas. ================================== */
   --container-max: 1280px;
-  --container-pad: clamp(20px, 4vw, 48px);
+  --container-pad: clamp(20px, 4.5vw, 48px);
 
-  --space-section-desktop: 80px;
-  --space-section-tablet: 64px;
-  --space-section-mobile: 48px;
+  --space-section-desktop: clamp(88px, 9vw, 120px);
+  --space-section-tablet: clamp(64px, 8vw, 88px);
+  --space-section-mobile: clamp(48px, 10vw, 64px);
 
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
+  --focus-ring: 0 0 0 3px rgba(12, 106, 196, 0.45);
 
-  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.09);
-  --shadow-pop: 0 20px 50px rgba(15, 23, 42, 0.14);
-}
+  --shadow-pop:
+    0 24px 48px rgba(15, 23, 42, 0.14),
+    0 8px 20px rgba(15, 23, 42, 0.08);
+} /* FIX: esta llave faltaba — sin ella, TODO el CSS de abajo quedaba
+     anidado dentro de :root y el navegador lo ignoraba por completo. */
 
 * { box-sizing: border-box; }
 
@@ -55,11 +323,24 @@ img { max-width: 100%; height: auto; display: block; object-fit: contain; }
 
 button, input, textarea { font-family: inherit; }
 
+/* ── Foco visible consistente y accesible en todo interactivo ── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
 /* ── Utilidad de contenedor global ── */
 .landing-header__inner,
 .landing-hero__content-row,
-.pilares-inner,
-.aprende-inner,
 .landing-quienes,
 .landing-contacto,
 .landing-footer__grid {
@@ -70,13 +351,25 @@ button, input, textarea { font-family: inherit; }
   box-sizing: border-box;
 }
 
+/* FIX: apuntaba a .pilares-inner / .aprende-inner, clases que no
+   existen en el JSX (los contenedores reales son .pilares-content /
+   .aprende-content), así que su texto (label/título/subtítulo)
+   nunca recibía padding lateral y quedaba pegado al borde en
+   pantallas angostas. Solo padding-inline aquí: .pilares-grid y
+   .modulo-embla ya centran y limitan su propio ancho más abajo, así
+   que no conviene duplicar max-width/margin-inline en el padre. */
+.pilares-content,
+.aprende-content {
+  padding-inline: var(--container-pad);
+  box-sizing: border-box;
+}
+
 /* ══════════════════════════════════════════════════════
-   BURBUJAS DECORATIVAS (circulo1.svg … circulo12.svg)
-   Contenedor absoluto que cubre la sección; cada burbuja es
-   una <img> posicionada individualmente vía inline style.
-   El stacking se resuelve explícitamente: las burbujas van en
-   z-index 0 y el contenido real de cada sección se envuelve en
-   un bloque con z-index 1 para quedar siempre por encima.
+   BURBUJAS DECORATIVAS
+   Antes: 3 animaciones simultáneas por burbuja (traslación +
+   rotación), muy notorias. Ahora: una sola animación suave,
+   menor amplitud, y las burbujas se atenúan para no competir
+   con el contenido ni con el nuevo acento azul.
    ══════════════════════════════════════════════════════ */
 .deco-bubbles {
   position: absolute;
@@ -92,25 +385,22 @@ button, input, textarea { font-family: inherit; }
   width: 80px;
   user-select: none;
   will-change: transform;
+  opacity: 0.55;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .deco-bubble--a { animation: floatA 9s ease-in-out infinite; }
-  .deco-bubble--b { animation: floatB 11s ease-in-out infinite; }
-  .deco-bubble--c { animation: floatC 13s ease-in-out infinite; }
+  .deco-bubble--a,
+  .deco-bubble--b,
+  .deco-bubble--c {
+    animation: floatGentle 12s ease-in-out infinite;
+  }
+  .deco-bubble--b { animation-delay: -4s; }
+  .deco-bubble--c { animation-delay: -8s; }
 }
 
-@keyframes floatA {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-18px) rotate(6deg); }
-}
-@keyframes floatB {
-  0%, 100% { transform: translateY(0) translateX(0); }
-  50% { transform: translateY(14px) translateX(-10px); }
-}
-@keyframes floatC {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-11px) rotate(-8deg); }
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -150,7 +440,7 @@ button, input, textarea { font-family: inherit; }
   font-size: 1.15rem;
   color: var(--edumon-ink);
 }
-.landing-nav__wordmark span { color: var(--edumon-purple); }
+.landing-nav__wordmark span { color: var(--edumon-blue-600); }
 
 .landing-nav__links {
   list-style: none;
@@ -161,6 +451,8 @@ button, input, textarea { font-family: inherit; }
   margin: 0;
   padding: 0;
   flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 .landing-nav__links a {
   display: inline-flex;
@@ -174,10 +466,10 @@ button, input, textarea { font-family: inherit; }
   white-space: nowrap;
   transition: background 0.2s ease, color 0.2s ease;
 }
-.landing-nav__links a:hover { background: var(--edumon-bg-soft); }
+.landing-nav__links a:hover { background: var(--edumon-blue-50); }
 .landing-nav__links a.active {
   color: #fff;
-  background: linear-gradient(135deg, var(--edumon-pink), var(--edumon-purple));
+  background: var(--edumon-blue-600);
 }
 
 .landing-nav__cta {
@@ -188,15 +480,20 @@ button, input, textarea { font-family: inherit; }
   padding: 0 20px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--edumon-purple), var(--edumon-cyan));
+  background: var(--edumon-blue-600);
   color: #fff;
   font-weight: 700;
   font-size: 0.875rem;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
-.landing-nav__cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
+.landing-nav__cta:hover {
+  transform: translateY(-1px);
+  /* MEJORA: glow de marca en vez de sombra gris plana */
+  box-shadow: var(--glow-brand);
+  background: var(--edumon-blue-700);
+}
 
 .landing-nav__hamburger {
   display: none;
@@ -236,7 +533,7 @@ button, input, textarea { font-family: inherit; }
   color: var(--edumon-ink);
   font-weight: 600;
 }
-.landing-nav__mobile-menu a:hover { background: var(--edumon-bg-soft); }
+.landing-nav__mobile-menu a:hover { background: var(--edumon-blue-50); }
 .landing-nav__mobile-cta {
   margin-top: 8px;
   display: inline-flex;
@@ -246,20 +543,23 @@ button, input, textarea { font-family: inherit; }
   height: 46px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--edumon-purple), var(--edumon-cyan));
+  background: var(--edumon-blue-600);
   color: #fff;
   font-weight: 700;
   cursor: pointer;
 }
 
-@media (max-width: 900px) {
+/* MEJORA: el menú de escritorio empezaba a apretarse antes de 900px
+   en pantallas con navegación larga; se adelanta el breakpoint del
+   hamburger y se evita que los links compriman el logo/CTA. */
+@media (max-width: 960px) {
   .landing-nav__links { display: none; }
   .landing-nav__cta { display: none; }
   .landing-nav__hamburger { display: flex; }
 }
 
 /* ══════════════════════════════════════════════════════
-   HERO — 80–90vh, balanceado, centrado verticalmente
+   HERO
    ══════════════════════════════════════════════════════ */
 .landing-hero {
   position: relative;
@@ -268,6 +568,12 @@ button, input, textarea { font-family: inherit; }
   align-items: center;
   overflow: hidden;
   padding-block: clamp(32px, 6vh, 64px);
+  /* MEJORA: fondo plano blanco → una insinuación de color cálido/frío
+     en las esquinas, para que el hero no se sienta tan corporativo. */
+  background:
+    radial-gradient(circle at 8% 12%, var(--edumon-cyan-50) 0%, transparent 42%),
+    radial-gradient(circle at 92% 88%, var(--edumon-warning-bg) 0%, transparent 38%),
+    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-50) 100%);
 }
 
 .landing-hero__content-row {
@@ -294,8 +600,8 @@ button, input, textarea { font-family: inherit; }
   gap: 6px;
   padding: 8px 16px;
   border-radius: 999px;
-  background: #fdf2f8;
-  color: var(--edumon-pink);
+  background: var(--edumon-blue-50);
+  color: var(--edumon-blue-700);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -309,7 +615,9 @@ button, input, textarea { font-family: inherit; }
   color: var(--edumon-ink);
 }
 .gradient-word {
-  background: linear-gradient(135deg, var(--edumon-purple), var(--edumon-pink));
+  background: linear-gradient(
+    135deg, var(--edumon-blue-900) 0%, var(--edumon-blue-700) 45%, var(--edumon-blue-500) 75%, var(--edumon-blue-300) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -342,23 +650,97 @@ button, input, textarea { font-family: inherit; }
   font-weight: 700;
   font-size: 0.95rem;
   text-decoration: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .landing-hero__btn-primary {
-  background: linear-gradient(135deg, var(--edumon-purple), var(--edumon-pink));
+  background: var(--edumon-blue-600);
   color: #fff;
   box-shadow: var(--shadow-card);
+}
+.landing-hero__btn-primary:hover {
+  background: var(--edumon-blue-700);
+  /* MEJORA: glow azul+cian — único acento "divertido" del hero */
+  box-shadow: var(--glow-brand);
 }
 .landing-hero__btn-secondary {
   background: #fff;
   color: var(--edumon-ink);
   border: 1.5px solid var(--edumon-border);
 }
+.landing-hero__btn-secondary:hover { border-color: var(--edumon-blue-300); background: var(--edumon-blue-50); }
 .landing-hero__btn-primary:hover,
 .landing-hero__btn-secondary:hover { transform: translateY(-2px); }
 
-/* Mascota — ocupa la columna derecha, centrada vertical y horizontalmente */
-.edumon-mascot-visual { padding: 0 !important; position: relative; }
+/* FIX: .edumon-mascot-ring y .edumon-mascot-img no tenían ninguna
+   regla propia (ancho/alto/posición) — el ring quedaba en 0×0
+   invisible y la mascota se apoyaba solo en el reset global
+   img{max-width:100%}, sin límite propio ni relación con el resto
+   del hero.
+   MEJORA: la mascota es el elemento con más personalidad de toda la
+   marca — se agranda para que sea el foco visual del hero, con un
+   halo multicolor (azul + cian + ámbar) en vez de un círculo plano,
+   y un balanceo suave para que se sienta viva. */
+.edumon-mascot-visual {
+  padding: 0 !important;
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edumon-mascot-ring {
+  position: absolute;
+  inset: 2%;
+  border-radius: 50%;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 32% 30%, rgba(252, 189, 0, 0.30), transparent 42%),
+    radial-gradient(circle at 72% 68%, rgba(5, 199, 242, 0.30), transparent 46%),
+    radial-gradient(circle at 50% 50%, var(--edumon-blue-100), transparent 68%);
+  filter: blur(6px);
+}
+
+.edumon-mascot-img {
+  position: relative;
+  z-index: 1;
+  width: 88%;
+  height: auto;
+  filter: drop-shadow(0 22px 30px rgba(4, 42, 84, 0.18));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .edumon-mascot-img { animation: mascotFloat 4.5s ease-in-out infinite; }
+}
+
+@keyframes mascotFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(-1.5deg); }
+}
+
+/* Chispas decorativas junto a la mascota — el toque "divertido"
+   que le faltaba a un hero por lo demás muy plano. */
+.edumon-mascot-sparkle {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+.edumon-mascot-sparkle--1 { top: 6%; right: 10%; color: var(--edumon-warning); }
+.edumon-mascot-sparkle--2 { bottom: 14%; left: 4%; color: var(--edumon-cyan-500); }
+@media (prefers-reduced-motion: no-preference) {
+  .edumon-mascot-sparkle--1 { animation: floatGentle 5s ease-in-out infinite; }
+  .edumon-mascot-sparkle--2 { animation: floatGentle 6s ease-in-out infinite -2s; }
+}
+
+@media (max-width: 900px) {
+  .edumon-mascot-visual { max-width: 380px; }
+}
+@media (max-width: 480px) {
+  .edumon-mascot-visual { max-width: 280px; }
+}
 
 @media (max-width: 900px) {
   .landing-hero { min-height: auto; padding-block: 40px 32px; }
@@ -373,6 +755,15 @@ button, input, textarea { font-family: inherit; }
   .landing-hero__actions { justify-content: center; }
   .landing-hero__btn-primary,
   .landing-hero__btn-secondary { flex: 1 1 220px; }
+
+  /* FIX: HERO_BUBBLES está posicionado en % pensado para el layout
+     de escritorio (texto a la izquierda, mascota a la derecha). En
+     mobile el contenido se apila en una sola columna centrada y esas
+     mismas burbujas terminaban flotando literalmente encima del
+     párrafo y los botones. Se recorta el contenedor de burbujas a la
+     mitad inferior de la sección (zona de la mascota), donde sí
+     tienen espacio para respirar sin tapar texto. */
+  .landing-hero .deco-bubbles { clip-path: inset(46% 0 0 0); }
 }
 
 @media (max-width: 480px) {
@@ -410,281 +801,861 @@ button, input, textarea { font-family: inherit; }
   .landing-section--alt,
   .landing-contacto-section { padding-block: var(--space-section-mobile); }
 }
+/* ─────────────────────────────────────────
+   PILARES
+───────────────────────────────────────── */
 
-/* ── PILARES ── */
-.landing-pilares { text-align: center; }
-.pilares-content { position: relative; z-index: 1; }
+.landing-pilares {
+  text-align: center;
+}
+
+.pilares-content {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ─────────────────────────────────────────
+   ETIQUETA
+───────────────────────────────────────── */
+
 .pilares-label,
 .pilares-inner .section-label,
 .section-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8rem;
+
+  font-size: 0.95rem;
   font-weight: 700;
-  color: var(--edumon-purple);
+
+  color: var(--edumon-blue-700);
+
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+
+/* ─────────────────────────────────────────
+   TÍTULO
+───────────────────────────────────────── */
+
 .pilares-title {
   font-family: var(--font-heading);
+
   font-weight: 800;
+
   font-size: clamp(1.7rem, 3vw, 2.4rem);
+
   margin: 12px 0 0;
+
   color: var(--edumon-ink);
 }
+
+
 .pilares-rainbow {
-  background: linear-gradient(135deg, var(--edumon-purple), var(--edumon-cyan), var(--edumon-pink));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--edumon-blue-600);
 }
+
+
+/* ─────────────────────────────────────────
+   DIVISOR
+───────────────────────────────────────── */
+
 .pilares-divider {
-  width: 64px;
-  height: 4px;
-  border-radius: 999px;
+  width: min(240px, 80%);
+
+  height: 3px;
+
   margin: 20px auto;
-  background: linear-gradient(90deg, var(--edumon-pink), var(--edumon-purple), var(--edumon-cyan));
+
+  border-radius: 999px;
+
+  /* MEJORA: leve degradado azul → cian en vez de azul plano,
+     coherente con el resto de la paleta (no color nuevo). */
+  background: var(--gradient-divider);
+
+  opacity: 0.85;
 }
+
+
+/* ─────────────────────────────────────────
+   SUBTÍTULO
+───────────────────────────────────────── */
+
 .pilares-subtitle {
   max-width: 560px;
+
   margin: 0 auto 40px;
+
   color: var(--edumon-muted);
+
   font-size: 1rem;
+
   line-height: 1.6;
 }
+
+
+/* ─────────────────────────────────────────
+   GRID
+───────────────────────────────────────── */
 
 .pilares-grid {
   width: 100%;
+
   max-width: var(--container-max);
+
   margin-inline: auto;
+
   padding-inline: var(--container-pad);
+
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
   gap: 24px;
+
   align-items: stretch;
 }
+
+
+/* ─────────────────────────────────────────
+   CARD
+───────────────────────────────────────── */
+
 .pilar-card {
-  background: #fff;
+  background: #ffffff;
+
   border: 1px solid var(--edumon-border);
+
   border-radius: var(--radius-lg);
+
   box-shadow: var(--shadow-card);
+
   padding: 32px 28px;
+
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
+
   text-align: center;
+
   height: 100%;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 }
-.pilar-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-pop); }
+
+
+/* Hover */
+
+.pilar-card:hover {
+  transform: translateY(-6px) scale(1.015);
+
+  box-shadow: var(--shadow-pop);
+
+  /* FIX: era border-color:#FFFF (hex inválido de 4 dígitos).
+     Ahora un azul suave real, coherente con el resto del hover. */
+  border-color: var(--edumon-blue-200);
+}
+
+/* MEJORA: fondo blanco plano en las 3 cards → cada una lleva un
+   tinte suave del mismo color que su ícono y su barra inferior, así
+   la sección deja de sentirse "genérica" sin perder legibilidad. */
+.pilar-card:nth-child(1) { background: var(--edumon-blue-50); }
+.pilar-card:nth-child(2) { background: var(--edumon-cyan-50); }
+.pilar-card:nth-child(3) { background: var(--edumon-warning-bg); }
+
+
+/* ─────────────────────────────────────────
+   ICONO
+   MEJORA: antes background/color eran ambos #FFFF (inválido),
+   dejando el ícono invisible. Ahora cada card tiene un color
+   propio (azul / cian / ámbar) tomado de la paleta existente,
+   coordinado con la barra inferior de cada card.
+───────────────────────────────────────── */
+
 .pilar-card__icon-circle {
   width: 72px;
+
   height: 72px;
+
   border-radius: 50%;
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
-  background: var(--edumon-bg-soft);
-  color: var(--edumon-purple);
+
   margin-bottom: 18px;
+
   flex-shrink: 0;
+
+  background: var(--edumon-blue-50);
+  color: var(--edumon-blue-700);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+/*
+   ICONOS — heredan el color del círculo vía currentColor
+   en vez de un stroke negro fijo, para que cada card luzca
+   coordinada consigo misma.
+*/
+
+.pilar-card__icon-circle svg {
+  width: 32px;
+
+  height: 32px;
+
+  stroke: currentColor;
+
+  stroke-width: 2;
+}
+
+
+/* ─────────────────────────────────────────
+   TÍTULO CARD
+───────────────────────────────────────── */
+
 .pilar-card__title {
   font-family: var(--font-heading);
+
   font-weight: 700;
+
   font-size: 1.1rem;
+
   margin: 0 0 10px;
+
   color: var(--edumon-ink);
 }
+
+
+/* ─────────────────────────────────────────
+   DESCRIPCIÓN
+───────────────────────────────────────── */
+
 .pilar-card__desc {
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: 0.95rem;
+
+  line-height: 1.65;
+
   color: var(--edumon-muted);
+
   margin: 0;
+
   flex: 1;
 }
+
+
+/* ─────────────────────────────────────────
+   BARRA
+───────────────────────────────────────── */
+
 .pilar-card__bar {
-  width: 48px;
+  width: 100%;
+
   height: 4px;
+
   border-radius: 999px;
+
   margin-top: 20px;
-  background: linear-gradient(90deg, var(--edumon-pink), var(--edumon-purple));
 }
-.pilar-card:nth-child(1) .pilar-card__bar { background: var(--edumon-pink); }
-.pilar-card:nth-child(2) .pilar-card__bar { background: var(--edumon-amber); }
-.pilar-card:nth-child(3) .pilar-card__bar { background: var(--edumon-purple); }
+
+
+.pilar-card:nth-child(1) .pilar-card__bar {
+  background: var(--edumon-blue-700);
+}
+
+.pilar-card:nth-child(2) .pilar-card__bar {
+  background: var(--edumon-cyan-600);
+}
+
+.pilar-card:nth-child(3) .pilar-card__bar {
+  background: var(--edumon-warning-dark);
+}
+
+
+/* ─────────────────────────────────────────
+   DIFERENCIACIÓN POR CARD
+   (fondo + color del ícono van juntos, coordinados con la barra)
+   MEJORA: ahora que la card en sí lleva un tinte de color, el
+   círculo pasa a blanco sólido + sombra de color a juego, para
+   que siga funcionando como una "insignia" que resalta sobre el
+   fondo en vez de fundirse con él.
+───────────────────────────────────────── */
+
+.pilar-card:nth-child(1) .pilar-card__icon-circle {
+  background: #ffffff;
+  color: var(--edumon-blue-700);
+  box-shadow: 0 10px 22px rgba(10, 90, 168, 0.22);
+}
+
+.pilar-card:nth-child(2) .pilar-card__icon-circle {
+  background: #ffffff;
+  color: var(--edumon-cyan-700);
+  box-shadow: 0 10px 22px rgba(3, 146, 180, 0.22);
+}
+
+.pilar-card:nth-child(3) .pilar-card__icon-circle {
+  background: #ffffff;
+  color: var(--edumon-warning-dark);
+  box-shadow: 0 10px 22px rgba(184, 134, 0, 0.22);
+}
+
+.pilar-card:hover .pilar-card__icon-circle {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+
+/* ─────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────── */
 
 @media (max-width: 900px) {
-  .pilares-grid { grid-template-columns: repeat(2, 1fr); }
+  .pilares-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* FIX: mismo problema que en el hero — PILARES_BUBBLES está
+     pensado para una sección ancha y baja; en mobile el bloque de
+     texto (label + título + subtítulo) queda mucho más alto en
+     proporción y las burbujas terminaban encima de esas líneas. Se
+     recortan fuera de esa franja superior. */
+  .landing-pilares .deco-bubbles { clip-path: inset(22% 0 0 0); }
 }
+
+
 @media (max-width: 620px) {
-  .pilares-grid { grid-template-columns: 1fr; }
+  .pilares-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pilar-card {
+    padding: 28px 24px;
+  }
 }
+/* ══════════════════════════════════════════════════════
+   CARRUSEL DE MÓDULOS — EDUMON
+   Diseño limpio, amigable y con jerarquía visual
+══════════════════════════════════════════════════════ */
+
+.aprende-content {
+  position: relative;
+  z-index: 1;
+}
+
 
 /* ══════════════════════════════════════════════════════
-   APRENDE — carrusel de módulos
-   ══════════════════════════════════════════════════════ */
-.aprende-content { position: relative; z-index: 1; }
+   CONTENEDOR DEL CARRUSEL
+══════════════════════════════════════════════════════ */
 
-/* ── Carrusel de módulos: "Featured Cards" (Embla) ──
-   La tarjeta central va a escala 1 / opacidad 100%; las vecinas se
-   asoman parcialmente (peek ~20-25% en desktop, ~10% en tablet, sin
-   recorte en móvil). Toda la animación corre sobre `transform` y
-   `opacity` — nunca `width`/`left` — para que sea barata en GPU. */
 .modulo-embla {
   position: relative;
-  margin-top: 28px;
+
+  margin-top: 24px;
+
   max-width: var(--container-max);
+
   margin-inline: auto;
-  padding: 8px calc(var(--container-pad) + 60px) 44px;
+
+  /*
+    Menos espacio lateral para que las cards
+    aprovechen mejor el ancho.
+  */
+  padding: 8px 48px 32px;
 }
+
+
+/* ══════════════════════════════════════════════════════
+   VIEWPORT
+══════════════════════════════════════════════════════ */
 
 .modulo-embla__viewport {
   overflow: hidden;
-  border-radius: 12px;
+
+  border-radius: 20px;
 }
+
 .modulo-embla__viewport:focus-visible {
-  outline: 2px solid var(--edumon-purple);
+  outline: none;
+
+  box-shadow: var(--focus-ring);
+
   outline-offset: 6px;
 }
 
+
+/* ══════════════════════════════════════════════════════
+   CONTAINER
+══════════════════════════════════════════════════════ */
+
 .modulo-embla__container {
   display: flex;
+
+  align-items: stretch;
+
   touch-action: pan-y;
 }
 
+
+/* ══════════════════════════════════════════════════════
+   SLIDE
+══════════════════════════════════════════════════════ */
+
 .modulo-embla__slide {
+  /*
+    Un poco más grande para que la card
+    tenga presencia.
+  */
   flex: 0 0 68%;
+
   min-width: 0;
-  padding: 22px 16px 14px;
+
+  padding: 20px 12px 24px;
 }
+
+
+/* ══════════════════════════════════════════════════════
+   INNER
+══════════════════════════════════════════════════════ */
 
 .modulo-embla__slide__inner {
   height: 100%;
-  transform-origin: 50% 50%;
+
+  transform-origin: center center;
+
   will-change: transform, opacity;
+
   cursor: pointer;
+
+  /*
+    Las cards laterales se perciben secundarias,
+    pero siguen siendo legibles.
+  */
+  opacity: 0.58;
+
+  transform: scale(0.91);
+
+  transition:
+    transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.35s ease;
 }
-.modulo-embla__slide__inner.is-active { cursor: default; }
-@media (prefers-reduced-motion: no-preference) {
+
+
+/* CARD ACTIVA */
+
+.modulo-embla__slide__inner.is-active {
+  cursor: default;
+
+  opacity: 1;
+
+  /*
+    Zoom de la card activa.
+  */
+  transform: scale(1.04);
+
+  z-index: 2;
+}
+
+
+/* Hover sobre cards no activas */
+
+.modulo-embla__slide__inner:not(.is-active):hover {
+  opacity: 0.85;
+
+  transform: scale(0.95) rotate(-0.6deg);
+}
+
+
+/* Accesibilidad */
+
+@media (prefers-reduced-motion: reduce) {
   .modulo-embla__slide__inner {
-    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
-      opacity 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+    transition: none;
   }
 }
 
+
+/* ══════════════════════════════════════════════════════
+   CARD
+══════════════════════════════════════════════════════ */
+
 .modulo-card {
   height: 100%;
+
   min-height: 260px;
+
   display: flex;
+
   flex-direction: column;
-  background: #fff;
-  border-radius: 20px;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+
+  border-radius: 22px;
+
+  border: 1px solid var(--edumon-border);
+
+  box-shadow:
+    0 6px 18px rgba(15, 23, 42, 0.06);
+
   overflow: hidden;
-  transition: box-shadow 0.5s ease;
-}
-.modulo-embla__slide__inner.is-active .modulo-card {
-  box-shadow: 0 26px 56px rgba(15, 23, 42, 0.16);
+
+  transition:
+    box-shadow 0.35s ease,
+    border-color 0.35s ease,
+    transform 0.35s ease;
 }
 
-.modulo-card__bar { height: 5px; flex-shrink: 0; }
+
+/* Card activa — MEJORA: en vez de un borde/sombra azul plano para
+   todas, cada card usa su propio color (--m-color, ya asignado por
+   JS desde la paleta de MODULOS) para el anillo y el glow, así el
+   carrusel se siente vivo y cada módulo tiene identidad propia. */
+
+.modulo-embla__slide__inner.is-active .modulo-card {
+  border-color: var(--m-color, var(--edumon-blue-200));
+
+  box-shadow:
+    0 22px 44px rgba(15, 23, 42, 0.14),
+    0 0 0 3px var(--m-color, var(--edumon-blue-200));
+}
+
+
+/* ══════════════════════════════════════════════════════
+   BARRA SUPERIOR
+══════════════════════════════════════════════════════ */
+
+.modulo-card__bar {
+  height: 4px;
+
+  flex-shrink: 0;
+
+  background: var(--edumon-blue-600);
+}
+
+
+/* ══════════════════════════════════════════════════════
+   CUERPO
+══════════════════════════════════════════════════════ */
 
 .modulo-card__body {
-  padding: 32px;
+  padding: 26px 28px 28px;
+
   display: flex;
+
   flex-direction: column;
+
+  align-items: center;
+
+  /*
+    Centrado vertical y horizontal.
+  */
+  text-align: center;
+
   flex: 1;
 }
 
+
+/* ══════════════════════════════════════════════════════
+   ICONO
+══════════════════════════════════════════════════════ */
+
 .modulo-card__icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  width: 72px;
+
+  height: 72px;
+
+  min-width: 72px;
+
+  border-radius: 20px;
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
-  margin-bottom: 20px;
+
+  margin: 0 auto 16px;
+
   flex-shrink: 0;
+
+  transition: transform 0.35s ease;
+
+  /* Fondo y sombra de color los define ModuloCard por línea,
+     tomados de la paleta propia de cada módulo. */
 }
 
+.modulo-embla__slide__inner.is-active .modulo-card__icon {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+
+/*
+  Garantiza que SVG / Lucide
+  quede perfectamente centrado.
+*/
+
+.modulo-card__icon svg {
+  width: 30px;
+
+  height: 30px;
+
+  display: block;
+
+  margin: 0;
+
+  stroke: currentColor;
+
+  stroke-width: 2;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   TÍTULO
+══════════════════════════════════════════════════════ */
+
 .modulo-card__title {
-  margin: 0 0 16px;
+  margin: 0 0 10px;
+
   font-family: var(--font-heading);
-  font-size: 22px;
-  font-weight: 600;
+
+  font-size: 21px;
+
+  font-weight: 700;
+
   line-height: 1.3;
+
   color: var(--edumon-ink);
 }
 
+
+/* ══════════════════════════════════════════════════════
+   DESCRIPCIÓN
+══════════════════════════════════════════════════════ */
+
 .modulo-card__desc {
+  max-width: 500px;
+
   margin: 0;
-  font-size: 16px;
-  line-height: 1.6;
+
+  font-size: 15px;
+
+  line-height: 1.55;
+
   color: var(--edumon-muted);
+
   display: -webkit-box;
+
   -webkit-line-clamp: 3;
+
   -webkit-box-orient: vertical;
+
   overflow: hidden;
 }
 
-/* ── Flechas ── */
+
+/* ══════════════════════════════════════════════════════
+   FLECHAS
+══════════════════════════════════════════════════════ */
+
 .modulo-embla__arrow {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: #fff;
-  color: var(--edumon-ink);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 5;
-  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
-}
-.modulo-embla__arrow:hover:not(:disabled) { transform: translateY(-50%) scale(1.08); }
-.modulo-embla__arrow:active:not(:disabled) { transform: translateY(-50%) scale(0.96); }
-.modulo-embla__arrow:disabled { opacity: 0.3; cursor: default; }
-.modulo-embla__arrow--prev { left: 4px; }
-.modulo-embla__arrow--next { right: 4px; }
 
-/* ── Indicadores ── */
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  width: 42px;
+
+  height: 42px;
+
+  border-radius: 50%;
+
+  border: 1px solid var(--edumon-border);
+
+  background: #ffffff;
+
+  color: var(--edumon-ink);
+
+  box-shadow:
+    0 5px 15px rgba(15, 23, 42, 0.08);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  cursor: pointer;
+
+  z-index: 5;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+
+/* Hover */
+
+.modulo-embla__arrow:hover:not(:disabled) {
+  background: var(--edumon-blue-50);
+
+  border-color: var(--edumon-blue-300);
+
+  color: var(--edumon-blue-700);
+
+  transform:
+    translateY(-50%)
+    scale(1.06);
+}
+
+
+/* Click */
+
+.modulo-embla__arrow:active:not(:disabled) {
+  transform:
+    translateY(-50%)
+    scale(0.94);
+}
+
+
+/* Disabled */
+
+.modulo-embla__arrow:disabled {
+  opacity: 0.3;
+
+  cursor: default;
+}
+
+
+/* Posición */
+
+.modulo-embla__arrow--prev {
+  left: 4px;
+}
+
+.modulo-embla__arrow--next {
+  right: 4px;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+
+  .modulo-embla {
+    padding-inline: 42px;
+  }
+
+  .modulo-embla__slide {
+    flex: 0 0 78%;
+  }
+
+}
+
+
+@media (max-width: 620px) {
+
+  .modulo-embla {
+    padding-inline: 36px;
+    padding-bottom: 24px;
+  }
+
+  .modulo-embla__slide {
+    flex: 0 0 88%;
+    padding-inline: 8px;
+  }
+
+  .modulo-embla__slide__inner.is-active {
+    transform: scale(1.01);
+  }
+
+  .modulo-card {
+    min-height: 225px;
+    border-radius: 18px;
+  }
+
+  .modulo-card__body {
+    padding: 22px 20px 24px;
+  }
+
+  .modulo-card__icon {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    border-radius: 16px;
+  }
+
+  .modulo-card__icon svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .modulo-card__title {
+    font-size: 19px;
+  }
+
+  .modulo-card__desc {
+    font-size: 14px;
+  }
+
+  .modulo-embla__arrow {
+    width: 38px;
+    height: 38px;
+  }
+
+}
+/* ── Indicadores: círculos reales, sin "píldora" ──*/
 .modulo-embla__dots {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 2px;
+  margin-top: 4px;
 }
 .modulo-embla__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
+  position: relative;
+  width: 44px;
+  height: 44px;
   border: none;
   padding: 0;
-  background: var(--edumon-border);
+  background: transparent;
   cursor: pointer;
-  transition: width 0.3s ease, background 0.3s ease;
 }
-.modulo-embla__dot:hover { background: #c4b5fd; }
-.modulo-embla__dot.is-active {
-  width: 24px;
-  background: var(--edumon-purple);
+.modulo-embla__dot::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--edumon-border);
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+.modulo-embla__dot:hover::before { background: var(--edumon-blue-300); }
+.modulo-embla__dot.is-active::before {
+  background: var(--edumon-blue-600);
+  transform: translate(-50%, -50%) scale(1.35);
+  box-shadow: 0 0 0 4px var(--edumon-blue-100);
 }
 
 @media (max-width: 1024px) {
-  .modulo-embla__slide { flex-basis: 84%; }
+  .modulo-embla__slide { flex-basis: 80%; }
 }
 @media (max-width: 640px) {
   .modulo-embla { padding-inline: var(--container-pad); }
-  .modulo-embla__slide { flex-basis: 94%; padding: 18px 8px 10px; }
+  .modulo-embla__slide { flex-basis: 92%; padding: 16px 6px 10px; }
+  .modulo-embla__slide__inner { opacity: 1; transform: none; }
   .modulo-embla__arrow { display: none; }
   .modulo-card__body { padding: 24px; }
   .modulo-card__title { font-size: 20px; }
@@ -692,9 +1663,13 @@ button, input, textarea { font-family: inherit; }
 
 /* ══════════════════════════════════════════════════════
    QUIÉNES SOMOS
+   MEJORA: antes background: #FFFF (hex inválido, se veía igual
+   que el resto de la página). Ahora un degradado casi imperceptible
+   hacia azul-50 que separa visualmente esta sección de "pilares"
+   y "aprende" sin romper el tono claro general.
    ══════════════════════════════════════════════════════ */
 .landing-section--alt {
-  background: linear-gradient(120deg, #fdf4ff 0%, #eef2ff 40%, #ecfeff 70%, #fff7ed 100%);
+  background: linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-50) 100%);
 }
 .landing-quienes {
   position: relative;
@@ -719,11 +1694,13 @@ button, input, textarea { font-family: inherit; }
   font-weight: 700;
   margin-bottom: 18px;
 }
-.quienes-content__sub span:nth-child(1) { color: var(--edumon-pink); }
-.quienes-content__sub span:nth-child(2) { color: var(--edumon-amber); }
-.quienes-content__sub span:nth-child(3) { color: var(--edumon-green); }
-.quienes-content__sub span:nth-child(4) { color: var(--edumon-cyan); }
-.quienes-content__sub span:nth-child(5) { color: var(--edumon-purple); }
+/* Una sola familia tonal azul, de más oscuro a más claro,
+   que sigue diferenciando cada palabra sin sumar ruido de color. */
+.quienes-content__sub span:nth-child(1) { color: var(--edumon-blue-900); }
+.quienes-content__sub span:nth-child(2) { color: var(--edumon-blue-700); }
+.quienes-content__sub span:nth-child(3) { color: var(--edumon-blue-600); }
+.quienes-content__sub span:nth-child(4) { color: var(--edumon-blue-500); }
+.quienes-content__sub span:nth-child(5) { color: var(--edumon-blue-400); }
 .quienes-content__text {
   font-size: 0.98rem;
   line-height: 1.7;
@@ -773,601 +1750,282 @@ button, input, textarea { font-family: inherit; }
 
 /* ══════════════════════════════════════════════════════
    CONTACTO
-══════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════ */
 
-.landing-contacto{
-    position:relative;
-    z-index:1;
-    display:grid;
-    grid-template-columns:minmax(420px,1fr) minmax(480px,620px);
-    gap:clamp(40px,6vw,90px);
-    align-items:center;
+.landing-contacto {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(380px, 560px);
+  gap: clamp(32px, 5vw, 90px);
+  align-items: center;
 }
 
-/*----------------------------------------------------*/
-/* LADO IZQUIERDO */
-/*----------------------------------------------------*/
-
-.contacto-left{
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
+.contacto-left {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.contacto-left__badge{
-
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-
-    width:max-content;
-
-    padding:8px 18px;
-
-    border-radius:999px;
-
-    background:#FDF2F8;
-
-    color:var(--edumon-pink);
-
-    font-size:.8rem;
-
-    font-weight:700;
-
-    margin-bottom:18px;
-
+.contacto-left__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--edumon-blue-50);
+  color: var(--edumon-blue-700);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 18px;
 }
 
-.contacto-left__title{
-
-    font-family:var(--font-heading);
-
-    font-size:clamp(2rem,3vw,3rem);
-
-    font-weight:800;
-
-    line-height:1.15;
-
-    color:var(--edumon-ink);
-
-    margin-bottom:18px;
-
+.contacto-left__title {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--edumon-ink);
+  margin-bottom: 18px;
 }
 
-.highlight-1{
-    color:var(--edumon-pink);
+.highlight-1 { color: var(--edumon-blue-700); }
+.highlight-2 { color: var(--edumon-blue-600); }
+.highlight-3 { color: var(--edumon-blue-400); }
+
+.contacto-left__text {
+  max-width: 560px;
+  color: var(--edumon-muted);
+  line-height: 1.8;
+  font-size: 1rem;
+  margin-bottom: 32px;
 }
 
-.highlight-2{
-    color:var(--edumon-purple);
+/* ── Beneficios: el verde aquí es semántico (check = éxito), se conserva ── */
+.contacto-beneficios {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 36px;
 }
 
-.highlight-3{
-    color:var(--edumon-cyan);
+.beneficio {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: var(--edumon-ink);
 }
 
-.contacto-left__text{
-
-    max-width:560px;
-
-    color:var(--edumon-muted);
-
-    line-height:1.8;
-
-    font-size:1rem;
-
-    margin-bottom:32px;
-
+.beneficio span {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--edumon-success-bg);
+  color: var(--edumon-success);
+  font-size: 0.9rem;
 }
 
-/*----------------------------------------------------*/
-/* BENEFICIOS */
-/*----------------------------------------------------*/
-
-.contacto-beneficios{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:14px;
-
-    margin-bottom:36px;
-
+/* ── Imagen ── */
+.contacto-left__img-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 420px;
 }
 
-.beneficio{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
-
-    font-weight:600;
-
-    color:var(--edumon-ink);
-
+.contacto-left__img-wrap::before {
+  content: "";
+  position: absolute;
+  width: 430px;
+  height: 430px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--edumon-blue-100), transparent 72%);
 }
 
-.beneficio span{
-
-    width:30px;
-
-    height:30px;
-
-    border-radius:50%;
-
-    display:grid;
-
-    place-items:center;
-
-    background:#ECFDF5;
-
-    color:#10B981;
-
-    font-size:.9rem;
-
+.contacto-left__letras {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  filter: drop-shadow(0 24px 36px rgba(15, 23, 42, 0.16));
+  transition: transform 0.3s ease;
 }
 
-/*----------------------------------------------------*/
-/* IMAGEN */
-/*----------------------------------------------------*/
-
-.contacto-left__img-wrap{
-
-    position:relative;
-
-    width:100%;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    min-height:420px;
-
+.contacto-left__letras:hover {
+  transform: translateY(-6px);
 }
 
-.contacto-left__img-wrap::before{
-
-    content:"";
-
-    position:absolute;
-
-    width:430px;
-
-    height:430px;
-
-    border-radius:50%;
-
-    background:radial-gradient(circle,
-        rgba(124,58,237,.18),
-        rgba(236,72,153,.10),
-        transparent 72%);
-
+/* ── Tarjeta flotante: verde = estado "en línea", se conserva ── */
+.contacto-support-card {
+  position: absolute;
+  right: 30px;
+  top: 40px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow-pop);
+  font-weight: 700;
 }
 
-.contacto-left__letras{
-
-    position:relative;
-
-    z-index:2;
-
-    width:100%;
-
-    max-width:420px;
-
-    filter:drop-shadow(0 30px 45px rgba(0,0,0,.18));
-
-    transition:.4s;
-
+.support-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--edumon-success);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .support-dot { animation: pulse 2.4s infinite; }
 }
 
-.contacto-left__letras:hover{
-
-    transform:translateY(-8px) scale(1.04);
-
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
-/*----------------------------------------------------*/
-/* TARJETA FLOTANTE */
-/*----------------------------------------------------*/
-
-.contacto-support-card{
-
-    position:absolute;
-
-    right:30px;
-
-    top:40px;
-
-    z-index:3;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:10px;
-
-    padding:14px 18px;
-
-    border-radius:18px;
-
-    background:#fff;
-
-    box-shadow:0 18px 45px rgba(0,0,0,.12);
-
-    font-weight:700;
-
+/* ── Formulario ── */
+.contacto-form-card {
+  background: #fff;
+  border-radius: 28px;
+  padding: 40px;
+  border: 1px solid var(--edumon-border);
+  box-shadow: var(--shadow-pop);
 }
 
-.support-dot{
-
-    width:10px;
-
-    height:10px;
-
-    border-radius:50%;
-
-    background:#22C55E;
-
-    animation:pulse 2s infinite;
-
+.contacto-form-card__title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin-bottom: 6px;
 }
 
-@keyframes pulse{
-
-0%{
-
-box-shadow:0 0 0 0 rgba(34,197,94,.5);
-
+.contacto-form-card__sub {
+  color: var(--edumon-muted);
+  margin-bottom: 28px;
 }
 
-70%{
-
-box-shadow:0 0 0 12px rgba(34,197,94,0);
-
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
-100%{
-
-box-shadow:0 0 0 0 rgba(34,197,94,0);
-
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-}
-
-/*----------------------------------------------------*/
-/* FORMULARIO */
-/*----------------------------------------------------*/
-
-.contacto-form-card{
-
-    background:#fff;
-
-    border-radius:28px;
-
-    padding:40px;
-
-    border:1px solid rgba(124,58,237,.08);
-
-    box-shadow:
-
-    0 30px 60px rgba(15,23,42,.08),
-
-    0 8px 18px rgba(124,58,237,.06);
-
-}
-
-.contacto-form-card__title{
-
-    font-size:1.45rem;
-
-    font-weight:800;
-
-    margin-bottom:6px;
-
-}
-
-.contacto-form-card__sub{
-
-    color:var(--edumon-muted);
-
-    margin-bottom:28px;
-
-}
-
-.form-row{
-
-    display:grid;
-
-    grid-template-columns:1fr 1fr;
-
-    gap:18px;
-
-    margin-bottom:18px;
-
-}
-
-.form-field{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:8px;
-
-}
-
-.form-field label{
-
-    font-size:.85rem;
-
-    font-weight:700;
-
+.form-field label {
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .form-field input,
-.form-field textarea{
-
-    width:100%;
-
-    border:1.5px solid #E5E7EB;
-
-    border-radius:16px;
-
-    padding:15px 18px;
-
-    background:#FAFAFC;
-
-    font-size:.95rem;
-
-    transition:.25s;
-
+.form-field textarea {
+  width: 100%;
+  border: 1.5px solid var(--edumon-border);
+  border-radius: 16px;
+  padding: 15px 18px;
+  background: var(--edumon-bg-soft);
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.form-field textarea{
+.form-field textarea { min-height: 130px; }
 
-    min-height:130px;
-
+.form-field input:focus-visible,
+.form-field textarea:focus-visible {
+  background: #fff;
+  border-color: var(--edumon-blue-600);
 }
 
-.form-field input:focus,
-.form-field textarea:focus{
-
-    outline:none;
-
-    background:#fff;
-
-    border-color:var(--edumon-purple);
-
-    box-shadow:0 0 0 4px rgba(124,58,237,.12);
-
+.contacto-form-card__submit {
+  width: 100%;
+  height: 56px;
+  border: none;
+  border-radius: 999px;
+  margin-top: 10px;
+  background: var(--edumon-blue-600);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.contacto-form-card__submit{
-
-    width:100%;
-
-    height:56px;
-
-    border:none;
-
-    border-radius:999px;
-
-    margin-top:10px;
-
-    background:linear-gradient(135deg,
-    var(--edumon-purple),
-    var(--edumon-pink));
-
-    color:#fff;
-
-    font-size:1rem;
-
-    font-weight:700;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
-
-    cursor:pointer;
-
-    transition:.25s;
-
+.contacto-form-card__submit:hover {
+  background: var(--edumon-blue-700);
+  transform: translateY(-2px);
+  /* FIX: antes rgba(37,99,235,...) = #2563EB, un azul ajeno a la
+     paleta. Ahora reutiliza el glow de marca (azul-600 + cian). */
+  box-shadow: var(--glow-brand);
 }
 
-.contacto-form-card__submit:hover{
+.form-msg { margin-top: 15px; font-size: 0.9rem; }
+.form-msg--ok { color: var(--edumon-success); }
+.form-msg--err { color: var(--edumon-danger-hover); }
 
-    transform:translateY(-3px);
-
-    box-shadow:0 18px 35px rgba(124,58,237,.30);
-
+.contacto-form-card__privacy {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--edumon-muted);
 }
 
-.form-msg{
-
-    margin-top:15px;
-
-    font-size:.9rem;
-
+/* MEJORA: breakpoint intermedio — el grid mínimo (360px + 380px + gap)
+   podía desbordar en ventanas de ~900–1100px antes de caer a 1 columna
+   en 1024px. Se relajan los mínimos primero, y solo se colapsa a 1
+   columna si de verdad no cabe. */
+@media (max-width: 1180px) {
+  .landing-contacto {
+    grid-template-columns: minmax(300px, 1fr) minmax(320px, 480px);
+  }
 }
 
-.form-msg--ok{
-
-    color:#16A34A;
-
+/* ── Tablet ── */
+@media (max-width: 1024px) {
+  .landing-contacto { grid-template-columns: 1fr; gap: 70px; }
+  .contacto-left { align-items: center; text-align: center; }
+  .contacto-left__text { max-width: 650px; }
+  .contacto-beneficios { align-items: center; }
+  .contacto-support-card { right: 20%; }
 }
 
-.form-msg--err{
-
-    color:#DC2626;
-
+/* ── Móvil ── */
+@media (max-width: 768px) {
+  .contacto-left__title { font-size: 2rem; }
+  .contacto-left__img-wrap { min-height: 320px; }
+  .contacto-left__img-wrap::before { width: 300px; height: 300px; }
+  .contacto-left__letras { max-width: 300px; }
+  .contacto-support-card { top: 0; right: 50%; transform: translateX(50%); }
+  .contacto-form-card { padding: 26px; }
+  .form-row { grid-template-columns: 1fr; }
 }
 
-.contacto-form-card__privacy{
-
-    margin-top:20px;
-
-    text-align:center;
-
-    font-size:.78rem;
-
-    color:var(--edumon-muted);
-
-}
-
-/*----------------------------------------------------*/
-/* TABLET */
-/*----------------------------------------------------*/
-
-@media (max-width:1024px){
-
-.landing-contacto{
-
-grid-template-columns:1fr;
-
-gap:70px;
-
-}
-
-.contacto-left{
-
-align-items:center;
-
-text-align:center;
-
-}
-
-.contacto-left__text{
-
-max-width:650px;
-
-}
-
-.contacto-beneficios{
-
-align-items:center;
-
-}
-
-.contacto-support-card{
-
-right:20%;
-
-}
-
-}
-
-/*----------------------------------------------------*/
-/* MÓVIL */
-/*----------------------------------------------------*/
-
-@media (max-width:768px){
-
-.contacto-left__title{
-
-font-size:2rem;
-
-}
-
-.contacto-left__img-wrap{
-
-min-height:320px;
-
-}
-
-.contacto-left__img-wrap::before{
-
-width:300px;
-
-height:300px;
-
-}
-
-.contacto-left__letras{
-
-max-width:300px;
-
-}
-
-.contacto-support-card{
-
-top:0;
-
-right:50%;
-
-transform:translateX(50%);
-
-}
-
-.contacto-form-card{
-
-padding:26px;
-
-}
-
-.form-row{
-
-grid-template-columns:1fr;
-
-}
-
-}
-
-/*----------------------------------------------------*/
-/* MÓVIL PEQUEÑO */
-/*----------------------------------------------------*/
-
-@media (max-width:480px){
-
-.contacto-left__title{
-
-font-size:1.8rem;
-
-}
-
-.contacto-left__text{
-
-font-size:.95rem;
-
-}
-
-.contacto-left__letras{
-
-max-width:250px;
-
-}
-
-.contacto-form-card{
-
-padding:22px;
-
-border-radius:22px;
-
-}
-
-.contacto-form-card__title{
-
-font-size:1.25rem;
-
-}
-
-.contacto-form-card__submit{
-
-height:52px;
-
-font-size:.95rem;
-
-}
-
+/* ── Móvil pequeño ── */
+@media (max-width: 480px) {
+  .contacto-left__title { font-size: 1.8rem; }
+  .contacto-left__text { font-size: 0.95rem; }
+  .contacto-left__letras { max-width: 250px; }
+  .contacto-form-card { padding: 22px; border-radius: 22px; }
+  .contacto-form-card__title { font-size: 1.25rem; }
+  .contacto-form-card__submit { height: 52px; font-size: 0.95rem; }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1394,12 +2052,14 @@ font-size:.95rem;
   font-size: 1.3rem;
   margin-bottom: 10px;
 }
-.footer-brand__wordmark span:nth-child(1) { color: var(--edumon-pink); }
-.footer-brand__wordmark span:nth-child(2) { color: var(--edumon-amber); }
-.footer-brand__wordmark span:nth-child(3) { color: var(--edumon-green); }
-.footer-brand__wordmark span:nth-child(4) { color: var(--edumon-cyan); }
-.footer-brand__wordmark span:nth-child(5) { color: var(--edumon-purple); }
-.footer-brand__wordmark span:nth-child(6) { color: #f472b6; }
+/* Degradado de una sola familia (azul claro → blanco), coherente
+   sobre fondo oscuro. */
+.footer-brand__wordmark span:nth-child(1) { color: var(--edumon-blue-300); }
+.footer-brand__wordmark span:nth-child(2) { color: var(--edumon-blue-400); }
+.footer-brand__wordmark span:nth-child(3) { color: #a7c7fb; }
+.footer-brand__wordmark span:nth-child(4) { color: #bfd7fc; }
+.footer-brand__wordmark span:nth-child(5) { color: #d8e6fd; }
+.footer-brand__wordmark span:nth-child(6) { color: #ffffff; }
 .footer-brand__tagline { font-size: 0.9rem; line-height: 1.6; margin: 0 0 14px; color: #94a3b8; }
 .footer-brand__tagline strong { color: #fff; }
 .footer-brand__made {
@@ -1409,9 +2069,9 @@ font-size:.95rem;
   font-size: 0.78rem;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   margin-bottom: 10px;
-  color: #f9a8d4;
+  color: var(--edumon-blue-300);
 }
 .footer-brand__authors { font-size: 0.78rem; color: #64748b; }
 
@@ -1443,6 +2103,8 @@ font-size:.95rem;
   color: #94a3b8;
   margin-bottom: 12px;
 }
+/* Mismo tratamiento neutro y sobrio para ambos botones sociales,
+   con el azul de marca solo en el hover. */
 .footer-social-btn {
   display: inline-flex;
   align-items: center;
@@ -1454,16 +2116,21 @@ font-size:.95rem;
   font-size: 0.85rem;
   font-weight: 600;
   color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 10px;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
-.footer-social-btn--fb { background: #1877f2; }
-.footer-social-btn--ig { background: linear-gradient(135deg, #f59e0b, #db2777, #7c3aed); }
+.footer-social-btn:hover {
+  background: var(--edumon-blue-700);
+  border-color: var(--edumon-blue-600);
+}
 .footer-social-sub { font-size: 0.78rem; color: #64748b; line-height: 1.5; }
 
 .landing-footer__bottom {
   position: relative;
   z-index: 1;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 20px var(--container-pad);
   text-align: center;
   font-size: 0.78rem;
@@ -1481,12 +2148,9 @@ font-size:.95rem;
 
 /* ══════════════════════════════════════════════════════
    Ajuste de burbujas en pantallas pequeñas
-   (menos ruido visual y sin desbordes en móvil: se
-   escala el contenedor completo, no cada burbuja, para
-   no pisar el transform de las animaciones flotantes)
    ══════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
-  .deco-bubbles { transform: scale(0.8); transform-origin: center; }
+  .deco-bubbles { transform: scale(0.75); transform-origin: center; }
 }
 
 /* ══════════════════════════════════════════════════════

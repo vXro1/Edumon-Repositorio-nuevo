@@ -80,7 +80,7 @@ input[type="checkbox"],
 input[type="radio"],
 input[type="range"],
 select {
-  min-height: 44px;
+  min-height: 22px;
 }
 
 /* Excepciones: los botones inline pequeños aún necesitan la sobreescritura de min-height */
