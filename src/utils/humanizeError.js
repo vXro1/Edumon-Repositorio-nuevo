@@ -24,8 +24,13 @@ const PATTERN_MESSAGES = [
   [/cast error|invalid.*id/i,          "Uno de los campos tiene un formato inválido"],
   [/network error|failed to fetch|networkerror|request failed/i, "Sin conexión. Revisa tu internet e intenta de nuevo"],
   [/timeout/i,                         "La solicitud tardó demasiado. Intenta de nuevo"],
-  // Tipo de archivo no permitido (multer fileFilter / validaciones de adjuntos)
-  [/file type|tipo de archivo|mimetype/i, "Este tipo de archivo no es compatible. Prueba con una imagen, PDF o documento permitido"],
+  // Tipo de archivo no permitido (multer fileFilter / validaciones de adjuntos).
+  // FIX: el backend a veces manda "Formato de archivo no permitido" (sin la
+  // palabra "tipo" ni "mimetype" — ver cloudinaryMiddleware.js), que no
+  // calzaba con ningún patrón de aquí y se mostraba tal cual, crudo y sin
+  // decir qué formatos sí se aceptan.
+  [/file type|tipo de archivo|mimetype|formato.*archivo|formato.*permitido/i,
+    "Este tipo de archivo no es compatible. Prueba con una imagen, PDF o documento permitido"],
   // Mensajes técnicos genéricos que no traen su propio texto específico —
   // si el backend ya manda un mensaje concreto (ej. "El título debe tener
   // entre 3 y 200 caracteres"), esos NUNCA caen aquí: no calzan con ningún
@@ -43,9 +48,7 @@ const PATTERN_MESSAGES = [
 export function humanizeError(err, fallback = "Ocurrió un error. Intenta de nuevo") {
   if (!err) return fallback;
 
-  // El código de estado HTTP tiene la mayor prioridad
   const status = err?.response?.status ?? err?.status;
-  if (status && STATUS_MESSAGES[status]) return STATUS_MESSAGES[status];
 
   // Extraer el mensaje crudo de múltiples ubicaciones posibles
   const raw =
@@ -60,7 +63,12 @@ export function humanizeError(err, fallback = "Ocurrió un error. Intenta de nue
     if (regex.test(lower)) return human;
   }
 
-  // Retornar el mensaje original solo si parece legible (corto, sin stack trace)
+  // FIX: el código de estado HTTP tenía prioridad sobre el mensaje real del
+  // backend. Cuando el backend manda un motivo concreto y legible (ej. "La
+  // tarea está cerrada y no acepta entregas"), eso es siempre más útil que
+  // el genérico por status ("Revisa los datos ingresados") — mostrarlo tal
+  // cual. El genérico por status queda como respaldo solo cuando el backend
+  // no mandó nada legible.
   if (
     raw &&
     raw.length < 100 &&
@@ -68,6 +76,8 @@ export function humanizeError(err, fallback = "Ocurrió un error. Intenta de nue
   ) {
     return raw.charAt(0).toUpperCase() + raw.slice(1);
   }
+
+  if (status && STATUS_MESSAGES[status]) return STATUS_MESSAGES[status];
 
   return fallback;
 }

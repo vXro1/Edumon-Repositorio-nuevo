@@ -14,8 +14,16 @@ import { Button, Input , Badge } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 
 // ── ESTADO_META: se mantiene para mapear estado → variant de Badge ─────────
+// FIX: los valores reales que produce normalizeTarea() son "activa" /
+// "cerrada" / "vencida" (ver resolveEstado() en lib/normalizers/tarea.js,
+// y su uso consistente en TareasPage.jsx del docente) — esta página
+// comparaba contra "abierta", un valor que nunca existe, así que ningún
+// reto calificaba nunca como abierto: el contador siempre marcaba "0
+// abiertas", el filtro "Abiertas" siempre mostraba una lista vacía, y el
+// badge caía al fallback gris mostrando el texto crudo "activa" en vez de
+// una etiqueta traducida.
 const ESTADO_META = {
-  abierta: { label: "Abierta", variant: "success"  },
+  activa:  { label: "Abierta", variant: "success"  },
   cerrada: { label: "Cerrada", variant: "neutral"  },
   vencida: { label: "Vencida", variant: "error"    },
 };
@@ -46,11 +54,18 @@ function isVencida(fechaStr) {
 }
 
 function TareaRow({ tarea, onClick }) {
-  const estado =
-    tarea.estado ??
-    (isVencida(tarea.fechaEntrega) && tarea.estado === "abierta"
-      ? "vencida"
-      : tarea.estado ?? "abierta");
+  // normalizeTarea() ya resuelve el estado final (incluida la comparación
+  // con fechaEntrega) — no hace falta re-derivarlo aquí.
+  const estado = tarea.estado ?? "activa";
+  const iconBg = estado === "activa" ? "rgba(12,106,196,0.10)"
+    : estado === "vencida" ? "rgba(220,38,38,0.10)"
+    : "rgba(107,114,128,0.10)";
+  const iconColor = estado === "activa" ? "var(--color-primary)"
+    : estado === "vencida" ? "var(--color-error-hover)"
+    : "#6B7280";
+  const Icon = estado === "activa" ? ClipboardList
+    : estado === "vencida" ? XCircle
+    : CheckCircle2;
 
   return (
     <div
@@ -64,15 +79,10 @@ function TareaRow({ tarea, onClick }) {
       {/* Ícono */}
       <div style={{
         width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-        background: estado === "abierta"
-          ? "rgba(12,106,196,0.10)"
-          : "rgba(107,114,128,0.10)",
+        background: iconBg,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
-        {estado === "abierta"
-          ? <ClipboardList style={{ width: 16, height: 16, color: "var(--color-primary)" }} />
-          : <CheckCircle2  style={{ width: 16, height: 16, color: "#6B7280" }} />
-        }
+        <Icon style={{ width: 16, height: 16, color: iconColor }} />
       </div>
 
       {/* Información */}
@@ -147,14 +157,19 @@ export default function FamiliaTareasPage() {
       t.titulo?.toLowerCase().includes(search.toLowerCase()) ||
       t.curso?.nombre?.toLowerCase().includes(search.toLowerCase());
 
+    // "Cerradas" agrupa cerrada + vencida — para un padre ambas significan
+    // lo mismo en la práctica ("ya no se puede entregar"), la distinción
+    // fina solo importa en el badge de cada fila.
     const matchEstado =
-      filtroEstado === "todos" || t.estado === filtroEstado;
+      filtroEstado === "todos" ? true :
+      filtroEstado === "cerrada" ? (t.estado === "cerrada" || t.estado === "vencida") :
+      t.estado === filtroEstado;
 
     return matchSearch && matchEstado;
   });
 
-  const abiertas = tareas.filter(t => t.estado === "abierta").length;
-  const cerradas = tareas.filter(t => t.estado !== "abierta").length;
+  const abiertas = tareas.filter(t => t.estado === "activa").length;
+  const cerradas = tareas.filter(t => t.estado !== "activa").length;
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -177,37 +192,57 @@ export default function FamiliaTareasPage() {
         </div>
       </div>
 
-      {/* Barra de herramientas */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+      {/* Barra de herramientas — buscador en su propia fila y el filtro como
+          un control segmentado agrupado (antes eran 3 botones sueltos sin
+          agrupar, mezclados en la misma fila que el buscador con flexWrap:
+          en pantallas angostas se desarmaban en cualquier orden). */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
+        <Input
+          name="search"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar reto…"
+          leftIcon={<Search size={14} />}
+        />
 
-        {/* Search — <input> nativo reemplazado; el <div> wrapper desaparece */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <Input
-            name="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar reto…"
-            leftIcon={<Search size={14} />}
-          />
+        <div
+          role="tablist"
+          aria-label="Filtrar retos por estado"
+          style={{
+            display: "inline-flex", gap: 4, padding: 4, width: "fit-content",
+            background: "var(--color-surface-2)", border: "1px solid var(--color-border)",
+            borderRadius: 12,
+          }}
+        >
+          {["todos", "activa", "cerrada"].map(e => {
+            const active = filtroEstado === e;
+            return (
+              <button
+                key={e}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setFiltroEstado(e)}
+                style={{
+                  padding: "7px 16px",
+                  borderRadius: 9,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  border: "none",
+                  cursor: "pointer",
+                  background: active ? "var(--color-primary)" : "transparent",
+                  color: active ? "white" : "var(--color-text-muted)",
+                  boxShadow: active ? "var(--clay-shadow-sm)" : "none",
+                  transition: "background 150ms, color 150ms",
+                }}
+                onMouseEnter={e2 => { if (!active) e2.currentTarget.style.color = "var(--color-text)"; }}
+                onMouseLeave={e2 => { if (!active) e2.currentTarget.style.color = "var(--color-text-muted)"; }}
+              >
+                {e === "todos" ? "Todas" : e === "activa" ? "Abiertas" : "Cerradas"}
+              </button>
+            );
+          })}
         </div>
-
-        {/* Filtros — toggle buttons, se mantienen nativos */}
-        {["todos", "abierta", "cerrada"].map(e => (
-          <button
-            key={e}
-            onClick={() => setFiltroEstado(e)}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 8,
-              fontWeight: 600,
-              border: filtroEstado === e ? "none" : "1.5px solid var(--color-border)",
-              background: filtroEstado === e ? "var(--color-primary)" : "var(--color-surface)",
-              color: filtroEstado === e ? "white" : "var(--color-text-muted)",
-            }}
-          >
-            {e === "todos" ? "Todas" : e === "abierta" ? "Abiertas" : "Cerradas"}
-          </button>
-        ))}
       </div>
 
       {/* Error de carga */}
@@ -243,7 +278,7 @@ export default function FamiliaTareasPage() {
               <TareaRow
                 key={t._id}
                 tarea={t}
-                onClick={() => navigate(`/familia/entregas?tareaId=${t._id}`)}
+                onClick={() => navigate(`/familia/entregas/${t._id}`)}
               />
             ))
           )}

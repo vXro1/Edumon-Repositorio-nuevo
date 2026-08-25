@@ -1,8 +1,9 @@
 // src/features/foros/components/ForumInput.jsx
-// Compositor de mensajes: contexto de respuesta, textarea con tamaño automático, adjuntar archivos y enviar.
+// Compositor de mensajes: contexto de respuesta, editor de texto enriquecido, adjuntar archivos y enviar.
 import { useRef, useState } from 'react';
 import { Send, Paperclip, X, Lock, FileText } from 'lucide-react';
-import { Button } from '@/components';
+import { Button, RichTextEditor } from '@/components';
+import { sanitizeRichText, stripHtml } from '@/utils/richText';
 
 const MAX_FILES = 5;
 
@@ -35,20 +36,10 @@ const ForumInput = ({
   const [text, setText]   = useState('');
   const [files, setFiles] = useState([]);
   const fileInputRef      = useRef(null);
-  const textareaRef       = useRef(null);
 
-  const isClosed = foro?.estado === 'cerrado' || foro?.cerrado;
-  const canSend  = !isClosed && !loading && (text.trim().length > 0 || files.length > 0);
-
-  const handleTextChange = (e) => {
-    setText(e.target.value);
-    // Ajuste automático de tamaño
-    const ta = textareaRef.current;
-    if (ta) {
-      ta.style.height = 'auto';
-      ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
-    }
-  };
+  const isClosed  = foro?.estado === 'cerrado' || foro?.cerrado;
+  const textPlano = stripHtml(text);
+  const canSend   = !isClosed && !loading && (textPlano.length > 0 || files.length > 0);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -71,14 +62,13 @@ const ForumInput = ({
   const handleSend = () => {
     if (!canSend) return;
     onSubmit?.(
-      text.trim() || '(Archivo adjunto)',
+      textPlano.length > 0 ? sanitizeRichText(text) : '(Archivo adjunto)',
       files,
       replyTo?._id ?? null,
     );
     setText('');
     setFiles([]);
     onClearReply?.();
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
   if (isClosed) {
@@ -125,11 +115,14 @@ const ForumInput = ({
             <strong style={{ color: 'var(--color-text)' }}>
               {replyTo.autor?.nombre} {replyTo.autor?.apellido}
             </strong>
-            {replyTo.contenido && (
-              <span style={{ marginLeft: 6, opacity: 0.7 }}>
-                — {replyTo.contenido.slice(0, 60)}{replyTo.contenido.length > 60 ? '…' : ''}
-              </span>
-            )}
+            {replyTo.contenido && (() => {
+              const preview = stripHtml(replyTo.contenido);
+              return preview && (
+                <span style={{ marginLeft: 6, opacity: 0.7 }}>
+                  — {preview.slice(0, 60)}{preview.length > 60 ? '…' : ''}
+                </span>
+              );
+            })()}
           </span>
           <Button variant="ghost" size="sm" type="button" onClick={onClearReply}
             style={{ padding: '2px 4px', marginLeft: 8, flexShrink: 0 }}>
@@ -138,84 +131,63 @@ const ForumInput = ({
         </div>
       )}
 
+      {/* Etiqueta clara — sin esto, la única pista de qué es esta caja era
+          el placeholder, que desaparece apenas el usuario empieza a
+          escribir (nada de texto plano que sostenga esa explicación). */}
+      <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
+        Escribe tu mensaje
+      </p>
+
+      <RichTextEditor
+        value={text}
+        onChange={setText}
+        onKeyDown={handleKeyDown}
+        placeholder="Escribe aquí lo que quieras compartir…"
+        minHeight={52}
+        maxHeight={200}
+        compact
+      />
+
       {/* Pastillas de archivos */}
       {files.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {files.map((f, i) => <FilePill key={i} file={f} onRemove={removeFile} />)}
         </div>
       )}
 
-      {/* Fila de entrada */}
-      <div style={{
-        display:      'flex',
-        gap:          8,
-        alignItems:   'flex-end',
-        background:   'var(--color-surface-2, #f3f4f6)',
-        border:       '1.5px solid var(--color-border)',
-        borderRadius: 12,
-        padding:      '8px 8px 8px 14px',
-        transition:   'border-color 0.15s',
-      }}
-        onFocusCapture={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-        onBlurCapture={e  => e.currentTarget.style.borderColor = 'var(--color-border)'}
-      >
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Escribe un mensaje… (Enter para enviar, Shift+Enter para nueva línea)"
-          rows={1}
-          style={{
-            flex:       1,
-            resize:     'none',
-            border:     'none',
-            background: 'transparent',
-            fontSize:   14,
-            lineHeight: 1.55,
-            fontFamily: 'inherit',
-            outline:    'none',
-            minWidth:   0,
-            padding:    0,
-            maxHeight:  180,
-            overflowY:  'auto',
-            color:      'var(--color-text)',
-          }}
-        />
-
-        {/* Adjuntar archivo */}
+      {/* Fila de acciones — en su propia fila DEBAJO del editor, con texto
+          visible en ambos botones (antes "Adjuntar" era un ícono suelto
+          sin ninguna palabra al lado, y "Enviar" quedaba apretado junto al
+          editor en una sola línea comprimida). */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10 }}>
         <Button
           variant="ghost"
-          size="sm"
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={files.length >= MAX_FILES}
-          title="Adjuntar archivo"
-          style={{ flexShrink: 0, padding: '4px 6px' }}
+          leftIcon={<Paperclip size={16} />}
         >
-          <Paperclip size={17} />
+          Adjuntar archivo
         </Button>
         <input ref={fileInputRef} type="file" style={{ display: 'none' }}
           multiple accept="image/*,video/mp4,.pdf"
           onChange={handleFileChange} />
 
-        {/* Botón de envío */}
         <Button
           variant="primary"
-          size="sm"
           type="button"
           onClick={handleSend}
           disabled={!canSend}
           loading={loading}
-          leftIcon={!loading ? <Send size={14} /> : undefined}
+          leftIcon={!loading ? <Send size={15} /> : undefined}
           style={{ flexShrink: 0 }}
         >
-          {!loading && 'Enviar'}
+          {!loading && 'Enviar mensaje'}
         </Button>
       </div>
 
-      <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
-        Shift+Enter para nueva línea · Máx {MAX_FILES} archivos por mensaje
+      <p style={{ margin: '8px 0 0', fontSize: 11.5, color: 'var(--color-text-muted)' }}>
+        Puedes presionar Enter para enviar · Máximo {MAX_FILES} archivos por mensaje
       </p>
     </div>
   );

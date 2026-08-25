@@ -80,7 +80,19 @@ const rolePermissions = {
     PERMISSIONS.VIEW_ENTREGAS,
     PERMISSIONS.SUBMIT_ENTREGA,
 
+    // FIX: faltaba POST_MENSAJE_FORO — mensajeForoController.crearMensaje
+    // permite a CUALQUIER participante con acceso al foro publicar un
+    // mensaje raíz (respuestaA null); la única restricción real para
+    // padre es al RESPONDER (ver abajo), no al publicar. Sin este permiso
+    // el composer del foro (ForumInput, gateado por canPostMessage) se
+    // ocultaba por completo para el padre — el foro se veía "abierto" pero
+    // no había ninguna forma de escribir, ni un mensaje nuevo ni una
+    // respuesta.
     PERMISSIONS.VIEW_FOROS,              // confirmado: foro.tieneAcceso() incluye participante
+    PERMISSIONS.POST_MENSAJE_FORO,
+    // confirmado: crearMensaje() con respuestaA solo deja al padre
+    // responder a mensajes cuyo autor sea docente/administrador (no a
+    // otro padre) — ver useForumPermissions.canReplyToMessage().
     PERMISSIONS.REPLY_MENSAJE_FORO,
 
     PERMISSIONS.VIEW_EVENTS,             // confirmado: getEventos filtra por cursos del padre

@@ -25,10 +25,11 @@ import ForumSidebar  from '../components/ForumSidebar';
 import ForumMessage  from '../components/ForumMessage';
 import ForumInput    from '../components/ForumInput';
 import ForumActivity from '../components/ForumActivity';
-import { Modal, Button } from '@/components';
+import { Modal, Button, RichTextEditor } from '@/components';
 import { forosCreate } from '@/features/foros/services/forosService';
 import { Field } from '../../cursos/components/shared/ui';
 import { humanizeError } from '@/utils/humanizeError';
+import { sanitizeRichText, stripHtml } from '@/utils/richText';
 
 // ─── Esqueletos de carga ──────────────────────────────────────────────────────
 
@@ -100,14 +101,16 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
   };
   const removeMaterial = (file) => setMateriales(prev => prev.filter(f => f !== file));
 
+  const descripcionTexto = stripHtml(descripcion);
+
   const handleSubmit = async () => {
     if (titulo.trim().length < 5)      { setError('El título debe tener al menos 5 caracteres.'); return; }
-    if (descripcion.trim().length < 10){ setError('La descripción debe tener al menos 10 caracteres.'); return; }
+    if (descripcionTexto.length < 10)  { setError('La descripción debe tener al menos 10 caracteres.'); return; }
     setLoading(true); setError('');
     try {
       const fd = new FormData();
       fd.append('titulo', titulo.trim());
-      fd.append('descripcion', descripcion.trim());
+      fd.append('descripcion', sanitizeRichText(descripcion));
       fd.append('cursoId', cursoId);
       fd.append('publico', 'false');
       materiales.forEach(f => fd.append('archivos', f));
@@ -145,19 +148,14 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
         </span>
       </Field>
       <Field label="Descripción *">
-        <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)}
-          rows={4} maxLength={2000}
+        <RichTextEditor
+          value={descripcion}
+          onChange={setDescripcion}
+          minHeight={100}
           placeholder="Describe de qué trata el foro (mínimo 10 caracteres)"
-          style={{
-            width: '100%', padding: '9px 12px', border: '1.5px solid var(--color-border)',
-            borderRadius: 8, fontSize: 14, fontFamily: 'inherit', resize: 'vertical',
-            outline: 'none', background: 'var(--color-surface)', boxSizing: 'border-box',
-          }}
-          onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
-          onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
         />
-        <span style={{ fontSize: 11, color: descripcion.length < 10 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
-          {descripcion.length} / 2000
+        <span style={{ fontSize: 11, color: descripcionTexto.length < 10 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
+          {descripcionTexto.length} / 2000
         </span>
       </Field>
       <Field label="Materiales de apoyo (opcional)">
@@ -187,7 +185,7 @@ const CreateForumModal = ({ cursoId, onCreated, onClose }) => {
         paddingTop: 8, borderTop: '1px solid var(--color-border)' }}>
         <Button variant="ghost" onClick={onClose} disabled={loading}>Cancelar</Button>
         <Button onClick={handleSubmit}
-          disabled={loading || titulo.trim().length < 5 || descripcion.trim().length < 10}>
+          disabled={loading || titulo.trim().length < 5 || descripcionTexto.length < 10}>
           {loading ? 'Creando…' : 'Crear foro'}
         </Button>
       </div>
@@ -219,22 +217,27 @@ const ForumPage = () => {
     return () => window.removeEventListener('resize', fn);
   }, []);
 
-  // Visibilidad de los paneles — en pantallas compactas ambos arrancan
-  // cerrados (son overlays que tapan el contenido); en escritorio ambos
-  // arrancan abiertos (son columnas fijas).
-  const [sidebarOpen,  setSidebarOpen]  = useState(!isCompact);
-  const [activityOpen, setActivityOpen] = useState(!isCompact);
+  // Visibilidad de los paneles — AMBOS arrancan cerrados, también en
+  // escritorio. Antes se abrían solos en pantallas anchas y el usuario
+  // aterrizaba en 3 columnas compitiendo por su atención (lista de foros +
+  // mensajes + estadísticas) antes de siquiera leer el foro — abrumador
+  // para alguien que solo quiere leer/escribir un mensaje. Ahora la vista
+  // inicial es SIEMPRE solo el foro; los paneles son opcionales y se abren
+  // a pedido con los botones con texto del header ("Otros foros" /
+  // "Estadísticas").
+  const [sidebarOpen,  setSidebarOpen]  = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
   const [showCreate,   setShowCreate]   = useState(false);
 
-  // Cerrar los paneles automáticamente al navegar a otro foro en pantallas
-  // compactas, y al cruzar el punto de quiebre (evita quedar con un overlay
-  // abierto que de repente pasa a ser columna fija a medio abrir, o viceversa).
+  // Al navegar a otro foro, cerrar los paneles (evita quedar con un overlay
+  // abierto tapando el foro nuevo en pantallas angostas).
   useEffect(() => {
-    if (isCompact) { setSidebarOpen(false); setActivityOpen(false); }
-    else { setSidebarOpen(true); setActivityOpen(true); }
-  }, [foroId, isCompact]);
+    setSidebarOpen(false);
+    setActivityOpen(false);
+  }, [foroId]);
 
-  // En pantallas compactas solo un overlay a la vez — abrir uno cierra el otro.
+  // Solo un panel a la vez en pantallas angostas (uno tapa al otro como
+  // overlay); en escritorio ambos pueden estar abiertos como columnas.
   const toggleSidebar = () => setSidebarOpen(prev => {
     const next = !prev;
     if (next && isCompact) setActivityOpen(false);
@@ -369,6 +372,7 @@ const ForumPage = () => {
                         userId={perms.userId}
                         canEdit={perms.canEditMessage(msg.autorId ?? msg.autor?._id)}
                         canDelete={perms.canDeleteMessage(msg.autorId ?? msg.autor?._id)}
+                        canReply={perms.canPostMessage && perms.canReplyToMessage(msg.autor?.rol)}
                         onReply={setReplyTo}
                         onLike={handleLike}
                         onDelete={handleDelete}
@@ -531,13 +535,63 @@ const FORUM_CSS = `
   color:      var(--color-error-hover);
 }
 
-.fm-desc {
-  margin:   6px 0 0;
-  font-size: 13px;
-  color:    var(--color-text-muted);
-  line-height: 1.5;
-  max-width: 60ch;
+/* Envoltorio: separa la descripción del título con más aire (antes 6px —
+   se sentía pegada) y, si es larga, la colapsa con un degradado para no
+   dejar que un texto extenso empuje mensajes/estadísticas fuera de vista. */
+.fm-desc-wrap {
+  position:  relative;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
 }
+.fm-desc-wrap.is-collapsed {
+  max-height: 5.4em;
+  overflow:   hidden;
+}
+.fm-desc-wrap.is-collapsed::after {
+  content:    '';
+  position:   absolute;
+  left: 0; right: 0; bottom: 0;
+  height:     2.4em;
+  background: linear-gradient(to bottom, transparent, var(--color-surface));
+  pointer-events: none;
+}
+
+.fm-desc-toggle {
+  display:      inline-flex;
+  align-items:  center;
+  gap:          4px;
+  margin-top:   8px;
+  background:   none;
+  border:       none;
+  padding:      2px 0;
+  font-size:    13.5px;
+  font-weight:  700;
+  color:        var(--color-primary);
+  cursor:       pointer;
+}
+.fm-desc-toggle:hover { text-decoration: underline; }
+
+/* Texto de lectura pensado para adultos mayores: fuente más grande,
+   interlineado generoso y buen contraste (antes todo — incluidas las
+   negritas — iba en gris muted, sin jerarquía visual). */
+.fm-desc {
+  margin:    0;
+  font-size: 14.5px;
+  color:     var(--color-text-muted);
+  line-height: 1.75;
+  max-width: 70ch;
+}
+.fm-desc p { margin: 0 0 12px; }
+.fm-desc p:last-child { margin-bottom: 0; }
+.fm-desc ul, .fm-desc ol { margin: 8px 0 12px 26px; padding: 0; }
+.fm-desc li { margin-bottom: 6px; }
+.fm-desc strong, .fm-desc b { color: var(--color-text); font-weight: 800; }
+
+.fm-msg-content p { margin: 0 0 8px; }
+.fm-msg-content p:last-child { margin-bottom: 0; }
+.fm-msg-content ul, .fm-msg-content ol { margin: 6px 0 8px 24px; padding: 0; }
+.fm-msg-content li { margin-bottom: 4px; }
 
 .fm-count {
   display:      flex;
@@ -560,14 +614,14 @@ const FORUM_CSS = `
 .fm-action {
   display:      flex;
   align-items:  center;
-  gap:          6px;
+  gap:          7px;
   background:   var(--color-bg);
   border:       1.5px solid var(--color-border);
   border-radius: 9px;
-  padding:      7px 12px;
+  padding:      9px 14px;
   cursor:       pointer;
   color:        var(--color-text-muted);
-  font-size:    12.5px;
+  font-size:    13.5px;
   font-weight:  700;
   transition:   background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
 }
@@ -581,14 +635,16 @@ const FORUM_CSS = `
 .fm-action[data-variant="open"]  { background: var(--color-success-light); border-color: transparent; color: var(--edu-green-700, #15803d); }
 .fm-action:disabled { opacity: 0.6; cursor: default; }
 
-/* ── Cuerpo: grilla de 3 columnas en escritorio — hereda ancho/relleno de
-   .page, no vuelve a fijarlos. ── */
+/* ── Cuerpo: flex en vez de grid con columnas fijas — con los paneles
+   cerrados por defecto (ver ForumPage), un grid de 3 pistas fijas habría
+   dejado dos huecos vacíos a los lados en vez de dejar que los mensajes
+   ocupen todo el ancho. Con flex, un panel oculto (display:none) simplemente
+   desaparece y .fm-main se expande solo. Hereda ancho/relleno de .page. */
 .fm-body {
-  display:               grid;
-  grid-template-columns: 240px minmax(0, 1fr) 280px;
-  align-items:           start;
-  gap:                   16px;
-  width:                 100%;
+  display:      flex;
+  align-items:  flex-start;
+  gap:          16px;
+  width:        100%;
 }
 
 /* ── Barra lateral — sticky, no flotante ──
@@ -600,6 +656,8 @@ const FORUM_CSS = `
    tres columnas compongan una sola fila pareja, como cualquier layout de
    3 columnas real, sin importar cuánto contenido tenga cada una todavía. */
 .fm-sidebar {
+  flex:         0 0 240px;
+  width:        240px;
   border:       1px solid var(--color-border);
   border-radius: 14px;
   background:   var(--color-surface);
@@ -616,6 +674,7 @@ const FORUM_CSS = `
 .fm-main {
   display:        flex;
   flex-direction: column;
+  flex:           1 1 auto;
   min-width:      0;
   min-height:     clamp(320px, calc(100vh - 260px), 640px);
   background:     var(--color-surface);
@@ -635,6 +694,8 @@ const FORUM_CSS = `
 
 /* ── Panel de actividad — sticky, no flotante ── */
 .fm-activity {
+  flex:          0 0 280px;
+  width:         280px;
   border:        1px solid var(--color-border);
   border-radius: 14px;
   background:    var(--color-surface);
@@ -662,6 +723,10 @@ const FORUM_CSS = `
     max-height: none;
     min-height: 0;
     width:      100%;
+    /* En columna, flex-basis controla ALTO, no ancho — sin resetear esto
+       el panel quedaría forzado a una altura mínima de 240/280px al
+       apilarse, aunque tenga poco contenido. */
+    flex:       none;
   }
   /* El piso de altura de escritorio (pensado para que 3 columnas compongan
      una fila pareja) no aplica apiladas en una sola columna — ahí solo
@@ -671,7 +736,11 @@ const FORUM_CSS = `
   }
 }
 
-/* ── Móvil < 768 ── */
+/* ── Móvil < 768 ──
+   El texto de los botones NUNCA se oculta (antes .fm-action-label pasaba a
+   display:none acá, dejando botones solo-ícono sin significado claro para
+   alguien que no reconoce el ícono — .fm-header-actions ya envuelve en
+   varias filas si no caben, así que ocultar el texto no hacía falta). */
 @media (max-width: 767px) {
   .fm-messages-scroll {
     padding: 10px 12px 4px;
@@ -679,6 +748,6 @@ const FORUM_CSS = `
   .fm-header {
     padding: 16px;
   }
-  .fm-action-label { display: none; }
+  .fm-action { padding: 8px 12px; font-size: 13px; }
 }
 `;

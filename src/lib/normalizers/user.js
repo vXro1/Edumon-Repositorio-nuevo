@@ -47,6 +47,11 @@ export function normalizeUser(user) {
       ultimoAcceso: null,
       primerInicioSesion: false,
 
+      // Perfil familiar activo (padre/tutor navegando como uno de sus
+      // perfiles secundarios) — ver normalizeUser() más abajo.
+      esTitular: true,
+      perfilActivo: null,
+
       // Fechas
       fechaRegistro: null,
       createdAt: null,
@@ -167,6 +172,14 @@ export function normalizeUser(user) {
       null,
 
     primerInicioSesion: !!user.primerInicioSesion,
+
+    // FIX: se perdían al pasar por normalizeUser() — FamiliaPerfilesPage.jsx
+    // los lee de `user` para saber qué perfil está activo, pero como esta
+    // función siempre devolvía un objeto literal nuevo con un set fijo de
+    // campos, esTitular/perfilActivo (o perfilId, según venga del backend)
+    // quedaban undefined sin importar lo que mandara el backend.
+    esTitular: user.esTitular !== false,
+    perfilActivo: user.perfilActivo ?? user.perfilId ?? null,
 
     // Fechas
     fechaRegistro:

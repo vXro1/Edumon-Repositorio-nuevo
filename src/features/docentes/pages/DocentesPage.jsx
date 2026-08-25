@@ -3,10 +3,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Search, GraduationCap, X, Loader2, RefreshCw,
   Upload, CheckCircle2, AlertCircle, Download, Trash2, FileSpreadsheet,
-  User, Hash, Mail,
+  User, Hash, Mail, Filter, Eye, Edit2, UserX, UserCheck, Phone, Calendar, Clock,
 } from "lucide-react";
 
-import { usersGetAll } from "@/services/usersService";
+import { usersGetAll, usersGetById, usersUpdate, usersDelete } from "@/services/usersService";
 import { institucionesCreateDocente, institucionesCreateDocentesCsv } from "@/services/institucionesService";
 import { Modal, UserAvatar, Toast, Button, Badge, Avatar, Input, PhoneInput } from "@/components";
 import { Sk, EmptyState } from "@/features/cursos/components/shared/ui";
@@ -24,7 +24,7 @@ import { descargarPlantillaDocentesCSV, CSV_COLUMNAS_DOCENTES } from "@/componen
 function SkRow() {
   return (
     <tr>
-      {[200, 160, 140, 110, 80].map((w, i) => (
+      {[200, 160, 140, 110, 130].map((w, i) => (
         <td key={i} style={{ padding: "13px 16px" }}>
           <Sk h={14} w={w} />
         </td>
@@ -33,8 +33,49 @@ function SkRow() {
   );
 }
 
+// FIX: el badge de estado antes leía d.estado ?? "activo" como TEXTO crudo
+// ("suspendido" en gris neutro, indistinguible a simple vista de "activo")
+// — mismo componente/criterio visual que ya usa UsuariosPage.jsx (rojo +
+// punto + etiqueta en español), para que un docente suspendido resalte de
+// verdad en la tabla.
+function EstadoBadge({ estado }) {
+  const ok = estado === "activo";
+  return (
+    <Badge variant={ok ? "success" : "error"} size="sm" dot>
+      {ok ? "Activo" : "Suspendido"}
+    </Badge>
+  );
+}
+
+// FIX: esta fila no tenía NINGUNA acción — no había forma de editar, ver el
+// detalle ni suspender/reactivar un docente desde aquí. Mismo patrón que
+// UsuariosPage.jsx (ActionIconBtn con Ver/Editar/Suspender-Activar).
+function ActionIconBtn({ icon: Icon, title, color, bg, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      title={title}
+      style={{
+        height: 32, padding: "0 10px", borderRadius: 8,
+        border: `1px solid ${hov ? color : "var(--color-border)"}`,
+        background: hov ? bg : "var(--color-surface)",
+        color: hov ? color : "var(--color-text-muted)",
+        cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+        fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", transition: "all 150ms",
+      }}
+    >
+      <Icon style={{ width: 14, height: 14, flexShrink: 0 }} />
+      {title}
+    </button>
+  );
+}
+
 /* ── Fila de docente ────────────────────────────────────────────────── */
-function DocenteRow({ docente: d }) {
+function DocenteRow({ docente: d, onView, onEdit, onSuspend, onActivate }) {
+  const suspendido = d.estado && d.estado !== "activo";
   return (
     <tr
       style={{ transition: "background var(--transition-fast)" }}
@@ -61,9 +102,17 @@ function DocenteRow({ docente: d }) {
         {d.telefono ?? "—"}
       </td>
       <td style={{ padding: "12px 16px" }}>
-        <Badge variant={d.estado === "activo" ? "success" : "neutral"}>
-          {d.estado ?? "activo"}
-        </Badge>
+        <EstadoBadge estado={d.estado} />
+      </td>
+      <td style={{ padding: "12px 16px" }}>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          <ActionIconBtn icon={Eye} title="Ver" color="#6366F1" bg="rgba(99,102,241,0.08)" onClick={onView} />
+          <ActionIconBtn icon={Edit2} title="Editar" color="var(--color-primary)" bg="rgba(12,106,196,0.08)" onClick={onEdit} />
+          {suspendido
+            ? <ActionIconBtn icon={UserCheck} title="Activar" color="var(--edu-green-600)" bg="rgba(22,163,74,0.08)" onClick={onActivate} />
+            : <ActionIconBtn icon={UserX} title="Suspender" color="var(--color-error-hover)" bg="rgba(220,38,38,0.08)" onClick={onSuspend} />
+          }
+        </div>
       </td>
     </tr>
   );
@@ -128,6 +177,7 @@ export default function DocentesPage() {
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState("");
   const [debSearch,  setDebSearch]  = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("");
   const [page,       setPage]       = useState(1);
   const [total,      setTotal]      = useState(0);
   const [toast,    setToast]    = useState({ msg: "", type: "success" });
@@ -137,6 +187,17 @@ export default function DocentesPage() {
   const [showCsv,    setShowCsv]   = useState(false);
   const [form,       setForm]      = useState(INIT);
   const [createErrors, setCreateErrors] = useState({});
+
+  // Ver / Editar / Suspender / Activar — antes no existían: la tabla no
+  // tenía ninguna acción y no había forma de filtrar por estado, así que
+  // un docente suspendido (que sí vuelve en la respuesta del backend, sin
+  // filtrar por defecto) se perdía entre el resto sin ninguna señal clara.
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [delTarget,   setDelTarget]   = useState(null);
+  const [activTarget, setActivTarget] = useState(null);
+  const [viewTarget,  setViewTarget]  = useState(null);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewDetail,  setViewDetail]  = useState(null);
 
   const fileRef   = useRef(null);
   const [csvFile,    setCsvFile]   = useState(null);
@@ -155,7 +216,7 @@ export default function DocentesPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [debSearch]);
+  useEffect(() => { setPage(1); }, [debSearch, estadoFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -164,6 +225,11 @@ export default function DocentesPage() {
       const params = debSearch
         ? { rol: "docente", page: 1, limit: 1000 }
         : { rol: "docente", page, limit: LIMIT };
+      // Sin esto, "Suspendidos" no tenía forma de aislarse — el backend ya
+      // devuelve activos e inactivos mezclados si no se pide un estado
+      // puntual, así que un docente suspendido quedaba perdido entre el
+      // resto de la lista sin ningún filtro para encontrarlo directo.
+      if (estadoFilter) params.estado = estadoFilter;
       const res = await usersGetAll(params);
       const normalized = (res.users ?? []).map(normalizeUser);
       setDocentes(normalized);
@@ -174,7 +240,7 @@ export default function DocentesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, debSearch, setUsers]);
+  }, [page, debSearch, estadoFilter, setUsers]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -240,6 +306,118 @@ export default function DocentesPage() {
         setCreateErrors(serverErrors);
       }
       notify(humanizeError(err, "Error al registrar docente"), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Ver detalle ── */
+  const openView = async (d) => {
+    setViewTarget(d);
+    setViewDetail(null);
+    setViewLoading(true);
+    try {
+      const res = await usersGetById(d._id);
+      setViewDetail(normalizeUser(res.user ?? res));
+    } catch {
+      setViewDetail(d); // datos de la lista como respaldo
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  /* ── Editar ── */
+  const [editForm, setEditForm] = useState(INIT);
+  const [editErrors, setEditErrors] = useState({});
+  const ef = key => e => {
+    setEditForm(p => ({ ...p, [key]: e.target.value }));
+    if (editErrors[key]) setEditErrors(p => ({ ...p, [key]: "" }));
+  };
+  const efCedula = e => {
+    setEditForm(p => ({ ...p, cedula: toCedula(e.target.value) }));
+    if (editErrors.cedula) setEditErrors(p => ({ ...p, cedula: "" }));
+  };
+
+  const openEdit = (d) => {
+    setEditTarget(d);
+    setEditForm({
+      nombre: d.nombre ?? "", apellido: d.apellido ?? "",
+      cedula: d.cedula ?? "", telefono: d.telefono ?? "", correo: d.correo ?? "",
+    });
+    setEditErrors({});
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editTarget) return;
+
+    const cedula = editForm.cedula.trim();
+    const errors = {};
+    if (!editForm.nombre.trim())   errors.nombre = "El nombre es requerido";
+    if (!editForm.apellido.trim()) errors.apellido = "El apellido es requerido";
+    if (cedula && !isValidCedula(cedula)) errors.cedula = CEDULA_ERROR;
+    if (editForm.telefono.trim() && !isValidPhone(editForm.telefono)) errors.telefono = PHONE_ERROR;
+    if (!editForm.correo.trim()) errors.correo = "El correo es requerido";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.correo.trim())) errors.correo = "Ingresa un correo válido";
+
+    if (Object.keys(errors).length) {
+      setEditErrors(errors);
+      notify("Corrige los campos marcados en rojo", "error");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const body = {
+        nombre: editForm.nombre.trim(), apellido: editForm.apellido.trim(),
+        cedula, correo: editForm.correo.trim(),
+      };
+      const telefono = normalizePhone(editForm.telefono);
+      if (telefono) body.telefono = telefono;
+      await usersUpdate(editTarget._id, body);
+      notify("Docente actualizado");
+      setEditTarget(null);
+      if (viewTarget?._id === editTarget._id) setViewDetail(d => d ? { ...d, ...body } : d);
+      load();
+    } catch (err) {
+      if (err.validationErrors?.length) {
+        const serverErrors = {};
+        for (const ve of err.validationErrors) serverErrors[ve.path] = ve.msg;
+        setEditErrors(serverErrors);
+      }
+      notify(humanizeError(err, "Error al actualizar docente"), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Suspender ── */
+  const handleSuspend = async () => {
+    if (!delTarget) return;
+    setSaving(true);
+    try {
+      await usersDelete(delTarget._id);
+      setDocentes(prev => prev.map(d => d._id === delTarget._id ? { ...d, estado: "suspendido" } : d));
+      notify("Docente suspendido");
+      setDelTarget(null);
+    } catch (err) {
+      notify(humanizeError(err, "Error al suspender docente"), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Activar (revertir suspensión) ── */
+  const handleActivate = async () => {
+    if (!activTarget) return;
+    setSaving(true);
+    try {
+      await usersUpdate(activTarget._id, { estado: "activo" });
+      setDocentes(prev => prev.map(d => d._id === activTarget._id ? { ...d, estado: "activo" } : d));
+      notify("Docente activado");
+      setActivTarget(null);
+    } catch (err) {
+      notify(humanizeError(err, "Error al activar docente"), "error");
     } finally {
       setSaving(false);
     }
@@ -321,42 +499,65 @@ export default function DocentesPage() {
         </div>
       </div>
 
-      {/* ── Search ── */}
-      <div style={{ position: "relative", maxWidth: 360, marginBottom: "var(--space-5)" }}>
-        <Search
-          size={15}
-          style={{
-            position: "absolute", left: 12, top: "50%",
-            transform: "translateY(-50%)", color: "var(--color-text-subtle)",
-            pointerEvents: "none",
-          }}
-        />
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, correo o cédula…"
-          style={{
-            width: "100%", height: 38, paddingLeft: 36, paddingRight: search ? 36 : 12,
-            borderRadius: "var(--radius-md)", border: "1.5px solid var(--color-border)",
-            background: "var(--color-surface)", color: "var(--color-text)",
-            fontSize: 13, outline: "none", boxSizing: "border-box",
-            transition: "border-color var(--transition-fast)",
-          }}
-          onFocus={e  => (e.target.style.borderColor = "var(--color-primary)")}
-          onBlur={e   => (e.target.style.borderColor = "var(--color-border)")}
-        />
-        {search && (
-          <button
-            onClick={() => setSearch("")}
+      {/* ── Search + filtro de estado ──
+          FIX: no había forma de aislar solo los docentes suspendidos —
+          venían mezclados con los activos, página tras página, sin ningún
+          filtro para encontrarlos directo (mismo patrón que ya tiene
+          UsuariosPage.jsx). */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: "var(--space-5)" }}>
+        <div style={{ position: "relative", maxWidth: 360, flex: 1, minWidth: 220 }}>
+          <Search
+            size={15}
             style={{
-              position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--color-text-muted)", display: "flex", padding: 2,
+              position: "absolute", left: 12, top: "50%",
+              transform: "translateY(-50%)", color: "var(--color-text-subtle)",
+              pointerEvents: "none",
+            }}
+          />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por nombre, correo o cédula…"
+            style={{
+              width: "100%", height: 38, paddingLeft: 36, paddingRight: search ? 36 : 12,
+              borderRadius: "var(--radius-md)", border: "1.5px solid var(--color-border)",
+              background: "var(--color-surface)", color: "var(--color-text)",
+              fontSize: 13, outline: "none", boxSizing: "border-box",
+              transition: "border-color var(--transition-fast)",
+            }}
+            onFocus={e  => (e.target.style.borderColor = "var(--color-primary)")}
+            onBlur={e   => (e.target.style.borderColor = "var(--color-border)")}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              style={{
+                position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: "var(--color-text-muted)", display: "flex", padding: 2,
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <Filter style={{ width: 14, height: 14, color: "var(--color-text-muted)" }} />
+          <select
+            value={estadoFilter}
+            onChange={e => setEstadoFilter(e.target.value)}
+            style={{
+              height: 38, border: "1.5px solid var(--color-border)", borderRadius: "var(--radius-md)",
+              padding: "0 10px", fontSize: 13, background: "var(--color-surface)",
+              color: "var(--color-text)", cursor: "pointer", outline: "none",
             }}
           >
-            <X size={14} />
-          </button>
-        )}
+            <option value="">Todos los estados</option>
+            <option value="activo">Activos</option>
+            <option value="suspendido">Suspendidos</option>
+          </select>
+        </div>
       </div>
 
       {/* ── Table ── */}
@@ -379,7 +580,7 @@ export default function DocentesPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--color-surface-2)", borderBottom: "1px solid var(--color-border)" }}>
-                  {["Docente", "Correo", "Teléfono", "Estado"].map(h => (
+                  {["Docente", "Correo", "Teléfono", "Estado", "Acciones"].map(h => (
                     <th key={h} style={{
                       padding: "10px 16px", textAlign: "left",
                       fontSize: 11, fontWeight: 700, textTransform: "uppercase",
@@ -394,7 +595,16 @@ export default function DocentesPage() {
               <tbody>
                 {loading
                   ? [0, 1, 2, 3, 4].map(i => <SkRow key={i} />)
-                  : filtered.map(d => <DocenteRow key={d._id} docente={d} />)
+                  : filtered.map(d => (
+                      <DocenteRow
+                        key={d._id}
+                        docente={d}
+                        onView={() => openView(d)}
+                        onEdit={() => openEdit(d)}
+                        onSuspend={() => setDelTarget(d)}
+                        onActivate={() => setActivTarget(d)}
+                      />
+                    ))
                 }
               </tbody>
             </table>
@@ -608,6 +818,179 @@ export default function DocentesPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ══ MODAL: Editar docente ══ */}
+      <Modal
+        isOpen={Boolean(editTarget)}
+        onClose={() => setEditTarget(null)}
+        title="Editar docente"
+        description={`${editTarget?.nombre ?? ""} ${editTarget?.apellido ?? ""}`}
+        size="md"
+      >
+        <form onSubmit={handleEditSubmit} noValidate>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
+            <Input
+              label="Nombre" required
+              value={editForm.nombre} onChange={ef("nombre")}
+              placeholder="Ej. María" leftIcon={<User size={16} />}
+              error={editErrors.nombre}
+            />
+            <Input
+              label="Apellido" required
+              value={editForm.apellido} onChange={ef("apellido")}
+              placeholder="Ej. García" leftIcon={<User size={16} />}
+              error={editErrors.apellido}
+            />
+            <Input
+              label="Cédula"
+              value={editForm.cedula} onChange={efCedula}
+              placeholder="1020304050" inputMode="numeric" leftIcon={<Hash size={16} />}
+              error={editErrors.cedula}
+            />
+            <PhoneInput
+              label="Teléfono"
+              value={editForm.telefono} onChange={ef("telefono")}
+              error={editErrors.telefono}
+            />
+          </div>
+          <div style={{ marginTop: "var(--space-4)" }}>
+            <Input
+              label="Correo electrónico" required
+              value={editForm.correo} onChange={ef("correo")}
+              placeholder="correo@institución.edu" type="email" leftIcon={<Mail size={16} />}
+              error={editErrors.correo}
+            />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)", marginTop: "var(--space-6)" }}>
+            <Button variant="outline" type="button" onClick={() => setEditTarget(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? <><Loader2 size={14} className="animate-spin" /> Guardando…</> : "Guardar cambios"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ══ MODAL: Ver detalle ══ */}
+      <Modal
+        isOpen={Boolean(viewTarget)}
+        onClose={() => { setViewTarget(null); setViewDetail(null); }}
+        title="Detalle del docente"
+        size="md"
+      >
+        {viewLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[0, 1, 2, 3, 4].map(i => <Sk key={i} h={44} r={8} />)}
+          </div>
+        ) : (viewDetail ?? viewTarget) ? (() => {
+          const d = viewDetail ?? viewTarget;
+          return (
+            <>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 16,
+                padding: "4px 0 16px", borderBottom: "1px solid var(--color-border)", marginBottom: 12,
+              }}>
+                <UserAvatar user={d} size={64} />
+                <div>
+                  <p style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text)", margin: 0 }}>
+                    {d.nombre} {d.apellido}
+                  </p>
+                  <div style={{ marginTop: 6 }}>
+                    <EstadoBadge estado={d.estado} />
+                  </div>
+                </div>
+              </div>
+
+              {[
+                { icon: Mail, label: "Correo", value: d.correo },
+                { icon: Phone, label: "Teléfono", value: d.telefono },
+                { icon: Hash, label: "Cédula", value: d.cedula },
+                { icon: Calendar, label: "Registro", value: d.fechaRegistro || d.createdAt ? new Date(d.fechaRegistro ?? d.createdAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : null },
+                { icon: Clock, label: "Último acceso", value: d.ultimoAcceso ? new Date(d.ultimoAcceso).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : null },
+              ].filter(row => row.value).map(row => (
+                <div key={row.label} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--color-border)" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(12,106,196,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <row.icon style={{ width: 13, height: 13, color: "var(--color-primary)" }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>{row.label}</p>
+                    <p style={{ fontSize: 13.5, fontWeight: 500, color: "var(--color-text)", margin: "2px 0 0" }}>{row.value}</p>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: "flex", gap: 10, marginTop: 18, justifyContent: "flex-end" }}>
+                <Button variant="outline" onClick={() => { setViewTarget(null); openEdit(d); }}>
+                  <Edit2 size={13} /> Editar
+                </Button>
+                {d.estado && d.estado !== "activo" ? (
+                  <Button onClick={() => { setViewTarget(null); setActivTarget(d); }} style={{ background: "var(--edu-green-600)" }}>
+                    <UserCheck size={13} /> Activar
+                  </Button>
+                ) : (
+                  <Button onClick={() => { setViewTarget(null); setDelTarget(d); }} style={{ background: "var(--color-error-hover)" }}>
+                    <UserX size={13} /> Suspender
+                  </Button>
+                )}
+              </div>
+            </>
+          );
+        })() : null}
+      </Modal>
+
+      {/* ══ MODAL: Confirmar suspensión ══ */}
+      <Modal isOpen={Boolean(delTarget)} onClose={() => setDelTarget(null)} title="Suspender docente" size="sm">
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
+          padding: "12px 14px", borderRadius: 10,
+          background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.15)",
+        }}>
+          <UserAvatar user={delTarget} size={40} />
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
+              {delTarget?.nombre} {delTarget?.apellido}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0 }}>{delTarget?.correo}</p>
+          </div>
+        </div>
+        <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", marginBottom: 20 }}>
+          El docente <strong style={{ color: "var(--color-text)" }}>no podrá iniciar sesión</strong> mientras esté
+          suspendido. Podrás reactivarlo en cualquier momento.
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Button variant="outline" onClick={() => setDelTarget(null)}>Cancelar</Button>
+          <Button onClick={handleSuspend} disabled={saving} style={{ background: "var(--color-error-hover)" }}>
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Suspendiendo…</> : "Suspender"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ══ MODAL: Confirmar activación ══ */}
+      <Modal isOpen={Boolean(activTarget)} onClose={() => setActivTarget(null)} title="Activar docente" size="sm">
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
+          padding: "12px 14px", borderRadius: 10,
+          background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.2)",
+        }}>
+          <UserAvatar user={activTarget} size={40} />
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: 0 }}>
+              {activTarget?.nombre} {activTarget?.apellido}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0 }}>{activTarget?.correo}</p>
+          </div>
+        </div>
+        <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", marginBottom: 20 }}>
+          El docente podrá <strong style={{ color: "var(--color-text)" }}>volver a iniciar sesión</strong> normalmente.
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Button variant="outline" onClick={() => setActivTarget(null)}>Cancelar</Button>
+          <Button onClick={handleActivate} disabled={saving} style={{ background: "var(--edu-green-600)" }}>
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Activando…</> : "Activar docente"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

@@ -5,7 +5,15 @@
 // era `position: sticky` con su propio fondo/borde/sombra, una segunda barra
 // flotando debajo de la navbar real — lo que hacía sentir el foro como una
 // pieza de software aparte pegada al dashboard, no parte del mismo diseño).
-import { ArrowLeft, MessageSquare, Lock, Unlock, PanelLeft, PanelRight } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, MessageSquare, Lock, Unlock, PanelLeft, PanelRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { sanitizeRichText, stripHtml } from '@/utils/richText';
+
+// Umbral a partir del cual la descripción se colapsa con "Ver más" — sin
+// esto, una descripción larga (varios párrafos + lista) empuja todo el
+// resto del foro (mensajes, estadísticas) fuera de la vista inicial y
+// domina la pantalla antes de que el usuario llegue al contenido real.
+const DESC_COLLAPSE_THRESHOLD = 220;
 
 const ForumHeader = ({
   foro,
@@ -41,6 +49,40 @@ const ForumHeader = ({
   const isClosed = foro?.estado === 'cerrado' || foro?.cerrado;
 
   return (
+    <ForumHeaderContent
+      foro={foro}
+      cursoNombre={cursoNombre}
+      isClosed={isClosed}
+      onBack={onBack}
+      canManage={canManage}
+      onToggleEstado={onToggleEstado}
+      togglingEstado={togglingEstado}
+      sidebarOpen={sidebarOpen}
+      onToggleSidebar={onToggleSidebar}
+      activityOpen={activityOpen}
+      onToggleActivity={onToggleActivity}
+    />
+  );
+};
+
+const ForumHeaderContent = ({
+  foro,
+  cursoNombre,
+  isClosed,
+  onBack,
+  canManage,
+  onToggleEstado,
+  togglingEstado,
+  sidebarOpen,
+  onToggleSidebar,
+  activityOpen,
+  onToggleActivity,
+}) => {
+  const [descExpanded, setDescExpanded] = useState(false);
+  const descPlain  = stripHtml(foro?.descripcion);
+  const isLongDesc = descPlain.length > DESC_COLLAPSE_THRESHOLD;
+
+  return (
     <div>
       {/* Volver — mismo botón de texto simple que usa el resto de la app
           (ver CursoHubPage.jsx), en vez de estar embebido dentro de la barra. */}
@@ -68,7 +110,17 @@ const ForumHeader = ({
               </span>
             </div>
             {foro?.descripcion && (
-              <p className="fm-desc">{foro.descripcion}</p>
+              <>
+                <div className={`fm-desc-wrap${isLongDesc && !descExpanded ? ' is-collapsed' : ''}`}>
+                  <div className="fm-desc" dangerouslySetInnerHTML={{ __html: sanitizeRichText(foro.descripcion) }} />
+                </div>
+                {isLongDesc && (
+                  <button type="button" className="fm-desc-toggle" onClick={() => setDescExpanded(v => !v)}>
+                    {descExpanded ? 'Ver menos' : 'Ver descripción completa'}
+                    {descExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                )}
+              </>
             )}
             {foro?.totalMensajes > 0 && (
               <p className="fm-count">
@@ -91,15 +143,17 @@ const ForumHeader = ({
           )}
 
           <button type="button" onClick={onToggleActivity} className="fm-action" data-active={activityOpen || undefined}
-            title={activityOpen ? 'Ocultar estadísticas y participantes' : 'Mostrar estadísticas y participantes'}>
+            aria-pressed={!!activityOpen}
+            title={activityOpen ? 'Ocultar estadísticas' : 'Mostrar estadísticas de este foro'}>
             <PanelRight size={15} />
-            <span className="fm-action-label">Actividad</span>
+            <span className="fm-action-label">Estadísticas</span>
           </button>
 
           <button type="button" onClick={onToggleSidebar} className="fm-action" data-active={sidebarOpen || undefined}
-            title={sidebarOpen ? 'Ocultar lista de foros' : 'Mostrar lista de foros'}>
+            aria-pressed={!!sidebarOpen}
+            title={sidebarOpen ? 'Ocultar lista de foros' : 'Ver otros foros del curso'}>
             <PanelLeft size={15} />
-            <span className="fm-action-label">Foros</span>
+            <span className="fm-action-label">Otros foros</span>
           </button>
         </div>
       </div>

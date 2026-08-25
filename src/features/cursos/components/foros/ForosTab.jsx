@@ -7,10 +7,11 @@ import CursoContext from '../../context/CursoContext';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Lock, Plus, ArrowRight } from 'lucide-react';
 import { forosGetByCurso, forosCreate } from '@/features/foros/services/forosService';
-import { Button, Modal, FileUpload, Toast } from '@/components';
-import { Sk, SectionHeader, Field, StTextarea } from '../shared/ui';
+import { Button, Modal, FileUpload, Toast, RichTextEditor } from '@/components';
+import { Sk, SectionHeader, Field } from '../shared/ui';
 import { makeNotify } from '../shared/helpers';
 import { Input } from '@/components';
+import { sanitizeRichText, stripHtml } from '@/utils/richText';
 
 // ─── ForoCrearForm ────────────────────────────────────────────────────────────
 
@@ -21,13 +22,15 @@ function ForoCrearForm({ onSubmit, onCancel }) {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState('');
 
+  const descripcionTexto = stripHtml(descripcion);
+
   const handleSubmit = async () => {
     setError('');
-    if (titulo.trim().length < 5)       { setError('El título debe tener al menos 5 caracteres.'); return; }
-    if (descripcion.trim().length < 10) { setError('La descripción debe tener al menos 10 caracteres.'); return; }
+    if (titulo.trim().length < 5)      { setError('El título debe tener al menos 5 caracteres.'); return; }
+    if (descripcionTexto.length < 10)  { setError('La descripción debe tener al menos 10 caracteres.'); return; }
     setLoading(true);
     try {
-      await onSubmit({ titulo: titulo.trim(), descripcion: descripcion.trim(), archivos });
+      await onSubmit({ titulo: titulo.trim(), descripcion: sanitizeRichText(descripcion), archivos });
     } catch (err) {
       setError(err?.message ?? 'Error al crear el foro');
     } finally {
@@ -51,11 +54,10 @@ function ForoCrearForm({ onSubmit, onCancel }) {
         </span>
       </Field>
       <Field label="Descripción *">
-        <StTextarea value={descripcion} onChange={e => setDescripcion(e.target.value)}
-          placeholder="Describe de qué trata el foro (mínimo 10 caracteres)" rows={4}
-          maxLength={2000} />
-        <span style={{ fontSize: 11, color: descripcion.length < 10 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
-          {descripcion.length} / 2000
+        <RichTextEditor value={descripcion} onChange={setDescripcion}
+          placeholder="Describe de qué trata el foro (mínimo 10 caracteres)" minHeight={100} />
+        <span style={{ fontSize: 11, color: descripcionTexto.length < 10 ? 'var(--color-error-hover)' : 'var(--color-text-muted)' }}>
+          {descripcionTexto.length} / 2000
         </span>
       </Field>
       <Field label="Archivos adjuntos (opcional)">
@@ -66,7 +68,7 @@ function ForoCrearForm({ onSubmit, onCancel }) {
       <div className="modal-form-footer">
         <Button variant="ghost" onClick={onCancel} disabled={loading}>Cancelar</Button>
         <Button onClick={handleSubmit}
-          disabled={loading || titulo.trim().length < 5 || descripcion.trim().length < 10}>
+          disabled={loading || titulo.trim().length < 5 || descripcionTexto.length < 10}>
           {loading ? 'Creando…' : 'Crear foro'}
         </Button>
       </div>
@@ -131,7 +133,7 @@ function ForoCard({ foro, cursoId, cursoNombre }) {
         {foro.descripcion && (
           <p style={{ fontSize: 12.5, color: 'var(--color-text-muted)', margin: 0,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {foro.descripcion}
+            {stripHtml(foro.descripcion)}
           </p>
         )}
         <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '3px 0 0' }}>

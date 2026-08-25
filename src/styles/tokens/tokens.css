@@ -9,27 +9,35 @@
    Fuente única de verdad para todos los tokens de diseño.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── Fuentes web — rutas resueltas desde src/styles/tokens/ ────────── */
+/* ── Fuentes web — rutas resueltas desde public/fonts/ (ruta absoluta;
+   ver nota en globals.css / historial — con ruta relativa desde
+   src/assets/fonts/ Vite no la reescribía al bundlear y la fuente nunca
+   cargaba en producción). */
+/* Baloo 2 — títulos/subtítulos (--font-heading/--font-display). Reemplaza
+   a Fredoka: mismo espíritu redondeado pero más "burbujeante"/infantil —
+   Fredoka se sentía todavía elegante/comedida para una app de niños con
+   mascota; Baloo 2 es la familia que de hecho usan la mayoría de apps
+   educativas infantiles reales por ese motivo. Variable, pesos 400-800.
+   Nunito → Quicksand como auxiliar (--font-body/--font-sans): mismo
+   argumento — Quicksand tiene los trazos geométricos más redondeados
+   (o/e/a genuinamente circulares) que Nunito no tiene. Variable,
+   pesos 300-700. Quicksand no publica un corte itálico en Google Fonts —
+   texto en cursiva simplemente cae al peso normal, no hay negrita/
+   cursiva sintética que evitar aquí. */
 @font-face {
-  font-family: 'Inter';
-  src: url('../../assets/fonts/Inter-Variable.woff2') format('woff2');
-  font-weight: 100 900;
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo2-Variable.woff2') format('woff2');
+  font-weight: 400 800;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('../../assets/fonts/Inter-Italic-Variable.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: italic;
+  font-family: 'Quicksand';
+  src: url('/fonts/Quicksand-Variable.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
   font-display: swap;
 }
-@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Regular.woff2')   format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Medium.woff2')    format('woff2'); font-weight: 500; font-display: swap; }
-@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-SemiBold.woff2')  format('woff2'); font-weight: 600; font-display: swap; }
-@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Bold.woff2')      format('woff2'); font-weight: 700; font-display: swap; }
-@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
-@font-face { font-family: 'Poppins'; src: url('../../assets/fonts/Poppins-Black.woff2')     format('woff2'); font-weight: 900; font-display: swap; }
 :root {
   /* ──────────────────────────────────────────────────────────────────
      PALETA DE MARCA EN BRUTO
@@ -297,21 +305,22 @@
   /* ──────────────────────────────────────────────────────────────────
      TIPOGRAFÍA
      ────────────────────────────────────────────────────────────────── */
-  /* Una sola familia en todo el sitio (incluye login/landing — esto no es
-     "color" y se aplica igual en todas partes). Antes era Inter: legible,
-     pero de trazo recto y angular — sentía "fría"/corporativa para el
-     público real de esta app (adultos, muchos sin experiencia técnica).
-     Poppins es geométrica y redondeada (círculos reales en o/e/c/a) sin
-     sacrificar legibilidad, y ya estaba cargada localmente (login/landing
-     la usaban parcialmente) — unificar en ella además resuelve el "dos
-     fuentes mezcladas" que advertía este comentario antes. Pesos 400-900
-     disponibles vía @font-face arriba, así que --font-extrabold/--font-black
-     se siguen viendo "gruesos" en títulos sin cambiar de familia. Inter
-     queda como respaldo si Poppins no carga por algún motivo. */
-  --font-sans:    "Poppins", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: var(--font-sans);
+  /* Dos familias con roles fijos en todo el sitio (incluye login/landing —
+     esto no es "color" y se aplica igual en todas partes):
+     - Baloo 2 en títulos y subtítulos (--font-heading/--font-display):
+       más redonda y "burbujeante" que la anterior (Fredoka) — se pidió
+       explícitamente algo más amigable/infantil, menos elegante/formal.
+     - Quicksand como auxiliar (--font-body/--font-sans): mismo criterio,
+       trazos genuinamente circulares en vez de solo "suavizados" —
+       pensada para párrafos, a diferencia de Baloo 2 que a tamaño de
+       cuerpo pierde legibilidad.
+     --font-sans es la base heredada por <body> (ver reset.css) y por
+     cualquier elemento sin --font-heading explícito, así que sigue siendo
+     Quicksand, no Baloo 2. */
+  --font-heading: "Baloo 2", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-heading);
+  --font-sans:    "Quicksand", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body:    var(--font-sans);
-  --font-heading: var(--font-display);
   --font-mono:    "Fira Code", "Cascadia Code", "Consolas", monospace;
 
   /* Tamaños */

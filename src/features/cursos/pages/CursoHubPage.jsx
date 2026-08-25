@@ -49,6 +49,7 @@ function CursoHubContent() {
   const setTab     = (key) => setSearchParams({ tab: key }, { replace: true });
 
   const esPadre = rawRole === "padre" || rawRole === "padre/tutor";
+  const esEstudiante = rawRole === "estudiante";
 
   const renderTab = () => {
     switch (activeTab) {
@@ -75,7 +76,7 @@ function CursoHubContent() {
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} style={{ marginBottom: 14 }}>
         <ArrowLeft style={{ width: 15, height: 15 }} /> Volver
       </Button>
-      <HubHeader curso={curso} loading={loading} color={cursoColor} />
+      <HubHeader curso={curso} loading={loading} esPadre={esPadre} esEstudiante={esEstudiante} />
       <HubTabs   tabs={tabs} activeTab={activeTab} onTabChange={setTab} color={cursoColor} />
       <div>{renderTab()}</div>
     </div>

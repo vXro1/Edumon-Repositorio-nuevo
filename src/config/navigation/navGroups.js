@@ -95,11 +95,15 @@ export const NAV_GROUPS = {
     },
     {
       group: "Mis hijos",
+      // "Retos" y "Entregas" eran dos entradas separadas para el mismo
+      // flujo: cada reto de la lista ya lleva directo a su entrega
+      // (/familia/entregas/:tareaId, una sola vista por reto — ver
+      // FamiliaTareasPage.jsx). Tener las dos en el menú duplicaba el
+      // mismo contenido bajo dos nombres distintos y era confuso.
       items: [
         { label: "Perfiles",   path: "/familia/perfiles",   icon: "users" },
         { label: "Cursos",     path: "/familia/cursos",     icon: "layers" },
         { label: "Retos",      path: "/familia/tareas",     icon: "clipboard" },
-        { label: "Entregas",   path: "/familia/entregas",   icon: "file-text" },
         { label: "Foros",      path: "/familia/foros",      icon: "message-circle" },
         { label: "Calendario", path: "/calendario",          icon: "calendar" },
       ],

@@ -55,6 +55,7 @@ const FamiliaPerfilesPage   = lazy(() => import("../features/familia/pages/Famil
 const FamiliaCursosPage     = lazy(() => import("../features/familia/pages/FamiliaCursosPage"));
 const FamiliaTareasPage     = lazy(() => import("../features/familia/pages/FamiliaTareasPage"));
 const FamiliaEntregasPage   = lazy(() => import("../features/familia/pages/FamiliaEntregasPage"));
+const FamiliaEntregaDetallePage = lazy(() => import("../features/familia/pages/FamiliaEntregaDetallePage"));
 const FamiliaForosPage      = lazy(() => import("../features/familia/pages/FamiliaForosPage"));
 const FamiliaCalendarioPage = lazy(() => import("../features/familia/pages/FamiliaCalendarioPage"));
 
@@ -128,6 +129,8 @@ export default function AppRoutes() {
             <Route path="/familia/cursos"     element={<ProtectedRoute allowedRoles={["padre","padre/tutor"]}><FamiliaCursosPage /></ProtectedRoute>} />
             <Route path="/familia/tareas"     element={<ProtectedRoute allowedRoles={["padre","padre/tutor"]}><FamiliaTareasPage /></ProtectedRoute>} />
             <Route path="/familia/entregas"   element={<ProtectedRoute allowedRoles={["padre","padre/tutor"]}><FamiliaEntregasPage /></ProtectedRoute>} />
+            {/* URL propia por entrega — una sola vista, sin modal ni acordeón */}
+            <Route path="/familia/entregas/:tareaId" element={<ProtectedRoute allowedRoles={["padre","padre/tutor"]}><FamiliaEntregaDetallePage /></ProtectedRoute>} />
             <Route path="/familia/foros"      element={<ProtectedRoute allowedRoles={["padre","padre/tutor"]}><FamiliaForosPage /></ProtectedRoute>} />
             <Route path="/familia/calendario" element={<ProtectedRoute allowedRoles={["padre","padre/tutor"]}><FamiliaCalendarioPage /></ProtectedRoute>} />
 

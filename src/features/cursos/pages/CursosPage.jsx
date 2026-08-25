@@ -14,8 +14,9 @@ import letrasImg from "@/assets/img/letras.svg"; // fallback para cursos sin por
 
 import {
   Modal, Button, UserAvatar, Toast, Badge,
-  Input, Textarea, Select, PhoneInput,
+  Input, Textarea, Select, PhoneInput, IconActionButton,
 } from "@/components";
+import CursoCard from "@/features/cursos/components/CursoCard";
 
 import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 import {
@@ -67,6 +68,20 @@ function Sk({ h = 16, w = "100%", r = 7 }) {
     <div className="animate-pulse"
       style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }}
     />
+  );
+}
+
+function SkCard() {
+  return (
+    <div style={{
+      aspectRatio: "1 / 1",
+      borderRadius: 14,
+      border: "2px solid var(--color-border)",
+      background: "var(--color-surface)",
+      overflow: "hidden",
+    }}>
+      <Sk h="100%" r={0} />
+    </div>
   );
 }
 
@@ -507,139 +522,85 @@ export default function CursosPage() {
         />
       </div>
 
-      {/* ── Tabla ── */}
-      <div style={{
-        background: "var(--color-surface)", borderRadius: 16,
-        border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", overflow: "hidden",
-      }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
-                {["Curso", "Docente", "Participantes", "Estado", "Acciones"].map(h => (
-                  <th key={h} style={{
-                    padding: "11px 16px", textAlign: "left", fontSize: 11.5, fontWeight: 700,
-                    color: "var(--color-text-muted)", textTransform: "uppercase",
-                    letterSpacing: "0.06em", whiteSpace: "nowrap",
-                  }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                [0,1,2,3,4,5].map(i => (
-                  <tr key={i} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                    {[0,1,2,3,4].map(j => (
-                      <td key={j} style={{ padding: "13px 16px" }}>
-                        <Sk h={14} w={j === 4 ? 80 : "80%"} />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: "48px 16px", textAlign: "center" }}>
-                    <AlertCircle style={{ width: 32, height: 32, color: "var(--color-text-muted)", margin: "0 auto 10px" }} />
-                    <p style={{ fontSize: 14, color: "var(--color-text-muted)", margin: 0 }}>No hay cursos</p>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((c) => (
-                  <tr key={c._id}
-                    style={{ borderBottom: "1px solid var(--color-border)", transition: "background 0.12s" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "var(--color-bg)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                  >
-                    {/* Nombre — clickeable → hub */}
-                    <td style={{ padding: "13px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
-                        onClick={() => goToCurso(c)} title="Abrir curso">
-                        <span style={{
-                          width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                          background: c.color || "var(--color-primary)",
-                        }} />
-                        <img
-                          src={c.fotoPortada || letrasImg}
-                          alt={c.nombre ?? "Curso"}
-                          onError={e => { e.target.onerror = null; e.target.src = letrasImg; }}
-                          style={{
-                            width: 32, height: 32, borderRadius: 7, objectFit: "cover",
-                            border: "1px solid var(--color-border)", flexShrink: 0,
-                            background: "var(--color-bg)",
-                          }}
-                        />
-                        <span style={{
-                          fontSize: 13.5, fontWeight: 600, color: "var(--color-primary)",
-                          textDecoration: "underline", textDecorationColor: "rgba(12,106,196,0.3)",
-                          textUnderlineOffset: 3,
-                        }}>
-                          {c.nombre}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Docente — siempre resuelto */}
-                    <td style={{ padding: "13px 16px", fontSize: 13, color: "var(--color-text-muted)" }}>
-                      {getDocenteNombre(c)}
-                    </td>
-
-                    <td style={{ padding: "13px 16px", fontSize: 13, color: "var(--color-text-muted)" }}>
-                      {c.participantes?.length ?? c.totalParticipantes ?? "—"}
-                    </td>
-
-                    <td style={{ padding: "13px 16px" }}>
-                      <EstadoBadge estado={c.estado ?? "activo"} />
-                    </td>
-
-                    {/* Acciones — con texto: los íconos solos no dicen qué
-                        hace cada botón (ver plan de corrección UX/UI) */}
-                    <td style={{ padding: "13px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                        <Button variant="ghost" size="sm" onClick={() => goToCurso(c)}>
-                          <ExternalLink style={{ width: 14, height: 14, color: "var(--color-primary)" }} /> Abrir
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openParts(c)}>
-                          <Users style={{ width: 14, height: 14, color: "#6366F1" }} /> Participantes
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                          <Edit2 style={{ width: 14, height: 14, color: "var(--edu-green-600)" }} /> Editar
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openArchive(c)}>
-                          <Archive style={{ width: 14, height: 14, color: "#D97706" }} /> Archivar
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* ── Grid de cursos ──
+          FIX: antes era una tabla — el usuario pidió el mismo estilo de
+          card que ya funciona bien en /familia/cursos. CursoCard se usa en
+          modo `compact` (sin los accesos rápidos de navegación, que no
+          aplican aquí) y cada card lleva debajo su propia fila de acciones
+          de gestión (Participantes/Editar/Archivar) — las mismas que tenía
+          la tabla, ahora con IconActionButton en vez de <Button> de texto
+          suelto dentro de una celda. */}
+      {loading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+          {[0, 1, 2, 3, 4, 5].map(i => <SkCard key={i} />)}
         </div>
+      ) : filtered.length === 0 ? (
+        <div style={{
+          background: "var(--color-surface)", borderRadius: 16,
+          border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)",
+          padding: "60px 24px",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+        }}>
+          <AlertCircle style={{ width: 36, height: 36, color: "var(--color-text-muted)" }} />
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-muted)", margin: 0 }}>No hay cursos</p>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+            {filtered.map((c) => (
+              <div key={c._id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <CursoCard
+                  curso={c}
+                  role={isDocente ? "docente" : "administrador"}
+                  compact
+                  onClick={() => goToCurso(c)}
+                />
 
-        {/* Paginación — oculta cuando hay búsqueda activa */}
-        {!debSearch && totalPages > 1 && (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "12px 16px", borderTop: "1px solid var(--color-border)",
-          }}>
-            <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
-              Página {page} de {totalPages}
-            </span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <Button variant="ghost" size="sm" aria-label="Anterior"
-                onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-                <ChevronLeft style={{ width: 14, height: 14 }} />
-              </Button>
-              <Button variant="ghost" size="sm" aria-label="Siguiente"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-                <ChevronRight style={{ width: 14, height: 14 }} />
-              </Button>
-            </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "0 2px" }}>
+                  <EstadoBadge estado={c.estado ?? "activo"} />
+                  {!isDocente && (
+                    <span style={{
+                      fontSize: 11.5, color: "var(--color-text-muted)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {getDocenteNombre(c)}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <IconActionButton icon={Users} title="Participantes" color="#6366F1" onClick={() => openParts(c)} />
+                  <IconActionButton icon={Edit2} title="Editar" color="var(--edu-green-600)" onClick={() => openEdit(c)} />
+                  <IconActionButton icon={Archive} title="Archivar" color="#D97706" onClick={() => openArchive(c)} />
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+
+          {/* Paginación — oculta cuando hay búsqueda activa */}
+          {!debSearch && totalPages > 1 && (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginTop: 20, padding: "12px 16px", borderRadius: 12,
+              background: "var(--color-surface)", border: "1px solid var(--color-border)",
+            }}>
+              <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
+                Página {page} de {totalPages}
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button variant="ghost" size="sm" aria-label="Anterior"
+                  onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                  <ChevronLeft style={{ width: 14, height: 14 }} />
+                </Button>
+                <Button variant="ghost" size="sm" aria-label="Siguiente"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                  <ChevronRight style={{ width: 14, height: 14 }} />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* ══ MODAL CREAR ═══════════════════════════════════════════ */}
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Nuevo curso" size="md">

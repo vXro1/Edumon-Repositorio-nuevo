@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback, useContext } from "react";
 import CursoContext from "../../context/CursoContext";
 import { BookOpen, Eye, Pencil, Trash2, Upload } from "lucide-react";
 import { modulosGetByCurso, modulosCreate, modulosUpdate, modulosDelete } from "@/features/cursos/services/cursosService";
-import { Button, Input, AppModal, Badge, Toast, CsvUploadModal } from "@/components";
-import { Sk, EmptyState, Field, StTextarea, InfoBlock, IconBtn } from "../shared/ui";
+import { Button, Input, AppModal, Badge, Toast, CsvUploadModal, RichTextEditor } from "@/components";
+import { Sk, EmptyState, Field, InfoBlock, IconBtn } from "../shared/ui";
 import { makeNotify } from "../shared/helpers";
+import { sanitizeRichText, stripHtml } from "@/utils/richText";
 import {
   descargarPlantillaModulosCSV,
   parsearCsvModulos,
@@ -60,11 +61,12 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
     if (!form.titulo.trim()) { notify("El título es requerido", "error"); return; }
     setSaving(true);
     try {
+      const payload = { ...form, descripcion: sanitizeRichText(form.descripcion) };
       if (editTarget) {
-        await modulosUpdate(editTarget._id, form);
+        await modulosUpdate(editTarget._id, payload);
         notify("Módulo actualizado");
       } else {
-        await modulosCreate({ ...form, cursoId });
+        await modulosCreate({ ...payload, cursoId });
         notify("Módulo creado");
       }
       setModalOpen(false);
@@ -186,7 +188,7 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
                     fontSize: 12.5, color: "var(--color-text-muted)", margin: "3px 0 0",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
-                    {m.descripcion}
+                    {stripHtml(m.descripcion)}
                   </p>
                 )}
               </div>
@@ -229,11 +231,11 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
               />
             </Field>
             <Field label="Descripción">
-              <StTextarea
+              <RichTextEditor
                 value={form.descripcion}
-                onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, descripcion: v }))}
                 placeholder="Descripción opcional"
-                rows={4}
+                minHeight={90}
               />
             </Field>
           </form>
@@ -275,11 +277,17 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
                 </div>
               </div>
               <InfoBlock label="Descripción">
-                <p style={{ fontSize: 13.5, color: "var(--color-text)", margin: 0, lineHeight: 1.6 }}>
-                  {viewTarget.descripcion?.trim()
-                    ? viewTarget.descripcion
-                    : <span style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Sin descripción</span>}
-                </p>
+                {stripHtml(viewTarget.descripcion).length > 0 ? (
+                  <div
+                    className="modulo-desc-rich"
+                    style={{ fontSize: 13.5, color: "var(--color-text)", lineHeight: 1.6 }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(viewTarget.descripcion) }}
+                  />
+                ) : (
+                  <p style={{ fontSize: 13.5, margin: 0, color: "var(--color-text-muted)", fontStyle: "italic" }}>
+                    Sin descripción
+                  </p>
+                )}
               </InfoBlock>
             </div>
           )}
@@ -306,6 +314,13 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
       {/* ══════════════════════════════════════════════
           Modal — Carga masiva CSV (reutilizable)
       ══════════════════════════════════════════════ */}
+      <style>{`
+        .modulo-desc-rich p { margin: 0 0 6px; }
+        .modulo-desc-rich p:last-child { margin-bottom: 0; }
+        .modulo-desc-rich ul, .modulo-desc-rich ol { margin: 4px 0 6px 20px; padding: 0; }
+        .modulo-desc-rich li { margin-bottom: 2px; }
+      `}</style>
+
       <CsvUploadModal
         isOpen={csvOpen}
         onClose={() => setCsvOpen(false)}

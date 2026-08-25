@@ -1,6 +1,7 @@
 
 //src/features/cursos/components/tareas/TareasTab.jsx
 import { useState, useEffect, useCallback, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import CursoContext from "../../context/CursoContext";
 import { ClipboardList, Clock, Eye, Pencil, Lock, Layers } from "lucide-react";
 
@@ -22,9 +23,6 @@ import { fmt, fmtHour, esPasada, makeNotify } from "../shared/helpers";
 
 import TareaDetalle from "./TareaDetalle";
 import TareaForm from "./TareaForm";
-import EntregasTab from "../entregas/EntregasTab";
-import CalificarEntrega from "../entregas/CalificarEntrega";
-import RealizarEntrega from "../entregas/RealizarEntrega";
 
 
 const emptyForm = () => ({
@@ -54,6 +52,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
   const canGrade = ctx?.canGradeEntregas ?? canGradeProp;
   const esPadre = esPadreProp ?? false;
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [tareas, setTareas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +61,6 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
   const [creating, setCreating] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
-  const [viewMode, setViewMode] = useState("detail");
-  const [gradeTarget, setGradeTarget] = useState(null);
 
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm());
@@ -139,7 +136,6 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     setViewTarget(null);
     setForm(emptyForm());
     setErrors({});
-    setViewMode("detail");
     setModalOpen(true);
     await Promise.all([loadParticipantes(), loadModulos()]);
   };
@@ -179,7 +175,6 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     setViewTarget(null);
     setForm(buildEditForm(t));
     setErrors({});
-    setViewMode("detail");
     setModalOpen(true);
 
     // La fila que abrió el modal viene de la lista paginada (tareasGetAll),
@@ -203,22 +198,23 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     setCreating(false);
     setEditTarget(null);
     setViewTarget(t);
-    setViewMode("detail");
     setModalOpen(true);
   };
 
+  // Ver/hacer una entrega vive en su propia URL, no en este modal — un
+  // docente necesita filtrar y calificar varias entregas, un padre solo
+  // necesita enviar la suya; ninguno de los dos casos entra bien en un
+  // modal anidado dentro de "Retos". El docente va a la página de
+  // entregas de la tarea (la misma que usa /tareas), el padre a la
+  // página de "mi entrega" para esa tarea puntual.
   const openEntregas = (t) => {
-    setViewTarget(t);
-    setViewMode("entregas");
-    setModalOpen(true);
+    navigate(esPadre ? `/familia/entregas/${t._id}` : `/tareas/${t._id}/entregas`);
   };
 
   const handleClose = () => {
     setModalOpen(false);
-    setViewMode("detail");
     setViewTarget(null);
     setEditTarget(null);
-    setGradeTarget(null);
     setCreating(false);
     setErrors({});
   };
@@ -360,15 +356,9 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     ? "Nuevo reto"
     : editTarget
       ? "Editar reto"
-      : viewMode === "entregas"
-        ? `Entregas — ${viewTarget?.titulo ?? ""}`
-        : viewMode === "calificar"
-          ? "Calificar entrega"
-          : viewMode === "realizar"
-            ? "Realizar entrega"
-            : viewTarget?.titulo ?? "Detalle del reto";
+      : viewTarget?.titulo ?? "Detalle del reto";
 
-  const isForm = viewMode === "detail" && (editTarget || creating);
+  const isForm = editTarget || creating;
 
   return (
     <div>
@@ -460,13 +450,13 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
       <AppModal
         isOpen={modalOpen}
         onClose={handleClose}
-        size={viewMode === "entregas" ? "lg" : "md"}
+        size="md"
       >
         <AppModal.Header title={modalTitle} onClose={handleClose} />
 
         <AppModal.Body>
           {/* Detalle de tarea */}
-          {viewMode === "detail" && !editTarget && !creating && viewTarget && (
+          {!editTarget && !creating && viewTarget && (
             <TareaDetalle
               tarea={viewTarget}
               canManage={canManage}
@@ -491,35 +481,6 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
               modulos={modulos}
               loadingModulos={loadingModulos}
               onSubmit={handleSave}
-            />
-          )}
-
-          {/* Lista de entregas */}
-          {viewMode === "entregas" && viewTarget && (
-            <EntregasTab
-              tarea={viewTarget}
-              canGrade={canGrade}
-              esPadre={esPadre}
-              onBack={() => setViewMode("detail")}
-              onGrade={ent => { setGradeTarget(ent); setViewMode("calificar"); }}
-              onRealizarEntrega={() => setViewMode("realizar")}
-            />
-          )}
-
-          {/* Calificar entrega */}
-          {viewMode === "calificar" && gradeTarget && (
-            <CalificarEntrega
-              entrega={gradeTarget}
-              onCancel={() => setViewMode("entregas")}
-              onSuccess={() => { setGradeTarget(null); setViewMode("entregas"); }}
-            />
-          )}
-
-          {/* Realizar entrega */}
-          {viewMode === "realizar" && viewTarget && (
-            <RealizarEntrega
-              tarea={viewTarget}
-              onCancel={() => setViewMode("entregas")}
             />
           )}
         </AppModal.Body>

@@ -126,9 +126,27 @@ export const AuthProvider = ({ children }) => {
     sessionManager.reset();
   }, []);
 
+  // FIX: FamiliaPerfilesPage.jsx llama a `switchProfile()` tras
+  // seleccionarPerfil() — pero esa función nunca existió en el contexto
+  // (`switchProfile is not a function`, crash al elegir cualquier perfil).
+  // seleccionarPerfil() en el backend NO devuelve un token en el body —
+  // solo reemplaza la cookie httpOnly access_token con una que lleva el
+  // nuevo perfilId/esTitular. El único trabajo del frontend es volver a
+  // preguntar "¿quién soy?" (mismo patrón que el chequeo silencioso al
+  // arrancar la app), para que `user` refleje el perfil recién activado.
+  const switchProfile = useCallback(async () => {
+    try {
+      const profile = await authService.getProfile();
+      setUser(normalizeUser(profile.user ?? profile));
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const userValue = useMemo(
-    () => ({ user, isAuthenticated, login, logout, updateUser }),
-    [user, isAuthenticated, login, logout, updateUser]
+    () => ({ user, isAuthenticated, login, logout, updateUser, switchProfile }),
+    [user, isAuthenticated, login, logout, updateUser, switchProfile]
   );
 
   const fullValue = useMemo(

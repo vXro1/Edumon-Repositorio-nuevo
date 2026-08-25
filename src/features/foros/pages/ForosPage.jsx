@@ -15,10 +15,11 @@ import {
   forosDelete,
 } from "@/features/foros/services/forosService";
 
-import { Modal, Toast, Button, Badge } from "@/components";
+import { Modal, Toast, Button, Badge, RichTextEditor } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { normalizeCurso } from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
+import { sanitizeRichText, stripHtml } from "@/utils/richText";
 
 function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
@@ -90,11 +91,15 @@ export default function ForosPage() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (stripHtml(form.descripcion).length === 0) {
+      notify("La descripción es obligatoria", "error");
+      return;
+    }
     setSaving(true);
     try {
       const fd = new FormData();
       fd.append("titulo", form.titulo);
-      fd.append("descripcion", form.descripcion);
+      fd.append("descripcion", sanitizeRichText(form.descripcion));
       fd.append("cursoId", cursoSel);
       fd.append("publico", form.publico ? "true" : "false");
       archivos.forEach(file => fd.append("archivos", file));
@@ -218,7 +223,7 @@ export default function ForosPage() {
               <StyledInput value={form.titulo} onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))} placeholder="Ej: Dudas sobre el reto de esta semana" required />
             </FieldGroup>
             <FieldGroup label="Descripción *">
-              <StyledInput as="textarea" value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} placeholder="Contexto del foro para los participantes..." rows={4} required />
+              <RichTextEditor value={form.descripcion} onChange={v => setForm(p => ({ ...p, descripcion: v }))} placeholder="Contexto del foro para los participantes..." minHeight={90} />
             </FieldGroup>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <input
@@ -306,7 +311,7 @@ function ForoCard({ foro, onOpen, onToggle, onDelete }) {
         </div>
         {foro.descripcion && (
           <p style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {foro.descripcion}
+            {stripHtml(foro.descripcion)}
           </p>
         )}
       </div>

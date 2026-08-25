@@ -1,7 +1,8 @@
 // src/features/foros/components/ForumMessage.jsx
 import { useState } from 'react';
 import { Heart, MessageSquare, Pencil, Trash2, Check, X, FileText } from 'lucide-react';
-import { UserAvatar, Button } from '@/components';
+import { UserAvatar, Button, RichTextEditor } from '@/components';
+import { sanitizeRichText } from '@/utils/richText';
 
 // ─── Utilidades ──────────────────────────────────────────────────────────────
 
@@ -150,8 +151,9 @@ const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdi
   const [delConfirm, setDelConfirm] = useState(false);
 
   const handleSaveEdit = () => {
-    if (editText.trim() === reply.contenido) { setEditing(false); return; }
-    onEdit?.({ id: reply._id, contenido: editText.trim() });
+    const clean = sanitizeRichText(editText);
+    if (clean === (reply.contenido ?? '')) { setEditing(false); return; }
+    onEdit?.({ id: reply._id, contenido: clean });
     setEditing(false);
   };
 
@@ -182,30 +184,28 @@ const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdi
         </div>
 
         {editing ? (
-          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
-            <textarea
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <RichTextEditor
               value={editText}
-              onChange={e => setEditText(e.target.value)}
-              rows={2}
-              style={{
-                flex: 1, resize: 'none', border: '1.5px solid var(--color-primary)',
-                borderRadius: 8, padding: '6px 10px', fontSize: 13.5,
-                fontFamily: 'inherit', outline: 'none', background: 'var(--color-surface)',
-              }}
-              autoFocus
+              onChange={setEditText}
+              minHeight={44}
+              compact
             />
-            <Button variant="primary" size="sm" onClick={handleSaveEdit} leftIcon={<Check size={12} />}>
-              Guardar
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setEditing(false)} leftIcon={<X size={12} />}>
-              Cancelar
-            </Button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Button variant="primary" size="sm" onClick={handleSaveEdit} leftIcon={<Check size={12} />}>
+                Guardar
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setEditing(false)} leftIcon={<X size={12} />}>
+                Cancelar
+              </Button>
+            </div>
           </div>
         ) : (
-          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55,
-            color: 'var(--color-text)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-            {reply.contenido}
-          </p>
+          <div
+            className="fm-msg-content"
+            style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--color-text)', wordBreak: 'break-word' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(reply.contenido) }}
+          />
         )}
 
         {reply.archivos?.length > 0 && (
@@ -258,6 +258,7 @@ const ForumMessage = ({
   userId,
   canEdit,
   canDelete,
+  canReply = true,
   onReply,
   onLike,
   onDelete,
@@ -269,8 +270,9 @@ const ForumMessage = ({
   const [hovered,    setHovered]    = useState(false);
 
   const handleSaveEdit = () => {
-    if (editText.trim() === msg.contenido) { setEditing(false); return; }
-    onEdit?.({ id: msg._id, contenido: editText.trim() });
+    const clean = sanitizeRichText(editText);
+    if (clean === (msg.contenido ?? '')) { setEditing(false); return; }
+    onEdit?.({ id: msg._id, contenido: clean });
     setEditing(false);
   };
 
@@ -314,16 +316,10 @@ const ForumMessage = ({
         {/* Contenido o área de edición */}
         {editing ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <textarea
+            <RichTextEditor
               value={editText}
-              onChange={e => setEditText(e.target.value)}
-              rows={3}
-              style={{
-                width: '100%', resize: 'vertical', border: '1.5px solid var(--color-primary)',
-                borderRadius: 8, padding: '8px 12px', fontSize: 14, fontFamily: 'inherit',
-                outline: 'none', background: 'var(--color-surface)', boxSizing: 'border-box',
-              }}
-              autoFocus
+              onChange={setEditText}
+              minHeight={64}
             />
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="primary" size="sm" onClick={handleSaveEdit} leftIcon={<Check size={13} />}>
@@ -336,12 +332,11 @@ const ForumMessage = ({
             </div>
           </div>
         ) : (
-          <p style={{
-            margin: 0, fontSize: 14, lineHeight: 1.6,
-            color: 'var(--color-text)', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          }}>
-            {msg.contenido}
-          </p>
+          <div
+            className="fm-msg-content"
+            style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--color-text)', wordBreak: 'break-word' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(msg.contenido) }}
+          />
         )}
 
         {/* Archivos adjuntos */}
@@ -368,6 +363,8 @@ const ForumMessage = ({
               variant="ghost"
               size="sm"
               onClick={() => onReply?.(msg)}
+              disabled={!canReply}
+              title={canReply ? undefined : 'Solo puedes responder a mensajes del docente o del administrador'}
               leftIcon={<MessageSquare size={13} />}
             >
               <span className="fm-action-label">Responder</span>

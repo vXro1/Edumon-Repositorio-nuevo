@@ -9,29 +9,33 @@ import {
   perfilesGetAll, perfilesCreate, perfilesUpdate,
   perfilesDelete, perfilesSeleccionar, perfilesUpdateFcmToken,
 } from "@/features/familia/services/perfilesService";
-import { usersGetDefaultPhotos } from "@/services/usersService";
 import { humanizeError } from "@/utils/humanizeError";
 import { Toast, Button, Input, Badge, Modal } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 // ─── Importaciones de avatares locales ────────────────────────────────────
-import av1  from "@/assets/img/avatars/avatar1.svg";
-import av2  from "@/assets/img/avatars/avatar2.svg";
-import av3  from "@/assets/img/avatars/avatar3.svg";
-import av4  from "@/assets/img/avatars/avatar4.svg";
-import av5  from "@/assets/img/avatars/avatar5.svg";
-import av6  from "@/assets/img/avatars/avatar6.svg";
-import av7  from "@/assets/img/avatars/avatar7.svg";
-import av8  from "@/assets/img/avatars/avatar8.svg";
-import av9  from "@/assets/img/avatars/avatar9.svg";
-import av10 from "@/assets/img/avatars/avatar10.svg";
-import av11 from "@/assets/img/avatars/avatar11.svg";
+// FIX: importaba avatar1..avatar11.svg en minúscula — solo existen
+// Avatar1..Avatar8.svg (con mayúscula, y ninguno del 9 al 11). En Windows
+// esto "funcionaba" porque el filesystem no distingue mayúsculas, pero
+// `vite build` sí, y tronaba con ENOENT en avatar9.svg. Esta página era
+// literalmente imposible de compilar/desplegar tal como estaba.
+import av1 from "@/assets/img/avatars/Avatar1.svg";
+import av2 from "@/assets/img/avatars/Avatar2.svg";
+import av3 from "@/assets/img/avatars/Avatar3.svg";
+import av4 from "@/assets/img/avatars/Avatar4.svg";
+import av5 from "@/assets/img/avatars/Avatar5.svg";
+import av6 from "@/assets/img/avatars/Avatar6.svg";
+import av7 from "@/assets/img/avatars/Avatar7.svg";
+import av8 from "@/assets/img/avatars/Avatar8.svg";
 
-const LOCAL_AVATARS = [av1, av2, av3, av4, av5, av6, av7, av8, av9, av10, av11];
+const LOCAL_AVATARS = [av1, av2, av3, av4, av5, av6, av7, av8];
 
 // ─── Selector de avatar ────────────────────────────────────────────────────
-function AvatarPicker({ value, onChange, defaultPhotos, loadingPhotos }) {
+// Solo los 8 avatares locales — el backend (usersGetDefaultPhotos) devolvía
+// una segunda lista "Avatares adicionales" con las MISMAS 8 imágenes bajo
+// otro nombre, duplicando el selector sin ningún avatar realmente nuevo.
+function AvatarPicker({ value, onChange }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
@@ -96,47 +100,6 @@ function AvatarPicker({ value, onChange, defaultPhotos, loadingPhotos }) {
           })}
         </div>
       </div>
-
-      {/* Avatares del backend (Cloudinary) */}
-      {(loadingPhotos || defaultPhotos.length > 0) && (
-        <div>
-          <p style={{ fontSize: 10.5, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 8px" }}>
-            Avatares adicionales
-          </p>
-          {loadingPhotos ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(52px, 1fr))", gap: 8 }}>
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="animate-pulse" style={{ aspectRatio: "1", borderRadius: "50%", background: "var(--color-border)" }} />
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(52px, 1fr))", gap: 8 }}>
-              {defaultPhotos.map((foto, i) => {
-                const sel = value === foto.url;
-                return (
-                  <button
-                    key={foto.publicId ?? i}
-                    type="button"
-                    onClick={() => onChange(foto.url)}
-                    title={foto.nombre ?? `Avatar ${i + 1}`}
-                    style={{
-                      padding: 2,
-                      border: sel ? "3px solid var(--color-primary)" : "3px solid transparent",
-                      borderRadius: "50%", background: "none", cursor: "pointer",
-                      transition: "border-color 120ms, transform 120ms",
-                      outline: "none",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
-                    onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    <img src={foto.url} alt={foto.nombre ?? `Avatar ${i + 1}`} style={{ width: "100%", aspectRatio: "1", borderRadius: "50%", objectFit: "cover", display: "block" }} />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -197,8 +160,12 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
 
       <p style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--color-text)", overflowWrap: "anywhere", maxWidth: "100%" }}>{name}</p>
 
-      {/* Acciones */}
-      <div style={{ display: "flex", gap: 8 }}>
+      {/* Acciones — el estado (Seleccionar/Activo/Perfil actual) y las
+          acciones de Editar/Eliminar van en FILAS separadas, cada una
+          centrada y con flexWrap. Antes iban los 3 elementos en una sola
+          fila sin wrap: en una card de ~180px de ancho ("Perfil actual" +
+          2 botones con texto) no cabía y se desbordaba/apilaba mal. */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%" }}>
         {!isSelected && (
           <Button variant="primary" size="sm" onClick={onSelect} loading={switching}>
             {isTitular ? "Volver al titular" : "Seleccionar"}
@@ -211,14 +178,14 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
           <span style={{ fontSize: 12, color: "#D97706", fontWeight: 600 }}>Perfil actual</span>
         )}
         {!isTitular && (
-          <>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
             <IconBtn label="Editar" color="#6366F1" onClick={onEdit}>
               <Edit2 size={13} />
             </IconBtn>
             <IconBtn label="Eliminar" color="var(--color-error-hover)" onClick={onDelete}>
               <Trash2 size={13} />
             </IconBtn>
-          </>
+          </div>
         )}
       </div>
     </div>
@@ -249,10 +216,6 @@ export default function FamiliaPerfilesPage() {
   const [form,       setForm]       = useState({ nombre: "", avatarUrl: "" });
   const [formErrors, setFormErrors] = useState({});
 
-  // Avatares del backend compartidos entre los dos modales
-  const [defaultPhotos, setDefaultPhotos] = useState([]);
-  const [loadingPhotos, setLoadingPhotos] = useState(false);
-
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast({ msg: "", type: "success" }), 3500);
@@ -274,22 +237,10 @@ export default function FamiliaPerfilesPage() {
 
   useEffect(() => { load(); }, []);
 
-  // Carga los avatares del backend una sola vez (se comparte entre modales)
-  const loadDefaultPhotos = async () => {
-    if (defaultPhotos.length > 0) return;
-    setLoadingPhotos(true);
-    try {
-      const data = await usersGetDefaultPhotos();
-      setDefaultPhotos(data.fotos ?? []);
-    } catch { /* silencioso */ }
-    finally { setLoadingPhotos(false); }
-  };
-
   const openCreate = () => {
     setForm({ nombre: "", avatarUrl: "" });
     setFormErrors({});
     setCreateOpen(true);
-    loadDefaultPhotos();
   };
 
   const openEdit = (p) => {
@@ -297,26 +248,28 @@ export default function FamiliaPerfilesPage() {
     setForm({ nombre: p.nombre, avatarUrl: p.avatarUrl ?? "" });
     setFormErrors({});
     setEditOpen(true);
-    loadDefaultPhotos();
   };
 
   // ── Seleccionar perfil ────────────────────────────────────────────────────
+  // FIX: esperaba un `res.token` en el body y se lo pasaba a switchProfile()
+  // junto con datos armados a mano — pero seleccionarPerfil() en el backend
+  // nunca devuelve un token (solo reemplaza la cookie httpOnly), así que
+  // esa rama disparaba SIEMPRE y la función ni siquiera llegaba a existir
+  // en el contexto de auth. Ahora: se llama al endpoint (que deja la cookie
+  // lista) y luego se le pide a switchProfile() que vuelva a preguntar
+  // "¿quién soy?" — así `user` queda con el perfil real que aceptó el server.
   const handleSelect = async (perfil, esTitular = false) => {
     const perfilId = esTitular ? null : perfil._id;
     setSwitching(esTitular ? "titular" : perfil._id);
     try {
-      const res = await perfilesSeleccionar({ perfilId });
+      await perfilesSeleccionar({ perfilId });
 
-      if (!res.token) {
-        notify("No se pudo obtener el token del perfil", "error");
+      const ok = await switchProfile();
+      if (!ok) {
+        notify("Perfil activado, pero no se pudo refrescar la sesión. Recarga la página.", "error");
         return;
       }
 
-      const profileData = esTitular
-        ? { ...titular, esTitular: true, _id: null, avatarUrl: titular?.avatarUrl }
-        : { ...res.perfil, esTitular: false };
-
-      switchProfile(res.token, profileData);
       setActiveId(esTitular ? null : perfil._id);
 
       const fcmToken = localStorage.getItem("fcmToken");
@@ -432,7 +385,7 @@ export default function FamiliaPerfilesPage() {
 
       {/* Esqueletos de carga */}
       {loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
           {[...Array(3)].map((_, i) => (
             <div key={i} className="animate-pulse" style={{ height: 180, borderRadius: 18, background: "var(--color-border)" }} />
           ))}
@@ -441,7 +394,7 @@ export default function FamiliaPerfilesPage() {
 
       {/* Grid de perfiles */}
       {!apiError && !loading && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
           {/* Titular */}
           {titular && (
             <ProfileCard
@@ -500,8 +453,6 @@ export default function FamiliaPerfilesPage() {
             <AvatarPicker
               value={form.avatarUrl}
               onChange={url => setForm(f => ({ ...f, avatarUrl: url }))}
-              defaultPhotos={defaultPhotos}
-              loadingPhotos={loadingPhotos}
             />
 
             <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 16 }}>
@@ -544,8 +495,6 @@ export default function FamiliaPerfilesPage() {
             <AvatarPicker
               value={form.avatarUrl}
               onChange={url => setForm(f => ({ ...f, avatarUrl: url }))}
-              defaultPhotos={defaultPhotos}
-              loadingPhotos={loadingPhotos}
             />
 
             <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 16 }}>

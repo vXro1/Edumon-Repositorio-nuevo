@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BookOpen, ClipboardList, Users, ChevronRight,
-  Plus, Calendar, Clock, CheckCircle2, Sparkles,
+  Plus, Calendar, Clock, CheckCircle2, Sparkles, MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { cursosGetMine } from "@/features/cursos/services/cursosService";
@@ -89,6 +89,34 @@ function EventItem({ evento }) {
         </p>
       </div>
     </div>
+  );
+}
+
+/* ── Tarjeta de acción rápida — mismo patrón que admin/padre ──── */
+function ActionCard({ icon: Icon, label, desc, colorClass, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="card card-interactive"
+      style={{
+        display: "flex", alignItems: "center", gap: "var(--space-3)",
+        padding: "var(--space-4)", textAlign: "left", width: "100%",
+        background: "var(--color-surface)", border: "1px solid var(--color-border)",
+      }}
+    >
+      <div className={`stat-card-icon ${colorClass}`} style={{ flexShrink: 0 }}>
+        <Icon size={18} aria-hidden="true" />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: "var(--text-sm)", fontWeight: "var(--font-semibold)", color: "var(--color-text)", margin: 0, lineHeight: 1.3 }}>
+          {label}
+        </p>
+        <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)", margin: 0, marginTop: 2 }}>
+          {desc}
+        </p>
+      </div>
+      <ChevronRight size={14} style={{ color: "var(--color-text-subtle)", flexShrink: 0 }} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -224,22 +252,19 @@ export default function DocenteHomePage() {
         </div>
       </section>
 
-      {/* ── Acciones rápidas ── */}
+      {/* ── Acciones rápidas ──
+          Mismo patrón de tarjeta (ActionCard) que admin/padre — antes era
+          una fila de 3 botones sueltos sin tarjeta de Calendario, la única
+          forma de llegar al calendario era un botón "ghost" chiquito
+          mezclado ahí. Cursos/Retos/Calendario quedan como base común con
+          los otros roles; Foros es lo específico del rol docente. */}
       <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
-        <div className="quick-actions">
-          <Button variant="primary" onClick={() => navigate("/cursos")}>
-            <Plus size={15} aria-hidden="true" />
-            Crear curso
-          </Button>
-          <Button variant="outline-neutral" onClick={() => navigate("/tareas")}>
-            <ClipboardList size={15} aria-hidden="true" />
-            Nuevo reto
-          </Button>
-          <Button variant="ghost" onClick={() => navigate("/calendario")}>
-            <Calendar size={15} aria-hidden="true" />
-            Ver calendario
-          </Button>
+        <div className="grid-auto-sm">
+          <ActionCard icon={Plus}           label="Crear curso"  desc="Nuevo curso para tus estudiantes" colorClass="stat-icon-purple" onClick={() => navigate("/cursos")} />
+          <ActionCard icon={ClipboardList}  label="Nuevo reto"   desc="Asigna un reto o actividad"       colorClass="stat-icon-cyan"   onClick={() => navigate("/tareas")} />
+          <ActionCard icon={MessageCircle}  label="Foros"        desc="Discusiones de tus cursos"        colorClass="stat-icon-green"  onClick={() => navigate("/foros")} />
+          <ActionCard icon={Calendar}       label="Calendario"   desc="Eventos y actividades"             colorClass="stat-icon-yellow" onClick={() => navigate("/calendario")} />
         </div>
       </section>
 
@@ -315,19 +340,41 @@ export default function DocenteHomePage() {
         </section>
       </div>
 
-      {/* ── Eventos de hoy ── */}
-      {!loading && eventos.length > 0 && (
-        <section aria-label="Eventos de hoy" style={{ marginBottom: "var(--space-6)" }}>
-          <SectionHeader
-            title="Eventos de hoy"
-            actionLabel="Ver calendario"
-            onAction={() => navigate("/calendario")}
-          />
-          <div className="list-card">
-            {eventos.map(ev => <EventItem key={ev._id} evento={ev} />)}
-          </div>
-        </section>
-      )}
+      {/* ── Eventos de hoy ──
+          Antes esta sección desaparecía por completo si no había eventos
+          hoy — igual que en padre, el docente se quedaba sin ningún rastro
+          visible del calendario en el día a día. Ahora es permanente, con
+          esqueleto de carga y estado vacío, igual que en el dashboard de
+          administrador. */}
+      <section aria-label="Eventos de hoy" style={{ marginBottom: "var(--space-6)" }}>
+        <SectionHeader
+          title="Eventos de hoy"
+          actionLabel="Ver calendario"
+          onAction={() => navigate("/calendario")}
+        />
+        <div className="list-card">
+          {loading ? (
+            <div style={{ padding: "var(--space-4)" }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} className="skeleton-list-item">
+                  <Sk h={34} w={34} r="var(--radius-md)" />
+                  <div style={{ flex: 1 }}>
+                    <Sk h={12} w="75%" />
+                    <div style={{ marginTop: 5 }}><Sk h={10} w="50%" /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : eventos.length === 0 ? (
+            <div className="empty-state" style={{ border: "none", borderRadius: 0 }}>
+              <div className="empty-state-icon"><Calendar size={22} aria-hidden="true" /></div>
+              <p className="empty-state-title">Sin eventos hoy</p>
+            </div>
+          ) : (
+            eventos.map(ev => <EventItem key={ev._id} evento={ev} />)
+          )}
+        </div>
+      </section>
     </div>
   );
 }

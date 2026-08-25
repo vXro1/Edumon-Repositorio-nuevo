@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BookOpen, FileText, Calendar, Bell,
+  BookOpen, FileText, ClipboardList, Calendar, Bell,
   ChevronRight, Users, Clock, Heart,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -207,9 +207,12 @@ export default function PadreHomePage() {
             icon={BookOpen} label="Ver cursos"          desc="Cursos de tus hijos"
             colorClass="stat-icon-cyan"   onClick={() => navigate("/familia/cursos")}
           />
+          {/* Antes "Ver entregas" apuntaba a una lista separada
+              (/familia/entregas) que duplicaba esta misma lista de retos —
+              cada reto ya lleva directo a su entrega individual. */}
           <QuickActionCard
-            icon={FileText} label="Ver entregas"        desc="Revisión de retos enviados"
-            colorClass="stat-icon-green"  onClick={() => navigate("/familia/entregas")}
+            icon={ClipboardList} label="Retos"        desc="Retos de tus hijos y sus entregas"
+            colorClass="stat-icon-green"  onClick={() => navigate("/familia/tareas")}
           />
           <QuickActionCard
             icon={Calendar} label="Calendario"          desc="Eventos y actividades"
@@ -245,8 +248,6 @@ export default function PadreHomePage() {
                 curso={c}
                 role="padre"
                 idx={i}
-                showCover={true}
-                coverSrc={c.fotoPortada || null}
                 compact={true}
               />
             ))}
@@ -254,19 +255,41 @@ export default function PadreHomePage() {
         )}
       </section>
 
-      {/* ── Eventos de hoy ── */}
-      {!loading && eventos.length > 0 && (
-        <section aria-label="Eventos de hoy">
-          <SectionHeader
-            title="Eventos de hoy"
-            actionLabel="Ver calendario"
-            onAction={() => navigate("/familia/calendario")}
-          />
-          <div className="list-card">
-            {eventos.map(ev => <EventItem key={ev._id} evento={ev} />)}
-          </div>
-        </section>
-      )}
+      {/* ── Eventos de hoy ──
+          Antes desaparecía por completo sin eventos hoy, dejando al padre
+          sin ningún rastro del calendario en el día a día salvo la
+          tarjeta de "Calendario" en Acciones rápidas. Ahora es permanente,
+          con esqueleto de carga y estado vacío, igual que en el
+          dashboard de administrador y docente. */}
+      <section aria-label="Eventos de hoy">
+        <SectionHeader
+          title="Eventos de hoy"
+          actionLabel="Ver calendario"
+          onAction={() => navigate("/familia/calendario")}
+        />
+        <div className="list-card">
+          {loading ? (
+            <div style={{ padding: "var(--space-4)" }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} className="skeleton-list-item">
+                  <Sk h={34} w={34} r="var(--radius-md)" />
+                  <div style={{ flex: 1 }}>
+                    <Sk h={12} w="75%" />
+                    <div style={{ marginTop: 5 }}><Sk h={10} w="50%" /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : eventos.length === 0 ? (
+            <div className="empty-state" style={{ border: "none", borderRadius: 0 }}>
+              <div className="empty-state-icon"><Calendar size={22} aria-hidden="true" /></div>
+              <p className="empty-state-title">Sin eventos hoy</p>
+            </div>
+          ) : (
+            eventos.map(ev => <EventItem key={ev._id} evento={ev} />)
+          )}
+        </div>
+      </section>
     </div>
   );
 }
