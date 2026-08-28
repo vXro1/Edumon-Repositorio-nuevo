@@ -37,13 +37,27 @@ import { parseValidationErrors, summarizeValidationErrors } from "@/utils/parseV
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DIAS_SEMANA = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 
+// FIX: incluía "reunion"/"actividad"/"otro" como opciones elegibles en el
+// selector de categoría del formulario, y ninguna era una de las 3 que el
+// backend realmente acepta (ver createEventoValidator) — cualquier envío
+// con esos valores (incluido "otro", el default con el que arrancaba el
+// formulario) siempre volvía 400. Se mantienen acá SOLO como estilos de
+// fallback para pintar eventos ya existentes que puedan tener esos valores
+// legado guardados — catCfg() ya cae a "otro" para cualquier categoría que
+// no reconozca. El selector de creación/edición usa CATEGORIA_FORM_OPTIONS
+// más abajo, que sí son las 3 únicas que el backend acepta.
 const CATEGORIA_CFG = {
   tarea:          { color: "#6366F1", bg: "rgba(99,102,241,0.10)",  label: "Reto" },
   escuela_padres: { color: "#D97706", bg: "rgba(217,119,6,0.10)",   label: "Escuela de padres" },
+  institucional:  { color: "var(--color-primary)", bg: "rgba(12,106,196,0.10)",  label: "Institucional" },
   reunion:        { color: "var(--color-primary)", bg: "rgba(12,106,196,0.10)",  label: "Reunión" },
   actividad:      { color: "var(--edu-green-600)", bg: "rgba(22,163,74,0.10)",   label: "Actividad" },
   otro:           { color: "#64748B", bg: "rgba(100,116,139,0.10)", label: "Otro" },
 };
+
+// Único enum que el backend acepta para "categoria" en /api/eventos (ver
+// createEventoValidator/updateEventoValidator del backend).
+const CATEGORIA_FORM_OPTIONS = ["escuela_padres", "tarea", "institucional"];
 
 function catCfg(cat) { return CATEGORIA_CFG[cat] ?? CATEGORIA_CFG.otro; }
 
@@ -71,7 +85,7 @@ function FieldError({ message }) {
 
 const INIT_FORM = {
   titulo: "", descripcion: "", fechaInicio: "", fechaFin: "",
-  hora: "", ubicacion: "", categoria: "otro",
+  hora: "", ubicacion: "", categoria: "institucional",
 };
 
 export default function EventosPage() {
@@ -162,7 +176,11 @@ export default function EventosPage() {
       fechaFin:    toLocalInput(ev.fechaFin),
       hora:        ev.hora        ?? "",
       ubicacion:   ev.ubicacion   ?? "",
-      categoria:   ev.categoria   ?? "otro",
+      // Si el evento existente trae una categoría legado que el backend ya
+      // no acepta (ver comentario de CATEGORIA_CFG arriba), cae a
+      // "institucional" en vez de reintentar guardar un valor que el
+      // validador va a rechazar apenas se toque "Guardar".
+      categoria:   CATEGORIA_FORM_OPTIONS.includes(ev.categoria) ? ev.categoria : "institucional",
     });
     const ids = (ev.cursosIds ?? ev.cursos ?? []).map(c => c._id ?? c);
     setCursosIds(ids);
@@ -180,6 +198,10 @@ export default function EventosPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (cursosIds.length === 0) {
+      setErrors({ cursosIds: "Selecciona al menos un curso" });
+      return;
+    }
     setSaving(true);
     setErrors({});
     try {
@@ -415,11 +437,51 @@ export default function EventosPage() {
               onChange={(e) => updateForm("categoria", e.target.value)}
               required
             >
-              {Object.entries(CATEGORIA_CFG).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
+              {CATEGORIA_FORM_OPTIONS.map((key) => (
+                <option key={key} value={key}>{CATEGORIA_CFG[key].label}</option>
               ))}
             </Select>
             <FieldError message={errors.categoria} />
+          </div>
+
+          {/* Cursos asociados — el backend exige "cursosIds" como array en
+              cada creación/edición (ver createEventoValidator); antes no
+              había ningún control acá para llenarlo, así que el campo
+              siempre llegaba vacío/ausente y el guardado fallaba con
+              "cursosIds debe ser un array" incluso con el resto del
+              formulario perfecto. cursosIds/toggleCurso ya existían
+              (openCreate/openEdit los preparan), solo faltaba el render. */}
+          <div>
+            <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)",
+              textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6, margin: "0 0 6px" }}>
+              Cursos asociados *
+            </p>
+            {cursos.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
+                No tienes cursos disponibles para asociar.
+              </p>
+            ) : (
+              <div style={{
+                display: "flex", flexDirection: "column", gap: 6,
+                maxHeight: 160, overflowY: "auto",
+                border: "1px solid var(--color-border)", borderRadius: 8, padding: 8,
+              }}>
+                {cursos.map((c) => (
+                  <label
+                    key={c._id}
+                    style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={cursosIds.includes(c._id)}
+                      onChange={() => { clearError("cursosIds"); toggleCurso(c._id); }}
+                    />
+                    {c.nombre}
+                  </label>
+                ))}
+              </div>
+            )}
+            <FieldError message={errors.cursosIds} />
           </div>
 
           {/* Imagen de portada */}

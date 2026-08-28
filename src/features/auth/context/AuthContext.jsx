@@ -11,6 +11,7 @@ import React, {
 import { authService } from "../../../services/authService";
 import { registerLogoutCallback } from "../../../services/core/apiClient";
 import { sessionManager } from "../../../services/core/sessionManager";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
 import { normalizeUser } from "@/lib/normalizers";
 
 export const UserContext = createContext(null);
@@ -73,6 +74,21 @@ export const AuthProvider = ({ children }) => {
 
     return () => sessionManager.stop();
   }, [isAuthenticated, logout]);
+
+  // Conexión de Socket.IO — mismo ciclo de vida que sessionManager arriba:
+  // se conecta apenas hay sesión, se desconecta apenas se pierde (logout,
+  // expiración). Un solo socket compartido para toda la app; cualquier
+  // pantalla se suscribe a sus propios eventos con getSocket()?.on(...).
+  useEffect(() => {
+    if (!isAuthenticated) {
+      disconnectSocket();
+      return;
+    }
+
+    connectSocket();
+
+    return () => disconnectSocket();
+  }, [isAuthenticated]);
 
   // Pregunta silenciosa "¿quién soy?" usando la cookie httpOnly.
   // Si no hay sesión válida, el catch deja user en null —

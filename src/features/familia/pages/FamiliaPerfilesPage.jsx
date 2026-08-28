@@ -15,19 +15,21 @@ import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 // ─── Importaciones de avatares locales ────────────────────────────────────
-// FIX: importaba avatar1..avatar11.svg en minúscula — solo existen
-// Avatar1..Avatar8.svg (con mayúscula, y ninguno del 9 al 11). En Windows
-// esto "funcionaba" porque el filesystem no distingue mayúsculas, pero
-// `vite build` sí, y tronaba con ENOENT en avatar9.svg. Esta página era
-// literalmente imposible de compilar/desplegar tal como estaba.
-import av1 from "@/assets/img/avatars/Avatar1.svg";
-import av2 from "@/assets/img/avatars/Avatar2.svg";
-import av3 from "@/assets/img/avatars/Avatar3.svg";
-import av4 from "@/assets/img/avatars/Avatar4.svg";
-import av5 from "@/assets/img/avatars/Avatar5.svg";
-import av6 from "@/assets/img/avatars/Avatar6.svg";
-import av7 from "@/assets/img/avatars/Avatar7.svg";
-import av8 from "@/assets/img/avatars/Avatar8.svg";
+// FIX (dockerización, 2026-08-28): importaba Avatar1..Avatar8.svg con
+// mayúscula inicial — en disco solo existen avatar1..avatar8.svg, en
+// minúscula (ver src/assets/img/avatars/). En Windows esto "funcionaba"
+// porque el filesystem no distingue mayúsculas de minúsculas, pero
+// `vite build` corriendo en Linux (el contenedor Docker) sí, y tronaba con
+// ENOENT en el primer avatar. Esta página era literalmente imposible de
+// compilar fuera de Windows tal como estaba.
+import av1 from "@/assets/img/avatars/avatar1.svg";
+import av2 from "@/assets/img/avatars/avatar2.svg";
+import av3 from "@/assets/img/avatars/avatar3.svg";
+import av4 from "@/assets/img/avatars/avatar4.svg";
+import av5 from "@/assets/img/avatars/avatar5.svg";
+import av6 from "@/assets/img/avatars/avatar6.svg";
+import av7 from "@/assets/img/avatars/avatar7.svg";
+import av8 from "@/assets/img/avatars/avatar8.svg";
 
 const LOCAL_AVATARS = [av1, av2, av3, av4, av5, av6, av7, av8];
 
