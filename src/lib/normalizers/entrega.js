@@ -1,8 +1,3 @@
-// src/lib/normalizers/entrega.js
-
-/**
- * Normaliza archivos adjuntos
- */
 export function normalizeArchivos(archivos) {
   if (!Array.isArray(archivos)) return [];
 
@@ -49,10 +44,6 @@ export function normalizeArchivos(archivos) {
   }));
 }
 
-/**
- * Normaliza una entrega individual
- * Compatible con backend parcial, frontend-only o datos enriquecidos
- */
 export function normalizeEntrega(data) {
   if (!data) return null;
 
@@ -147,12 +138,7 @@ export function normalizeEntrega(data) {
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
 
-    // Calificación — el backend (calificarEntregaValidator.js / Entrega.js)
-    // usa "valoracion" (entero 1-5), nunca "nota". Este normalizador antes
-    // buscaba data.calificacion.nota, campo que el backend jamás envía, así
-    // que SIEMPRE devolvía calificacion: null aunque la entrega sí tuviera
-    // valoración — ocultaba la nota tanto al padre (FamiliaEntregasPage)
-    // como al docente (EntregasPage).
+    // el backend usa "valoracion" (entero 1-5), nunca "nota"
     calificacion:
       data.calificacion &&
       data.calificacion.valoracion !== undefined &&
@@ -163,9 +149,7 @@ export function normalizeEntrega(data) {
             fechaCalificacion:
               data.calificacion.fechaCalificacion || null,
 
-            // "docente" viene de un cache de enriquecimiento manual (ver
-            // normalizeAndEnrichEntrega); "docenteId" es como el backend lo
-            // manda de verdad cuando popula calificacion.docenteId.
+            // "docente" viene del cache de enriquecimiento; "docenteId" es como lo manda el backend
             docente:
               data.calificacion.docente &&
               typeof data.calificacion.docente === "object"
@@ -207,9 +191,6 @@ export function normalizeEntrega(data) {
   };
 }
 
-/**
- * Normaliza y enriquece entrega con cache
- */
 export function normalizeAndEnrichEntrega(data, cache = {}) {
   if (!data) return null;
 
@@ -233,17 +214,11 @@ export function normalizeAndEnrichEntrega(data, cache = {}) {
   });
 }
 
-/**
- * Normaliza múltiples entregas
- */
 export function normalizeEntregas(entregas) {
   if (!Array.isArray(entregas)) return [];
   return entregas.map(normalizeEntrega).filter(Boolean);
 }
 
-/**
- * Enriquecer múltiples entregas usando cache externo
- */
 export function normalizeAndEnrichEntregas(entregas, cache = {}) {
   if (!Array.isArray(entregas)) return [];
   return entregas
@@ -255,7 +230,7 @@ export async function enrichEntregasData(entregas) {
     return [];
   }
 
-  // Importación dinámica para evitar problemas de inicialización circular con Vite
+  // dinámico para evitar ciclos de inicialización con Vite
   const [{ usersGetById }, { tareasGetById }] = await Promise.all([
     import("@/services/usersService"),
     import("@/features/cursos/services/tareasService"),

@@ -1,4 +1,3 @@
-// src/features/foros/components/ForumInput.jsx
 // Compositor de mensajes: contexto de respuesta, editor de texto enriquecido, adjuntar archivos y enviar.
 import { useRef, useState } from 'react';
 import { Send, Paperclip, X, Lock, FileText } from 'lucide-react';
@@ -131,9 +130,6 @@ const ForumInput = ({
         </div>
       )}
 
-      {/* Etiqueta clara — sin esto, la única pista de qué es esta caja era
-          el placeholder, que desaparece apenas el usuario empieza a
-          escribir (nada de texto plano que sostenga esa explicación). */}
       <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
         Escribe tu mensaje
       </p>
@@ -155,10 +151,6 @@ const ForumInput = ({
         </div>
       )}
 
-      {/* Fila de acciones — en su propia fila DEBAJO del editor, con texto
-          visible en ambos botones (antes "Adjuntar" era un ícono suelto
-          sin ninguna palabra al lado, y "Enviar" quedaba apretado junto al
-          editor en una sola línea comprimida). */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10 }}>
         <Button
           variant="ghost"

@@ -1,4 +1,3 @@
-// src/features/familia/pages/FamiliaCalendarioPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import { Calendar } from "lucide-react";
 import { cursosGetMine } from "@/features/cursos/services/cursosService";
@@ -22,7 +21,6 @@ export default function FamiliaCalendarioPage() {
       // Acumuladores para stats globales
       let totalTareas = 0, totalEventos = 0, tareasVencidas = 0, eventosProximos = 0;
       const allItems  = [];
-      const ahora     = new Date();
 
       await Promise.all(
         cursos.map(async (c) => {

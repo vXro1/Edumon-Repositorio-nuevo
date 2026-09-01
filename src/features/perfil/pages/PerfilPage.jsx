@@ -1,10 +1,9 @@
-//ruta : src/features/perfil/pages/PerfilPage.jsx
 import { useState, useEffect } from "react";
 
 import {
   User, Camera, Mail, Phone, CreditCard, Building2, Shield,
   Edit3, Save, X, Calendar, Users,
-  BookOpen, GraduationCap, Key, Info, Clock, Hash, Loader2, Check,
+  BookOpen, GraduationCap, Key, Info, Clock, Hash, Check,
 } from "lucide-react";
 
 import { usersGetMyProfile, usersUpdateMyPhoto, usersGetDefaultPhotos, usersUpdateMyProfile } from "@/services/usersService";
@@ -333,10 +332,8 @@ export default function PerfilPage() {
           telefono: normalizePhone(editForm.telefono) ?? "",
         }).filter(([, v]) => v !== "")
       );
-      // PUT /users/me/profile: el backend identifica al usuario por el token
-      // (req.user.userId), nunca por :id en la URL — así cualquier rol puede
-      // editar SU PROPIO perfil sin pasar por el endpoint admin-only
-      // PUT /users/:id (que devolvía 403 a docentes/padres editando lo suyo).
+      // /users/me/profile identifica al usuario por el token, no por :id — así
+      // cualquier rol edita su propio perfil sin el endpoint admin-only
       const data   = await usersUpdateMyProfile(body);
       const updated = data.user ?? data.usuario ?? data;
       setProfile(p => ({ ...p, ...updated }));

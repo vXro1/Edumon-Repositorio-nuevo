@@ -1,5 +1,3 @@
-// src/lib/normalizers/index.js
-
 // Usuarios
 export * from "./user";
 

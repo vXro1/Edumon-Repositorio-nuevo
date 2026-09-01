@@ -1,5 +1,3 @@
-// src/features/familia/pages/FamiliaPerfilesPage.jsx
-// ROL: Padre / Tutor — Selector y gestión de perfiles familiares
 import { useState, useEffect } from "react";
 import {
   Users, Plus, Edit2, Trash2, Check,
@@ -14,14 +12,8 @@ import { Toast, Button, Input, Badge, Modal } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
-// ─── Importaciones de avatares locales ────────────────────────────────────
-// FIX (dockerización, 2026-08-28): importaba Avatar1..Avatar8.svg con
-// mayúscula inicial — en disco solo existen avatar1..avatar8.svg, en
-// minúscula (ver src/assets/img/avatars/). En Windows esto "funcionaba"
-// porque el filesystem no distingue mayúsculas de minúsculas, pero
-// `vite build` corriendo en Linux (el contenedor Docker) sí, y tronaba con
-// ENOENT en el primer avatar. Esta página era literalmente imposible de
-// compilar fuera de Windows tal como estaba.
+// nombres en minúscula: en Windows el filesystem no distingue mayúsculas, pero
+// vite build en Linux (Docker) sí — con mayúscula inicial esto rompía el build
 import av1 from "@/assets/img/avatars/avatar1.svg";
 import av2 from "@/assets/img/avatars/avatar2.svg";
 import av3 from "@/assets/img/avatars/avatar3.svg";
@@ -34,9 +26,7 @@ import av8 from "@/assets/img/avatars/avatar8.svg";
 const LOCAL_AVATARS = [av1, av2, av3, av4, av5, av6, av7, av8];
 
 // ─── Selector de avatar ────────────────────────────────────────────────────
-// Solo los 8 avatares locales — el backend (usersGetDefaultPhotos) devolvía
-// una segunda lista "Avatares adicionales" con las MISMAS 8 imágenes bajo
-// otro nombre, duplicando el selector sin ningún avatar realmente nuevo.
+// solo los 8 locales — la lista "adicionales" del backend duplica las mismas imágenes
 function AvatarPicker({ value, onChange }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -162,11 +152,7 @@ function ProfileCard({ perfil, isTitular, isSelected, onSelect, onEdit, onDelete
 
       <p style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--color-text)", overflowWrap: "anywhere", maxWidth: "100%" }}>{name}</p>
 
-      {/* Acciones — el estado (Seleccionar/Activo/Perfil actual) y las
-          acciones de Editar/Eliminar van en FILAS separadas, cada una
-          centrada y con flexWrap. Antes iban los 3 elementos en una sola
-          fila sin wrap: en una card de ~180px de ancho ("Perfil actual" +
-          2 botones con texto) no cabía y se desbordaba/apilaba mal. */}
+      {/* estado y acciones en filas separadas — juntos no cabían en una card angosta */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%" }}>
         {!isSelected && (
           <Button variant="primary" size="sm" onClick={onSelect} loading={switching}>
@@ -253,13 +239,8 @@ export default function FamiliaPerfilesPage() {
   };
 
   // ── Seleccionar perfil ────────────────────────────────────────────────────
-  // FIX: esperaba un `res.token` en el body y se lo pasaba a switchProfile()
-  // junto con datos armados a mano — pero seleccionarPerfil() en el backend
-  // nunca devuelve un token (solo reemplaza la cookie httpOnly), así que
-  // esa rama disparaba SIEMPRE y la función ni siquiera llegaba a existir
-  // en el contexto de auth. Ahora: se llama al endpoint (que deja la cookie
-  // lista) y luego se le pide a switchProfile() que vuelva a preguntar
-  // "¿quién soy?" — así `user` queda con el perfil real que aceptó el server.
+  // seleccionarPerfil() solo reemplaza la cookie httpOnly, no devuelve token —
+  // switchProfile() vuelve a preguntar "¿quién soy?" para refrescar el user real
   const handleSelect = async (perfil, esTitular = false) => {
     const perfilId = esTitular ? null : perfil._id;
     setSwitching(esTitular ? "titular" : perfil._id);

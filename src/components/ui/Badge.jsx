@@ -1,5 +1,3 @@
-// src/components/ui/Badge.jsx
-
 /* ─────────────────────────────────────────────────────────────────────────
    Badges — Soft UI:
    • Relleno de color suave (10-15%) + borde fino del mismo tono

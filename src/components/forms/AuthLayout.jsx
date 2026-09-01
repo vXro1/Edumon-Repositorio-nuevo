@@ -1,17 +1,11 @@
-// src/features/auth/components/shared/AuthLayout.jsx
-// Contenedor compartido para todas las páginas de autenticación: LoginForm, ForgotPasswordForm, ResetPasswordForm.
-// Tarjeta de dos paneles: panel de marca (degradado azul + logo con halo) y
-// panel de formulario (blanco). El corte diagonal entre ambos es el
-// elemento de firma del rediseño — en móvil se desactiva y el panel de
-// marca se aplana a una franja horizontal compacta arriba.
+// contenedor compartido de las páginas de auth: tarjeta de dos paneles (marca + formulario)
+// con corte diagonal entre ambos; en móvil se aplana a una franja horizontal
 import letras from "@/assets/img/letras.svg";
 import circulo1 from "@/assets/img/circulos/circulo1.svg";
 import circulo5 from "@/assets/img/circulos/circulo5.svg";
 import circulo9 from "@/assets/img/circulos/circulo9.svg";
 
-// Solo 3 acentos decorativos (antes 12 disponibles / 8 en uso): dos anclas
-// grandes recortadas por el borde y un satélite pequeño. Menos elementos,
-// más aire — para que el logo sea lo único que compite por la atención.
+// solo 3 acentos decorativos: menos elementos, para que el logo sea el único foco
 const AUTH_BUBBLES = [
   { src: circulo1, top: "-16%", left: "-14%", size: 240, opacity: 0.28 },
   { src: circulo5, bottom: "-18%", right: "-12%", size: 210, opacity: 0.24 },
@@ -39,10 +33,7 @@ function AuthBubbles() {
   );
 }
 
-/* ─────────────────────────────────────────────
-   Panel de marca — degradado azul + logo con halo.
-   Mismo bloque en las 3 pantallas; solo cambia brandTitle / brandTagline.
-───────────────────────────────────────────── */
+// mismo bloque en las 3 pantallas de auth; solo cambia brandTitle/brandTagline
 function AuthBrandPanel({ brandTitle, brandTagline }) {
   return (
     <div className="auth-card-brand">
@@ -60,14 +51,7 @@ function AuthBrandPanel({ brandTitle, brandTagline }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   Contenedor principal — tarjeta de dos paneles, centrada.
-   topAction: contenido opcional FUERA de la tarjeta (ej. "Volver al
-   inicio"), alineado al mismo ancho que la tarjeta, encima de ella.
-   brandTitle / brandTagline: copy del panel de marca. Traen defaults
-   pensados para la pantalla de login.
-   children: contenido del formulario, dentro del panel blanco.
-───────────────────────────────────────────── */
+// topAction: contenido opcional fuera de la tarjeta (ej. "Volver al inicio")
 const AuthLayout = ({
   children,
   topAction,
@@ -91,13 +75,8 @@ const AuthLayout = ({
 );
 export default AuthLayout;
 
-/* ─────────────────────────────────────────────
-   CSS compartido (todas las clases llevan prefijo `auth-`)
-   Colores tomados de los tokens del proyecto. Estas pantallas viven
-   fuera de .app-shell, así que el azul de marca se toma del token
-   crudo --edu-blue-500/700/900 (var(--color-primary) resolvería al
-   morado de :root, no al azul del dashboard).
-───────────────────────────────────────────── */
+// estas pantallas viven fuera de .app-shell: el azul usa el token crudo --edu-blue-500,
+// no --color-primary (que resolvería al morado de :root)
 export const AUTH_CSS = `
 .auth-root {
   min-height: 100vh;
@@ -164,12 +143,8 @@ export const AUTH_CSS = `
   overflow: hidden;
 }
 
-/* ══ PANEL DE MARCA ══
-   Degradado azul diagonal (misma familia de color, sin mezclar tonos
-   nuevos) + halo radial detrás de la insignia, para que el logo sea
-   el punto focal. El clip-path recorta un ángulo en el borde derecho:
-   la tarjeta blanca de fondo se asoma por ese corte, creando la costura
-   diagonal sin agregar ningún elemento extra al DOM. */
+/* clip-path recorta un ángulo en el borde derecho: la tarjeta blanca de fondo
+   se asoma por ese corte, creando la costura diagonal sin elementos extra en el DOM */
 .auth-card-brand {
   position: relative;
   flex: 0 0 300px;
@@ -337,11 +312,6 @@ export const AUTH_CSS = `
 /* ══ FORM ══ */
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
 
-/* El teléfono con prefijo "+57" usa el componente PhoneInput (flexbox,
-   ver src/components/ui/PhoneInput.jsx) — ya no hay clases propias de
-   login para eso, evita que dos hojas de estilo definan el mismo campo
-   con números distintos y terminen empujándose entre sí. */
-
 .auth-row-between {
   display: flex;
   align-items: center;
@@ -447,10 +417,7 @@ export const AUTH_CSS = `
   margin-top: 2px;
 }
 
-/* ══ RESPONSIVE ══
-   El corte diagonal (clip-path) solo tiene sentido con los paneles uno
-   junto al otro, así que se desactiva por debajo de 760px, donde el
-   panel de marca pasa a franja horizontal compacta. */
+/* clip-path solo tiene sentido con los paneles lado a lado; se desactiva bajo 760px */
 @media (max-width: 760px) {
   .auth-card { flex-direction: column; }
   .auth-card-brand {

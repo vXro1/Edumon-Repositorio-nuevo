@@ -1,4 +1,3 @@
-// src/features/auth/pages/LoginPage.jsx
 import { useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";

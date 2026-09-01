@@ -1,7 +1,4 @@
-// src/services/fcmService.js
-// Registra el FCM token del dispositivo en el backend.
-// Firebase Cloud Messaging requiere que el proyecto tenga firebase configurado.
-// Si no está disponible, el registro falla silenciosamente.
+// registra el FCM token del dispositivo; si Firebase no está configurado, falla silenciosamente
 import { apiFetch } from './core/apiClient';
 
 export const fcmService = {

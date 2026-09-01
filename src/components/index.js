@@ -1,5 +1,3 @@
-// src/components/index.js
-
 /* ── FORMS ── */
 export { default as ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 export { default as LoginForm }          from "./forms/LoginForm";

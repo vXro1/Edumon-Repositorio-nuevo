@@ -1,9 +1,6 @@
 import { memo } from "react";
 
-// `title` sigue siendo el tooltip nativo del navegador (hover); ahora
-// también se pinta como texto visible junto al ícono — un ícono solo no le
-// dice a un usuario adulto qué acción hace el botón sin pasar el mouse
-// por encima primero (ver plan de corrección UX/UI).
+// title es tanto el tooltip nativo como el texto visible junto al ícono
 const IconActionButton = memo(function IconActionButton({
   icon: Icon,
   color = "var(--color-text-muted)",

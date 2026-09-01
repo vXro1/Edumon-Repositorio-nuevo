@@ -1,11 +1,6 @@
-// src/features/cursos/components/hub/HubHeader.jsx
 import { Users } from "lucide-react";
 import { Sk } from "../shared/ui";
-// Mismo fallback que ya usan CursoCard.jsx/CursosPage.jsx/FamiliaCursosPage.jsx
-// para "curso sin portada" — antes esta cabecera usaba un degradado de color
-// liso en su lugar, así que un curso sin foto propia se veía distinto aquí
-// que en el resto de la app, y el color sólido tapaba por completo cualquier
-// imagen (de ahí "ese color no me deja ver la imagen").
+// mismo fallback que CursoCard/CursosPage/FamiliaCursosPage para "curso sin portada"
 import letrasImg from "@/assets/img/letras.svg";
 
 const FALLBACK_COLOR = "#0C6AC4";
@@ -20,8 +15,7 @@ function shade(hex, amount) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Aclara mezclando con blanco — para el fondo suave detrás del logo de
-// respaldo (nunca un color sólido que compita con la imagen real).
+// aclara mezclando con blanco, para el fondo suave detrás del logo de respaldo
 function tint(hex, amount) {
   let h = hex.replace("#", "");
   if (h.length === 3) h = h.split("").map(ch => ch + ch).join("");
@@ -32,13 +26,7 @@ function tint(hex, amount) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// FIX: `role`/`color` nunca llegaban desde CursoHubPage.jsx (pasaba
-// `color={cursoColor}` pero este componente nunca declaraba esa prop, y
-// nunca pasaba `role` en absoluto) — el eyebrow "Seguimiento"/"Mi curso"
-// jamás se activaba para padre/estudiante, siempre caía en "Curso".
-// Ahora recibe directamente esPadre/esEstudiante en vez de un string de
-// rol crudo (evita depender de una constante ROLES.ESTUDIANTE que ni
-// siquiera existe en roleMatrix.js).
+// recibe esPadre/esEstudiante directamente, no un string de rol crudo
 export default function HubHeader({ curso, loading, esPadre = false, esEstudiante = false }) {
   if (loading) {
     return (
@@ -65,25 +53,10 @@ export default function HubHeader({ curso, loading, esPadre = false, esEstudiant
   return (
     <>
       <style>{HUBHEADER_CSS}</style>
-      {/* FIX: antes eran DOS bloques separados (portada + franja blanca),
-          cada uno con su propio borde/radio, que tenían que coincidir en
-          ancho al pixel para verse como una sola tarjeta — y no coincidían:
-          la portada usaba aspect-ratio + max-height SIN width:100% en un
-          <div> de bloque, lo que hace que el navegador derive el ANCHO a
-          partir del alto ya recortado por max-height (vía la proporción),
-          en vez de llenar el contenedor — la portada quedaba angosta
-          mientras la franja de abajo sí llenaba el ancho completo (el
-          "escalón" rojo que se veía en la captura). Ahora es UNA sola
-          tarjeta con un solo borde/radio/sombra; la portada y la franja de
-          info son secciones internas, imposible que se desalineen. */}
+      {/* una sola tarjeta con un borde/radio/sombra — portada y franja son secciones internas */}
       <div className="hhead-wrap" style={{ "--hhead-color": color, "--hhead-color-dark": colorDark }}>
 
-        {/* Portada — a opacidad completa (antes se dibujaba a 0.18, casi
-            invisible). Sin foto propia, se usa el MISMO logo de respaldo que
-            ya ven en la tarjeta del curso en el dashboard (CursoCard.jsx),
-            sobre un fondo suave con el color del curso — así nunca se ve
-            como "un bloque de color tapando la imagen", y la cabecera se ve
-            consistente con el resto de la app tenga foto o no. */}
+        {/* sin foto propia, usa el mismo logo de respaldo que CursoCard */}
         <div className="hhead-cover">
           {cover ? (
             <img
@@ -109,8 +82,7 @@ export default function HubHeader({ curso, loading, esPadre = false, esEstudiant
           </div>
         </div>
 
-        {/* Franja de información — SIEMPRE texto oscuro sobre fondo claro,
-            nunca depende de cuán clara/oscura salga la foto de portada. */}
+        {/* siempre texto oscuro sobre fondo claro, no depende de la foto de portada */}
         <div className="hhead-info">
           {curso.docente && (
             <div className="hhead-docente">

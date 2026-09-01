@@ -1,4 +1,3 @@
-// src/features/dashboard/docente/pages/DocenteHomePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -252,12 +251,7 @@ export default function DocenteHomePage() {
         </div>
       </section>
 
-      {/* ── Acciones rápidas ──
-          Mismo patrón de tarjeta (ActionCard) que admin/padre — antes era
-          una fila de 3 botones sueltos sin tarjeta de Calendario, la única
-          forma de llegar al calendario era un botón "ghost" chiquito
-          mezclado ahí. Cursos/Retos/Calendario quedan como base común con
-          los otros roles; Foros es lo específico del rol docente. */}
+      {/* mismo patrón de tarjeta (ActionCard) que admin/padre; Foros es lo específico de docente */}
       <section aria-label="Acciones rápidas" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader title="Acciones rápidas" />
         <div className="grid-auto-sm">
@@ -340,12 +334,7 @@ export default function DocenteHomePage() {
         </section>
       </div>
 
-      {/* ── Eventos de hoy ──
-          Antes esta sección desaparecía por completo si no había eventos
-          hoy — igual que en padre, el docente se quedaba sin ningún rastro
-          visible del calendario en el día a día. Ahora es permanente, con
-          esqueleto de carga y estado vacío, igual que en el dashboard de
-          administrador. */}
+      {/* sección permanente (con esqueleto/estado vacío), no desaparece sin eventos hoy */}
       <section aria-label="Eventos de hoy" style={{ marginBottom: "var(--space-6)" }}>
         <SectionHeader
           title="Eventos de hoy"

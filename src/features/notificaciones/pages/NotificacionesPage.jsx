@@ -1,5 +1,3 @@
-// src/features/notificaciones/pages/NotificacionesPage.jsx
-
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, BellOff, Check, CheckCheck, Trash2,

@@ -1,4 +1,3 @@
-// src/features/cursos/components/tareas/TareaForm.jsx
 import { useRef, useEffect, useState } from "react";
 import { FileText, Upload, X, Globe, Users, Link2, Calendar, Clock, Eye, ZoomIn, ZoomOut, RotateCcw, ExternalLink, Check, Trash2 } from "lucide-react";
 import { Input, Textarea, Select, Checkbox } from "@/components";
@@ -34,9 +33,7 @@ function isPdfName(name = "") {
   return (name.split(".").pop() || "").toLowerCase() === "pdf";
 }
 
-// Insignia de color por tipo de archivo — más confiable visualmente que
-// adivinar un ícono específico por extensión, y no depende de qué íconos
-// tenga disponibles la librería.
+// insignia de color por extensión — no depende de qué íconos tenga la librería
 const FILE_BADGES = {
   pdf:  { label: "PDF",  bg: "#FEE2E2", fg: "var(--color-error-hover)" },
   doc:  { label: "DOC",  bg: "#DBEAFE", fg: "#2563EB" },
@@ -55,8 +52,7 @@ function getFileBadge(name = "") {
   return FILE_BADGES[ext] || { label: ext ? ext.slice(0, 4).toUpperCase() : "FILE", bg: "#F1F5F9", fg: "#64748B" };
 }
 
-// Convierte el valor de un <input type="datetime-local"> en un texto
-// legible tipo "Martes 5 de agosto, 11:59 p. m."
+// "Martes 5 de agosto, 11:59 p. m." a partir de un datetime-local
 function formatFechaBonita(value) {
   if (!value) return null;
   const d = new Date(value);
@@ -68,17 +64,14 @@ function formatFechaBonita(value) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-// Antepone https:// si el usuario no escribió protocolo, para que el
-// enlace de preview y el <a href> naveguen a la página real.
+// antepone https:// si falta protocolo
 function getFullUrl(url = "") {
   const trimmed = url.trim();
   if (!trimmed) return null;
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-// Extrae el dominio de una URL para mostrarlo como preview mientras el
-// usuario escribe un enlace de referencia. Devuelve null si la URL aún
-// no es válida (mientras el usuario todavía está escribiendo).
+// null mientras la URL todavía no es válida (usuario escribiendo)
 function getDomain(url = "") {
   const full = getFullUrl(url);
   if (!full) return null;
@@ -96,16 +89,7 @@ const iconBtnStyle = {
   alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0,
 };
 
-/* ── Modal de vista previa con zoom ───────────────────────────────────
-   Se adapta al tipo de documento:
-   - Imagen: zoom con escala CSS sobre el <img>.
-   - PDF: se embebe en <iframe> (funciona tanto con URLs reales como con
-     blobs locales de archivos recién adjuntados) y el zoom se logra
-     escalando el iframe.
-   - Cualquier otro tipo: no hay preview nativo posible en el navegador,
-     así que se muestra la insignia del archivo y un botón para abrirlo
-     en una pestaña nueva.
-────────────────────────────────────────────────────────────────────── */
+/* ── Modal de vista previa con zoom — imagen o iframe (PDF), o insignia + link para el resto ── */
 function PreviewModal({ item, onClose }) {
   const [zoom, setZoom] = useState(1);
 
@@ -243,13 +227,8 @@ function PreviewModal({ item, onClose }) {
   );
 }
 
-/* ── Tarjeta de archivo (imagen, o insignia de color + nombre) ───────
-   Se usa tanto para archivos nuevos (con preview en memoria) como para
-   archivos ya subidos (con URL real). El botón de eliminar/marcar va
-   arriba a la derecha; si hay `onPreview`, aparece un botón de ojo
-   arriba a la izquierda que abre el modal de vista previa con zoom,
-   en vez de navegar directamente. */
-function FileCard({ name, sizeLabel, isImage, isPdf, imageUrl, href, marked = false, onAction, actionTitle = "Quitar", onPreview }) {
+/* ── Tarjeta de archivo — sirve tanto para archivos nuevos como ya subidos ── */
+function FileCard({ name, sizeLabel, isImage, imageUrl, href, marked = false, onAction, actionTitle = "Quitar", onPreview }) {
   const badge = !isImage ? getFileBadge(name) : null;
 
   const thumb = (
@@ -308,9 +287,6 @@ function FileCard({ name, sizeLabel, isImage, isPdf, imageUrl, href, marked = fa
         </button>
       )}
 
-      {/* Botón de eliminar: rojo y con texto siempre visible (no solo un
-          ícono en una esquina) para que "borrar este archivo" sea obvio de
-          un vistazo, no algo que haya que descubrir pasando el mouse. */}
       <button
         type="button"
         onClick={onAction}
@@ -338,9 +314,7 @@ function FileCard({ name, sizeLabel, isImage, isPdf, imageUrl, href, marked = fa
   );
 }
 
-/* ── Preview de un archivo recién seleccionado (aún no subido) ──────
-   Genera una URL de objeto en memoria para imágenes y PDFs, así el
-   botón de vista previa también funciona antes de subir el archivo. */
+/* URL de objeto en memoria para que la vista previa funcione antes de subir */
 function NewFilePreview({ file, onRemove, onPreview }) {
   const isImage = file.type?.startsWith("image/");
   const isPdf = file.type === "application/pdf" || isPdfName(file.name);
@@ -368,21 +342,10 @@ function NewFilePreview({ file, onRemove, onPreview }) {
 }
 
 /* ── Editor de etiquetas tipo "chips" ─────────────────────────────────
-   Reemplaza al viejo <Input> de texto separado por comas.
-
-   Por qué el viejo enfoque fallaba:
-   El input era controlado y su `value` se recalculaba en cada render
-   desde `etiquetas.join(", ")`, pero `updateEtiquetas` filtraba strings
-   vacíos con `.filter(Boolean)`. Al escribir una coma, el split producía
-   un elemento vacío al final que el filter eliminaba de inmediato,
-   así que el re-render borraba la coma recién tecleada antes de que el
-   usuario pudiera seguir escribiendo la segunda etiqueta.
-
-   Este componente evita el problema por completo: las etiquetas ya
-   confirmadas se muestran como chips (no se re-derivan de texto), y hay
-   un input de texto aparte solo para lo que se está escribiendo. La
-   etiqueta se confirma con Enter, coma, o al perder el foco.
-────────────────────────────────────────────────────────────────────── */
+   El viejo <Input> de texto separado por comas re-derivaba su value de
+   etiquetas.join(", ") en cada render, y el filter de vacíos borraba la
+   coma recién tecleada antes de que el usuario pudiera seguir escribiendo.
+   Aquí las etiquetas confirmadas viven aparte como chips, no como texto. */
 function TagsInput({ tags, onChange, placeholder }) {
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef(null);
@@ -401,8 +364,6 @@ function TagsInput({ tags, onChange, placeholder }) {
       commitTag(inputValue);
       return;
     }
-    // Backspace con el input vacío borra la última etiqueta confirmada,
-    // patrón estándar de los editores de tags.
     if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
       onChange(tags.slice(0, -1));
     }
@@ -465,23 +426,8 @@ function TagsInput({ tags, onChange, placeholder }) {
   );
 }
 
-/* ── Editor de enlaces con confirmación explícita ─────────────────────
-   Antes: cada enlace nuevo era una fila "draft" siempre editable (URL +
-   Nombre) con un botón ✕ que borraba la fila completa. El problema: no
-   había ninguna diferencia visual ni de estado entre "enlace que ya
-   agregué" y "enlace que todavía estoy escribiendo" — la ✕ se sentía
-   inútil porque solo borraba un borrador, nunca confirmaba nada.
-
-   Ahora: hay un único campo de captura (URL + Nombre opcional) con un
-   botón de confirmación (✓, deshabilitado hasta que la URL sea válida).
-   Al confirmar, el enlace se agrega a una lista de enlaces YA
-   confirmados — cada uno con su propia ✕ que sí funciona de verdad,
-   porque son enlaces que aún no se enviaron al servidor (a diferencia
-   de los "Enlaces existentes" ya guardados, que son de solo lectura por
-   la limitación de backend explicada arriba). El campo de captura se
-   limpia después de cada confirmación, listo para el siguiente. Mismo
-   patrón que TagsInput.
-────────────────────────────────────────────────────────────────────── */
+/* ── Editor de enlaces con confirmación explícita (✓) en vez de filas draft editables —
+   mismo patrón que TagsInput ── */
 function EnlacesInput({ enlaces, onChange }) {
   const [urlDraft, setUrlDraft] = useState("");
   const [nombreDraft, setNombreDraft] = useState("");
@@ -630,41 +576,13 @@ function EnlacesInput({ enlaces, onChange }) {
 
 /* ── Formulario principal ─────────────────────────────────────────── */
 /*
-  Forma esperada de `form` (alineada 1:1 con tareaSchema del backend):
-  {
-    titulo: "",
-    descripcion: "",
-    criterios: "",              // antes llamado "instrucciones", sin respaldo real
-    etiquetas: [],               // String[] en el schema
-    moduloId: "",                // OBLIGATORIO al crear (createTareaValidator), opcional al editar
-    fechaEntrega: "",
-    tipoEntrega: "archivo",
-    asignacionTipo: "todos",
-    participantes: [],           // se mapea a participantesSeleccionados al enviar
-    archivosNuevos: [],
-    enlacesNuevos: [{ url: "...", nombre: "..." }], // solo enlaces YA confirmados con ✓,
-                                  // nunca filas a medio escribir (ver EnlacesInput)
-    archivosEliminar: [],        // publicIds a quitar de archivosAdjuntos
-    enlacesExistentes: [],       // precargado desde tarea.soloEnlaces al editar
+  Forma esperada de `form` (alineada con tareaSchema del backend):
+  { titulo, descripcion, criterios, etiquetas: [], moduloId, fechaEntrega,
+    tipoEntrega, asignacionTipo, participantes: [], archivosNuevos: [],
+    enlacesNuevos: [{ url, nombre }], archivosEliminar: [], enlacesExistentes: [] }
 
-    // NOTA: se eliminó "enlacesEliminar". El backend (updateTarea) solo sabe
-    // eliminar adjuntos comparando por publicId (archivosAEliminar), y los
-    // enlaces nunca tienen publicId — no hay ningún campo que el controller
-    // lea para eliminar un enlace existente. Por eso los enlaces existentes
-    // se muestran aquí en modo solo lectura: mostrar un botón de "eliminar"
-    // que no elimina nada tras guardar es peor que no tenerlo. Si se agrega
-    // soporte de eliminación en el backend (por ejemplo comparando por url),
-    // este campo y su UI se pueden reintroducir.
-  }
-
-  NOTA: se eliminaron `puntajeMaximo` y `permiteEntregaTardia` porque no
-  existen en tareaSchema (backend). Si se necesitan, deben agregarse primero
-  al modelo de Mongoose y al controlador antes de reintroducirlos aquí.
-
-  NOTA IMPORTANTE (moduloId): createTareaValidator.js exige moduloId como
-  MongoId no vacío al crear una tarea (`.notEmpty()... .isMongoId()`).
-  updateTareaValidator.js lo marca como `.optional()`. Por eso el campo se
-  vuelve obligatorio solo cuando NO se está editando (editTarget es null).
+  Sin "enlacesEliminar": el backend no tiene forma de borrar un enlace existente.
+  moduloId es obligatorio solo al crear (el validator lo marca opcional al editar).
 */
 export default function TareaForm({
   form, setForm,
@@ -678,8 +596,7 @@ export default function TareaForm({
   const esEdicion = Boolean(editTarget);
   const [previewItem, setPreviewItem] = useState(null);
 
-  // Limpia el error de un campo apenas el usuario empieza a corregirlo,
-  // así el mensaje no queda pegado tras el primer intento fallido.
+  // limpia el error de un campo apenas el usuario empieza a corregirlo
   const clearError = (key) => {
     if (errors[key] && setErrors) {
       setErrors(prev => {
@@ -714,9 +631,7 @@ export default function TareaForm({
     }));
 
   const handleFileAdd = (e) => {
-    // Capturar los archivos ANTES de resetear el input.
-    // e.target.files es una FileList viva: si el reset ocurre antes de que
-    // React ejecute el updater, el array quedaría vacío.
+    // e.target.files es una FileList viva — capturar antes de resetear el input
     const captured = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (captured.length === 0) return;
@@ -726,17 +641,10 @@ export default function TareaForm({
   const removeArchivoNuevo = (i) =>
     setForm(f => ({ ...f, archivosNuevos: f.archivosNuevos.filter((_, idx) => idx !== i) }));
 
-  // Fallback defensivo: en TareasTab.jsx (openEdit), los enlaces existentes
-  // se leen con `t.adjuntos ?? t.archivosAdjuntos`, lo que sugiere que
-  // normalizeTarea podría estar renombrando el campo a "adjuntos". Se aplica
-  // el mismo fallback aquí para que la lista de archivos no quede vacía si
-  // ese es el caso — confirmar contra normalizeTarea y simplificar a un solo
-  // nombre una vez que se sepa cuál es el real.
+  // fallback: normalizeTarea puede exponer el campo como "adjuntos" o "archivosAdjuntos"
   const archivosExistentes = (editTarget?.adjuntos ?? editTarget?.archivosAdjuntos ?? []).filter(a => a.tipo === "archivo");
   const enlacesExistentes = form.enlacesExistentes ?? [];
 
-  // Mínimo permitido para el input datetime-local: ahora mismo,
-  // así el usuario ve la restricción antes de intentar guardar.
   const minFechaEntrega = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
@@ -769,8 +677,6 @@ export default function TareaForm({
           placeholder="Instrucciones para los participantes..."
         />
 
-        {/* Criterios de evaluación — campo real del schema (antes llamado
-            "instrucciones" en el form, sin respaldo en el backend) */}
         <div>
           <Textarea
             label="Criterios de evaluación"
@@ -782,8 +688,6 @@ export default function TareaForm({
           <FieldError message={errors.criterios} />
         </div>
 
-        {/* Etiquetas — String[] en tareaSchema. Editor tipo chips: cada
-            etiqueta se confirma con Enter, coma, o al salir del campo. */}
         <Field label="Etiquetas">
           <TagsInput
             tags={form.etiquetas ?? []}
@@ -998,16 +902,7 @@ export default function TareaForm({
           )}
         </Field>
 
-        {/* Enlaces existentes (edición) — precargados desde tarea.soloEnlaces,
-            que es un virtual derivado de archivosAdjuntos filtrado por
-            tipo: 'enlace'. Se muestran EN SOLO LECTURA (sin botón de
-            eliminar): updateTarea (backend) no tiene ningún mecanismo para
-            eliminar un enlace existente — archivosAEliminar solo compara por
-            publicId, campo que los enlaces nunca tienen. Un botón de
-            "eliminar" aquí simulaba una función que no persistía tras
-            guardar, lo cual es peor que no ofrecerla. Si se quiere reemplazar
-            un enlace, la única vía disponible hoy es agregarlo de nuevo con
-            otro texto en "Enlace de referencia" más abajo. */}
+        {/* solo lectura: el backend no tiene forma de eliminar un enlace existente */}
         {editTarget && enlacesExistentes.length > 0 && (
           <Field label="Enlaces existentes">
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1057,8 +952,6 @@ export default function TareaForm({
           </Field>
         )}
 
-        {/* Enlaces nuevos — captura con confirmación (✓), no filas draft
-            editables. Ver EnlacesInput arriba para el porqué del cambio. */}
         <Field label="Enlace de referencia">
           <EnlacesInput
             enlaces={form.enlacesNuevos}

@@ -1,4 +1,3 @@
-// src/components/layout/Navbar.jsx
 import { memo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,10 +18,7 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
   const [noLeidas,    setNoLeidas]    = useState(0);
   const profileRef = useRef(null);
 
-  /* Conteo inicial al montar + actualización en vivo por Socket.IO — el
-     backend manda "notificaciones:conteo" apenas se conecta el socket
-     (ver socketHandlers.js) y de nuevo cada vez que se crea/lee una
-     notificación, así que este badge no necesita su propio polling. */
+  // backend empuja "notificaciones:conteo" por socket; este badge no necesita polling propio
   useEffect(() => {
     notificacionesGetConteoNoLeidas()
       .then((res) => setNoLeidas(res.noLeidas ?? 0))

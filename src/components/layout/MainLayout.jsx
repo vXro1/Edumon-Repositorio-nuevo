@@ -13,16 +13,8 @@ export const MainLayout = () => {
 
   useUserPresence(user?._id);
 
-  // Los tokens de marca del dashboard (azul) están scopeados a la clase
-  // .app-shell (ver tokens.css) — pero Toast/ToastContext usan createPortal
-  // directo a document.body, FUERA del árbol de .app-shell, así que la
-  // cascada de CSS custom properties nunca los alcanzaba y los toasts
-  // seguían viéndose morados aunque se dispararan desde el dashboard.
-  // Reflejar la misma clase en <body> mientras el dashboard está montado
-  // resuelve esto: el portal es descendiente de <body>, así que ahora sí
-  // hereda el bloque .app-shell de tokens.css. Al salir del dashboard
-  // (logout, navegar a /login) el efecto limpia la clase y el portal
-  // vuelve a heredar el morado original de :root.
+  // los toasts usan createPortal a document.body, fuera del árbol .app-shell —
+  // reflejar la clase en <body> para que hereden el azul del dashboard, no el morado de :root
   useEffect(() => {
     document.body.classList.add("app-shell");
     return () => document.body.classList.remove("app-shell");

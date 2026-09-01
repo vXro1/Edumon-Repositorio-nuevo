@@ -1,7 +1,4 @@
-// src/features/cursos/components/foros/ForosTab.jsx
-// Pestaña de foros dentro de CursoHubPage.
-// Al hacer clic en un foro se navega a la ForumPage canónica (/curso/:cursoId/foro/:foroId).
-// El enfoque de detalle en modal ha sido eliminado — los foros se abren como páginas completas.
+// al hacer clic en un foro se navega a la ForumPage canónica, no un modal de detalle
 import { useState, useEffect, useCallback, useContext } from 'react';
 import CursoContext from '../../context/CursoContext';
 import { useNavigate } from 'react-router-dom';

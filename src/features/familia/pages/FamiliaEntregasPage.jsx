@@ -1,8 +1,5 @@
-// src/features/familia/pages/FamiliaEntregasPage.jsx
-// ROL: Padre / Tutor — índice de "Mis entregas". Cada fila es solo un link:
-// el formulario de envío vive en su propia URL (FamiliaEntregaDetallePage,
-// /familia/entregas/:tareaId) en vez de expandirse acá mismo — así hay una
-// única vista por entrega, con su propia URL, en vez de un acordeón.
+// índice de "Mis entregas" — cada fila es un link; el formulario de envío
+// vive en su propia URL (FamiliaEntregaDetallePage), no en un acordeón
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, AlertCircle, Clock, BookOpen, ChevronRight } from "lucide-react";

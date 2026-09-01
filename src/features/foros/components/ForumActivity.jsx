@@ -1,4 +1,3 @@
-// src/features/foros/components/ForumActivity.jsx
 // Panel derecho: participantes, estadísticas, materiales de apoyo del foro y
 // archivos adjuntos recientes de los mensajes.
 import { useState } from 'react';
@@ -154,9 +153,6 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
           )}
         </div>
 
-        {/* Creador del foro — el backend siempre lo popula (docenteId), pero
-            antes normalizeForo lo descartaba, así que nunca se mostraba quién
-            abrió el foro. */}
         {foro?.creador && (
           <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <MiniAvatar autor={foro.creador} />
@@ -173,9 +169,7 @@ const ForumActivity = ({ foro, mensajes = [] }) => {
         )}
       </Section>
 
-      {/* Materiales de apoyo — archivos que el docente adjuntó al CREAR el
-          foro (Foro.archivos), distintos de los archivos sueltos que
-          cualquiera adjunta en un mensaje (sección "Archivos" más abajo). */}
+      {/* archivos adjuntados al crear el foro, distintos de los adjuntos sueltos en mensajes */}
       {foro?.archivos?.length > 0 && (
         <Section title="Materiales de apoyo" icon={BookOpen}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

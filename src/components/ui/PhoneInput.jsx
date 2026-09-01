@@ -1,4 +1,3 @@
-// src/components/ui/PhoneInput.jsx
 import { forwardRef, useId } from "react";
 import { AlertCircle, Phone } from "lucide-react";
 import {

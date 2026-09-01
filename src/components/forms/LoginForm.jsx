@@ -1,4 +1,3 @@
-// src/features/auth/components/LoginForm.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, AlertTriangle, X, ArrowLeft } from "lucide-react";
@@ -24,8 +23,7 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // El usuario puede escribir o pegar "+57 300 123 4567", "573001234567" o
-    // "3001234567": toLocalPhone deja siempre los 10 dígitos que muestra el input.
+    // toLocalPhone deja siempre los 10 dígitos que muestra el input, sea cual sea el formato pegado
     const v = name === "telefono" ? toLocalPhone(value) : value;
     setForm(p => ({ ...p, [name]: v }));
     if (errors[name]) setErrors(p => ({ ...p, [name]: "" }));
@@ -41,9 +39,6 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
   return (
     <AuthLayout
       topAction={
-        // "Volver al inicio" ahora vive FUERA de la tarjeta, en su propia
-        // fila (ver AuthLayout: topAction), así no compite con el logo
-        // por espacio arriba del todo.
         <button type="button" className="auth-back-link" onClick={() => navigate("/")}>
           <ArrowLeft size={13} />
           Volver al inicio

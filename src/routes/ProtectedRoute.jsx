@@ -13,17 +13,13 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuthContext();
   const location = useLocation();
 
-  // Muestra LoadingScreen mientras se verifica la sesión inicial
   if (loading) return <LoadingScreen message="Verificando sesión..." />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Sesión restaurada (refresh, reapertura de pestaña) con la contraseña
-  // temporal aún activa: el redirect de LoginPage solo dispara justo al
-  // enviar el formulario, así que cualquier otra ruta protegida debe
-  // reforzarlo también o el usuario puede saltarse el wizard por completo.
+  // refuerza el wizard también en sesiones restauradas, no solo en el redirect de LoginPage
   if (user?.primerInicioSesion && location.pathname !== "/primer-inicio") {
     return <Navigate to="/primer-inicio" replace />;
   }

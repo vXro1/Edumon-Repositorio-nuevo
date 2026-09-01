@@ -1,20 +1,6 @@
-// src/lib/normalizers/tarea.js
-//
-// Único punto de normalización de una "Tarea" que llega del backend.
-// Todo lo que se agrega o cambia aquí debe respetar EXACTAMENTE el
-// contrato del backend (Tarea.js / createTareaValidator.js /
-// updateTareaValidator.js / tareasController.js):
-//
-//   - etiquetas               -> Array<String>
-//   - criterios               -> String (NO es un array de objetos)
-//   - archivosAdjuntos        -> Array<{ tipo: "archivo" | "enlace", url, nombre, ... }>
-//                                Los "enlaces" NO son un campo aparte en el modelo:
-//                                el backend los guarda mezclados dentro de
-//                                archivosAdjuntos con tipo: "enlace".
-//   - participantesSeleccionados -> Array<ObjectId> o Array<Usuario poblado>
-//
-// Cualquier campo que no exista en el backend (puntajeMaximo, permiteEntregaTardia,
-// etc.) se mantiene solo como valor por defecto de UI, nunca se envía de vuelta.
+// Punto único de normalización de una Tarea del backend. Nota: "enlaces" no es un
+// campo aparte — viven mezclados en archivosAdjuntos con tipo: "enlace". Campos que
+// no existen en el backend (puntajeMaximo, permiteEntregaTardia) son solo defaults de UI.
 
 /**
  * Normaliza archivos adjuntos de tareas.
@@ -53,9 +39,7 @@ export function normalizeArchivosTarea(archivos) {
       archivo.public_id ||
       "",
 
-    // "tipo" es el campo clave para distinguir archivo vs enlace más
-    // adelante (TareaDetalle.jsx y TareaForm.jsx filtran por
-    // a.tipo === "enlace"). Se preserva tal cual viene del backend.
+    // clave para distinguir archivo vs enlace más adelante (filtran por a.tipo === "enlace")
     tipo:
       archivo.tipo ||
       archivo.tipoArchivo ||
@@ -212,12 +196,7 @@ export function normalizeTarea(tarea) {
   // Módulo (mismo patrón que curso/docente)
   const modulo = normalizeModulo(tarea);
 
-  // Adjuntos: incluye tanto archivos (Cloudinary) como enlaces — el backend
-  // NO tiene un campo "enlaces" separado en el modelo Tarea, ambos viven
-  // juntos en archivosAdjuntos distinguidos por el campo "tipo". Los
-  // componentes que necesitan solo enlaces o solo archivos deben filtrar
-  // este mismo array (ver TareaDetalle.jsx / TareaForm.jsx: `.filter(a =>
-  // a.tipo === "enlace")` / `.filter(a => a.tipo === "archivo")`).
+  // archivos y enlaces mezclados, distinguidos por "tipo" — quien necesite solo uno filtra el array
   const adjuntos = normalizeArchivosTarea(
     tarea.adjuntos ||
       tarea.archivos ||
@@ -225,13 +204,7 @@ export function normalizeTarea(tarea) {
       []
   );
 
-  // Criterios: en el backend es un STRING plano, no un array de objetos
-  // (ver createTareaValidator.js: body('criterios').optional().trim()).
-  // Antes existía normalizeCriterios(), que asumía una estructura de
-  // {titulo, descripcion, puntaje}[] que nunca existió en el backend —
-  // por eso siempre devolvía [] y el dato "desaparecía" en pantalla aunque
-  // sí estuviera guardado. Se eliminó esa función y aquí simplemente se
-  // pasa el string tal cual, sin transformarlo.
+  // criterios es un string plano en el backend, no un array de objetos
   const criterios = typeof tarea.criterios === "string" ? tarea.criterios : "";
 
   // Participantes seleccionados
@@ -311,8 +284,7 @@ export function normalizeTarea(tarea) {
           tarea.docenteId?.id ||
           null,
 
-    // Módulo (antes se perdía: solo copiaba tarea.modulo, que nunca llega
-    // del backend; el backend siempre envía tarea.moduloId poblado)
+    // el backend siempre envía moduloId poblado, no tarea.modulo
     modulo,
     moduloId:
       typeof tarea.moduloId === "string"
@@ -345,18 +317,13 @@ export function normalizeTarea(tarea) {
       100,
 
     // Contenido
-    // Se exponen 3 alias (adjuntos / archivos / archivosAdjuntos) apuntando
-    // al mismo array ya normalizado, porque distintos componentes del
-    // frontend leen con nombres distintos. Es un alias de conveniencia de
-    // UI, no una duplicación real de datos ni un campo inventado.
+    // 3 alias al mismo array — distintos componentes leen con nombres distintos
     adjuntos,
     archivos: adjuntos,
     archivosAdjuntos: adjuntos,
 
     criterios,
 
-    // Participantes (antes no se copiaba en absoluto, por eso el bloque
-    // "Asignada a (N)" de TareaDetalle.jsx nunca se mostraba)
     participantesSeleccionados,
 
     // Progreso / estadísticas
@@ -372,10 +339,7 @@ export function normalizeTarea(tarea) {
       tarea.totalCalificadas ??
       0,
 
-    // Etiquetas: Array<String> real en el backend. Nunca se hace
-    // JSON.parse/JSON.stringify aquí — si tarea.etiquetas ya es un array,
-    // se usa tal cual; si no, se cae a [] en vez de intentar "adivinar"
-    // un formato roto (evita propagar corrupción histórica de datos).
+    // se usa tal cual si ya es array; si no, [] en vez de adivinar un formato roto
     etiquetas:
       Array.isArray(tarea.etiquetas)
         ? tarea.etiquetas

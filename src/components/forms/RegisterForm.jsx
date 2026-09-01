@@ -1,6 +1,3 @@
-// RUTA EDUMON WEB/src/components/forms/RegisterForm.jsx
-// src/components/forms/RegisterForm.jsx
-
 const RegisterForm = () => {
   return (
     <div>

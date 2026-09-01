@@ -1,11 +1,9 @@
-// src/features/calendario/pages/CalendarioPage.jsx
-// Calendario general para docente y administrador.
+// calendario general para docente y administrador
 import { useState, useEffect, useCallback } from "react";
 import { CalendarDays } from "lucide-react";
 import { cursosGetMine } from "@/features/cursos/services/cursosService";
 import { calendarioGetByCurso } from "@/features/calendario/services/calendarioService";
 import { eventosDelete, eventosCreateSimple, eventosUpdateSimple } from "@/features/eventos/services/eventosService";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePermission, PERMISSIONS } from "@/hooks/usePermission";
 import CalendarWidget from "@/components/ui/CalendarWidget";
 import { Modal, Button } from "@/components";
@@ -233,7 +231,6 @@ function EditEventoModal({ evento, onClose, onSaved }) {
 // PÁGINA PRINCIPAL
 // ══════════════════════════════════════════════════════════════════════════
 export default function CalendarioPage() {
-  const { user }  = useAuth();
   const canManage = usePermission(PERMISSIONS.CREATE_EVENTS);
 
   const [cursos,     setCursos]     = useState([]);

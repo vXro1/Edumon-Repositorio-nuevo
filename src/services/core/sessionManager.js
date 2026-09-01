@@ -1,4 +1,3 @@
-// src/services/core/sessionManager.js
 const SESSION_CONFIG = {
   INACTIVITY_TIMEOUT_MS: 30 * 60 * 1000, // 30 minutos
   WARNING_BEFORE_MS:      2 * 60 * 1000, // aviso 2 min antes

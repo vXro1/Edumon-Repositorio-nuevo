@@ -1,4 +1,3 @@
-// src/components/feedback/LoadingScreen.jsx
 // Pantalla de carga de página completa — usada durante la verificación inicial de sesión
 
 export default function LoadingScreen({ message = "Cargando..." }) {

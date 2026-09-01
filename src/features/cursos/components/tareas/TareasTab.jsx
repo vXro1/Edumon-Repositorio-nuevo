@@ -1,5 +1,3 @@
-
-//src/features/cursos/components/tareas/TareasTab.jsx
 import { useState, useEffect, useCallback, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import CursoContext from "../../context/CursoContext";
@@ -7,9 +5,8 @@ import { ClipboardList, Clock, Eye, Pencil, Lock, Layers } from "lucide-react";
 
 import { tareasGetAll, tareasGetById, tareasCreate, tareasUpdate, tareasDelete } from "@/features/cursos/services/tareasService";
 import { cursosGetParticipantes, modulosGetByCurso } from "@/features/cursos/services/cursosService";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 
-import { AppModal, Badge, Button, Toast, IconActionButton } from "@/components";
+import { AppModal, Button, Toast, IconActionButton } from "@/components";
 import {
   Sk,
   EmptyState,
@@ -39,10 +36,7 @@ const emptyForm = () => ({
   archivosEliminar: [],
   enlacesNuevos: [],
   enlacesExistentes: [],
-  // NOTA: no existe "enlacesEliminar" — el backend (updateTarea) no tiene
-  // ningún mecanismo para eliminar un enlace existente (archivosAEliminar
-  // solo compara por publicId, que los enlaces nunca tienen). TareaForm.jsx
-  // muestra los enlaces existentes en modo solo lectura por esta misma razón.
+  // no existe "enlacesEliminar" — el backend no soporta borrar un enlace existente
 });
 
 export default function TareasTab({ cursoId: cursoIdProp, canManage: canManageProp, canGrade: canGradeProp, esPadre: esPadreProp }) {
@@ -51,7 +45,6 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
   const canManage = ctx?.canManageTasks ?? canManageProp;
   const canGrade = ctx?.canGradeEntregas ?? canGradeProp;
   const esPadre = esPadreProp ?? false;
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [tareas, setTareas] = useState([]);
@@ -140,10 +133,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     await Promise.all([loadParticipantes(), loadModulos()]);
   };
 
-  // Construye el estado del form de edición a partir de una tarea normalizada.
-  // Extraído para poder aplicarlo dos veces: primero con el dato (posiblemente
-  // parcial) que ya está en la lista, y de nuevo cuando llega la versión
-  // completa desde el servidor (ver fetch de abajo).
+  // reutilizada: primero con el dato de la lista, luego con el fetch fresco
   const buildEditForm = (t) => {
     const selIds = (t.participantesSeleccionados ?? [])
       .map(p => String(typeof p === "object" ? p._id ?? "" : p))
@@ -177,11 +167,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     setErrors({});
     setModalOpen(true);
 
-    // La fila que abrió el modal viene de la lista paginada (tareasGetAll),
-    // que puede quedar desactualizada si la tarea se editó desde otra
-    // pestaña/sesión. Se vuelve a pedir por ID para garantizar que el form
-    // de edición siempre parta de TODOS los datos reales — adjuntos y
-    // enlaces incluidos — en vez de lo que haya quedado en memoria.
+    // la fila de la lista puede estar desactualizada; se repite el fetch por ID
     const fetchFresh = tareasGetById(t._id ?? t.id)
       .then(fresh => {
         const normalized = normalizeTarea(fresh);
@@ -189,7 +175,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
         setForm(buildEditForm(normalized));
       })
       .catch(() => {
-        // Si falla, se sigue trabajando con los datos de la lista (ya cargados arriba)
+        // si falla, se sigue con los datos de la lista
       });
 
     await Promise.all([loadParticipantes(), loadModulos(), fetchFresh]);
@@ -201,12 +187,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     setModalOpen(true);
   };
 
-  // Ver/hacer una entrega vive en su propia URL, no en este modal — un
-  // docente necesita filtrar y calificar varias entregas, un padre solo
-  // necesita enviar la suya; ninguno de los dos casos entra bien en un
-  // modal anidado dentro de "Retos". El docente va a la página de
-  // entregas de la tarea (la misma que usa /tareas), el padre a la
-  // página de "mi entrega" para esa tarea puntual.
+  // ver/hacer una entrega vive en su propia URL, no en un modal anidado
   const openEntregas = (t) => {
     navigate(esPadre ? `/familia/entregas/${t._id}` : `/tareas/${t._id}/entregas`);
   };
@@ -223,14 +204,11 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
   const handleSave = async (e) => {
     e.preventDefault();
 
-    // Guard contra doble submit — ver requestQueue.js para el porqué.
     if (saving) return;
 
     const nextErrors = {};
 
-    // Mismo mínimo que createTareaValidator (backend): sin este chequeo, un
-    // título de 1-2 caracteres pasaba el cliente y el servidor lo rechazaba
-    // con un 400 que antes no se mostraba en ningún lado (ver fix de abajo).
+    // mismo mínimo que el validador del backend
     if (!form.titulo.trim()) {
       nextErrors.titulo = "El título es requerido";
     } else if (form.titulo.trim().length < 3) {
@@ -263,17 +241,13 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
       fd.append("cursoId", cursoId);
       fd.append("asignacionTipo", form.asignacionTipo);
       fd.append("tipoEntrega", form.tipoEntrega || "archivo");
-      // NOTA: no se envía docenteId — el backend siempre lo fuerza a
-      // req.user.userId (createTarea.js) e ignora cualquier valor del body.
+      // docenteId no se envía — el backend siempre lo fuerza a req.user.userId
 
       if (form.moduloId) fd.append("moduloId", form.moduloId);
       if (form.fechaEntrega) fd.append("fechaEntrega", form.fechaEntrega);
 
-      // etiquetas y participantesSeleccionados tienen `.isArray()` en el
-      // validator, que corre ANTES que el controller. La notación de
-      // corchetes fuerza que Multer arme un array real incluso con un
-      // solo valor — CONFIRMADO funcionando con datos reales (etiquetas
-      // "h","m","cd","g","ii" se guardaron correctamente en la última prueba).
+      // etiquetas[] / participantesSeleccionados[] — el validator tiene isArray(),
+      // los corchetes hacen que Multer arme el array incluso con un solo valor
       (form.etiquetas ?? []).forEach(tag => fd.append("etiquetas[]", tag));
 
       if (form.asignacionTipo === "seleccionados") {
@@ -282,8 +256,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
 
       form.archivosNuevos.forEach(f => fd.append("archivos", f));
 
-      // archivosAEliminar y enlaces/nuevosEnlaces NO tienen isArray() en el
-      // validator, así que JSON.stringify() aquí sí funciona.
+      // estos campos no tienen isArray() en el validator, así que JSON.stringify() funciona
       if (editTarget && form.archivosEliminar.length > 0) {
         fd.append("archivosAEliminar", JSON.stringify(form.archivosEliminar));
       }
@@ -292,21 +265,14 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
       if (enlacesValidos.length > 0) {
         const enlacesKey = editTarget ? "nuevosEnlaces" : "enlaces";
         fd.append(enlacesKey, JSON.stringify(enlacesValidos));
-        // CONFIRMADO por captura de red: este payload sale exactamente como
-        // [{"url":"https://google.com","nombre":""}] — válido, con URL real,
-        // bajo la key correcta. El backend responde 200 pero soloEnlaces
-        // queda vacío. Esto NO es un bug de frontend: no tocar esta lógica
-        // sin evidencia nueva de logs de servidor o del schema Tarea.js.
+        // payload confirmado correcto por captura de red; el backend responde 200
+        // pero igual deja enlaces vacíos — es un bug de backend, no tocar esto sin evidencia nueva
       }
 
       if (editTarget) {
         await tareasUpdate(editTarget._id, fd);
         notify("Reto actualizado");
-        // AVISO (no corregible en frontend): updateTarea.js define
-        // camposActualizables = ['titulo','descripcion','fechaEntrega','tipoEntrega',
-        // 'estado','cursoId','moduloId','asignacionTipo','criterios'] — 'etiquetas'
-        // NO está en esa lista. El backend ignora silenciosamente cualquier cambio
-        // de etiquetas al editar una tarea existente (solo se guardan al crear).
+        // el backend ignora cambios de "etiquetas" al editar (solo se guardan al crear) — no corregible en frontend
       } else {
         await tareasCreate(fd);
         notify("Reto creado");
@@ -315,14 +281,9 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
       handleClose();
       load();
     } catch (err) {
-      // Antes solo se mostraba un toast genérico ("Error al guardar reto")
-      // y encima con "undefined" en el detalle (ver fix en apiClient.js —
-      // leía nombres de propiedad que express-validator nunca usa). Ahora
-      // cada mensaje se pinta debajo de su campo, igual que en EventosPage.
       const fieldErrors = parseValidationErrors(err);
       if (fieldErrors) {
-        // El validator del backend usa "participantesSeleccionados";
-        // TareaForm pinta ese error bajo la key "participantes".
+        // el backend usa "participantesSeleccionados"; TareaForm pinta ese error bajo "participantes"
         if (fieldErrors.participantesSeleccionados && !fieldErrors.participantes) {
           fieldErrors.participantes = fieldErrors.participantesSeleccionados;
         }
@@ -336,10 +297,7 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     }
   };
 
-  // NOTA: tareasDelete (DELETE /tareas/:id) en el backend no borra el reto —
-  // solo lo cierra y limpia sus archivos adjuntos. El botón se etiqueta y
-  // confirma como "cerrar", no "eliminar", para no prometer algo que el
-  // backend no hace (el reto sigue existiendo, solo pasa a estado "cerrada").
+  // tareasDelete no borra el reto, solo lo cierra y limpia sus adjuntos
   const handleDelete = async (id) => {
     if (!confirm("¿Cerrar este reto? No se podrá reabrir y se eliminarán sus archivos adjuntos.")) return;
     try {

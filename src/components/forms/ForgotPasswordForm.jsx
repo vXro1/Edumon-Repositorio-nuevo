@@ -1,4 +1,3 @@
-// src/features/auth/components/ForgotPasswordForm.jsx
 import { useState } from "react";
 import { Mail, Phone } from "lucide-react";
 import { Input, PhoneInput } from "@/components";

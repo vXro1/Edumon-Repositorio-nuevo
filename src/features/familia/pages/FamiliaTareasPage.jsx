@@ -1,27 +1,16 @@
-// src/features/familia/pages/FamiliaTareasPage.jsx
-// ROL: Padre / Tutor — Ver tareas asignadas (solo lectura)
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardList, Search, ChevronRight, AlertCircle,
-  Calendar, Clock, BookOpen, CheckCircle2, XCircle,
+  Clock, BookOpen, CheckCircle2, XCircle,
 } from "lucide-react";
-import { cursosGetMine } from "@/features/cursos/services/cursosService";
 import { tareasGetAll } from "@/features/cursos/services/tareasService";
 import { normalizeTarea } from "@/lib/normalizers";
 
 import { Button, Input , Badge } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
 
-// ── ESTADO_META: se mantiene para mapear estado → variant de Badge ─────────
-// FIX: los valores reales que produce normalizeTarea() son "activa" /
-// "cerrada" / "vencida" (ver resolveEstado() en lib/normalizers/tarea.js,
-// y su uso consistente en TareasPage.jsx del docente) — esta página
-// comparaba contra "abierta", un valor que nunca existe, así que ningún
-// reto calificaba nunca como abierto: el contador siempre marcaba "0
-// abiertas", el filtro "Abiertas" siempre mostraba una lista vacía, y el
-// badge caía al fallback gris mostrando el texto crudo "activa" en vez de
-// una etiqueta traducida.
+// normalizeTarea() produce "activa" / "cerrada" / "vencida", nunca "abierta"
 const ESTADO_META = {
   activa:  { label: "Abierta", variant: "success"  },
   cerrada: { label: "Cerrada", variant: "neutral"  },
@@ -32,7 +21,6 @@ function Sk({ h = 14, w = "100%", r = 6 }) {
   return <div className="animate-pulse" style={{ height: h, width: w, borderRadius: r, background: "var(--color-border)" }} />;
 }
 
-// ── EstadoBadge migrado — usa Badge del design system ─────────────────────
 function EstadoBadge({ estado }) {
   const m = ESTADO_META[estado] ?? { label: estado, variant: "neutral" };
   return (
@@ -54,8 +42,6 @@ function isVencida(fechaStr) {
 }
 
 function TareaRow({ tarea, onClick }) {
-  // normalizeTarea() ya resuelve el estado final (incluida la comparación
-  // con fechaEntrega) — no hace falta re-derivarlo aquí.
   const estado = tarea.estado ?? "activa";
   const iconBg = estado === "activa" ? "rgba(12,106,196,0.10)"
     : estado === "vencida" ? "rgba(220,38,38,0.10)"
@@ -157,9 +143,7 @@ export default function FamiliaTareasPage() {
       t.titulo?.toLowerCase().includes(search.toLowerCase()) ||
       t.curso?.nombre?.toLowerCase().includes(search.toLowerCase());
 
-    // "Cerradas" agrupa cerrada + vencida — para un padre ambas significan
-    // lo mismo en la práctica ("ya no se puede entregar"), la distinción
-    // fina solo importa en el badge de cada fila.
+    // "Cerradas" agrupa cerrada + vencida — para un padre ambas significan lo mismo
     const matchEstado =
       filtroEstado === "todos" ? true :
       filtroEstado === "cerrada" ? (t.estado === "cerrada" || t.estado === "vencida") :
@@ -192,10 +176,6 @@ export default function FamiliaTareasPage() {
         </div>
       </div>
 
-      {/* Barra de herramientas — buscador en su propia fila y el filtro como
-          un control segmentado agrupado (antes eran 3 botones sueltos sin
-          agrupar, mezclados en la misma fila que el buscador con flexWrap:
-          en pantallas angostas se desarmaban en cualquier orden). */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
         <Input
           name="search"

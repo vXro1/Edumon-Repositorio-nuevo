@@ -1,6 +1,4 @@
-// src/routes/AppRoutes.jsx
-// La navegación por pestañas usa el query param ?tab= (ej. /cursos/:id?tab=tareas).
-// Los tabs usan { replace: true } para no contaminar el historial del back-button.
+// navegación por pestañas usa ?tab= (ej. /cursos/:id?tab=tareas); los tabs usan { replace: true }
 
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -18,8 +16,6 @@ const DemoPage       = lazy(() => import("../pages/DemoPage"));
 const LoginPage          = lazy(() => import("../features/auth/pages/LoginPage")         .then(m => ({ default: m.LoginPage })));
 const ForgotPasswordPage = lazy(() => import("../features/auth/pages/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage  = lazy(() => import("../features/auth/pages/ResetPasswordPage") .then(m => ({ default: m.ResetPasswordPage })));
-// FIX: faltaba registrar esta ruta por completo — por eso el wizard de
-// primer login nunca se veía (caía en el catch-all "*" → NotFoundPage).
 const FirstLoginScreen   = lazy(() => import("../features/auth/pages/FirstLoginScreen"));
 
 // ── Dashboards ────────────────────────────────────────────────────
@@ -145,9 +141,7 @@ export default function AppRoutes() {
           {/* /dashboard → smart redirect al home del rol */}
           <Route path="/dashboard" element={<ProtectedRoute><RoleRedirect /></ProtectedRoute>} />
 
-          {/* Wizard de primer inicio de sesión — FIX: ruta que faltaba registrar.
-              Fuera de MainLayout (no queremos sidebar/navbar durante el wizard),
-              sin allowedRoles (aplica a cualquier rol la primera vez). */}
+          {/* fuera de MainLayout: sin sidebar/navbar durante el wizard */}
           <Route path="/primer-inicio" element={<ProtectedRoute><FirstLoginScreen /></ProtectedRoute>} />
 
           {/* 404 — catch-all */}

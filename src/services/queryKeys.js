@@ -1,7 +1,3 @@
-// src/services/queryKeys.js
-// Fuente única de verdad para todos los query keys de React Query.
-// Usar siempre estas factories en useQuery/useMutation/invalidateQueries.
-
 export const queryKeys = {
 
   // ─── Cursos ───────────────────────────────────────────────────────────────

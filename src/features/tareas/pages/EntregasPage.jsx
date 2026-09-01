@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import {
-  ArrowLeft, CheckCircle2, Clock, Star, Loader2, RefreshCw,
+  ArrowLeft, Star, Loader2, RefreshCw,
   FileText, ExternalLink, ChevronDown, ChevronUp, Search, X,
   ClipboardList,
 } from "lucide-react";
@@ -52,12 +52,7 @@ export default function EntregasPage() {
     setTimeout(() => setToast({ msg: "", type: "success" }), 3500);
   };
 
-  // entregasGetByTarea ya devuelve padreId y calificacion.docenteId poblados
-  // (ver entregaController.js: getEntregasByTarea popula ambos), así que no
-  // hace falta volver a pedirlos por separado. Antes se intentaba "enriquecer"
-  // llamando a usersGetById(padreId) — pero padreId YA era el objeto poblado
-  // en este punto, no un id crudo, así que esas llamadas pedían
-  // /users/[object Object] y nunca devolvían nada útil.
+  // entregasGetByTarea ya devuelve padreId y calificacion.docenteId poblados, no hace falta reenriquecer
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -98,10 +93,7 @@ export default function EntregasPage() {
     setShowCal(true);
   };
 
-  // El backend (calificarEntregaValidator.js) espera { valoracion (1-5),
-  // comentario } — nunca "nota" ni "docenteId" en el body. docenteId se
-  // extrae del token de sesión en el controlador (calificarEntrega.js) y
-  // el validator RECHAZA la petición si docenteId viene en el body.
+  // el backend espera { valoracion (1-5), comentario } — nunca "nota" ni "docenteId" (viene del token)
   const handleCalificar = async (e) => {
     e.preventDefault();
     if (!calForm.valoracion) {

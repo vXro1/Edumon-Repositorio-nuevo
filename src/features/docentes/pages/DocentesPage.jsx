@@ -1,14 +1,13 @@
-// src/features/docentes/pages/DocentesPage.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Search, GraduationCap, X, Loader2, RefreshCw,
-  Upload, CheckCircle2, AlertCircle, Download, Trash2, FileSpreadsheet,
+  Upload, CheckCircle2, AlertCircle, Download, FileSpreadsheet,
   User, Hash, Mail, Filter, Eye, Edit2, UserX, UserCheck, Phone, Calendar, Clock,
 } from "lucide-react";
 
 import { usersGetAll, usersGetById, usersUpdate, usersDelete } from "@/services/usersService";
 import { institucionesCreateDocente, institucionesCreateDocentesCsv } from "@/services/institucionesService";
-import { Modal, UserAvatar, Toast, Button, Badge, Avatar, Input, PhoneInput } from "@/components";
+import { Modal, UserAvatar, Toast, Button, Badge, Input, PhoneInput } from "@/components";
 import { Sk, EmptyState } from "@/features/cursos/components/shared/ui";
 import { normalizeUser } from "@/lib/normalizers";
 import useUserStore from "@/store/useUserStore";
@@ -33,11 +32,6 @@ function SkRow() {
   );
 }
 
-// FIX: el badge de estado antes leía d.estado ?? "activo" como TEXTO crudo
-// ("suspendido" en gris neutro, indistinguible a simple vista de "activo")
-// — mismo componente/criterio visual que ya usa UsuariosPage.jsx (rojo +
-// punto + etiqueta en español), para que un docente suspendido resalte de
-// verdad en la tabla.
 function EstadoBadge({ estado }) {
   const ok = estado === "activo";
   return (
@@ -47,9 +41,6 @@ function EstadoBadge({ estado }) {
   );
 }
 
-// FIX: esta fila no tenía NINGUNA acción — no había forma de editar, ver el
-// detalle ni suspender/reactivar un docente desde aquí. Mismo patrón que
-// UsuariosPage.jsx (ActionIconBtn con Ver/Editar/Suspender-Activar).
 function ActionIconBtn({ icon: Icon, title, color, bg, onClick }) {
   const [hov, setHov] = useState(false);
   return (
@@ -188,10 +179,6 @@ export default function DocentesPage() {
   const [form,       setForm]      = useState(INIT);
   const [createErrors, setCreateErrors] = useState({});
 
-  // Ver / Editar / Suspender / Activar — antes no existían: la tabla no
-  // tenía ninguna acción y no había forma de filtrar por estado, así que
-  // un docente suspendido (que sí vuelve en la respuesta del backend, sin
-  // filtrar por defecto) se perdía entre el resto sin ninguna señal clara.
   const [editTarget,  setEditTarget]  = useState(null);
   const [delTarget,   setDelTarget]   = useState(null);
   const [activTarget, setActivTarget] = useState(null);
@@ -221,14 +208,11 @@ export default function DocentesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Al buscar, traer todos los docentes para que el filtro cliente sea completo
+      // al buscar, traer todos los docentes para que el filtro cliente sea completo
       const params = debSearch
         ? { rol: "docente", page: 1, limit: 1000 }
         : { rol: "docente", page, limit: LIMIT };
-      // Sin esto, "Suspendidos" no tenía forma de aislarse — el backend ya
-      // devuelve activos e inactivos mezclados si no se pide un estado
-      // puntual, así que un docente suspendido quedaba perdido entre el
-      // resto de la lista sin ningún filtro para encontrarlo directo.
+      // sin esto el backend devuelve activos e inactivos mezclados
       if (estadoFilter) params.estado = estadoFilter;
       const res = await usersGetAll(params);
       const normalized = (res.users ?? []).map(normalizeUser);
@@ -267,8 +251,6 @@ export default function DocentesPage() {
   const handleCreate = async e => {
     e.preventDefault();
 
-    // Mismas reglas de validación que en el resto de creaciones de usuario,
-    // mostradas junto a cada campo en vez de solo en un toast genérico
     const cedula = form.cedula.trim();
     const errors = {};
     if (!form.nombre.trim())              errors.nombre   = "El nombre es requerido";
@@ -286,7 +268,7 @@ export default function DocentesPage() {
 
     setSaving(true);
     try {
-      // No se envía "contraseña": el backend aplica la regla única (= cédula)
+      // no se envía "contraseña" — el backend aplica la regla única (= cédula)
       await institucionesCreateDocente({
         ...form,
         cedula,
@@ -298,8 +280,6 @@ export default function DocentesPage() {
       setCreateErrors({});
       load();
     } catch (err) {
-      // Errores de validación del backend (ej. cédula/correo duplicados) se
-      // muestran junto al campo correspondiente, igual que en Usuarios
       if (err.validationErrors?.length) {
         const serverErrors = {};
         for (const ve of err.validationErrors) serverErrors[ve.path] = ve.msg;
@@ -499,11 +479,7 @@ export default function DocentesPage() {
         </div>
       </div>
 
-      {/* ── Search + filtro de estado ──
-          FIX: no había forma de aislar solo los docentes suspendidos —
-          venían mezclados con los activos, página tras página, sin ningún
-          filtro para encontrarlos directo (mismo patrón que ya tiene
-          UsuariosPage.jsx). */}
+      {/* ── Search + filtro de estado ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: "var(--space-5)" }}>
         <div style={{ position: "relative", maxWidth: 360, flex: 1, minWidth: 220 }}>
           <Search

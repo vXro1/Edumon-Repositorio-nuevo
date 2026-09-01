@@ -1,24 +1,4 @@
-// src/components/ui/PadresCsvTemplate.jsx  (también exportable como util puro)
-//
-// Genera y descarga la plantilla CSV para registro masivo de padres de familia.
-// Se puede usar de dos formas:
-//
-//   1. Como función utilitaria pura (sin React):
-//      import { descargarPlantillaPadresCSV } from "./PadresCsvTemplate";
-//      descargarPlantillaPadresCSV();
-//
-//   2. Como componente botón listo para usar:
-//      import PadresCsvTemplateButton from "./PadresCsvTemplate";
-//      <PadresCsvTemplateButton />
-//
-// Columnas según el endpoint POST /cursos/:id/usuarios-masivo:
-//   nombre, apellido, telefono, cedula
-//
-// La plantilla incluye:
-//   - Fila de encabezados (requerida por el backend)
-//   - 3 filas de ejemplo comentadas con datos ficticios colombianos
-//   - BOM UTF-8 para compatibilidad con Excel en Windows
-
+// plantilla CSV para registro masivo de padres — columnas según POST /cursos/:id/usuarios-masivo
 const COLUMNAS = ["nombre", "apellido", "telefono", "cedula"];
 
 const EJEMPLOS = [
@@ -40,10 +20,6 @@ export function generarContenidoCsvPadres() {
   return "\uFEFF" + [encabezado, ...filas].join("\r\n");
 }
 
-/**
- * Descarga la plantilla CSV directamente en el navegador.
- * @param {string} [filename="plantilla_padres.csv"]
- */
 export function descargarPlantillaPadresCSV(filename = "plantilla_padres.csv") {
   const contenido = generarContenidoCsvPadres();
   const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
@@ -68,15 +44,6 @@ const DOWNLOAD_ICON = (
   </svg>
 );
 
-/**
- * Botón reutilizable que descarga la plantilla al hacer clic.
- *
- * Props:
- *   label     {string}  Texto del botón
- *   filename  {string}  Nombre del archivo descargado
- *   style     {object}  Estilos adicionales inline
- *   className {string}  Clase CSS adicional
- */
 export default function PadresCsvTemplateButton({
   label = "Descargar plantilla CSV",
   filename = "plantilla_padres.csv",

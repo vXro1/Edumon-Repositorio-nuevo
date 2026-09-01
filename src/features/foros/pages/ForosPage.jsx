@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  MessageCircle, Plus, RefreshCw, Loader2, CheckCircle2,
-  AlertCircle, Lock, Unlock, Trash2, ChevronRight, BookOpen,
-  Globe, EyeOff,
+  MessageCircle, Plus, RefreshCw, Loader2,
+  Lock, Unlock, Trash2, ChevronRight, BookOpen,
+  Globe,
 } from "lucide-react";
 
 import { cursosGetMine } from "@/features/cursos/services/cursosService";

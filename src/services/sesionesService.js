@@ -1,4 +1,3 @@
-// src/services/sesionesService.js
 import { apiFetch } from './core/apiClient';
 
 export const sesionesService = {

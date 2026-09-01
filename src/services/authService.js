@@ -1,6 +1,4 @@
-// src/services/authService.js
-// Backend usa cookies httpOnly (access_token / refresh_token).
-// El cliente JS no maneja ni lee tokens directamente.
+// backend usa cookies httpOnly (access_token/refresh_token) — el cliente JS no lee tokens directamente
 import { apiFetch } from './core/apiClient';
 
 export const authService = {
@@ -19,10 +17,7 @@ export const authService = {
     return data.user ?? data;
   },
 
-  // El backend espera contraseñaActual/contraseñaNueva (con ñ) — se remapea
-  // aquí porque ambos call sites (FirstLoginScreen, PerfilPage) usan las
-  // claves sin ñ, y el mismatch hacía que change-password devolviera 400
-  // ("La contraseña actual y la nueva son obligatorias") en cada intento.
+  // el backend espera las claves con ñ; los call sites las mandan sin ñ, se remapea aquí
   changePassword: async ({ contrasenaActual, contrasenaNueva }) =>
     apiFetch('/auth/change-password', {
       method: 'POST',

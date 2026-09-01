@@ -1,4 +1,3 @@
-// src/hooks/useFCM.js
 // Solicita permiso de notificaciones y registra el FCM token con el backend.
 // Se llama una vez después del login exitoso desde AuthContext.
 // Los errores son siempre silenciosos: FCM no es crítico.

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 
 import {
-  Plus, Search, Users, Edit2, Trash2, X,
+  Plus, Search, Users, Edit2, X,
   Loader2, RefreshCw, ChevronLeft, ChevronRight,
-  CheckCircle2, AlertCircle, Filter, Eye,
+  AlertCircle, Filter, Eye,
   UserCheck, Phone, Mail, Hash, Calendar,
   Clock, Shield, UserX,
 } from "lucide-react";
@@ -275,9 +275,7 @@ export default function UsuariosPage() {
     setSaving(true);
     try {
       const rolApi = toApiRol(form.rol);
-      // No se envía "contraseña": el backend aplica la regla única del sistema
-      // (contraseña inicial = cédula), igual que al crear docentes, admins de
-      // institución o participantes. Así ningún flujo puede volver a divergir.
+      // no se envía "contraseña" — el backend aplica la regla única (= cédula)
       const body = {
         nombre:     form.nombre.trim(),
         apellido:   form.apellido.trim(),

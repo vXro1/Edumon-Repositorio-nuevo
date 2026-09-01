@@ -1,4 +1,3 @@
-// src/features/cursos/components/calendario/CalendarioTab.jsx
 import { useState, useEffect, useCallback } from "react";
 import { calendarioGetByCurso } from "@/features/calendario/services/calendarioService";
 import { eventosDelete, eventosCreateSimple, eventosUpdateSimple } from "@/features/eventos/services/eventosService";
@@ -86,10 +85,6 @@ function EventoFormModal({ cursoId, evento, onClose, onSaved }) {
       }
       onSaved();
     } catch (err) {
-      // El backend manda un array `errors` (express-validator) con el campo
-      // exacto (`path`) y el motivo (`msg`) de cada validación fallida.
-      // Antes solo se mostraba err.message genérico; ahora se reparte cada
-      // mensaje debajo de su input correspondiente.
       const parsed = parseValidationErrors(err);
       if (parsed) {
         setFieldErrors(parsed);

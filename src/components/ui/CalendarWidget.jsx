@@ -1,7 +1,5 @@
-// src/components/ui/CalendarWidget.jsx
-// Componente de calendario reutilizable — misma visual para todos los roles.
-// Gestiona navegación de mes, selección de día y modal de detalle internamente.
-// Recibe items ya cargados; la lógica de fetch y CRUD queda en el padre.
+// calendario reutilizable — misma visual para todos los roles. Recibe items ya
+// cargados; la lógica de fetch y CRUD queda en el padre.
 import { useState } from "react";
 import {
   ChevronLeft, ChevronRight, CalendarDays, Clock, MapPin,
@@ -150,8 +148,6 @@ function ItemRow({ item, idx, onClick }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        {/* Con palabras, no solo un ícono: una flecha sola no le dice a
-            todo el mundo "esto se puede abrir". */}
         <span style={{
           display: "flex", alignItems: "center", gap: 2,
           fontSize: 11, fontWeight: 700, color: "var(--color-primary)",
@@ -296,22 +292,6 @@ function InfoRow({ icon, label, children }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// CALENDAR WIDGET — componente principal exportado
-//
-// Props:
-//   items[]      — [{id,tipo,titulo,fecha,fechaInicio,fechaFin,hora,ubicacion,
-//                    categoria,estado,modulo,tipoEntrega,color,cursoNombre,
-//                    cursosNombres[]}]
-//   loading      — boolean
-//   stats        — { totalTareas, totalEventos, tareasVencidas, eventosProximos }
-//   canManage    — boolean: muestra botón "Nuevo evento" y acciones en modal
-//   onRefresh    — () => void  (opcional)
-//   onCreateEvent — () => void (opcional, requerido si canManage)
-//   onEditEvent  — (item) => void
-//   onDeleteEvent — (id) => Promise<void>
-//   title        — string (por defecto "Calendario")
-// ══════════════════════════════════════════════════════════════════════════
 export default function CalendarWidget({
   items       = [],
   loading     = false,
@@ -341,13 +321,11 @@ export default function CalendarWidget({
     else setMonth(m => m + 1);
   };
 
-  // Filtramos items del mes actual para la lista lateral
   const itemsDelMes = items.filter(item => {
     const d = new Date(item.fecha);
     return d.getFullYear() === year && d.getMonth() === month;
   }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-  // Índice día → items
   const byDay = {};
   itemsDelMes.forEach(item => {
     const d   = new Date(item.fecha);
@@ -453,9 +431,6 @@ export default function CalendarWidget({
               <span style={{ fontWeight: 800, fontSize: 16, color: "var(--color-text)", whiteSpace: "nowrap" }}>
                 {MESES[month]} {year}
               </span>
-              {/* Botón "Hoy": salta directo al mes actual y selecciona el día de
-                  hoy — sin esto, si el usuario navega a otro mes no hay forma
-                  rápida de volver ni de saber en qué fecha está parado. */}
               <button
                 onClick={() => { setYear(now.getFullYear()); setMonth(now.getMonth()); setSelected(now); }}
                 style={{
@@ -481,8 +456,6 @@ export default function CalendarWidget({
             </button>
           </div>
 
-          {/* Aviso de cómo interactuar — para que nadie tenga que adivinar
-              que los días y los eventos son clicables. */}
           <div style={{
             display: "flex", alignItems: "center", gap: 7,
             padding: "9px 16px", background: "rgba(12,106,196,0.06)",
@@ -549,10 +522,7 @@ export default function CalendarWidget({
                       width: 28, height: 28, borderRadius: "50%",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 14.5, fontWeight: isToday || isSel ? 800 : 500,
-                      // "Hoy" siempre se marca con un círculo sólido — no un tinte
-                      // suave que se puede pasar por alto. Si además está
-                      // seleccionado, el círculo se invierte a blanco para que
-                      // ambos estados sigan siendo distinguibles.
+                      // "hoy" siempre círculo sólido; si además seleccionado, se invierte a blanco
                       background: isToday ? (isSel ? "#fff" : "var(--color-primary)") : "transparent",
                       color: isToday ? (isSel ? "var(--color-primary)" : "#fff") : (isSel ? "#fff" : "var(--color-text)"),
                     }}>
@@ -607,9 +577,6 @@ export default function CalendarWidget({
         {/* ── PANEL DERECHO ─────────────────────────────────────────── */}
         <div style={{ flex: 1, minWidth: 260, display: "flex", flexDirection: "column", gap: 14 }}>
 
-          {/* Sin día seleccionado: en vez de dejar este espacio vacío (que
-              hacía parecer que no había nada que hacer), se explica el paso
-              a paso completo — ver día → ver evento → editar/eliminar. */}
           {!selected && !loading && (
             <div style={{
               background: "var(--color-surface)", borderRadius: 14,

@@ -175,12 +175,9 @@ export default function InstitucionesPage() {
 
   const closeDetail = () => { setDetailInst(null); setDetailAdmin(null); };
 
-  // dentro de InstitucionesPage.jsx
-
   const handleCreate = async (e) => {
     e.preventDefault();
 
-    // Validación previa en cliente (evita pegarle al backend con datos incompletos)
     const nombre = form.nombre.trim();
     const nit = form.nit.trim();
     const adminCorreo = form.adminCorreo.trim().toLowerCase();

@@ -1,4 +1,3 @@
-// src/features/cursos/components/CursoCard.jsx
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -35,7 +34,6 @@ function ActionBtn({ action, onNavigate }) {
 export default memo(function CursoCard({
   curso,
   role      = "docente",
-  idx       = 0,
   onClick   = null,
   compact   = false,
 }) {
@@ -136,9 +134,6 @@ export default memo(function CursoCard({
             {curso.participantes?.length ?? curso.totalParticipantes ?? 0}
             {" "}{role === "padre" ? "participantes" : "alumnos"}
           </span>
-          {/* Antes era solo una flecha diagonal (ArrowUpRight): un ícono sin
-              texto no le dice a un usuario adulto que la tarjeta se puede
-              abrir. "Ver curso" dice exactamente qué pasa al hacer clic. */}
           <span style={{
             display: "flex", alignItems: "center", gap: 2,
             fontSize: 11.5, fontWeight: 700, color: cursoColor,

@@ -1,4 +1,3 @@
-// src/features/auth/context/AuthContext.jsx
 import React, {
   createContext,
   useCallback,
@@ -47,9 +46,7 @@ export const AuthProvider = ({ children }) => {
     window.location.replace(url);
   }, [clearAll]);
 
-  // Logout global por 401 real (sesión que expiró a mitad de uso).
-  // El chequeo silencioso de /auth/profile al arrancar NO pasa por aquí
-  // (lo filtra apiClient.js con silentAuth).
+  // logout global por 401 real; el chequeo silencioso al arrancar no pasa por aquí
   useEffect(() => {
     handling401.current = false;
 
@@ -75,10 +72,7 @@ export const AuthProvider = ({ children }) => {
     return () => sessionManager.stop();
   }, [isAuthenticated, logout]);
 
-  // Conexión de Socket.IO — mismo ciclo de vida que sessionManager arriba:
-  // se conecta apenas hay sesión, se desconecta apenas se pierde (logout,
-  // expiración). Un solo socket compartido para toda la app; cualquier
-  // pantalla se suscribe a sus propios eventos con getSocket()?.on(...).
+  // un solo socket compartido para toda la app; cada pantalla se suscribe con getSocket()?.on(...)
   useEffect(() => {
     if (!isAuthenticated) {
       disconnectSocket();
@@ -90,9 +84,7 @@ export const AuthProvider = ({ children }) => {
     return () => disconnectSocket();
   }, [isAuthenticated]);
 
-  // Pregunta silenciosa "¿quién soy?" usando la cookie httpOnly.
-  // Si no hay sesión válida, el catch deja user en null —
-  // NO navega, NO llama a logout(), NO recarga la página.
+  // pregunta silenciosa "¿quién soy?"; sin sesión válida, el catch deja user en null sin navegar
   useEffect(() => {
     let mounted = true;
 
@@ -123,12 +115,6 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, []);
 
-  // FIX: FirstLoginScreen.jsx (y potencialmente otras pantallas) hacen
-  // `const { user, updateUser } = useAuth()` y llaman a updateUser(nuevoUser)
-  // después de guardar la foto de perfil o los datos en el backend.
-  // Esta función nunca existió en el contexto → updateUser era `undefined`
-  // → TypeError al completar el paso 1 del wizard de primer login, que
-  // rompía el flujo silenciosamente antes de llegar al paso de correo/contraseña.
   const updateUser = useCallback((partialUser) => {
     if (!partialUser) return;
     setUser(prev => {
@@ -142,14 +128,8 @@ export const AuthProvider = ({ children }) => {
     sessionManager.reset();
   }, []);
 
-  // FIX: FamiliaPerfilesPage.jsx llama a `switchProfile()` tras
-  // seleccionarPerfil() — pero esa función nunca existió en el contexto
-  // (`switchProfile is not a function`, crash al elegir cualquier perfil).
-  // seleccionarPerfil() en el backend NO devuelve un token en el body —
-  // solo reemplaza la cookie httpOnly access_token con una que lleva el
-  // nuevo perfilId/esTitular. El único trabajo del frontend es volver a
-  // preguntar "¿quién soy?" (mismo patrón que el chequeo silencioso al
-  // arrancar la app), para que `user` refleje el perfil recién activado.
+  // seleccionarPerfil() solo reemplaza la cookie; esto vuelve a preguntar
+  // "¿quién soy?" para que `user` refleje el perfil recién activado
   const switchProfile = useCallback(async () => {
     try {
       const profile = await authService.getProfile();

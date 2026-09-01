@@ -1,20 +1,4 @@
-// src/components/ui/ModulosCsvTemplate.jsx
-//
-// Genera y descarga la plantilla CSV para creación masiva de módulos.
-// Uso idéntico al patrón de PadresCsvTemplate.
-//
-// Dos formas de uso:
-//
-//   1. Función utilitaria pura:
-//      import { descargarPlantillaModulosCSV } from "./ModulosCsvTemplate";
-//      descargarPlantillaModulosCSV();
-//
-//   2. Componente botón:
-//      import ModulosCsvTemplateButton from "./ModulosCsvTemplate";
-//      <ModulosCsvTemplateButton />
-//
-// Columnas según modulosCreate: titulo (requerido), descripcion (opcional)
-
+// plantilla CSV para creación masiva de módulos — mismo patrón que PadresCsvTemplate
 const COLUMNAS = ["titulo", "descripcion"];
 
 const EJEMPLOS = [
@@ -23,10 +7,6 @@ const EJEMPLOS = [
   ["Práctica guiada",         "Ejercicios con acompañamiento docente"],
 ];
 
-/**
- * Genera el contenido CSV como string con BOM UTF-8.
- * @returns {string}
- */
 export function generarContenidoCsvModulos() {
   const encabezado = COLUMNAS.join(",");
   const filas = EJEMPLOS.map((fila) => fila.map((v) => `"${v}"`).join(","));
@@ -34,10 +14,6 @@ export function generarContenidoCsvModulos() {
   return "\uFEFF" + [encabezado, ...filas].join("\r\n");
 }
 
-/**
- * Descarga la plantilla CSV directamente en el navegador.
- * @param {string} [filename="plantilla_modulos.csv"]
- */
 export function descargarPlantillaModulosCSV(filename = "plantilla_modulos.csv") {
   const contenido = generarContenidoCsvModulos();
   const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
@@ -52,14 +28,7 @@ export function descargarPlantillaModulosCSV(filename = "plantilla_modulos.csv")
   URL.revokeObjectURL(url);
 }
 
-/**
- * Parsea un File CSV y devuelve un array de objetos { titulo, descripcion }.
- * Ignora filas vacías y la fila de encabezado.
- * Lanza Error si el archivo no tiene la columna "titulo".
- *
- * @param {File} file
- * @returns {Promise<Array<{ titulo: string, descripcion: string }>>}
- */
+// parsea un File CSV a [{ titulo, descripcion }]; lanza si falta la columna "titulo"
 export async function parsearCsvModulos(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

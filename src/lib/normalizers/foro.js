@@ -1,5 +1,3 @@
-// src/lib/normalizers/foro.js
-
 import { normalizeUser } from "./user";
 
 /**
@@ -54,17 +52,8 @@ export function normalizeArchivosForo(archivos) {
   }));
 }
 
-/**
- * Normaliza un mensaje individual del foro
- *
- * currentUserId: el backend (MensajeForo.js) guarda "likes" como un NÚMERO
- * (contador) y "likedBy" como el array real de usuarios — nunca "totalLikes"
- * ni "yaLeDioLike" en el listado (GET /mensajes-foro/foro/:foroId). Esos dos
- * campos solo existen en la respuesta del toggle individual (POST .../like).
- * Sin currentUserId, yaLeDioLike siempre caía a `false` después de cualquier
- * recarga/invalidación de la lista — el corazón se "desmarcaba" solo aunque
- * el like siguiera guardado en la base de datos.
- */
+// currentUserId: el listado no trae yaLeDioLike (solo la respuesta del toggle
+// individual la tiene), así que se deriva comparando contra likedBy
 export function normalizeMensaje(mensaje, currentUserId = null) {
   if (!mensaje) return null;
 
@@ -80,9 +69,7 @@ export function normalizeMensaje(mensaje, currentUserId = null) {
       ? likedByIds.includes(String(currentUserId))
       : false;
 
-  // mensaje.likes es el contador (Number) que guarda el backend — nunca un
-  // array. mensaje.totalLikes no existe en ninguna respuesta real; el
-  // fallback solo cubre datos ya normalizados que se vuelven a normalizar.
+  // likes es el contador (Number); totalLikes solo aparece en datos ya normalizados
   const totalLikes =
     typeof mensaje.likes === "number"
       ? mensaje.likes
@@ -90,7 +77,7 @@ export function normalizeMensaje(mensaje, currentUserId = null) {
 
   const id = mensaje._id || mensaje.id || null;
 
-  // El backend puede poblar el autor en usuarioId, autor o autorId
+  // el backend puede poblar el autor en usuarioId, autor o autorId
   const rawAutor =
     (mensaje.usuarioId && typeof mensaje.usuarioId === "object" ? mensaje.usuarioId : null) ||
     (mensaje.autor     && typeof mensaje.autor     === "object" ? mensaje.autor     : null) ||
@@ -210,10 +197,7 @@ export function normalizeForo(foro) {
           foro.cursoId?.id ||
           null,
 
-    // Autor creador — el backend (Foro.js) guarda esto en "docenteId", nunca
-    // en "creador"/"creadorId". Sin este fallback, el foro nunca sabía quién
-    // lo creó aunque el backend siempre lo popula (nombre apellido
-    // fotoPerfilUrl rol en crearForo/obtenerForoPorId/obtenerForosPorCurso).
+    // el backend guarda el creador en "docenteId", nunca en "creador"/"creadorId"
     creador:
       foro.creador && typeof foro.creador === "object"
         ? normalizeUser(foro.creador)
@@ -236,10 +220,7 @@ export function normalizeForo(foro) {
           foro.docenteId?.id ||
           null,
 
-    // Materiales de apoyo — archivos adjuntados al FORO al crearlo (distinto
-    // de los archivos de cada mensaje). El backend los guarda en Foro.archivos
-    // y crearForo/obtenerForoPorId ya los devuelven, pero este normalizador
-    // nunca los exponía, así que no había forma de mostrarlos en ningún lado.
+    // materiales de apoyo del foro, distinto de los archivos de cada mensaje
     archivos: normalizeArchivosForo(foro.archivos),
 
     // Mensajes

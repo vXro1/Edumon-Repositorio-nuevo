@@ -1,8 +1,4 @@
-// src/features/familia/pages/FamiliaEntregaDetallePage.jsx
-// ROL: Padre / Tutor — vista única de "hacer entrega" para UNA tarea puntual.
-// URL propia (/familia/entregas/:tareaId) en vez de un modal con varios pasos
-// internos: el padre llega directo al formulario de esa entrega, sin tener
-// que abrir un curso, un modal, una lista y recién ahí encontrar el botón.
+// vista de "hacer entrega" para una tarea puntual (padre/tutor) — URL propia en vez de modal
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -24,9 +20,7 @@ const ESTADO_LABEL = {
   borrador: "Borrador", enviada: "Enviada", tarde: "Entregada tarde", calificada: "Calificada",
 };
 
-// Texto legible por tipo de entrega — mismo mapeo que usa TareaDetalle.jsx
-// (vista del docente), para que el padre vea el mismo dato con la misma
-// etiqueta en vez de solo el valor crudo del backend ("archivo").
+// mismo mapeo que TareaDetalle (vista del docente), para consistencia
 const TIPO_ENTREGA_LABELS = {
   archivo: "Archivo / Documento",
   texto: "Texto en línea",
@@ -36,11 +30,7 @@ const TIPO_ENTREGA_LABELS = {
   grupal: "Grupal",
 };
 
-// Mismos formatos/tamaño que valida uploadArchivoCloudinary en el backend
-// (ver BACKEND EDUMON NUEVO/src/middlewares/cloudinaryMiddleware.js) — se
-// muestran ANTES de intentar subir en vez de solo después de un error
-// "Formato de archivo no permitido" sin ningún detalle de qué sí se acepta,
-// y el <input type="file"> los usa como filtro nativo del selector.
+// mismos formatos/tamaño que valida el backend — se muestran antes de subir, no solo en el error
 const FORMATOS_PERMITIDOS_LABEL =
   "PDF, Word (.doc/.docx), Excel (.xls/.xlsx), imágenes (.jpg/.png) o video (.mp4/.mpeg/.webm) — máx. 10 MB por archivo";
 const FORMATOS_PERMITIDOS_ACCEPT =
@@ -99,10 +89,6 @@ export default function FamiliaEntregaDetallePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // FIX: antes solo miraba entrega.estado, nunca tarea.estado — un padre
-  // no se enteraba de que el reto estaba cerrado hasta que el envío le
-  // fallaba con un toast de error. Ahora se muestra un aviso explícito
-  // (más abajo) y el formulario se deshabilita antes de que intente nada.
   const tareaCerrada = tarea?.estado === "cerrada";
   const canEdit = !tareaCerrada && (!entrega || entrega.estado === "borrador");
   const canSend = !tareaCerrada && entrega?.estado === "borrador";
@@ -113,9 +99,7 @@ export default function FamiliaEntregaDetallePage() {
       const esActualizacion = entrega && entrega.estado === "borrador";
 
       const fd = new FormData();
-      // updateEntregaValidator.js rechaza la petición si tareaId/padreId
-      // vienen en el body al actualizar un borrador ya existente — solo van
-      // en la creación inicial.
+      // tareaId/padreId solo van en la creación inicial, el validator los rechaza al actualizar
       if (!esActualizacion) {
         fd.append("tareaId", tareaId);
         fd.append("padreId", user._id ?? user.id);
@@ -134,10 +118,7 @@ export default function FamiliaEntregaDetallePage() {
       setArchivos([]);
       await load();
     } catch (err) {
-      // El backend solo dice "Formato de archivo no permitido" sin listar
-      // qué sí se acepta (humanizeError ya evita mostrar ese texto crudo,
-      // pero acá se puede ser más útil y decir exactamente los formatos
-      // válidos para una entrega, en vez del mensaje genérico).
+      // el backend solo dice "Formato de archivo no permitido" sin listar qué sí se acepta
       const rawMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "";
       const esErrorFormato = /formato.*(archivo|permitido)|tipo de archivo/i.test(rawMsg);
       notify(
@@ -162,8 +143,6 @@ export default function FamiliaEntregaDetallePage() {
       notify("Entrega enviada exitosamente");
       await load();
     } catch (err) {
-      // Ej.: "La tarea está cerrada y no acepta entregas" — humanizeError
-      // ahora sí muestra el motivo real del backend en vez de un genérico.
       notify(humanizeError(err, "Error al enviar la entrega"), "error");
     } finally {
       setSaving(null);
@@ -268,8 +247,6 @@ export default function FamiliaEntregaDetallePage() {
         )}
       </div>
 
-      {/* Aviso — visible ANTES de que el padre intente enviar, no solo como
-          error después de un intento fallido. */}
       {tareaCerrada && (
         <div style={{
           display: "flex", alignItems: "flex-start", gap: 10,
@@ -306,10 +283,6 @@ export default function FamiliaEntregaDetallePage() {
             <strong style={{ color: "var(--color-text)" }}>Criterios: </strong>{tarea.criterios}
           </p>
         )}
-        {/* Antes este bloque no tenía ningún título — quedaba pegado debajo
-            de los criterios sin ninguna señal de que era material aparte
-            (archivos/enlaces que el docente adjuntó a la tarea), así que
-            era fácil no darse cuenta de que estaba ahí. */}
         {(materialArchivos.length > 0 || materialEnlaces.length > 0) && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--color-border)" }}>
           <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)" }}>
@@ -364,10 +337,6 @@ export default function FamiliaEntregaDetallePage() {
         );
       })()}
 
-      {/* Formulario de respuesta — si el reto está cerrado y nunca hubo
-          entrega, no hay nada que mostrar aquí: el aviso de arriba ya lo
-          explica, mostrar una caja vacía "Sin respuesta escrita" solo suma
-          confusión. */}
       {(entrega || !tareaCerrada) && (
       <div style={{
         background: "var(--color-surface)", border: "1px solid var(--color-border)",
@@ -420,9 +389,6 @@ export default function FamiliaEntregaDetallePage() {
               <Paperclip style={{ width: 14, height: 14 }} />
               Adjuntar archivos {archivos.length > 0 && `(${archivos.length})`}
             </button>
-            {/* Formatos aceptados a la vista ANTES de intentar subir — antes
-                el único aviso era el error genérico del backend después de
-                un intento fallido. */}
             <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "var(--color-text-muted)", display: "flex", alignItems: "flex-start", gap: 5, lineHeight: 1.5 }}>
               <Info style={{ width: 12, height: 12, flexShrink: 0, marginTop: 1 }} />
               Formatos aceptados: {FORMATOS_PERMITIDOS_LABEL}.

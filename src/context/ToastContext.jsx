@@ -1,7 +1,4 @@
-// src/context/ToastContext.jsx
-// Sistema global de toasts. Envuelve la app con <ToastProvider>, luego llama:
-//   const { notify } = useToast();
-//   notify("Guardado", "success");
+// sistema global de toasts: <ToastProvider> + useToast().notify(msg, type)
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, AlertCircle, Info, X, AlertTriangle } from "lucide-react";
@@ -11,10 +8,8 @@ const ToastContext = createContext(null);
 let _id = 0;
 const nextId = () => ++_id;
 
-// Todos los colores salen de los tokens semánticos (tokens.css) vía
-// color-mix() — nada hardcodeado. "info" usa --color-primary, que está
-// scopeado a .app-shell (ver MainLayout.jsx): azul en el dashboard, morado
-// en login/landing, automáticamente, sin ninguna lógica aquí.
+// "info" usa --color-primary, que está scopeado a .app-shell — cambia de azul a
+// morado entre dashboard y login automáticamente, sin lógica aquí
 const VARIANTS = {
   success: {
     bg:      "color-mix(in srgb, var(--color-success) 10%, transparent)",

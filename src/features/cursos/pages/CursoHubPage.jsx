@@ -1,8 +1,4 @@
-// src/features/cursos/pages/CursoHubPage.jsx
-// ─────────────────────────────────────────────────────────────────────────────
-// ORQUESTADOR — Gestiona tabs y renderiza el layout.
-// Toda la lógica de datos y permisos viene de CursoProvider (React Query).
-// ─────────────────────────────────────────────────────────────────────────────
+// orquestador de tabs; toda la lógica de datos y permisos viene de CursoProvider
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, BookOpen, ClipboardList, MessageSquare, Users, Calendar } from "lucide-react";
 
@@ -37,7 +33,7 @@ function CursoHubContent() {
   const {
     cursoId, curso, cursoColor, loading, user,
     canManageModules, canManageTasks, canGradeEntregas,
-    canCreateForo, canViewParticipants, canManageParticipants, canSubmitEntrega,
+    canCreateForo, canViewParticipants, canManageParticipants,
   } = useCursoContext();
 
   const rawRole = user?.rol ?? user?.role ?? "";

@@ -1,4 +1,3 @@
-// src/features/auth/components/SessionCard.jsx
 import { Monitor, Smartphone, Tablet, Globe, Clock, MapPin } from "lucide-react";
 
 const DEVICE_ICONS = {

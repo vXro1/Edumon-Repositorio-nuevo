@@ -1,4 +1,3 @@
-// src/features/auth/components/forms/ResetPasswordForm.jsx
 import { useState, useRef, useEffect } from "react";
 import { Mail, Phone, Lock } from "lucide-react";
 import { Input, PhoneInput } from "@/components";
@@ -161,7 +160,7 @@ const ResetPasswordForm = ({
     e.preventDefault();
     const ve = validate({ ...form, method });
     if (Object.keys(ve).length) { setErrors(ve); return; }
-    const { confirmar, ...rest } = form;
+    const { confirmar: _confirmar, ...rest } = form;
     onSubmit({
       ...rest,
       // "+57XXXXXXXXXX" siempre, sin importar cómo lo haya escrito el usuario
@@ -218,10 +217,7 @@ const ResetPasswordForm = ({
         </>
       ) : (
         <form onSubmit={handleSubmit} noValidate className="auth-form">
-          {/* Si se llegó sin pasar por "Recuperar contraseña" (sin router
-              state), no hay teléfono/correo que mostrar — se deja el campo
-              editable como respaldo en vez de perder la posibilidad de usar
-              esta pantalla como punto de entrada directo. */}
+          {/* sin router state (entrada directa a esta pantalla), el campo queda editable */}
           {!contactValue && (
             method === "phone" ? (
               <PhoneInput

@@ -1,6 +1,4 @@
-// src/features/foros/pages/ForumPage.jsx
-// Vista canónica del foro. Todos los roles usan esta misma página.
-// Ruta: /curso/:cursoId/foro/:foroId
+// Vista canónica del foro — todos los roles usan esta misma página
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MessageSquare, Paperclip, X, FileText } from 'lucide-react';
@@ -64,8 +62,7 @@ const EmptyState = ({ canPost }) => (
 
 const MAX_MATERIALES = 5;
 
-// El backend (foroRoutes.js) acepta hasta 5 archivos de máx. 10MB cada uno:
-// imágenes, video (mp4/mpeg/quicktime) y PDF.
+// el backend acepta hasta 5 archivos de máx. 10MB: imágenes, video, PDF
 const MaterialPill = ({ file, onRemove }) => (
   <div style={{
     display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -202,14 +199,7 @@ const ForumPage = () => {
   const { user }            = useAuthContext();
   const { notify }          = useToast();
 
-  // Punto de quiebre "compacto": por debajo de 1100px no cabe el layout de
-  // 3 columnas (sidebar + mensajes + actividad), así que ambos paneles
-  // laterales pasan a ser overlays deslizantes en vez de columnas fijas.
-  // Antes el panel de actividad simplemente se ocultaba con
-  // `display:none` por debajo de 1100px SIN ninguna forma de volver a
-  // abrirlo — estadísticas, participantes y materiales de apoyo eran
-  // inaccesibles en tablet/móvil aunque el botón para abrirlos siguiera
-  // visible entre 768 y 1100px (no hacía nada).
+  // por debajo de 1100px no cabe el layout de 3 columnas; los paneles pasan a overlays
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 1100);
   useEffect(() => {
     const fn = () => setIsCompact(window.innerWidth < 1100);
@@ -217,27 +207,18 @@ const ForumPage = () => {
     return () => window.removeEventListener('resize', fn);
   }, []);
 
-  // Visibilidad de los paneles — AMBOS arrancan cerrados, también en
-  // escritorio. Antes se abrían solos en pantallas anchas y el usuario
-  // aterrizaba en 3 columnas compitiendo por su atención (lista de foros +
-  // mensajes + estadísticas) antes de siquiera leer el foro — abrumador
-  // para alguien que solo quiere leer/escribir un mensaje. Ahora la vista
-  // inicial es SIEMPRE solo el foro; los paneles son opcionales y se abren
-  // a pedido con los botones con texto del header ("Otros foros" /
-  // "Estadísticas").
+  // ambos paneles arrancan cerrados — la vista inicial es solo el foro, se abren a pedido
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [showCreate,   setShowCreate]   = useState(false);
 
-  // Al navegar a otro foro, cerrar los paneles (evita quedar con un overlay
-  // abierto tapando el foro nuevo en pantallas angostas).
+  // cerrar los paneles al cambiar de foro (evita overlay tapando el foro nuevo en angosto)
   useEffect(() => {
     setSidebarOpen(false);
     setActivityOpen(false);
   }, [foroId]);
 
-  // Solo un panel a la vez en pantallas angostas (uno tapa al otro como
-  // overlay); en escritorio ambos pueden estar abiertos como columnas.
+  // en angosto solo un panel a la vez (overlay); en escritorio ambos pueden estar abiertos
   const toggleSidebar = () => setSidebarOpen(prev => {
     const next = !prev;
     if (next && isCompact) setActivityOpen(false);
@@ -316,7 +297,6 @@ const ForumPage = () => {
     });
   };
 
-  // Obtener el nombre del curso desde el estado de navegación o los datos del foro
   const cursoNombre = location.state?.cursoNombre ?? foro?.curso?.nombre ?? null;
 
   return (
@@ -341,9 +321,7 @@ const ForumPage = () => {
         />
 
         <div className="fm-body">
-          {/* Sidebar izquierdo — columna fija (sticky) en escritorio; sección
-              normal del documento en pantallas angostas, nunca un overlay
-              flotante encima del contenido. */}
+          {/* sticky en escritorio; sección normal (no overlay) en angosto */}
           <div className={`fm-sidebar${sidebarOpen ? ' open' : ''}`}>
             <ForumSidebar
               forums={forums}
@@ -395,8 +373,7 @@ const ForumPage = () => {
             )}
           </main>
 
-          {/* Panel de actividad — misma lógica que el sidebar: columna fija
-              en escritorio, sección normal (no overlay) en angosto. */}
+          {/* misma lógica que el sidebar */}
           <div className={`fm-activity${activityOpen ? ' open' : ''}`}>
             <ForumActivity foro={foro} mensajes={mensajes} />
           </div>
@@ -423,22 +400,8 @@ const ForumPage = () => {
 export default ForumPage;
 
 // ─── Estilos CSS ──────────────────────────────────────────────────────────────
-//
-// Rediseño (v2): el problema reportado no era el layout de 3 columnas en sí
-// (eso ya se había arreglado antes — ver historial), sino que el ENCABEZADO
-// era una barra sticky con su propio fondo/borde/sombra, una segunda barra
-// flotando justo debajo de la navbar real de la app, dentro del padding de
-// `.page` — el foro se sentía como una app aparte pegada al dashboard, no
-// como una pantalla más de Edumon. Además `.fm-body` reimplementaba su
-// propio max-width + padding cuando `.page` (el contenedor real de toda
-// página del dashboard) ya hace exactamente eso — el resultado era relleno
-// duplicado entre la navbar y el contenido real.
-//
-// Ahora: no hay ninguna barra sticky. El encabezado es una tarjeta más,
-// con el mismo lenguaje visual (borde, radio, sombra) que las columnas de
-// abajo — pertenece a la misma familia visual en vez de destacarse como
-// "chrome" de aplicación. `.fm-body` ya no fija su propio ancho/relleno:
-// hereda el de `.page`, igual que cualquier otra página del dashboard.
+// El encabezado es una tarjeta normal (mismo lenguaje visual que las columnas
+// de abajo), no una barra sticky. .fm-body hereda ancho/padding de .page.
 const FORUM_CSS = `
 @keyframes fm-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 @keyframes fm-spin   { to { transform: rotate(360deg); } }
@@ -448,8 +411,7 @@ const FORUM_CSS = `
   flex-direction: column;
 }
 
-/* ── Volver — mismo botón de texto simple que el resto de la app (ver
-   CursoHubPage.jsx: <Button variant="ghost"><ArrowLeft/> Volver</Button>) ── */
+/* mismo botón de texto simple que el resto de la app */
 .fm-back {
   display:      flex;
   align-items:  center;
@@ -467,9 +429,7 @@ const FORUM_CSS = `
 }
 .fm-back:hover { color: var(--color-text); }
 
-/* ── Encabezado — tarjeta normal, misma familia visual que las columnas
-   de abajo (border + radius + clay-card), NUNCA sticky ni con su propio
-   fondo de "barra". ── */
+/* tarjeta normal, nunca sticky */
 .fm-header {
   display:        flex;
   align-items:    flex-start;
@@ -535,9 +495,7 @@ const FORUM_CSS = `
   color:      var(--color-error-hover);
 }
 
-/* Envoltorio: separa la descripción del título con más aire (antes 6px —
-   se sentía pegada) y, si es larga, la colapsa con un degradado para no
-   dejar que un texto extenso empuje mensajes/estadísticas fuera de vista. */
+/* descripción larga se colapsa con degradado para no empujar el resto fuera de vista */
 .fm-desc-wrap {
   position:  relative;
   margin-top: 12px;
@@ -572,9 +530,7 @@ const FORUM_CSS = `
 }
 .fm-desc-toggle:hover { text-decoration: underline; }
 
-/* Texto de lectura pensado para adultos mayores: fuente más grande,
-   interlineado generoso y buen contraste (antes todo — incluidas las
-   negritas — iba en gris muted, sin jerarquía visual). */
+/* fuente grande e interlineado generoso — pensado para lectores adultos mayores */
 .fm-desc {
   margin:    0;
   font-size: 14.5px;
@@ -635,11 +591,7 @@ const FORUM_CSS = `
 .fm-action[data-variant="open"]  { background: var(--color-success-light); border-color: transparent; color: var(--edu-green-700, #15803d); }
 .fm-action:disabled { opacity: 0.6; cursor: default; }
 
-/* ── Cuerpo: flex en vez de grid con columnas fijas — con los paneles
-   cerrados por defecto (ver ForumPage), un grid de 3 pistas fijas habría
-   dejado dos huecos vacíos a los lados en vez de dejar que los mensajes
-   ocupen todo el ancho. Con flex, un panel oculto (display:none) simplemente
-   desaparece y .fm-main se expande solo. Hereda ancho/relleno de .page. */
+/* flex en vez de grid: un panel oculto (display:none) desaparece y .fm-main se expande solo */
 .fm-body {
   display:      flex;
   align-items:  flex-start;
@@ -647,14 +599,7 @@ const FORUM_CSS = `
   width:        100%;
 }
 
-/* ── Barra lateral — sticky, no flotante ──
-   min-height: sin esto, con poco contenido (un foro, un mensaje) las tres
-   columnas quedaban cortas y el resto de la página se veía como un vacío
-   gris sin terminar, con los bordes inferiores de las columnas en
-   escalera (la de actividad mucho más alta que las otras dos) — el efecto
-   "a medio cargar" que se reportó. Un piso común de altura hace que las
-   tres columnas compongan una sola fila pareja, como cualquier layout de
-   3 columnas real, sin importar cuánto contenido tenga cada una todavía. */
+/* sticky, no flotante — min-height evita que las 3 columnas queden en escalera con poco contenido */
 .fm-sidebar {
   flex:         0 0 240px;
   width:        240px;
@@ -670,7 +615,6 @@ const FORUM_CSS = `
 }
 .fm-sidebar:not(.open) { display: none; }
 
-/* ── Centro principal — fluye con la página, sin recorte propio ── */
 .fm-main {
   display:        flex;
   flex-direction: column;
@@ -684,15 +628,12 @@ const FORUM_CSS = `
   overflow:       hidden;
 }
 
-/* flex:1 empuja el compositor (ForumInput) al fondo de la tarjeta cuando
-   hay pocos mensajes, en vez de dejarlo pegado justo debajo del último
-   mensaje con un vacío suelto entre el compositor y el borde de la tarjeta. */
+/* flex:1 empuja el compositor al fondo de la tarjeta cuando hay pocos mensajes */
 .fm-messages-scroll {
   flex:    1;
   padding: 14px 18px 10px;
 }
 
-/* ── Panel de actividad — sticky, no flotante ── */
 .fm-activity {
   flex:          0 0 280px;
   width:         280px;
@@ -708,11 +649,7 @@ const FORUM_CSS = `
 }
 .fm-activity:not(.open) { display: none; }
 
-/* ── Compacto: tableta y móvil, <1100px ──
-   Sidebar y actividad dejan de ser columnas: pasan a ser SECCIONES del
-   documento (la página sigue desplazándose normalmente), controladas por
-   el mismo botón con texto del header — nunca un overlay que tape el
-   contenido. */
+/* tableta y móvil: sidebar/actividad pasan de columnas a secciones apiladas */
 @media (max-width: 1100px) {
   .fm-body {
     display: flex;
@@ -723,24 +660,14 @@ const FORUM_CSS = `
     max-height: none;
     min-height: 0;
     width:      100%;
-    /* En columna, flex-basis controla ALTO, no ancho — sin resetear esto
-       el panel quedaría forzado a una altura mínima de 240/280px al
-       apilarse, aunque tenga poco contenido. */
-    flex:       none;
+    flex:       none; /* en columna, flex-basis controla alto, no ancho */
   }
-  /* El piso de altura de escritorio (pensado para que 3 columnas compongan
-     una fila pareja) no aplica apiladas en una sola columna — ahí solo
-     dejaría un hueco vacío enorme dentro de cada sección. */
   .fm-main {
     min-height: 0;
   }
 }
 
-/* ── Móvil < 768 ──
-   El texto de los botones NUNCA se oculta (antes .fm-action-label pasaba a
-   display:none acá, dejando botones solo-ícono sin significado claro para
-   alguien que no reconoce el ícono — .fm-header-actions ya envuelve en
-   varias filas si no caben, así que ocultar el texto no hacía falta). */
+/* el texto de los botones nunca se oculta, aunque no haya espacio */
 @media (max-width: 767px) {
   .fm-messages-scroll {
     padding: 10px 12px 4px;

@@ -1,24 +1,14 @@
-// src/features/eventos/pages/EventosPage.jsx
-
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import {
-  Calendar,
   Plus,
   RefreshCw,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   MapPin,
-  BookOpen,
   Trash2,
   Edit2,
   X,
-  List,
-  LayoutGrid,
   Image,
   Paperclip,
 } from "lucide-react";
@@ -33,19 +23,8 @@ import { normalizeCurso }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
 import { parseValidationErrors, summarizeValidationErrors } from "@/utils/parseValidationErrors";
 
-// ── Funciones auxiliares ─────────────────────────────────────────
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const DIAS_SEMANA = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-
-// FIX: incluía "reunion"/"actividad"/"otro" como opciones elegibles en el
-// selector de categoría del formulario, y ninguna era una de las 3 que el
-// backend realmente acepta (ver createEventoValidator) — cualquier envío
-// con esos valores (incluido "otro", el default con el que arrancaba el
-// formulario) siempre volvía 400. Se mantienen acá SOLO como estilos de
-// fallback para pintar eventos ya existentes que puedan tener esos valores
-// legado guardados — catCfg() ya cae a "otro" para cualquier categoría que
-// no reconozca. El selector de creación/edición usa CATEGORIA_FORM_OPTIONS
-// más abajo, que sí son las 3 únicas que el backend acepta.
+// solo 3 categorías son válidas para crear/editar (CATEGORIA_FORM_OPTIONS abajo);
+// el resto son estilos de fallback para eventos legado con valores que el backend ya no acepta
 const CATEGORIA_CFG = {
   tarea:          { color: "#6366F1", bg: "rgba(99,102,241,0.10)",  label: "Reto" },
   escuela_padres: { color: "#D97706", bg: "rgba(217,119,6,0.10)",   label: "Escuela de padres" },
@@ -55,8 +34,7 @@ const CATEGORIA_CFG = {
   otro:           { color: "#64748B", bg: "rgba(100,116,139,0.10)", label: "Otro" },
 };
 
-// Único enum que el backend acepta para "categoria" en /api/eventos (ver
-// createEventoValidator/updateEventoValidator del backend).
+// único enum que el backend acepta para "categoria"
 const CATEGORIA_FORM_OPTIONS = ["escuela_padres", "tarea", "institucional"];
 
 function catCfg(cat) { return CATEGORIA_CFG[cat] ?? CATEGORIA_CFG.otro; }
@@ -80,9 +58,6 @@ function FieldError({ message }) {
   );
 }
 
-// ── StyledInput, StyledSelect y FieldGroup eliminados — reemplazados por
-//    Input, Textarea y Select del design system con prop label ─────────────
-
 const INIT_FORM = {
   titulo: "", descripcion: "", fechaInicio: "", fechaFin: "",
   hora: "", ubicacion: "", categoria: "institucional",
@@ -92,12 +67,7 @@ export default function EventosPage() {
   const [eventos,   setEventos]   = useState([]);
   const [cursos,    setCursos]    = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [view,      setView]      = useState("lista");
   const [toast,     setToast]     = useState({ msg: "", type: "success" });
-
-  const today = new Date();
-  const [calYear,  setCalYear]  = useState(today.getFullYear());
-  const [calMonth, setCalMonth] = useState(today.getMonth());
 
   const [showForm,       setShowForm]       = useState(false);
   const [editTarget,     setEditTarget]     = useState(null);
@@ -176,10 +146,7 @@ export default function EventosPage() {
       fechaFin:    toLocalInput(ev.fechaFin),
       hora:        ev.hora        ?? "",
       ubicacion:   ev.ubicacion   ?? "",
-      // Si el evento existente trae una categoría legado que el backend ya
-      // no acepta (ver comentario de CATEGORIA_CFG arriba), cae a
-      // "institucional" en vez de reintentar guardar un valor que el
-      // validador va a rechazar apenas se toque "Guardar".
+      // categoría legado que el backend ya no acepta -> cae a "institucional"
       categoria:   CATEGORIA_FORM_OPTIONS.includes(ev.categoria) ? ev.categoria : "institucional",
     });
     const ids = (ev.cursosIds ?? ev.cursos ?? []).map(c => c._id ?? c);
@@ -218,11 +185,6 @@ export default function EventosPage() {
       setShowForm(false);
       load();
     } catch (err) {
-      // El backend manda un array `errors` (express-validator) con el campo
-      // exacto (`path`) y el motivo (`msg`) de cada validación fallida.
-      // Antes solo se mostraba el mensaje genérico de humanizeError; ahora
-      // se reparte cada mensaje debajo de su input correspondiente y el
-      // toast muestra un resumen en vez de un texto genérico.
       const fieldErrors = parseValidationErrors(err);
       if (fieldErrors) {
         setErrors(fieldErrors);
@@ -444,13 +406,7 @@ export default function EventosPage() {
             <FieldError message={errors.categoria} />
           </div>
 
-          {/* Cursos asociados — el backend exige "cursosIds" como array en
-              cada creación/edición (ver createEventoValidator); antes no
-              había ningún control acá para llenarlo, así que el campo
-              siempre llegaba vacío/ausente y el guardado fallaba con
-              "cursosIds debe ser un array" incluso con el resto del
-              formulario perfecto. cursosIds/toggleCurso ya existían
-              (openCreate/openEdit los preparan), solo faltaba el render. */}
+          {/* el backend exige cursosIds como array en cada creación/edición */}
           <div>
             <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)",
               textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6, margin: "0 0 6px" }}>

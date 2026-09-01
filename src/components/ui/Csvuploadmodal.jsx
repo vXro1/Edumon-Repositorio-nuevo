@@ -1,20 +1,5 @@
-// src/components/ui/CsvUploadModal.jsx
-//
-// Modal reutilizable para carga masiva de archivos CSV.
-// Diseñado para ser agnóstico al dominio: recibe onUpload (async fn que
-// acepta un File) y onDownloadTemplate (fn que descarga la plantilla).
-//
-// Props:
-//   isOpen            {boolean}   — controla visibilidad
-//   onClose           {fn}        — cierra el modal
-//   onUpload          {async fn}  — recibe el File seleccionado; debe lanzar
-//                                   error con message en caso de fallo
-//   onDownloadTemplate{fn}        — dispara descarga de la plantilla CSV
-//   title             {string}    — título del modal (default: "Carga masiva CSV")
-//   description       {string}    — descripción opcional bajo el título
-//   templateLabel     {string}    — texto del botón de plantilla
-//   acceptedColumns   {string[]}  — lista de columnas esperadas para hint visual
-//   maxFileSizeMB     {number}    — límite en MB (default: 5)
+// modal reutilizable de carga masiva CSV, agnóstico al dominio — recibe
+// onUpload(File) y onDownloadTemplate()
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { AppModal, Button } from "@/components";

@@ -1,4 +1,3 @@
-// src/features/foros/components/ForumMessage.jsx
 import { useState } from 'react';
 import { Heart, MessageSquare, Pencil, Trash2, Check, X, FileText } from 'lucide-react';
 import { UserAvatar, Button, RichTextEditor } from '@/components';
@@ -65,9 +64,6 @@ const FilePreview = ({ archivo }) => {
         border: '1px solid var(--color-border)' }} />
   );
 
-  // PDF u otro archivo sin vista previa nativa en el navegador: no basta con
-  // el nombre como enlace — debe quedar claro qué TIPO de archivo es y qué
-  // acción hace el clic ("Ver archivo"), no solo un texto azul suelto.
   const ext = (archivo.nombre ?? '').split('.').pop()?.toUpperCase() || (isPdf ? 'PDF' : 'ARCHIVO');
   return (
     <a href={archivo.url} target="_blank" rel="noreferrer"
@@ -100,10 +96,7 @@ const FilePreview = ({ archivo }) => {
   );
 };
 
-// ─── Botón de like animado ─────────────────────────────────────────────────
-// Antes el corazón cambiaba de outline a relleno sin ninguna transición —
-// un salto instantáneo. Este componente centraliza el "pop" (spring-easing)
-// al dar like, reutilizado por el mensaje raíz y por cada respuesta.
+// centraliza la animación "pop" del like, reutilizado por el mensaje raíz y cada respuesta
 const LikeButton = ({ liked, count, size = 14, onLike }) => {
   const [popping, setPopping] = useState(false);
 
@@ -135,9 +128,6 @@ const LikeButton = ({ liked, count, size = 14, onLike }) => {
       }
       style={liked ? { color: '#e11d48', fontWeight: 700 } : {}}
     >
-      {/* Nunca solo el número: sin la palabra "Me gusta" el botón (icono +
-          número suelto) es ambiguo — no queda claro qué acción hace ni si
-          ya se presionó. */}
       Me gusta{count > 0 ? ` ${count}` : ''}
     </Button>
   );
@@ -145,7 +135,7 @@ const LikeButton = ({ liked, count, size = 14, onLike }) => {
 
 // ─── Respuesta del foro ───────────────────────────────────────────────────────
 
-const ForumReply = ({ reply, userId, canDelete, canEdit, onLike, onDelete, onEdit }) => {
+const ForumReply = ({ reply, userId: _userId, canDelete, canEdit, onLike, onDelete, onEdit }) => {
   const [editing,    setEditing]    = useState(false);
   const [editText,   setEditText]   = useState(reply.contenido ?? '');
   const [delConfirm, setDelConfirm] = useState(false);

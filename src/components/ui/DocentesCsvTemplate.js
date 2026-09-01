@@ -1,12 +1,5 @@
-// src/components/ui/DocentesCsvTemplate.js
-
-// El orden de estas columnas DEBE coincidir exactamente con el array
-// `headers` fijo por posición que usa csv-parser en el backend
-// (preregistrarDocentesCSV): ['nombre', 'apellido', 'telefono', 'cedula'].
-// El backend NO lee correo del CSV — lo genera automáticamente como
-// `${cedula}@temp.com`. Si cambias el orden aquí sin cambiar el backend,
-// los datos se desalinean silenciosamente (ej. el teléfono se guarda
-// como si fuera cédula).
+// el orden debe coincidir exactamente con el parseo por posición del backend —
+// cambiarlo sin tocar el backend desalinea los datos silenciosamente
 export const CSV_COLUMNAS_DOCENTES = ["nombre", "apellido", "telefono", "cedula"];
 
 const FILAS_EJEMPLO = [

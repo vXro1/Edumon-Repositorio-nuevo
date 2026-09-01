@@ -1,4 +1,3 @@
-// src/features/foros/components/ForumSidebar.jsx
 // Barra lateral izquierda: lista de foros del curso. Al hacer clic navega a ForumPage.
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Lock, Plus } from 'lucide-react';

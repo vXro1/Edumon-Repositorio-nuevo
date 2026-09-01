@@ -1,13 +1,8 @@
-// src/utils/richText.js
 import DOMPurify from "dompurify";
 
 const ALLOWED_TAGS = ["b", "strong", "i", "em", "u", "ul", "ol", "li", "p", "br"];
 
-/**
- * Sanitiza HTML generado por el RichTextEditor (contentEditable) antes de
- * guardarlo o renderizarlo con dangerouslySetInnerHTML — solo permite las
- * etiquetas de formato básico que el editor puede producir.
- */
+// sanitiza el HTML del RichTextEditor antes de guardar o usar dangerouslySetInnerHTML
 export function sanitizeRichText(html) {
   if (!html) return "";
   return DOMPurify.sanitize(html, {
@@ -16,10 +11,7 @@ export function sanitizeRichText(html) {
   });
 }
 
-/**
- * Versión en texto plano (sin etiquetas) — para previews truncados donde
- * renderizar HTML crudo con ellipsis podría cortar una etiqueta a la mitad.
- */
+// texto plano, para previews truncados donde un ellipsis podría cortar una etiqueta a la mitad
 export function stripHtml(html) {
   if (!html) return "";
   const div = document.createElement("div");

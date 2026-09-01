@@ -1,14 +1,10 @@
-// src/lib/normalizers/user.js
-
 /**
  * Normaliza un usuario individual
  * Compatible con backend parcial, frontend-only o datos enriquecidos
  */
 export function normalizeUser(user) {
-  // Usuario vacío / fallback seguro
-  // Debe mantener el MISMO shape que el objeto normal — cualquier campo
-  // omitido aquí puede causar un crash silencioso (ej. usuario.cursos.length)
-  // en componentes que no verifican existencia antes de usarlo.
+  // fallback: debe mantener el mismo shape que el objeto normal, o un campo
+  // faltante crashea componentes que no verifican existencia (ej. usuario.cursos.length)
   if (!user) {
     return {
       id: null,
@@ -47,8 +43,7 @@ export function normalizeUser(user) {
       ultimoAcceso: null,
       primerInicioSesion: false,
 
-      // Perfil familiar activo (padre/tutor navegando como uno de sus
-      // perfiles secundarios) — ver normalizeUser() más abajo.
+      // perfil familiar activo (padre/tutor navegando como uno de sus perfiles secundarios)
       esTitular: true,
       perfilActivo: null,
 
@@ -173,11 +168,6 @@ export function normalizeUser(user) {
 
     primerInicioSesion: !!user.primerInicioSesion,
 
-    // FIX: se perdían al pasar por normalizeUser() — FamiliaPerfilesPage.jsx
-    // los lee de `user` para saber qué perfil está activo, pero como esta
-    // función siempre devolvía un objeto literal nuevo con un set fijo de
-    // campos, esTitular/perfilActivo (o perfilId, según venga del backend)
-    // quedaban undefined sin importar lo que mandara el backend.
     esTitular: user.esTitular !== false,
     perfilActivo: user.perfilActivo ?? user.perfilId ?? null,
 

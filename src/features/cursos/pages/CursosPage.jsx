@@ -1,6 +1,3 @@
-// src/features/cursos/pages/CursosPage.jsx
-// ROL: Administrador / Docente — gestión de cursos
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -50,12 +47,7 @@ const ESTADO_META = {
   archivado: { label: "Archivado", color: "#D97706", bg: "rgba(217,119,6,0.1)"  },
 };
 
-// Paleta base de colores para el curso (coincide con el patrón hex del validador: #3B82F6, etc.)
-// Antes usaba var(--color-success)/var(--color-error)/var(--color-primary) —
-// el backend exige un hex literal, así que ese string llegaba tal cual al
-// validador y el POST /cursos fallaba con 400 siempre que se elegía uno de
-// esos tres swatches (o se dejaba el color por defecto: DEFAULT_COLOR
-// apuntaba justo a "var(--color-primary)").
+// hex literal — el backend rechaza valores tipo var(--color-primary)
 const COLOR_PALETTE = [
   "#8B5CF6", "#06B6D4", "#41D958", "#F59E0B", "#EC4899",
   "#EF4444", "#0C6AC4", "#6366F1", "#14B8A6", "#F97316",
@@ -131,9 +123,7 @@ function ColorPickerField({ value, onChange }) {
               aria-label={`Elegir color ${c}`}
               title={c}
               style={{
-                // min-width/min-height: la regla global button{min-height:44px}
-                // (accesibilidad táctil) le ganaba a este height:27 y dejaba
-                // el swatch ovalado (27px de ancho x 44px de alto).
+                // min-width/min-height explícitos: la regla global button{min-height:44px} ovalaba el swatch
                 width: 27, height: 27, minWidth: 27, minHeight: 27, borderRadius: "50%", background: c,
                 border: active ? "2px solid var(--color-surface)" : "2px solid transparent",
                 outline: active ? `2px solid ${c}` : "2px solid transparent",
@@ -522,14 +512,7 @@ export default function CursosPage() {
         />
       </div>
 
-      {/* ── Grid de cursos ──
-          FIX: antes era una tabla — el usuario pidió el mismo estilo de
-          card que ya funciona bien en /familia/cursos. CursoCard se usa en
-          modo `compact` (sin los accesos rápidos de navegación, que no
-          aplican aquí) y cada card lleva debajo su propia fila de acciones
-          de gestión (Participantes/Editar/Archivar) — las mismas que tenía
-          la tabla, ahora con IconActionButton en vez de <Button> de texto
-          suelto dentro de una celda. */}
+      {/* ── Grid de cursos — mismo estilo de card que /familia/cursos, en modo compact ── */}
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
           {[0, 1, 2, 3, 4, 5].map(i => <SkCard key={i} />)}
