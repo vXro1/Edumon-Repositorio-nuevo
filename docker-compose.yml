@@ -6,11 +6,15 @@
 services:
   backend:
     build:
-      context: "../Backend Edumon"
+      context: "../Backend"
     container_name: edumon-backend
     init: true
     env_file:
-      - "../Backend Edumon/.env"
+      - "../Backend/.env"
+    environment:
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
     networks:
       - edumon-net
     ports:
@@ -42,3 +46,6 @@ services:
 networks:
   edumon-net:
     driver: bridge
+
+volumes:
+  uploads:

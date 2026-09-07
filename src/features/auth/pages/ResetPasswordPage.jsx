@@ -7,23 +7,17 @@ import { ResetPasswordForm } from "@/components";
 export const ResetPasswordPage = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const method        = location.state?.method ?? "email";
   const defaultEmail  = location.state?.correo ?? "";
-  const defaultPhone  = location.state?.telefono ?? "";
 
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async ({ correo, telefono, codigo, contrasenaNueva }) => {
+  const handleSubmit = async ({ correo, codigo, contrasenaNueva }) => {
     setLoading(true);
     setError("");
     try {
-      if (method === "phone") {
-        await authService.resetPasswordPhone({ telefono, codigo, contrasenaNueva });
-      } else {
-        await authService.resetPassword({ correo, codigo, contrasenaNueva });
-      }
+      await authService.resetPassword({ correo, codigo, contrasenaNueva });
       setSuccess(true);
     } catch (err) {
       setError(humanizeError(err, "Ocurrió un error. Intenta de nuevo."));
@@ -33,16 +27,10 @@ export const ResetPasswordPage = () => {
   };
 
   // Reenviar código: reutiliza el mismo endpoint de envío inicial
-  // (forgotPassword/forgotPasswordPhone) — no hay una ruta separada de
-  // "solo reenviar", así que volver a pedir el código es exactamente eso.
+  // (forgotPassword) — no hay una ruta separada de "solo reenviar".
   const handleResend = async () => {
-    if (method === "phone") {
-      if (!defaultPhone) return;
-      await authService.forgotPasswordPhone({ telefono: defaultPhone });
-    } else {
-      if (!defaultEmail) return;
-      await authService.forgotPassword({ correo: defaultEmail });
-    }
+    if (!defaultEmail) return;
+    await authService.forgotPassword({ correo: defaultEmail });
   };
 
   return (
@@ -52,8 +40,7 @@ export const ResetPasswordPage = () => {
       error={error}
       success={success}
       defaultEmail={defaultEmail}
-      defaultPhone={defaultPhone}
-      method={method}
+      method="email"
       onBack={() => navigate("/login")}
       onGoLogin={() => navigate("/login", { replace: true })}
       onResend={handleResend}

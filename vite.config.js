@@ -7,7 +7,18 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
+      // /api, /uploads (archivos subidos) y /static (avatares) los sirve el backend
       '/api': {
+        target: 'https://backend-edumon.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/uploads': {
+        target: 'https://backend-edumon.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/static': {
         target: 'https://backend-edumon.onrender.com',
         changeOrigin: true,
         secure: true,

@@ -40,14 +40,6 @@ export const authService = {
   forgotPassword: async (body) => apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body) }),
 
   resetPassword: async (body) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
-
-  forgotPasswordPhone: async (body) => apiFetch('/auth/forgot-password-phone', { method: 'POST', body: JSON.stringify(body) }),
-
-  resetPasswordPhone: async ({ telefono, codigo, contrasenaNueva }) =>
-    apiFetch('/auth/reset-password-phone', {
-      method: 'POST',
-      body: JSON.stringify({ telefono, codigo, contraseñaNueva: contrasenaNueva }),
-    }),
 };
 
 export const authChangePassword = (body) => authService.changePassword(body);
