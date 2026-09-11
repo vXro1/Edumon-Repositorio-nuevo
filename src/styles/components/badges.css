@@ -1,0 +1,155 @@
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON — BADGES (Soft UI)
+   ════════════════════════════════════════════════════════════════════
+   NOTA: estas clases standalone no tienen consumidores hoy — Badge.jsx
+   arma sus propios estilos inline con tokens (mismo criterio que aquí).
+   Se mantienen coherentes por si algún día se usan directamente.
+
+   Concepto visual:
+   • Relleno de color suave + borde fino del mismo tono
+   • box-shadow: var(--clay-pill) — sombra suave fija, no una "base" 3D
+   • Sin bounce de entrada
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ────────────────────────────────────────────────────────── */
+@keyframes badge-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes badge-pulse-dot {
+  0%, 100%  { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(0.5);  opacity: 0.5; }
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  border-radius: 100px;
+  line-height: 1;
+  vertical-align: middle;
+  box-shadow: var(--clay-pill);
+  animation: badge-in 150ms ease both;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+/* ── Tamaños ──────────────────────────────────────────────────────────── */
+.badge-sm { font-size: 10px; padding: 3px  9px;  }
+.badge    { font-size: 11px; padding: 5px  12px; }   /* md (predeterminado) */
+.badge-lg { font-size: 13px; padding: 7px  16px; }
+
+/* ── Variantes de color — relleno suave + borde + texto del tono fuerte ── */
+.badge-success {
+  background: var(--color-success-light);
+  border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent);
+  color: var(--edu-green-700);
+}
+.badge-error,
+.badge-danger {
+  background: var(--color-error-light);
+  border: 1px solid color-mix(in srgb, var(--color-error) 22%, transparent);
+  color: var(--color-error-hover);
+}
+.badge-warning {
+  background: var(--color-warning-light);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 22%, transparent);
+  color: var(--edu-yellow-700);
+}
+.badge-info,
+.badge-primary {
+  background: var(--color-info-light);
+  border: 1px solid color-mix(in srgb, var(--color-info) 22%, transparent);
+  color: var(--edu-cyan-700);
+}
+.badge-purple,
+.badge-secondary {
+  background: var(--color-primary-light);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+  color: var(--color-primary-hover);
+}
+.badge-neutral {
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+}
+.badge-dark {
+  background: var(--edu-neutral-800);
+  border: 1px solid var(--edu-neutral-900);
+  color: #fff;
+}
+
+/* ── Gradiente especial ───────────────────────────────────────────────── */
+.badge-gradient {
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-info) 100%);
+  border: none;
+  color: #fff;
+}
+
+/* ── Dot de estado ────────────────────────────────────────────────────── */
+.badge-dot::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+/* ── Dot pulsante (en vivo) ───────────────────────────────────────────── */
+.badge-pulse::before {
+  animation: badge-pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ── Interactivo (clicable) ─────────────────────────────────────────── */
+.badge-interactive {
+  cursor: pointer;
+  user-select: none;
+}
+.badge-interactive:hover  { transform: translateY(-1px); }
+.badge-interactive:active { transform: scale(0.97); }
+
+/* ── Botón de cierre (chip removible) ───────────────────────────────────── */
+.badge-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  margin-left: 2px;
+  flex-shrink: 0;
+  transition: background 120ms ease;
+}
+.badge-close:hover { background: color-mix(in srgb, currentColor 28%, transparent); }
+
+/* ── Contador de notificaciones ───────────────────────────────────────── */
+.badge-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-family: var(--font-sans);
+  box-shadow: var(--clay-pill);
+}

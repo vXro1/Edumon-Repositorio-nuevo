@@ -1,0 +1,130 @@
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON — AVATARS
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-family: var(--font-display);
+  font-weight: var(--font-semibold);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  border: 2.5px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+  transition:
+    transform  var(--transition-spring),
+    box-shadow var(--transition-base);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Tamaños ────────────────────────────────────────────────────────────── */
+.avatar-2xs { width: 1.5rem;  height: 1.5rem;  font-size: var(--text-2xs); }
+.avatar-xs  { width: 2rem;    height: 2rem;    font-size: var(--text-xs); }
+.avatar-sm  { width: 2.5rem;  height: 2.5rem;  font-size: var(--text-xs); }
+.avatar-md  { width: 3rem;    height: 3rem;    font-size: var(--text-sm); }
+.avatar-lg  { width: 4rem;    height: 4rem;    font-size: var(--text-base); }
+.avatar-xl  { width: 5.5rem;  height: 5.5rem;  font-size: var(--text-xl); }
+.avatar-2xl { width: 7.5rem;  height: 7.5rem;  font-size: var(--text-3xl); }
+
+/* ── Forma cuadrada (instituciones / cursos) ────────────────────────────── */
+.avatar-square    { border-radius: var(--radius-lg); }
+.avatar-square-sm { border-radius: var(--radius-md); }
+
+/* ── Punto de estado ───────────────────────────────────────────────────────── */
+.avatar-status {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-surface);
+  flex-shrink: 0;
+}
+
+.avatar-2xs .avatar-status,
+.avatar-xs  .avatar-status { width: 0.5rem;   height: 0.5rem; }
+.avatar-lg  .avatar-status,
+.avatar-xl  .avatar-status { width: 0.875rem; height: 0.875rem; bottom: 2px; right: 2px; }
+
+.avatar-status--online  { background: var(--color-success); }
+.avatar-status--offline { background: var(--color-text-subtle); }
+.avatar-status--busy    { background: var(--color-error); }
+.avatar-status--away    { background: var(--color-warning); }
+.avatar-status--idle    { background: var(--color-warning-light); border-color: var(--color-warning); }
+
+/* ── Paleta de colores (avatares sin foto) ────────────────────────────────── */
+.avatar-color-0 { background: var(--edu-purple-50); color: var(--edu-purple-600); }
+.avatar-color-1 { background: var(--edu-pink-50);   color: var(--edu-pink-600); }
+.avatar-color-2 { background: var(--edu-cyan-50);   color: var(--edu-cyan-600); }
+.avatar-color-3 { background: var(--edu-green-50);  color: var(--edu-green-600); }
+.avatar-color-4 { background: var(--edu-yellow-50); color: var(--edu-yellow-700); }
+.avatar-color-5 { background: var(--color-primary-light); color: var(--color-primary); }
+
+/* ── Bordes por rol ─────────────────────────────────────────────────────── */
+.avatar-role-superadmin    { border-color: var(--edu-pink-500); }
+.avatar-role-administrador { border-color: var(--edu-cyan-500); }
+.avatar-role-docente       { border-color: var(--color-primary); }
+.avatar-role-estudiante    { border-color: var(--edu-green-500); }
+
+/* ── Interactivo ──────────────────────────────────────────────────────── */
+.avatar-interactive { cursor: pointer; }
+.avatar-interactive:hover {
+  transform: scale(1.06);
+  box-shadow: var(--shadow-md);
+}
+.avatar-interactive:active { transform: scale(0.96); }
+.avatar-interactive:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* ── Grupo / apilado ────────────────────────────────────────────────────── */
+.avatar-group {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  align-items: center;
+}
+
+.avatar-group .avatar {
+  margin-left: -0.625rem;
+  transition:
+    transform var(--transition-spring),
+    z-index   0ms;
+}
+.avatar-group .avatar:first-child { margin-left: 0; }
+.avatar-group .avatar:hover {
+  transform: translateY(-4px) scale(1.08);
+  z-index: 10;
+}
+
+/* Contador "+N" dentro del grupo */
+.avatar-group-count {
+  background: var(--color-surface-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-2xs);
+  font-weight: var(--font-bold);
+  border: 2.5px solid var(--color-surface);
+}
+
+/* ── Avatar con insignia ────────────────────────────────────────────────── */
+.avatar-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-full);
+}

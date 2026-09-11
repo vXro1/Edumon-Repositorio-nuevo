@@ -1,0 +1,200 @@
+/* ════════════════════════════════════════════════════════════════════
+   EDUMON DESIGN SYSTEM — modals.css
+   Modal responsivo: pantalla completa en móvil, panel centrado en ≥480px
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Overlay / backdrop ──────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;                     /* por encima del nav-dropdown (200) */
+  display: flex;
+  align-items: flex-end;            /* móvil: hoja desde abajo */
+  justify-content: center;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: edu-backdrop-in 0.2s ease both;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 480px) {
+  .modal-overlay {
+    align-items: center;
+    padding: var(--space-4);
+  }
+}
+
+/* ── Panel ───────────────────────────────────────────────────────── */
+.modal-panel {
+  position: relative;
+  width: 100%;
+  max-height: 95dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+  animation: modal-sheet-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (min-width: 480px) {
+  .modal-panel {
+    width: 100%;
+    max-width: 560px;
+    border-radius: var(--radius-2xl);
+    max-height: calc(100dvh - var(--space-8));
+    animation: edu-modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .modal-panel.modal-sm { max-width: 420px; }
+  .modal-panel.modal-md { max-width: 560px; }
+  .modal-panel.modal-lg { max-width: 720px; }
+  .modal-panel.modal-xl { max-width: 900px; }
+}
+
+/* Deslizamiento hacia arriba (hoja inferior móvil) */
+@keyframes modal-sheet-in {
+  from { opacity: 0.6; transform: translateY(100%); }
+  to   { opacity: 1;   transform: translateY(0); }
+}
+
+/* Fade del backdrop */
+@keyframes edu-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Entrada del panel en desktop */
+@keyframes edu-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* ── Franja de color (acento de marca) ──────────────────────────────────── */
+.modal-strip {
+  height: 4px;
+  flex-shrink: 0;
+  background: var(--gradient-brand);
+}
+
+/* Asa de arrastre móvil */
+.modal-handle {
+  display: block;
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-border-strong);
+  margin: var(--space-3) auto var(--space-1);
+  flex-shrink: 0;
+}
+@media (min-width: 480px) { .modal-handle { display: none; } }
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-text);
+  margin: 0;
+  line-height: var(--leading-tight);
+}
+
+.modal-description {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: var(--space-1) 0 0;
+  line-height: var(--leading-relaxed);
+}
+
+.modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.modal-close:hover { background: var(--edu-neutral-100); color: var(--color-text); }
+.modal-close:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+/* ── Body ────────────────────────────────────────────────────────── */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar delgada en el cuerpo del modal */
+.modal-body::-webkit-scrollbar { width: 4px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.modal-footer.modal-footer-start  { justify-content: flex-start; }
+.modal-footer.modal-footer-center { justify-content: center; }
+.modal-footer.modal-footer-spread { justify-content: space-between; }
+
+/* Botones a ancho completo en móvil */
+@media (max-width: 479px) {
+  .modal-footer {
+    flex-direction: column-reverse;
+    padding: var(--space-4);
+  }
+  .modal-footer .btn { width: 100%; }
+}
+
+/* ── In-form footer (stays in scroll flow, visually consistent) ── */
+.modal-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 479px) {
+  .modal-form-footer {
+    flex-direction: column-reverse;
+  }
+  .modal-form-footer .btn { width: 100%; }
+}

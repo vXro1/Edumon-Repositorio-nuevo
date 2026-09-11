@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Title -->
+    <title>Edumon - Plataforma Educativa</title>
+
+    <!-- SEO -->
+    <meta
+      name="description"
+      content="Edumon: Plataforma educativa tipo LMS para gestión académica entre estudiantes, docentes y familias."
+    />
+
+    <!-- Favicon (IMPORTANTE: Vite usa ruta /src/ o /public correctamente) -->
+    <link rel="icon" type="image/svg+xml" href="/src/assets/icons/logo.svg" />
+
+    <!-- Baloo 2 (títulos) se sirve localmente como woff2 — ver @font-face
+         en src/styles/tokens/tokens.css.
+         Nunito (cuerpo, --font-sans) se pidió explícitamente y se trae de
+         Google Fonts. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <!-- React root -->
+    <div id="root"></div>
+
+    <!-- Entry point -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
