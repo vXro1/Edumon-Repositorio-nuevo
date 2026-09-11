@@ -21,6 +21,7 @@ import { Modal, Toast, Button, Input } from "@/components";
 import { humanizeError } from "@/utils/humanizeError";
 import { formatBytes } from "@/utils/formatBytes";
 import logo from "@/assets/icons/logo.svg";
+import "./AppMovilPage.css";
 
 const VERSION_RE = /^\d+\.\d+\.\d+$/;
 const APK_ACCEPT = ".apk,application/vnd.android.package-archive";
@@ -228,7 +229,7 @@ export default function AppMovilPage() {
       <Toast msg={toast.msg} type={toast.type} />
 
       {/* Encabezado */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+      <div className="appmovil-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(12,106,196,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -252,14 +253,14 @@ export default function AppMovilPage() {
       </div>
 
       {/* Card: versión actual */}
-      <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", padding: 24, marginBottom: 20 }}>
+      <div className="appmovil-hero-card" style={{ position: "relative", overflow: "hidden", background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", padding: 24, marginBottom: 20 }}>
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--color-text-muted)", fontSize: 14 }}>
             <Loader2 style={{ width: 16, height: 16, animation: "edu-spin 0.6s linear infinite" }} />
             Cargando versión publicada…
           </div>
         ) : build ? (
-          <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="appmovil-current-card" style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
             <AppIcon />
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
@@ -280,7 +281,7 @@ export default function AppMovilPage() {
                   {build.notas}
                 </p>
               )}
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div className="appmovil-current-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <Button size="sm" onClick={() => download(build.urlDescarga)} disabled={!build.urlDescarga} leftIcon={<Download style={{ width: 14, height: 14 }} />}>
                   Descargar APK
                 </Button>
@@ -321,11 +322,12 @@ export default function AppMovilPage() {
 
       {/* Historial de versiones */}
       <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", overflow: "hidden" }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--color-border)" }}>
+        <div className="appmovil-history-head" style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 18px", borderBottom: "1px solid var(--color-border)" }}>
+          <Smartphone style={{ width: 14, height: 14, color: "var(--color-primary)" }} />
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)" }}>Historial de versiones</span>
         </div>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="appmovil-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid var(--color-border)" }}>
                 {["Versión", "Tamaño", "Publicada", "Estado", "Acciones"].map((h) => (
@@ -349,13 +351,13 @@ export default function AppMovilPage() {
               ) : (
                 history.map((b) => (
                   <tr key={b.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                    <td style={{ padding: "12px 16px", fontSize: 13.5, fontWeight: 700, color: "var(--color-text)" }}>
+                    <td data-label="Versión" style={{ padding: "12px 16px", fontSize: 13.5, fontWeight: 700, color: "var(--color-text)" }}>
                       v{b.version}
                       {b.versionCode ? <span style={{ fontSize: 11.5, fontWeight: 500, color: "var(--color-text-muted)" }}> · {b.versionCode}</span> : null}
                     </td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>{formatBytes(b.tamano)}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>{fmtDate(b.fecha)}</td>
-                    <td style={{ padding: "12px 16px" }}>
+                    <td data-label="Tamaño" style={{ padding: "12px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>{formatBytes(b.tamano)}</td>
+                    <td data-label="Publicada" style={{ padding: "12px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>{fmtDate(b.fecha)}</td>
+                    <td data-label="Estado" style={{ padding: "12px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         {b.activa ? (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11.5, fontWeight: 700, color: "var(--edu-green-700,#15803d)" }}>
@@ -367,8 +369,8 @@ export default function AppMovilPage() {
                         {b.obligatoria && <ObligatoriaBadge />}
                       </div>
                     </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
+                    <td data-label="Acciones" style={{ padding: "12px 16px" }}>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         <Button variant="outline" size="sm" onClick={() => download(b.urlDescarga)} disabled={!b.urlDescarga} title="Descargar">
                           <Download style={{ width: 13, height: 13 }} />
                         </Button>
@@ -435,7 +437,7 @@ export default function AppMovilPage() {
               )}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="appmovil-form-grid">
               <Input
                 label="Versión"
                 placeholder="1.2.0"
@@ -493,7 +495,7 @@ export default function AppMovilPage() {
       <Modal isOpen={Boolean(editTarget)} onClose={() => setEditTarget(null)} title={`Editar v${editTarget?.version ?? ""}`} description="Cambia la versión, el changelog o si es obligatoria — no vuelve a subir el archivo." size="md">
         <form onSubmit={handleEdit}>
           <div style={{ display: "grid", gap: 14 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="appmovil-form-grid">
               <Input label="Versión" placeholder="1.2.0" value={editForm.version} onChange={ef("version")} required />
               <Input label="Código de versión (opcional)" placeholder="120" inputMode="numeric" value={editForm.versionCode} onChange={ef("versionCode")} />
             </div>
