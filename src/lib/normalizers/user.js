@@ -1,5 +1,7 @@
 // src/lib/normalizers/user.js
 
+import { assetUrl } from "@/utils/assetUrl";
+
 /**
  * Normaliza un usuario individual
  * Compatible con backend parcial, frontend-only o datos enriquecidos
@@ -78,13 +80,17 @@ export function normalizeUser(user) {
     user.email ||
     "";
 
-  // Avatar / foto
+  // Avatar / foto — el backend guarda rutas locales relativas
+  // (/uploads/pub/… o /static/avatares/…); assetUrl las vuelve absolutas
+  // contra el origen del API cuando hace falta.
   const avatarUrl =
-    user.fotoPerfilUrl ||
-    user.avatarUrl ||
-    user.avatar ||
-    user.foto ||
-    null;
+    assetUrl(
+      user.fotoPerfilUrl ||
+      user.avatarUrl ||
+      user.avatar ||
+      user.foto ||
+      ""
+    ) || null;
 
   // Nombre completo
   const nombre =

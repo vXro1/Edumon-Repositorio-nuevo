@@ -16,7 +16,7 @@ import { institucionesGetMine, institucionesGetAll } from "@/services/institucio
 
 import { Modal, Toast, UserAvatar, Badge, PhoneInput } from "@/components";
 
-import { humanizeError } from "@/utils/humanizeError";
+import { humanizeError, humanizeCursosActivosError } from "@/utils/humanizeError";
 import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 import {
   contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
@@ -370,7 +370,7 @@ export default function UsuariosPage() {
       notify("Usuario suspendido");
       setDelTarget(null);
     } catch (err) {
-      notify(humanizeError(err, "Error al suspender usuario"), "error");
+      notify(humanizeCursosActivosError(err) ?? humanizeError(err, "Error al suspender usuario"), "error");
     } finally {
       setSaving(false);
     }
@@ -531,7 +531,11 @@ export default function UsuariosPage() {
             <div style={{ gridColumn: "1 / -1" }}>
               <FieldGroup label="Rol *">
                 <StyledSelect value={form.rol} onChange={f("rol")}>
-                  {ROL_LABELS.filter(r => isSuperadmin || r.value !== "superadmin").map(r => (
+                  {/* Un administrador (institución) solo puede crear/editar padres y
+                      docentes — el backend rechaza con 403 "Un administrador solo puede
+                      crear usuarios con rol 'padre' o 'docente'" si intenta otra cosa.
+                      Se oculta la opción en vez de dejar que falle tras enviar el form. */}
+                  {ROL_LABELS.filter(r => isSuperadmin || !["superadmin", "administrador"].includes(r.value)).map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </StyledSelect>
@@ -589,7 +593,11 @@ export default function UsuariosPage() {
             <div style={{ gridColumn: "1 / -1" }}>
               <FieldGroup label="Rol *">
                 <StyledSelect value={form.rol} onChange={f("rol")}>
-                  {ROL_LABELS.filter(r => isSuperadmin || r.value !== "superadmin").map(r => (
+                  {/* Un administrador (institución) solo puede crear/editar padres y
+                      docentes — el backend rechaza con 403 "Un administrador solo puede
+                      crear usuarios con rol 'padre' o 'docente'" si intenta otra cosa.
+                      Se oculta la opción en vez de dejar que falle tras enviar el form. */}
+                  {ROL_LABELS.filter(r => isSuperadmin || !["superadmin", "administrador"].includes(r.value)).map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </StyledSelect>

@@ -80,7 +80,7 @@ export default function CursoParticipantesTab({ data = [], cursoId, onAdd, onRef
             }}
           >
             <CsvIcon />
-            Carga masiva CSV
+            Carga masiva Excel
           </button>
 
           {/* Agregar individual */}
@@ -112,9 +112,11 @@ export default function CursoParticipantesTab({ data = [], cursoId, onAdd, onRef
         onUpload={handleCsvUpload}
         onDownloadTemplate={descargarPlantillaPadresCSV}
         title="Carga masiva de padres de familia"
-        description="Sube un archivo CSV con los datos de los padres. Si el usuario ya existe (por cédula), se agrega directamente al curso."
+        description="Sube un Excel (.xlsx/.xlsm) con los datos de los padres. Si el usuario ya existe (por cédula), se agrega directamente al curso."
         templateLabel="Descargar plantilla"
         acceptedColumns={CSV_COLUMNAS_PADRES}
+        acceptExtensions={[".xlsx", ".xlsm"]}
+        fileTypeLabel="Excel (.xlsx, .xlsm)"
         maxFileSizeMB={5}
       />
     </div>

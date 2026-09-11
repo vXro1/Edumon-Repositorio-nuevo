@@ -15,11 +15,14 @@
 //
 // Cualquier campo que no exista en el backend (puntajeMaximo, permiteEntregaTardia,
 // etc.) se mantiene solo como valor por defecto de UI, nunca se envía de vuelta.
+import { assetUrl } from "@/utils/assetUrl";
 
 /**
  * Normaliza archivos adjuntos de tareas.
- * Se usa tanto para adjuntos tipo "archivo" (Cloudinary) como tipo "enlace"
- * (ambos viven juntos en archivosAdjuntos — ver nota arriba).
+ * Se usa tanto para adjuntos tipo "archivo" (almacenamiento local del backend)
+ * como tipo "enlace" (ambos viven juntos en archivosAdjuntos — ver nota arriba).
+ * assetUrl deja intactas las URLs absolutas (enlaces) y antepone el origen del
+ * API a las rutas relativas /uploads/… de los archivos.
  */
 export function normalizeArchivosTarea(archivos) {
   if (!Array.isArray(archivos)) return [];
@@ -31,10 +34,11 @@ export function normalizeArchivosTarea(archivos) {
       archivo.publicId ||
       `file_${index}_${Date.now()}`,
 
-    url:
+    url: assetUrl(
       archivo.url ||
       archivo.secure_url ||
-      "",
+      ""
+    ),
 
     nombre:
       archivo.nombre ||

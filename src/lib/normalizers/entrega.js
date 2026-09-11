@@ -1,5 +1,7 @@
 // src/lib/normalizers/entrega.js
 
+import { assetUrl } from "@/utils/assetUrl";
+
 /**
  * Normaliza archivos adjuntos
  */
@@ -13,7 +15,9 @@ export function normalizeArchivos(archivos) {
       archivo.publicId ||
       `file_${index}_${Date.now()}`,
 
-    url: archivo.url || archivo.secure_url || "",
+    // El backend guarda ahora rutas locales relativas (/uploads/priv/…);
+    // assetUrl les antepone el origen del API cuando corre en otro dominio.
+    url: assetUrl(archivo.url || archivo.secure_url || ""),
 
     nombre:
       archivo.nombre ||
@@ -136,6 +140,18 @@ export function normalizeEntrega(data) {
         data.archivos ||
         []
     ),
+
+    // Enlaces (Drive, YouTube, etc.) adjuntados por el acudiente junto con
+    // los archivos — ver sanitizarEnlaces() en entregaController.js.
+    enlaces: Array.isArray(data.enlaces)
+      ? data.enlaces
+          .filter((e) => e && typeof e.url === "string")
+          .map((e) => ({
+            url: e.url,
+            titulo: e.titulo || "",
+            descripcion: e.descripcion || "",
+          }))
+      : [],
 
     // Fechas
     fechaEnvio:

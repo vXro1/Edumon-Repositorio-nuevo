@@ -3,6 +3,7 @@
 import {
   Home, BookOpen, Bell, Calendar, Building2, Layers,
   GraduationCap, ClipboardList, MessageCircle, Users, FileText,
+  Smartphone,
 } from "lucide-react";
 
 export const ICONS = {
@@ -19,6 +20,7 @@ export const ICONS = {
   "message-circle":     MessageCircle,
   users:                Users,
   "file-text":          FileText,
+  smartphone:           Smartphone,
 };
 
 export const ROLE_LABELS = {
@@ -44,7 +46,10 @@ export const NAV_GROUPS = {
     },
     {
       group: "Sistema",
-      items: [{ label: "Notificaciones", path: "/notificaciones", icon: "bell" }],
+      items: [
+        { label: "App movil",      path: "/app-movil",      icon: "smartphone" },
+        { label: "Notificaciones", path: "/notificaciones", icon: "bell" },
+      ],
     },
   ],
 

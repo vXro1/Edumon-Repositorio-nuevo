@@ -16,6 +16,7 @@ import { Modal, Toast, UserAvatar, Button, Input, PhoneInput } from "@/component
 import getRoleStyle from "@/utils/getRoleStyle";
 import useUserStore from "@/store/useUserStore";
 import { humanizeError } from "@/utils/humanizeError";
+import { assetUrl } from "@/utils/assetUrl";
 import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 import { validarContrasenaNueva, TEXTO_REQUISITOS_CONTRASENA } from "@/utils/credenciales";
 
@@ -385,7 +386,9 @@ export default function PerfilPage() {
       const fd = new FormData();
       fd.append("fotoPredeterminadaUrl", pendingAvatar.url);
       const data   = await usersUpdateMyPhoto(fd);
-      const newUrl = data.fotoPerfilUrl ?? pendingAvatar.url;
+      // El backend devuelve ruta relativa (/uploads/… o /static/…); assetUrl
+      // la vuelve absoluta para que el <img> resuelva de inmediato.
+      const newUrl = assetUrl(data.fotoPerfilUrl) || pendingAvatar.url;
       setProfile(p => ({ ...p, fotoPerfilUrl: newUrl }));
       setUser({ ...profile, fotoPerfilUrl: newUrl });
       notify("Avatar actualizado");

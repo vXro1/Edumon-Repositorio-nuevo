@@ -1,6 +1,7 @@
 // src/lib/normalizers/curso.js
 
 import { normalizeUser } from "./user";
+import { assetUrl } from "@/utils/assetUrl";
 
 /**
  * Normaliza un registro de participante/inscripción de un curso.
@@ -35,7 +36,7 @@ function normalizeParticipante(p) {
     nombre: usuario?.nombre || "",
     apellido: usuario?.apellido || "",
     correo: usuario?.correo || "",
-    fotoPerfilUrl: usuario?.fotoPerfilUrl || null,
+    fotoPerfilUrl: assetUrl(usuario?.fotoPerfilUrl || "") || null,
 
     // Objeto completo del usuario, por si se necesita
     usuario,
@@ -54,13 +55,15 @@ export function normalizeCurso(curso) {
 
   const id = curso._id || curso.id || null;
 
-  // Imagen / portada
+  // Imagen / portada — ruta local relativa del backend → URL absoluta
   const imgUrl =
-    curso.fotoPortadaUrl ||
-    curso.fotoPortada ||
-    curso.imagen ||
-    curso.image ||
-    null;
+    assetUrl(
+      curso.fotoPortadaUrl ||
+      curso.fotoPortada ||
+      curso.imagen ||
+      curso.image ||
+      ""
+    ) || null;
 
   // Docente
   const docente =

@@ -4,7 +4,7 @@
 // panel de formulario (blanco). El corte diagonal entre ambos es el
 // elemento de firma del rediseño — en móvil se desactiva y el panel de
 // marca se aplana a una franja horizontal compacta arriba.
-import letras from "@/assets/img/letras.svg";
+import logo from "@/assets/icons/logo.svg";
 import circulo1 from "@/assets/img/circulos/circulo1.svg";
 import circulo5 from "@/assets/img/circulos/circulo5.svg";
 import circulo9 from "@/assets/img/circulos/circulo9.svg";
@@ -43,13 +43,31 @@ function AuthBubbles() {
    Panel de marca — degradado azul + logo con halo.
    Mismo bloque en las 3 pantallas; solo cambia brandTitle / brandTagline.
 ───────────────────────────────────────────── */
+const Star = ({ className, size = 16 }) => (
+  <svg
+    className={className}
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l7.1-1.01z" />
+  </svg>
+);
+
 function AuthBrandPanel({ brandTitle, brandTagline }) {
   return (
     <div className="auth-card-brand">
       <AuthBubbles />
+      <Star className="auth-spark auth-spark--1" size={18} />
+      <Star className="auth-spark auth-spark--2" size={12} />
+      <Star className="auth-spark auth-spark--3" size={22} />
+      <Star className="auth-spark auth-spark--4" size={14} />
+      <Star className="auth-spark auth-spark--5" size={10} />
       <div className="auth-brand-content">
         <div className="auth-brand-badge">
-          <img src={letras} alt="Edumon" draggable={false} />
+          <img src={logo} alt="Edumon" draggable={false} />
         </div>
         <div className="auth-brand-copy">
           <h2>{brandTitle}</h2>
@@ -105,7 +123,11 @@ export const AUTH_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--edu-blue-50, #EFF6FF);
+  /* Fondo con más vida (antes un azul plano muy apagado). */
+  background:
+    radial-gradient(circle at 12% 10%, rgba(5, 199, 242, 0.18) 0%, transparent 40%),
+    radial-gradient(circle at 88% 90%, rgba(124, 58, 237, 0.14) 0%, transparent 42%),
+    linear-gradient(160deg, #EAF4FF 0%, var(--edu-blue-100, #D9EFFC) 100%);
   padding: 24px 16px;
 }
 
@@ -184,8 +206,9 @@ export const AUTH_CSS = `
   overflow: hidden;
   clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
   background:
-    radial-gradient(circle at 50% 40%, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.09) 30%, transparent 60%),
-    linear-gradient(155deg, var(--edu-blue-900, #042A54) 0%, var(--edu-blue-700, #084A8C) 48%, var(--edu-blue-500, #0C6AC4) 100%);
+    radial-gradient(circle at 50% 38%, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.10) 30%, transparent 60%),
+    radial-gradient(circle at 78% 88%, rgba(5, 199, 242, 0.45) 0%, transparent 45%),
+    linear-gradient(155deg, var(--edu-blue-900, #042A54) 0%, var(--edu-blue-600, #0A5AA8) 45%, var(--edu-blue-400, #46A8EA) 100%);
 }
 
 /* ══ BURBUJAS DECORATIVAS — solo 3, muy suaves ══ */
@@ -197,6 +220,31 @@ export const AUTH_CSS = `
   z-index: 0;
 }
 .auth-bubble { position: absolute; user-select: none; }
+
+/* ══ ESTRELLITAS ══ centelleo sutil sobre el panel de marca ══ */
+.auth-spark {
+  position: absolute;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+}
+.auth-spark--1 { top: 12%; left: 16%; color: var(--edu-yellow, #FCBD00); }
+.auth-spark--2 { top: 26%; right: 18%; }
+.auth-spark--3 { bottom: 30%; left: 12%; color: var(--edu-cyan, #05C7F2); }
+.auth-spark--4 { bottom: 16%; right: 14%; }
+.auth-spark--5 { top: 46%; right: 30%; color: var(--edu-yellow, #FCBD00); }
+@media (prefers-reduced-motion: no-preference) {
+  .auth-spark { animation: auth-twinkle 3s ease-in-out infinite; }
+  .auth-spark--2 { animation-delay: -0.7s; }
+  .auth-spark--3 { animation-delay: -1.3s; }
+  .auth-spark--4 { animation-delay: -1.9s; }
+  .auth-spark--5 { animation-delay: -2.5s; }
+}
+@keyframes auth-twinkle {
+  0%, 100% { transform: scale(0.7); opacity: 0.35; }
+  50%      { transform: scale(1.1); opacity: 1; }
+}
 
 .auth-brand-content {
   position: relative;
@@ -227,8 +275,8 @@ export const AUTH_CSS = `
 }
 
 .auth-brand-badge img {
-  width: 135px;
-  height: 135px;
+  width: 150px;
+  height: 150px;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
@@ -282,21 +330,43 @@ export const AUTH_CSS = `
 }
 
 /* ══ ENCABEZADO DE FORMULARIO ══ */
-.auth-form-head { margin-bottom: 20px; text-align: center; }
+.auth-form-head { margin-bottom: 22px; text-align: center; }
 
+/* Título grande, con la fuente redondeada (Baloo 2) y DEGRADADO de
+   marca azul→cian, para que destaque claramente del subtítulo y del
+   resto del formulario. Debajo, una línea de acento centrada. */
 .auth-form-head h1 {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 2rem;
   font-weight: 800;
-  color: var(--color-text);
-  margin: 0 0 6px;
-  letter-spacing: -0.02em;
+  line-height: 1.12;
+  margin: 0 0 10px;
+  letter-spacing: 0.005em;
+  background: linear-gradient(
+    120deg,
+    var(--edu-blue-700, #084A8C) 0%,
+    var(--edu-blue-500, #0C6AC4) 45%,
+    var(--edu-cyan, #05C7F2) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.auth-form-head h1::after {
+  content: "";
+  display: block;
+  width: 46px;
+  height: 4px;
+  margin: 12px auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--edu-blue-500, #0C6AC4), var(--edu-cyan, #05C7F2));
 }
 
 .auth-form-head p {
   font-size: 13.5px;
-  color: var(--color-text-muted);
-  margin: 0;
+  color: var(--color-text-subtle, #94a3b8);
+  font-weight: 500;
+  margin: 12px 0 0;
   line-height: 1.5;
 }
 
@@ -333,14 +403,67 @@ export const AUTH_CSS = `
   color: var(--color-success-hover, #15803d);
   font-weight: 500;
 }
+/* Variante con ícono + más aire para la confirmación de "código enviado" */
+.auth-success--lg {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+.auth-success--lg svg { flex-shrink: 0; margin-top: 1px; }
 
 /* ══ FORM ══ */
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
 
-/* El teléfono con prefijo "+57" usa el componente PhoneInput (flexbox,
-   ver src/components/ui/PhoneInput.jsx) — ya no hay clases propias de
-   login para eso, evita que dos hojas de estilo definan el mismo campo
-   con números distintos y terminen empujándose entre sí. */
+/* ══ CAMPOS DE ENTRADA EN AUTH ══
+   Estas pantallas viven fuera de .app-shell, así que --color-primary
+   y --shadow-focus-soft resuelven al MORADO de :root — el campo de
+   teléfono se enfocaba en morado (y el anillo suave se leía como una
+   "segunda caja" lila alrededor del blanco). Aquí forzamos el mismo
+   azul de marca del resto del login para todos los campos, y quitamos
+   el fondo raro que Chrome pinta al autocompletar. */
+.auth-card-body .input,
+.auth-card-body .phone-field {
+  border-radius: 14px;
+  box-shadow: none;
+}
+.auth-card-body .input:hover:not(:disabled):not(.input-error):not(.input-success),
+.auth-card-body .phone-field:hover:not(.input-error):not(.input-success) {
+  border-color: var(--edu-blue-300, #7FC7F5);
+}
+.auth-card-body .input:focus:not(.input-error):not(.input-success),
+.auth-card-body .phone-field:focus-within:not(.input-error):not(.input-success) {
+  border-color: var(--edu-blue-500, #0C6AC4);
+  box-shadow: 0 0 0 3px rgba(12, 106, 196, 0.16);
+}
+.auth-card-body .phone-field:focus-within .phone-field-icon,
+.auth-card-body .phone-field:focus-within .phone-field-prefix {
+  color: var(--edu-blue-600, #0958A5);
+}
+/* El <input> interno del teléfono nunca dibuja su propia caja: hereda
+   el fondo del contenedor .phone-field y no tiene borde/anillo propio. */
+.auth-card-body .phone-field-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+/* Autocompletado de Chrome: sin recuadro amarillo/gris/azul interno,
+   ni en el estado "relleno" ni en el de "sugerencia disponible". */
+.auth-card-body input:-webkit-autofill,
+.auth-card-body input:-webkit-autofill:hover,
+.auth-card-body input:-webkit-autofill:focus,
+.auth-card-body input:-webkit-autofill:active,
+.auth-card-body input:autofill {
+  -webkit-text-fill-color: var(--color-text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface, #fff) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-surface, #fff) inset !important;
+  caret-color: var(--color-text);
+  transition: background-color 9999s ease-out 0s !important;
+}
 
 .auth-row-between {
   display: flex;
@@ -371,14 +494,14 @@ export const AUTH_CSS = `
   height: 48px;
   border: none;
   border-radius: 14px;
-  background: var(--edu-blue-500, #0C6AC4);
+  background: linear-gradient(135deg, var(--edu-blue-700, #084A8C), var(--edu-blue-500, #0C6AC4) 55%, var(--edu-cyan, #05C7F2));
   color: #fff;
   font-family: var(--font-display);
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(12,106,196,0.25);
-  transition: background 150ms ease, transform 100ms ease, box-shadow 100ms ease;
+  box-shadow: 0 6px 18px rgba(12,106,196,0.32);
+  transition: filter 150ms ease, transform 100ms ease, box-shadow 100ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -386,8 +509,8 @@ export const AUTH_CSS = `
   margin-top: 4px;
 }
 .auth-submit:hover:not(:disabled) {
-  background: var(--edu-blue-600, #0958A5);
-  box-shadow: 0 4px 14px rgba(12,106,196,0.32);
+  filter: saturate(1.15) brightness(1.04);
+  box-shadow: 0 8px 22px rgba(12,106,196,0.4);
 }
 .auth-submit:active:not(:disabled) { transform: scale(0.98); }
 .auth-submit:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -449,31 +572,45 @@ export const AUTH_CSS = `
 
 /* ══ RESPONSIVE ══
    El corte diagonal (clip-path) solo tiene sentido con los paneles uno
-   junto al otro, así que se desactiva por debajo de 760px, donde el
-   panel de marca pasa a franja horizontal compacta. */
+   junto al otro, así que se desactiva por debajo de 760px. En móvil el
+   panel de marca pasa a ser una "cabecera" centrada y generosa (no una
+   franja apretada): el logo grande es el protagonista. */
 @media (max-width: 760px) {
-  .auth-card { flex-direction: column; }
+  .auth-card { flex-direction: column; border-radius: 22px; }
   .auth-card-brand {
     flex: 0 0 auto;
     width: 100%;
     clip-path: none;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    text-align: left;
-    padding: 20px 22px;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 22px 36px;
   }
-  .auth-brand-content { flex-direction: row; align-items: center; gap: 16px; }
+  .auth-brand-content { flex-direction: column; align-items: center; gap: 14px; }
   .auth-brand-badge {
-    width: 56px; height: 56px;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.18);
+    width: 112px; height: 112px;
+    padding: 12px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.32),
+      0 0 0 10px rgba(255,255,255,0.06),
+      0 12px 30px rgba(4,42,84,0.4);
   }
-  .auth-brand-badge img { width: 50px; height: 50px; }
-  .auth-brand-copy h2 { font-size: 1.05rem; margin: 0; }
-  .auth-brand-copy h2::after { display: none; }
-  .auth-brand-copy .auth-brand-tagline { display: none; }
-  .auth-card-body { padding: 26px 22px 24px; max-height: none; overflow-y: visible; }
-  .auth-form-head h1 { font-size: 1.25rem; }
+  .auth-brand-badge img { width: 86px; height: 86px; }
+  .auth-brand-copy h2 { font-size: 1.2rem; margin: 0; }
+  .auth-brand-copy h2::after { display: block; margin: 8px auto 6px; }
+  .auth-brand-copy .auth-brand-tagline { display: block; font-size: 12.5px; }
+  .auth-spark--3, .auth-spark--5 { display: none; }
+  .auth-card-body {
+    position: relative;
+    margin-top: -16px;
+    border-radius: 26px 26px 0 0;
+    background: #fff;
+    padding: 28px 22px 24px;
+    max-height: none;
+    overflow-y: visible;
+  }
+  .auth-form-head h1 { font-size: 1.6rem; }
   .auth-otp-digit { width: 38px; height: 46px; font-size: 18px; }
   .auth-otp-row { gap: 6px; }
 }

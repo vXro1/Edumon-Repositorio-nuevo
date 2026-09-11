@@ -4,12 +4,17 @@ import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { useAuthContext } from "@/features/auth/context/AuthContext";
 import { buzonEnviar } from "@/features/buzon/services/buzonService";
+import { appMovilGetActual } from "@/services/appMovilService";
 import { normalizePhone } from "@/utils/normalizePhone";
+import { formatBytes } from "@/utils/formatBytes";
 import logo from "@/assets/icons/logo.svg";
 import edumonLetras from "@/assets/img/letras.svg";
 import mascota from "@/assets/img/cuerpocompleto.svg";
 import letras from "@/assets/img/letras.svg";
 import soporte from "@/assets/img/Buzonsoporte.svg";
+// Versión reducida de avatars.png (2,8 MB → ~0,4 MB): solo se muestra a
+// ~260px en el footer, no hace falta la resolución completa.
+import mascotasEquipo from "@/assets/img/avatars-footer.png";
 
 /* ─── Burbujas decorativas (assets reales) ─── */
 import circulo1 from "@/assets/img/circulos/circulo1.svg";
@@ -126,11 +131,12 @@ const IconInstagram = ({ size = 16 }) => (
   </svg>
 );
 
-const IconBook = ({ size = 16 }) => (
+const IconLogIn = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+    stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+    <polyline points="10 17 15 12 10 7" />
+    <line x1="15" y1="12" x2="3" y2="12" />
   </svg>
 );
 
@@ -264,13 +270,36 @@ const IconSmartphone = ({ size = 24 }) => (
   </svg>
 );
 
+const IconAndroid = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M6 18a1 1 0 001 1h1v3a1.5 1.5 0 003 0v-3h2v3a1.5 1.5 0 003 0v-3h1a1 1 0 001-1V9H6zM3.5 9A1.5 1.5 0 002 10.5v6a1.5 1.5 0 003 0v-6A1.5 1.5 0 003.5 9zm17 0a1.5 1.5 0 00-1.5 1.5v6a1.5 1.5 0 003 0v-6A1.5 1.5 0 0020.5 9zM15.53 2.16l1.3-1.3a.4.4 0 00-.57-.56l-1.48 1.48A6.9 6.9 0 0012 1c-.99 0-1.93.2-2.78.55L7.74.06a.4.4 0 00-.57.56l1.3 1.3A6.53 6.53 0 006 7.5h12a6.53 6.53 0 00-2.47-5.34zM9.75 5.25a.75.75 0 110-1.5.75.75 0 010 1.5zm4.5 0a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+  </svg>
+);
+
+const IconDownload = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
 /* ── Datos ── */
 const NAV_LINKS = [
   { label: "Inicio", href: "#inicio" },
   { label: "Pilares", href: "#pilares" },
   { label: "Aprende", href: "#aprende" },
   { label: "Quiénes somos", href: "#quienes" },
+  { label: "App", href: "#app" },
   { label: "Contáctanos", href: "#contacto" },
+];
+
+/* Equipo mostrado en "Quiénes somos" — se renderiza con clases CSS
+   (.quienes-member-card__avatar), sin estilos inline. */
+const EQUIPO = [
+  { iniciales: "VM", nombre: "Veronica Mancilla", rol: "Diseñadora UX/UI", tono: "pink" },
+  { iniciales: "BY", nombre: "Bryan David Yepes", rol: "Desarrollador Backend", tono: "blue" },
 ];
 
 const PILARES = [
@@ -292,73 +321,133 @@ const PILARES = [
 ];
 
 const MODULOS = [
-  { icon: <IconApple />, color: "#16a34a", title: "Alimentación saludable", desc: "Ideas simples para que las comidas en casa sean más sanas y menos peleas." },
-  { icon: <IconHeartHandshake />, color: "#7c3aed", title: "Crianza respetuosa", desc: "Acompañar el crecimiento de tu hijo respetando su ritmo y su voz." },
-  { icon: <IconSmile />, color: "#f59e0b", title: "Manejo de emociones", desc: "Cómo entender y acompañar lo que siente tu hijo, incluso en las rabietas." },
-  { icon: <IconShieldCheck />, color: "#06b6d4", title: "Límites saludables", desc: "Poner reglas claras sin gritos, con cariño y firmeza al mismo tiempo." },
-  { icon: <IconMessageCircle />, color: "#db2777", title: "Comunicación familiar", desc: "Conversaciones que abren confianza en vez de cerrarla." },
-  { icon: <IconSprout />, color: "#16a34a", title: "Desarrollo infantil", desc: "Entender qué es esperable en cada etapa para acompañar mejor." },
-  { icon: <IconRepeat />, color: "#f59e0b", title: "Hábitos y rutinas", desc: "Rutinas simples que le dan estructura y seguridad al día a día." },
-  { icon: <IconUsers size={24} />, color: "#7c3aed", title: "Tiempo de calidad", desc: "Momentos cortos y significativos que fortalecen el vínculo." },
-  { icon: <IconPuzzle />, color: "#06b6d4", title: "Resolución de conflictos", desc: "Herramientas para resolver peleas y desacuerdos sin gritos." },
-  { icon: <IconCompass />, color: "#db2777", title: "Autonomía", desc: "Ayudar a tu hijo a ganar independencia con confianza y sin miedo." },
-  { icon: <IconSmartphone />, color: "#16a34a", title: "Tecnología con medida", desc: "Acuerdos sanos sobre pantallas, sin pelear todos los días por eso." },
+  {
+    icon: <IconUsers size={24} />,
+    color: "#7c3aed",
+    title: "Mi familia y mi identidad",
+    desc: "Ayuda a tu hijo a sentirse querido, reconocer quién es y valorar a su familia y comunidad.",
+  },
+
+  {
+    icon: <IconHeartHandshake size={24} />,
+    color: "#db2777",
+    title: "Sentirse querido y seguro",
+    desc: "Fortalece los vínculos afectivos y acompaña a tu hijo para que crezca sintiéndose valorado y protegido.",
+  },
+
+  {
+    icon: <IconMessageCircle size={24} />,
+    color: "#06b6d4",
+    title: "Hablar, imaginar y expresar",
+    desc: "Anima a tu hijo a contar sus ideas, sentimientos y emociones mediante palabras, juegos, dibujos y otras formas de expresión.",
+  },
+
+  {
+    icon: <IconSmile size={24} />,
+    color: "#f59e0b",
+    title: "Mis emociones",
+    desc: "Aprende a reconocer y acompañar las emociones de tu hijo para que pueda expresarlas de manera saludable.",
+  },
+
+  {
+    icon: <IconCompass size={24} />,
+    color: "#16a34a",
+    title: "Explorar y descubrir",
+    desc: "Acompaña a tu hijo a observar, preguntar, experimentar y descubrir cómo funciona el mundo que lo rodea.",
+  },
+
+  {
+    icon: <IconPuzzle size={24} />,
+    color: "#7c3aed",
+    title: "Aprender a resolver problemas",
+    desc: "Invita a tu hijo a buscar soluciones, tomar pequeñas decisiones y aprender de las situaciones de la vida cotidiana.",
+  },
+
+  {
+    icon: <IconSprout size={24} />,
+    color: "#16a34a",
+    title: "Descubrir mi entorno",
+    desc: "Ayuda a tu hijo a conocer, cuidar y apropiarse de los espacios, lugares y comunidad donde vive.",
+  },
+
+  {
+    icon: <IconRepeat size={24} />,
+    color: "#f59e0b",
+    title: "Aprender con el cuerpo y el movimiento",
+    desc: "Promueve juegos y actividades donde tu hijo pueda moverse libremente, explorar y conocer su propio cuerpo.",
+  },
+
+  {
+    icon: <IconShieldCheck size={24} />,
+    color: "#06b6d4",
+    title: "Límites con amor",
+    desc: "Establece límites claros y respetuosos que ayuden a tu hijo a sentirse seguro y aprender a convivir con los demás.",
+  },
+
+  {
+    icon: <IconHeartHandshake size={24} />,
+    color: "#db2777",
+    title: "Familia que dialoga",
+    desc: "Crea espacios para conversar, escuchar y compartir en familia, fortaleciendo la confianza y los vínculos.",
+  },
+
+  {
+    icon: <IconApple size={24} />,
+    color: "#16a34a",
+    title: "Cuidar y crecer juntos",
+    desc: "Descubre prácticas sencillas para acompañar el desarrollo integral de tu hijo desde el hogar.",
+  },
 ];
 
 /* ── Config de burbujas decorativas por sección ──
    circulo: índice 1-12 del asset (src/assets/img/circulos/circuloN.svg)
    anim: variante de animación flotante (a | b | c)
    Todas usan position absolute dentro de un contenedor .deco-bubbles */
+/* Menos burbujas y más tenues: antes saturaban cada sección (6 arrays,
+   ~35 SVGs). Ahora 2-4 por sección y con poca opacidad, para que
+   acompañen sin competir con el contenido. */
 const HERO_BUBBLES = [
-  { circulo: 1, top: "4%", left: "1%", size: "150px", opacity: 0.9, anim: "a", delay: "0s" },
-  { circulo: 4, top: "12%", left: "20%", size: "52px", opacity: 0.7, anim: "b", delay: "1.1s" },
-  { circulo: 7, bottom: "8%", left: "6%", size: "100px", opacity: 0.85, anim: "c", delay: "0.5s" },
-  { circulo: 9, top: "36%", left: "42%", size: "34px", opacity: 0.5, anim: "a", delay: "2s" },
-  { circulo: 2, top: "6%", right: "4%", size: "90px", opacity: 0.85, anim: "b", delay: "0.3s" },
-  { circulo: 10, top: "26%", right: "18%", size: "48px", opacity: 0.6, anim: "c", delay: "1.5s" },
-  { circulo: 5, bottom: "4%", right: "3%", size: "130px", opacity: 0.9, anim: "a", delay: "0.8s" },
-  { circulo: 12, bottom: "22%", right: "22%", size: "38px", opacity: 0.55, anim: "b", delay: "1.8s" },
+  { circulo: 1, top: "5%", left: "1%", size: "140px", opacity: 0.5, anim: "a", delay: "0s" },
+  { circulo: 7, bottom: "8%", left: "6%", size: "94px", opacity: 0.42, anim: "c", delay: "0.5s" },
+  { circulo: 2, top: "7%", right: "4%", size: "86px", opacity: 0.44, anim: "b", delay: "0.3s" },
+  { circulo: 5, bottom: "5%", right: "3%", size: "118px", opacity: 0.48, anim: "a", delay: "0.8s" },
+  { circulo: 10, top: "40%", left: "3%", size: "40px", opacity: 0.4, anim: "b", delay: "1.4s" },
 ];
 
 const PILARES_BUBBLES = [
-  { circulo: 3, top: "0%", left: "3%", size: "80px", opacity: 0.5, anim: "a", delay: "0.2s" },
-  { circulo: 6, top: "55%", left: "-2%", size: "60px", opacity: 0.4, anim: "b", delay: "1.3s" },
-  { circulo: 8, top: "8%", right: "5%", size: "70px", opacity: 0.5, anim: "c", delay: "0.6s" },
-  { circulo: 11, bottom: "0%", right: "10%", size: "56px", opacity: 0.45, anim: "a", delay: "1.9s" },
-  { circulo: 2, bottom: "12%", left: "20%", size: "36px", opacity: 0.35, anim: "b", delay: "0.9s" },
+  { circulo: 3, top: "2%", left: "3%", size: "76px", opacity: 0.24, anim: "a", delay: "0.2s" },
+  { circulo: 8, top: "10%", right: "4%", size: "66px", opacity: 0.24, anim: "c", delay: "0.6s" },
+  { circulo: 11, bottom: "2%", right: "12%", size: "50px", opacity: 0.22, anim: "b", delay: "1.9s" },
+  { circulo: 6, bottom: "8%", left: "5%", size: "44px", opacity: 0.2, anim: "a", delay: "1.1s" },
 ];
 
 const APRENDE_BUBBLES = [
-  { circulo: 9, top: "2%", left: "2%", size: "64px", opacity: 0.45, anim: "b", delay: "0.4s" },
-  { circulo: 4, bottom: "6%", left: "8%", size: "44px", opacity: 0.4, anim: "a", delay: "1.6s" },
-  { circulo: 12, top: "10%", right: "3%", size: "58px", opacity: 0.45, anim: "c", delay: "1s" },
-  { circulo: 7, bottom: "2%", right: "6%", size: "80px", opacity: 0.5, anim: "b", delay: "0.2s" },
-  { circulo: 1, top: "50%", right: "1%", size: "30px", opacity: 0.35, anim: "a", delay: "2.1s" },
+  { circulo: 9, top: "3%", left: "2%", size: "60px", opacity: 0.24, anim: "b", delay: "0.4s" },
+  { circulo: 7, bottom: "3%", right: "6%", size: "74px", opacity: 0.24, anim: "b", delay: "0.2s" },
+  { circulo: 12, top: "12%", right: "3%", size: "46px", opacity: 0.2, anim: "c", delay: "1s" },
 ];
 
 const QUIENES_BUBBLES = [
-  { circulo: 5, top: "6%", right: "2%", size: "110px", opacity: 0.5, anim: "a", delay: "0s" },
-  { circulo: 8, bottom: "6%", left: "3%", size: "70px", opacity: 0.5, anim: "b", delay: "1.2s" },
-  { circulo: 3, top: "40%", left: "-3%", size: "44px", opacity: 0.4, anim: "c", delay: "0.7s" },
-  { circulo: 10, bottom: "18%", right: "20%", size: "50px", opacity: 0.4, anim: "a", delay: "1.7s" },
-  { circulo: 6, top: "12%", left: "34%", size: "34px", opacity: 0.35, anim: "b", delay: "2.2s" },
-  { circulo: 11, bottom: "0%", right: "38%", size: "40px", opacity: 0.35, anim: "c", delay: "1.4s" },
+  { circulo: 5, top: "6%", right: "2%", size: "100px", opacity: 0.24, anim: "a", delay: "0s" },
+  { circulo: 8, bottom: "6%", left: "3%", size: "64px", opacity: 0.22, anim: "b", delay: "1.2s" },
+  { circulo: 10, bottom: "20%", right: "22%", size: "44px", opacity: 0.2, anim: "c", delay: "1.7s" },
+];
+
+const APP_BUBBLES = [
+  { circulo: 4, top: "8%", left: "3%", size: "64px", opacity: 0.24, anim: "a", delay: "0.3s" },
+  { circulo: 6, bottom: "8%", right: "5%", size: "76px", opacity: 0.24, anim: "c", delay: "1.1s" },
 ];
 
 const CONTACTO_BUBBLES = [
-  { circulo: 2, top: "2%", left: "0%", size: "90px", opacity: 0.4, anim: "a", delay: "0.3s" },
-  { circulo: 12, bottom: "4%", left: "16%", size: "50px", opacity: 0.4, anim: "b", delay: "1.5s" },
-  { circulo: 4, top: "16%", right: "2%", size: "66px", opacity: 0.4, anim: "c", delay: "0.9s" },
-  { circulo: 9, bottom: "10%", right: "10%", size: "40px", opacity: 0.35, anim: "a", delay: "2s" },
-  { circulo: 7, top: "60%", left: "4%", size: "36px", opacity: 0.3, anim: "b", delay: "1.1s" },
-  { circulo: 1, bottom: "40%", right: "0%", size: "56px", opacity: 0.35, anim: "c", delay: "0.5s" },
+  { circulo: 2, top: "3%", left: "0%", size: "82px", opacity: 0.24, anim: "a", delay: "0.3s" },
+  { circulo: 12, bottom: "5%", left: "16%", size: "48px", opacity: 0.22, anim: "b", delay: "1.5s" },
+  { circulo: 9, bottom: "12%", right: "8%", size: "42px", opacity: 0.2, anim: "a", delay: "2s" },
 ];
 
 const FOOTER_BUBBLES = [
-  { circulo: 6, top: "4%", left: "4%", size: "60px", opacity: 0.18, anim: "a", delay: "0.4s" },
-  { circulo: 10, bottom: "8%", left: "18%", size: "40px", opacity: 0.15, anim: "b", delay: "1.3s" },
-  { circulo: 3, top: "10%", right: "6%", size: "70px", opacity: 0.18, anim: "c", delay: "0.8s" },
-  { circulo: 8, bottom: "4%", right: "16%", size: "46px", opacity: 0.15, anim: "a", delay: "1.9s" },
+  { circulo: 6, top: "6%", left: "4%", size: "58px", opacity: 0.2, anim: "a", delay: "0.4s" },
+  { circulo: 3, top: "12%", right: "6%", size: "66px", opacity: 0.2, anim: "c", delay: "0.8s" },
+  { circulo: 8, bottom: "6%", right: "18%", size: "44px", opacity: 0.18, anim: "a", delay: "1.9s" },
 ];
 
 /* ── Componente de burbujas decorativas reutilizable ── */
@@ -456,16 +545,35 @@ function useEmblaTween(emblaApi) {
   return tweenValues;
 }
 
+/* Cuántas tarjetas se ven (y avanzan) a la vez según el ancho:
+   PC avanza en grupos de 3, tablet de 2, móvil sigue de a una. */
+function getPerView() {
+  if (typeof window === "undefined") return 3;
+  const w = window.innerWidth;
+  if (w <= 640) return 1;
+  if (w <= 1024) return 2;
+  return 3;
+}
+
 /* ── Carrusel de módulos ("Featured Cards") ──
-   La tarjeta activa queda centrada a escala completa; las vecinas
-   se asoman parcialmente, más pequeñas y atenuadas. Construido
-   sobre Embla Carousel: el motor resuelve el snap/drag/swipe/touch,
-   nosotros solo mapeamos su progreso de scroll a scale/opacity. */
+   En móvil: una tarjeta centrada a escala completa, las vecinas se
+   asoman más pequeñas y atenuadas (efecto scroll con Embla).
+   En PC/tablet: rejilla de 3 (o 2) tarjetas que avanza por grupos,
+   todas a la misma escala. */
 function ModuloCarousel() {
   const reduceMotion = useRef(
     typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
   );
+
+  const [perView, setPerView] = useState(getPerView);
+  const singleView = perView === 1;
+
+  useEffect(() => {
+    const onResize = () => setPerView(getPerView());
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const autoplay = useRef(
     Autoplay({
@@ -480,21 +588,39 @@ function ModuloCarousel() {
      EMBLA — CARRUSEL INFINITO
   ───────────────────────────────────────── */
 
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    {
-      align: "center",
+  const emblaOptions = {
+    align: singleView ? "center" : "start",
+    loop: true,
+    slidesToScroll: perView,
+    skipSnaps: false,
+  };
 
-      /* 🔥 CARRUSEL INFINITO */
+  const [emblaRef, emblaApi] = useEmblaCarousel(emblaOptions, [autoplay.current]);
+
+  /* align + slidesToScroll dependen de perView: al cruzar un
+     breakpoint hay que re-inicializar el motor. */
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.reInit({
+      align: singleView ? "center" : "start",
       loop: true,
-
+      slidesToScroll: perView,
       skipSnaps: false,
-    },
-    [autoplay.current]
-  );
+    });
+  }, [emblaApi, perView, singleView]);
 
   const tweenValues = useEmblaTween(emblaApi);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState([]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const update = () => setScrollSnaps(emblaApi.scrollSnapList());
+    update();
+    emblaApi.on("reInit", update);
+    return () => emblaApi.off("reInit", update);
+  }, [emblaApi]);
 
 
   /* ─────────────────────────────────────────
@@ -590,19 +716,18 @@ function ModuloCarousel() {
 
             const diff = tweenValues[i] ?? 0;
 
-            const scale = clamp(
-              1 - Math.abs(diff) * 0.24,
-              0.82,
-              1
-            );
+            /* El efecto de zoom/atenuación por scroll solo aplica en
+               móvil (una tarjeta). En PC las 3 tarjetas del grupo se
+               ven iguales, a escala completa. */
+            const scale = singleView
+              ? clamp(1 - Math.abs(diff) * 0.24, 0.82, 1)
+              : 1;
 
-            const opacity = clamp(
-              1 - Math.abs(diff) * 0.65,
-              0.4,
-              1
-            );
+            const opacity = singleView
+              ? clamp(1 - Math.abs(diff) * 0.65, 0.4, 1)
+              : 1;
 
-            const isActive = i === selectedIndex;
+            const isActive = singleView && i === selectedIndex;
 
 
             return (
@@ -630,15 +755,16 @@ function ModuloCarousel() {
                   }}
 
                   onClick={() => {
-                    if (!isActive) {
+                    if (singleView && !isActive) {
                       scrollTo(i);
                     }
                   }}
 
-                  tabIndex={isActive ? -1 : 0}
+                  tabIndex={singleView && !isActive ? 0 : -1}
 
                   onKeyDown={(e) => {
                     if (
+                      singleView &&
                       !isActive &&
                       (e.key === "Enter" || e.key === " ")
                     ) {
@@ -688,19 +814,19 @@ function ModuloCarousel() {
       <div
         className="modulo-embla__dots"
         role="tablist"
-        aria-label="Selecciona un módulo"
+        aria-label="Selecciona un grupo de módulos"
       >
 
-        {MODULOS.map((m, i) => (
+        {scrollSnaps.map((_, i) => (
 
           <button
             type="button"
-            key={m.title}
+            key={i}
             role="tab"
 
             aria-selected={i === selectedIndex}
 
-            aria-label={`Ir al módulo ${i + 1}: ${m.title}`}
+            aria-label={`Ir al grupo ${i + 1} de ${scrollSnaps.length}`}
 
             className={`modulo-embla__dot ${
               i === selectedIndex ? "is-active" : ""
@@ -727,24 +853,37 @@ export default function LandingPage() {
   const [submitStatus, setSubmitStatus] = useState("idle");
   const [submitError, setSubmitError] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+  // Versión activa del APK (GET /apk/actual, público). null = sin publicar
+  // (404) — la sección "App" cae con gracia a "Próximamente".
+  const [appBuild, setAppBuild] = useState(null);
 
   useEffect(() => {
     if (!loading && isAuthenticated) navigate("/dashboard", { replace: true });
   }, [isAuthenticated, loading, navigate]);
 
+  useEffect(() => {
+    let alive = true;
+    appMovilGetActual()
+      .then((res) => { if (alive) setAppBuild(res?.apk ?? null); })
+      .catch(() => { if (alive) setAppBuild(null); });
+    return () => { alive = false; };
+  }, []);
+
   const heroRef = useRef(null);
   const pilaresRef = useRef(null);
   const aprendeRef = useRef(null);
   const quienesRef = useRef(null);
+  const appRef = useRef(null);
   const contactoRef = useRef(null);
 
   const pilaresVis = useIntersect(pilaresRef);
   const aprendeVis = useIntersect(aprendeRef);
   const quienesVis = useIntersect(quienesRef);
+  const appVis = useIntersect(appRef);
   const contactoVis = useIntersect(contactoRef);
 
   useEffect(() => {
-    const sections = ["inicio", "pilares", "aprende", "quienes", "contacto"];
+    const sections = ["inicio", "pilares", "aprende", "quienes", "app", "contacto"];
     const handler = () => {
       for (const id of [...sections].reverse()) {
         const el = document.getElementById(id);
@@ -829,7 +968,7 @@ export default function LandingPage() {
           </ul>
 
           <button className="landing-nav__cta" onClick={() => navigate("/login")}>
-            <IconBook size={16} />
+            <IconLogIn size={16} />
             Inicio de sesión
           </button>
 
@@ -859,7 +998,7 @@ export default function LandingPage() {
             className="landing-nav__mobile-cta"
             onClick={() => { navigate("/login"); setMenuOpen(false); }}
           >
-            <IconBook size={16} />
+            <IconLogIn size={16} />
             Inicio de sesión
           </button>
         </div>
@@ -900,8 +1039,13 @@ export default function LandingPage() {
 
           <div className="edumon-mascot-visual" aria-hidden="true">
             <div className="edumon-mascot-ring" />
-            <IconSparkles size={26} className="edumon-mascot-sparkle edumon-mascot-sparkle--1" />
+            <IconSparkles size={28} className="edumon-mascot-sparkle edumon-mascot-sparkle--1" />
             <IconStar size={18} className="edumon-mascot-sparkle edumon-mascot-sparkle--2" />
+            <IconStar size={13} className="edumon-mascot-sparkle edumon-mascot-sparkle--3" />
+            <IconSparkles size={16} className="edumon-mascot-sparkle edumon-mascot-sparkle--4" />
+            <IconStar size={22} className="edumon-mascot-sparkle edumon-mascot-sparkle--5" />
+            <IconSparkles size={12} className="edumon-mascot-sparkle edumon-mascot-sparkle--6" />
+            <IconStar size={15} className="edumon-mascot-sparkle edumon-mascot-sparkle--7" />
             <img
               src={mascota}
               alt="Mascota Edumon"
@@ -965,58 +1109,20 @@ export default function LandingPage() {
 
         <div className="aprende-content">
 
-          <div
-            style={{
-              textAlign: "center",
-              maxWidth: 640,
-              margin: "0 auto",
-              padding: "0 1.5rem 8px",
-            }}
-          >
-
-            {/* Etiqueta */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                color: "var(--edumon-blue-700)",
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                marginBottom: 10,
-              }}
-            >
+          <div className="aprende-head">
+            <div className="aprende-head__label">
               <IconSparkles size={13} />
               Módulos de aprendizaje
             </div>
 
-            {/* Título */}
-            <h2
-              style={{
-                fontSize: "clamp(1.6rem, 3vw, 2.1rem)",
-                fontWeight: 800,
-                color: "var(--edumon-ink)",
-                margin: "0 0 10px",
-              }}
-            >
+            <h2 className="aprende-head__title">
               ¿Qué podrás aprender en Edumon?
             </h2>
 
-            {/* Descripción */}
-            <p
-              style={{
-                fontSize: "0.95rem",
-                lineHeight: 1.6,
-                color: "var(--edumon-muted)",
-                margin: 0,
-              }}
-            >
+            <p className="aprende-head__desc">
               Cada módulo trae retos prácticos para aplicar con tus hijos desde
               el primer día — nada de teoría complicada.
             </p>
-
           </div>
 
           <ModuloCarousel />
@@ -1071,35 +1177,15 @@ export default function LandingPage() {
           </div>
 
           <div className="quienes-cards">
-            <div className="quienes-member-card">
-              <div style={{
-                width: "100%", height: "clamp(90px,16vw,140px)", borderRadius: "10px",
-                background: "linear-gradient(145deg,#fbcfe8,#fce7f3)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: "0.75rem", fontSize: "clamp(2rem,5vw,3rem)",
-                fontWeight: 800, color: "#be185d",
-                fontFamily: "var(--font-heading,'Poppins',sans-serif)",
-              }}>
-                VM
+            {EQUIPO.map((m) => (
+              <div className="quienes-member-card" key={m.iniciales}>
+                <div className={`quienes-member-card__avatar quienes-member-card__avatar--${m.tono}`}>
+                  {m.iniciales}
+                </div>
+                <div className="quienes-member-card__name">{m.nombre}</div>
+                <span className="quienes-member-card__role">{m.rol}</span>
               </div>
-              <div className="quienes-member-card__name">Veronica Mancilla</div>
-              <span className="quienes-member-card__role">Diseñadora UX/UI</span>
-            </div>
-
-            <div className="quienes-member-card">
-              <div style={{
-                width: "100%", height: "clamp(90px,16vw,140px)", borderRadius: "10px",
-                background: "linear-gradient(145deg,#bae6fd,#e0f2fe)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: "0.75rem", fontSize: "clamp(2rem,5vw,3rem)",
-                fontWeight: 800, color: "#0369a1",
-                fontFamily: "var(--font-heading,'Poppins',sans-serif)",
-              }}>
-                BY
-              </div>
-              <div className="quienes-member-card__name">Bryan David Yepes</div>
-              <span className="quienes-member-card__role">Desarrollador Backend</span>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1148,11 +1234,39 @@ export default function LandingPage() {
 
             <div className="contacto-left__img-wrap">
 
-              <img
-                src={soporte}
-                alt="Buzón de soporte Edumon"
-                className="contacto-left__letras"
-              />
+              <div className="buzon-scene">
+                <div className="buzon-scene__halo" aria-hidden="true" />
+
+                <IconStar size={16} className="buzon-spark buzon-spark--1" />
+                <IconSparkles size={20} className="buzon-spark buzon-spark--2" />
+                <IconStar size={12} className="buzon-spark buzon-spark--3" />
+
+                <img
+                  src={soporte}
+                  alt="Buzón de soporte Edumon"
+                  className="buzon-scene__img"
+                />
+
+                {/* Banderita del buzón: se levanta al pasar el mouse */}
+                <span className="buzon-flag" aria-hidden="true" />
+
+                {/* Contador de mensajes nuevos */}
+                <span className="buzon-badge" aria-hidden="true">1</span>
+
+                {/* Carta entrando al buzón (animación en bucle) */}
+                <span className="buzon-envelope" aria-hidden="true">
+                  <IconMail size={18} />
+                </span>
+
+                {/* Pedestal + sombra en el piso, para que "se pare" como un buzón real */}
+                <span className="buzon-scene__post" aria-hidden="true" />
+                <span className="buzon-scene__shadow" aria-hidden="true" />
+
+                <div className="buzon-chip">
+                  <span className="buzon-chip__dot" />
+                  Soporte en línea · respondemos rápido
+                </div>
+              </div>
 
             </div>
 
@@ -1243,6 +1357,78 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section
+        id="app"
+        ref={appRef}
+        className="landing-app"
+        style={{
+          opacity: appVis ? 1 : 0,
+          transform: appVis ? "none" : "translateY(24px)",
+          transition: "opacity 0.7s ease, transform 0.7s ease",
+        }}
+      >
+        <DecoBubbles items={APP_BUBBLES} />
+
+        <div className="landing-app__grid">
+          <div className="landing-app__content">
+            <div className="section-label">
+              <IconSmartphone size={14} />
+              App móvil
+            </div>
+
+            <h2 className="landing-app__title">Llevá Edumon en el bolsillo</h2>
+
+            <p className="landing-app__text">
+              Consulta tareas, entregas, foros y avisos desde el celular. La app
+              reúne todo lo de la plataforma en una experiencia pensada para el
+              día a día de las familias.
+            </p>
+
+            <div className="landing-app__android">
+              <IconAndroid size={16} />
+              Disponible solo para Android
+            </div>
+
+            <div className="landing-app__cta">
+              {appBuild?.urlDescarga ? (
+                <a
+                  className="landing-app__btn"
+                  href={appBuild.urlDescarga}
+                  rel="noopener noreferrer"
+                >
+                  <IconDownload size={18} />
+                  Descargar APK
+                </a>
+              ) : (
+                <button className="landing-app__btn" type="button" disabled>
+                  <IconDownload size={18} />
+                  Próximamente
+                </button>
+              )}
+
+              <p className="landing-app__meta">
+                {appBuild
+                  ? [
+                      appBuild.version ? `Versión ${appBuild.version}` : "Última versión",
+                      appBuild.tamano ? formatBytes(appBuild.tamano) : null,
+                      "APK para Android",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")
+                  : "Aún no publicamos la primera versión."}
+              </p>
+            </div>
+          </div>
+
+          <div className="landing-app__visual" aria-hidden="true">
+            <div className="landing-app__icon">
+              <img src={logo} alt="" />
+            </div>
+            <img src={mascota} alt="" className="landing-app__mascot" />
+          </div>
+        </div>
+      </section>
+
       <footer className="landing-footer">
         <DecoBubbles items={FOOTER_BUBBLES} />
 
@@ -1255,6 +1441,12 @@ export default function LandingPage() {
             <p className="footer-brand__tagline">
               Educación conectada, <strong>familias unidas.</strong>
             </p>
+            <img
+              src={mascotasEquipo}
+              alt="Las mascotas de Edumon jugando con bloques"
+              className="footer-crew"
+              loading="lazy"
+            />
             <div className="footer-brand__made">
               <IconHeart size={13} />
               Hecho con amor en Colombia
@@ -1279,6 +1471,22 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="footer-col">
+            <div className="footer-col__title">
+              <IconSmartphone size={15} />
+              App móvil
+            </div>
+            <ul>
+              <li>
+                <a href="#app" onClick={(e) => handleNav(e, "#app")}>
+                  <IconDownload size={12} />
+                  Descargar para Android
+                </a>
+              </li>
+            </ul>
+            <p className="footer-col__note">Solo disponible para Android.</p>
           </div>
 
           <div className="footer-col">

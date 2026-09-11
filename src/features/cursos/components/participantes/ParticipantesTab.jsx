@@ -260,7 +260,7 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
               }}
             >
               <Upload style={{ width: 14, height: 14 }} />
-              Carga masiva CSV
+              Carga masiva Excel
             </button>
 
             {/* Botón: agregar individual */}
@@ -399,9 +399,11 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
         onUpload={handleCsvUpload}
         onDownloadTemplate={descargarPlantillaPadresCSV}
         title="Carga masiva de padres de familia"
-        description="Sube un CSV con los datos de los padres. Si el usuario ya existe por cédula, se agrega directamente sin crear cuenta nueva."
+        description="Sube un Excel (.xlsx/.xlsm) con los datos de los padres. Si el usuario ya existe por cédula, se agrega directamente sin crear cuenta nueva."
         templateLabel="Descargar plantilla"
         acceptedColumns={CSV_COLUMNAS_PADRES}
+        acceptExtensions={[".xlsx", ".xlsm"]}
+        fileTypeLabel="Excel (.xlsx, .xlsm)"
         maxFileSizeMB={5}
       />
 

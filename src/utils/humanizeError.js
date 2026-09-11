@@ -81,3 +81,21 @@ export function humanizeError(err, fallback = "Ocurrió un error. Intenta de nue
 
   return fallback;
 }
+
+/**
+ * DELETE /users/:id (suspender) bloquea con 400 cuando el usuario es un
+ * docente con cursos en estado activo, mandando
+ * { message, cursosActivos: [{ _id, nombre, codigoCurso }, ...] } — sin este
+ * helper, humanizeError() solo mostraba el message genérico y se perdía la
+ * lista de cursos que hay que archivar/reasignar antes de poder suspender.
+ * @param {unknown} err
+ * @returns {string|null} mensaje listo para mostrar, o null si no aplica
+ */
+export function humanizeCursosActivosError(err) {
+  const cursos = err?.data?.cursosActivos;
+  if (!Array.isArray(cursos) || cursos.length === 0) return null;
+
+  const nombres = cursos.map((c) => c.nombre ?? c.codigoCurso ?? "curso").join(", ");
+  const sustantivo = cursos.length === 1 ? "un curso activo" : "cursos activos";
+  return `No se puede suspender: tiene ${sustantivo} (${nombres}). Archívalos o reasígnalos antes de suspender.`;
+}

@@ -52,7 +52,7 @@ const LoginForm = ({ onSubmit, loading = false, error = "", sessionExpired = fal
     >
       {/* Encabezado */}
       <div className="auth-form-head">
-        <h1>¡Bienvenido !</h1>
+        <h1>Inicia sesión</h1>
         <p>Accede con tu número de teléfono y contraseña</p>
       </div>
 

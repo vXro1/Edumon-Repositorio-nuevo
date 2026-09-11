@@ -21,6 +21,7 @@ const ALL_GLOBALS = {
   File:            "readonly",
   FileReader:      "readonly",
   Blob:            "readonly",
+  TextEncoder:     "readonly",
   Event:           "readonly",
   MutationObserver:"readonly",
   navigator:       "readonly",

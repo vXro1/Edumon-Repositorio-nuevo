@@ -297,9 +297,29 @@
 
   --focus-ring: 0 0 0 3px rgba(12, 106, 196, 0.45);
 
+  /* MEJORA: sombras más contenidas — las anteriores (24/48px) daban un
+     efecto "flotante" pesado que sumaba a la sensación de saturación. */
   --shadow-pop:
-    0 24px 48px rgba(15, 23, 42, 0.14),
-    0 8px 20px rgba(15, 23, 42, 0.08);
+    0 18px 36px rgba(15, 23, 42, 0.12),
+    0 6px 14px rgba(15, 23, 42, 0.07);
+
+  /* ================================================================
+     ACENTOS MULTICOLOR
+     Los 5 colores ya usados por los MÓDULOS del carrusel, promovidos a
+     tokens para usarlos con moderación como acento por sección. El azul
+     sigue siendo el color estructural; esto solo aporta el guiño lúdico
+     que conecta con la ilustración de mascotas.
+     ================================================================ */
+  --edu-violet: #7c3aed;
+  --edu-pink: #db2777;
+  --edu-accent-cyan: #06b6d4;
+  --edu-amber: #f59e0b;
+  --edu-green-accent: #16a34a;
+
+  --edu-violet-soft: #f3ecfe;
+  --edu-pink-soft: #fdecf4;
+  --edu-cyan-soft: #e6f9fd;
+  --edu-amber-soft: #fef3e2;
 } /* FIX: esta llave faltaba — sin ella, TODO el CSS de abajo quedaba
      anidado dentro de :root y el navegador lo ignoraba por completo. */
 
@@ -480,19 +500,20 @@ textarea:focus-visible {
   padding: 0 20px;
   border: none;
   border-radius: 999px;
-  background: var(--edumon-blue-600);
+  background: var(--gradient-cool);
   color: #fff;
   font-weight: 700;
   font-size: 0.875rem;
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 6px 16px rgba(10, 90, 168, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 .landing-nav__cta:hover {
   transform: translateY(-1px);
   /* MEJORA: glow de marca en vez de sombra gris plana */
   box-shadow: var(--glow-brand);
-  background: var(--edumon-blue-700);
+  filter: saturate(1.15) brightness(1.03);
 }
 
 .landing-nav__hamburger {
@@ -563,17 +584,19 @@ textarea:focus-visible {
    ══════════════════════════════════════════════════════ */
 .landing-hero {
   position: relative;
-  min-height: 86vh;
+  min-height: 78vh;
   display: flex;
   align-items: center;
   overflow: hidden;
   padding-block: clamp(32px, 6vh, 64px);
-  /* MEJORA: fondo plano blanco → una insinuación de color cálido/frío
-     en las esquinas, para que el hero no se sienta tan corporativo. */
+  /* Fondo con más color (se pidió subir la saturación general): los
+     halos de esquina más intensos y el degradado base cierra en
+     azul-100 en vez de -50. */
   background:
-    radial-gradient(circle at 8% 12%, var(--edumon-cyan-50) 0%, transparent 42%),
-    radial-gradient(circle at 92% 88%, var(--edumon-warning-bg) 0%, transparent 38%),
-    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-50) 100%);
+    radial-gradient(circle at 6% 10%, var(--edumon-cyan-100) 0%, transparent 46%),
+    radial-gradient(circle at 94% 90%, rgba(252, 189, 0, 0.16) 0%, transparent 42%),
+    radial-gradient(circle at 78% 4%, rgba(124, 58, 237, 0.10) 0%, transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-100) 100%);
 }
 
 .landing-hero__content-row {
@@ -615,8 +638,10 @@ textarea:focus-visible {
   color: var(--edumon-ink);
 }
 .gradient-word {
+  /* MEJORA: el degradado termina en cian (token de acento) para dar un
+     toque de calidez sin salir de la familia azul de marca. */
   background: linear-gradient(
-    135deg, var(--edumon-blue-900) 0%, var(--edumon-blue-700) 45%, var(--edumon-blue-500) 75%, var(--edumon-blue-300) 100%
+    135deg, var(--edumon-blue-900) 0%, var(--edumon-blue-600) 42%, var(--edumon-blue-400) 72%, var(--edu-accent-cyan) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -653,12 +678,12 @@ textarea:focus-visible {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .landing-hero__btn-primary {
-  background: var(--edumon-blue-600);
+  background: var(--gradient-cool);
   color: #fff;
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 10px 24px rgba(10, 90, 168, 0.30);
 }
 .landing-hero__btn-primary:hover {
-  background: var(--edumon-blue-700);
+  filter: saturate(1.15) brightness(1.03);
   /* MEJORA: glow azul+cian — único acento "divertido" del hero */
   box-shadow: var(--glow-brand);
 }
@@ -698,48 +723,68 @@ textarea:focus-visible {
   border-radius: 50%;
   z-index: 0;
   background:
-    radial-gradient(circle at 32% 30%, rgba(252, 189, 0, 0.30), transparent 42%),
-    radial-gradient(circle at 72% 68%, rgba(5, 199, 242, 0.30), transparent 46%),
-    radial-gradient(circle at 50% 50%, var(--edumon-blue-100), transparent 68%);
+    radial-gradient(circle at 30% 28%, rgba(252, 189, 0, 0.42), transparent 42%),
+    radial-gradient(circle at 74% 70%, rgba(5, 199, 242, 0.42), transparent 46%),
+    radial-gradient(circle at 22% 78%, rgba(219, 39, 119, 0.24), transparent 40%),
+    radial-gradient(circle at 50% 50%, var(--edumon-blue-200), transparent 70%);
   filter: blur(6px);
 }
 
 .edumon-mascot-img {
   position: relative;
   z-index: 1;
-  width: 88%;
+  width: 92%;
   height: auto;
-  filter: drop-shadow(0 22px 30px rgba(4, 42, 84, 0.18));
+  filter: drop-shadow(0 22px 30px rgba(4, 42, 84, 0.20));
+  /* Se pidió quitar el balanceo permanente (era invasivo) y dejar
+     solo un zoom al pasar el mouse. */
+  transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1),
+              filter 0.45s ease;
+  transform-origin: center bottom;
+}
+.edumon-mascot-visual:hover .edumon-mascot-img {
+  transform: scale(1.08) rotate(-1deg);
+  filter: drop-shadow(0 30px 42px rgba(4, 42, 84, 0.28));
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .edumon-mascot-img { animation: mascotFloat 4.5s ease-in-out infinite; }
-}
-
-@keyframes mascotFloat {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-14px) rotate(-1.5deg); }
-}
-
-/* Chispas decorativas junto a la mascota — el toque "divertido"
-   que le faltaba a un hero por lo demás muy plano. */
+/* Chispas / estrellitas decorativas junto a la mascota — más
+   cantidad y con un centelleo sutil (escala + opacidad), sin
+   desplazamiento que distraiga. */
 .edumon-mascot-sparkle {
   position: absolute;
   z-index: 2;
   pointer-events: none;
 }
-.edumon-mascot-sparkle--1 { top: 6%; right: 10%; color: var(--edumon-warning); }
-.edumon-mascot-sparkle--2 { bottom: 14%; left: 4%; color: var(--edumon-cyan-500); }
+.edumon-mascot-sparkle--1 { top: 4%;  right: 8%;  color: var(--edumon-warning); }
+.edumon-mascot-sparkle--2 { bottom: 14%; left: 2%;  color: var(--edumon-cyan-500); }
+.edumon-mascot-sparkle--3 { top: 30%; left: 6%;   color: var(--edu-pink); }
+.edumon-mascot-sparkle--4 { top: 12%; left: 24%;  color: var(--edumon-blue-400); }
+.edumon-mascot-sparkle--5 { bottom: 6%; right: 14%; color: var(--edumon-warning); }
+.edumon-mascot-sparkle--6 { top: 52%; right: 4%;  color: var(--edu-violet); }
+.edumon-mascot-sparkle--7 { bottom: 30%; right: 24%; color: var(--edumon-cyan-400); }
 @media (prefers-reduced-motion: no-preference) {
-  .edumon-mascot-sparkle--1 { animation: floatGentle 5s ease-in-out infinite; }
-  .edumon-mascot-sparkle--2 { animation: floatGentle 6s ease-in-out infinite -2s; }
+  .edumon-mascot-sparkle { animation: sparkleTwinkle 3.2s ease-in-out infinite; }
+  .edumon-mascot-sparkle--2 { animation-delay: -0.6s; }
+  .edumon-mascot-sparkle--3 { animation-delay: -1.1s; }
+  .edumon-mascot-sparkle--4 { animation-delay: -1.7s; }
+  .edumon-mascot-sparkle--5 { animation-delay: -2.2s; }
+  .edumon-mascot-sparkle--6 { animation-delay: -2.7s; }
+  .edumon-mascot-sparkle--7 { animation-delay: -3s; }
 }
 
+@keyframes sparkleTwinkle {
+  0%, 100% { transform: scale(0.7); opacity: 0.35; }
+  50%      { transform: scale(1.1); opacity: 1; }
+}
+
+/* En móvil la mascota se veía demasiado pequeña / apagada — se
+   agranda bastante para que siga siendo el foco visual del hero. */
 @media (max-width: 900px) {
-  .edumon-mascot-visual { max-width: 380px; }
+  .edumon-mascot-visual { max-width: 460px; }
+  .edumon-mascot-img { width: 96%; }
 }
 @media (max-width: 480px) {
-  .edumon-mascot-visual { max-width: 280px; }
+  .edumon-mascot-visual { max-width: min(360px, 82vw); }
 }
 
 @media (max-width: 900px) {
@@ -854,7 +899,15 @@ textarea:focus-visible {
 
 
 .pilares-rainbow {
-  color: var(--edumon-blue-600);
+  background: linear-gradient(
+    120deg,
+    var(--edumon-blue-700) 0%,
+    var(--edu-accent-cyan) 55%,
+    var(--edu-violet) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 
@@ -966,7 +1019,7 @@ textarea:focus-visible {
 /* MEJORA: fondo blanco plano en las 3 cards → cada una lleva un
    tinte suave del mismo color que su ícono y su barra inferior, así
    la sección deja de sentirse "genérica" sin perder legibilidad. */
-.pilar-card:nth-child(1) { background: var(--edumon-blue-50); }
+.pilar-card:nth-child(1) { background: var(--edu-violet-soft); }
 .pilar-card:nth-child(2) { background: var(--edumon-cyan-50); }
 .pilar-card:nth-child(3) { background: var(--edumon-warning-bg); }
 
@@ -1068,7 +1121,7 @@ textarea:focus-visible {
 
 
 .pilar-card:nth-child(1) .pilar-card__bar {
-  background: var(--edumon-blue-700);
+  background: var(--edu-violet);
 }
 
 .pilar-card:nth-child(2) .pilar-card__bar {
@@ -1091,8 +1144,8 @@ textarea:focus-visible {
 
 .pilar-card:nth-child(1) .pilar-card__icon-circle {
   background: #ffffff;
-  color: var(--edumon-blue-700);
-  box-shadow: 0 10px 22px rgba(10, 90, 168, 0.22);
+  color: var(--edu-violet);
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22);
 }
 
 .pilar-card:nth-child(2) .pilar-card__icon-circle {
@@ -1147,6 +1200,40 @@ textarea:focus-visible {
 .aprende-content {
   position: relative;
   z-index: 1;
+}
+
+/* Cabecera de la sección — antes vivía como un bloque enorme de estilos
+   inline en el JSX; ahora en clases, reutilizando el patrón de
+   .section-label / .pilares-label. */
+.aprende-head {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 1.5rem 8px;
+}
+.aprende-head__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--edumon-blue-700);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.aprende-head__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 800;
+  color: var(--edumon-ink);
+  margin: 0 0 10px;
+}
+.aprende-head__desc {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--edumon-muted);
+  margin: 0;
 }
 
 
@@ -1209,10 +1296,10 @@ textarea:focus-visible {
 
 .modulo-embla__slide {
   /*
-    Un poco más grande para que la card
-    tenga presencia.
+    PC: 3 tarjetas por vista (el carrusel avanza en grupos de 3).
+    Tablet baja a 2 y móvil a 1 vía los media queries de abajo.
   */
-  flex: 0 0 68%;
+  flex: 0 0 33.333%;
 
   min-width: 0;
 
@@ -1319,8 +1406,8 @@ textarea:focus-visible {
   border-color: var(--m-color, var(--edumon-blue-200));
 
   box-shadow:
-    0 22px 44px rgba(15, 23, 42, 0.14),
-    0 0 0 3px var(--m-color, var(--edumon-blue-200));
+    0 16px 32px rgba(15, 23, 42, 0.12),
+    0 0 0 2px var(--m-color, var(--edumon-blue-200));
 }
 
 
@@ -1549,26 +1636,28 @@ textarea:focus-visible {
    RESPONSIVE
 ══════════════════════════════════════════════════════ */
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
 
   .modulo-embla {
     padding-inline: 42px;
   }
 
+  /* Tablet: 2 tarjetas por vista. */
   .modulo-embla__slide {
-    flex: 0 0 78%;
+    flex: 0 0 50%;
   }
 
 }
 
 
-@media (max-width: 620px) {
+@media (max-width: 640px) {
 
   .modulo-embla {
     padding-inline: 36px;
     padding-bottom: 24px;
   }
 
+  /* Móvil: 1 tarjeta (se mantiene el efecto de asomar las vecinas). */
   .modulo-embla__slide {
     flex: 0 0 88%;
     padding-inline: 8px;
@@ -1650,7 +1739,7 @@ textarea:focus-visible {
 }
 
 @media (max-width: 1024px) {
-  .modulo-embla__slide { flex-basis: 80%; }
+  .modulo-embla__slide { flex-basis: 50%; }
 }
 @media (max-width: 640px) {
   .modulo-embla { padding-inline: var(--container-pad); }
@@ -1669,7 +1758,9 @@ textarea:focus-visible {
    y "aprende" sin romper el tono claro general.
    ══════════════════════════════════════════════════════ */
 .landing-section--alt {
-  background: linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-50) 100%);
+  background:
+    radial-gradient(circle at 88% 8%, var(--edumon-cyan-100) 0%, transparent 40%),
+    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-100) 100%);
 }
 .landing-quienes {
   position: relative;
@@ -1721,10 +1812,41 @@ textarea:focus-visible {
 }
 .quienes-member-card {
   background: #fff;
+  border: 1px solid var(--edumon-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: 16px;
+  padding: 20px 16px;
   text-align: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.quienes-member-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-pop);
+}
+
+/* Avatar de integrante — antes eran bloques rectangulares con estilos
+   inline; ahora una "insignia" circular con iniciales y gradiente de
+   marca, coherente con el resto del sistema. */
+.quienes-member-card__avatar {
+  width: clamp(64px, 12vw, 84px);
+  height: clamp(64px, 12vw, 84px);
+  margin: 0 auto 0.85rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: clamp(1.3rem, 3.4vw, 1.8rem);
+  color: #fff;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+}
+.quienes-member-card__avatar--blue {
+  background: linear-gradient(140deg, var(--edumon-blue-600), var(--edu-accent-cyan));
+}
+.quienes-member-card__avatar--pink {
+  background: linear-gradient(140deg, var(--edu-pink), var(--edu-violet));
 }
 .quienes-member-card__name {
   font-weight: 700;
@@ -1830,36 +1952,214 @@ textarea:focus-visible {
   font-size: 0.9rem;
 }
 
-/* ── Imagen ── */
+/* ══════════════════════════════════════════════════════
+   BUZÓN DE SOPORTE — "escena" alrededor de la ilustración
+   Se pidió que "parezca de verdad un buzón": pedestal que lo
+   clava en el piso, sombra proyectada, banderita que se levanta
+   al pasar el mouse, contador de mensajes y una carta que entra
+   en bucle.
+   ══════════════════════════════════════════════════════ */
 .contacto-left__img-wrap {
   position: relative;
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 420px;
+  align-items: flex-end;
+  min-height: 470px;
 }
 
-.contacto-left__img-wrap::before {
-  content: "";
+.buzon-scene {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 34px;
+  isolation: isolate;
+}
+
+.buzon-scene__halo {
   position: absolute;
-  width: 430px;
-  height: 430px;
+  z-index: 0;
+  width: 118%;
+  aspect-ratio: 1;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, var(--edumon-blue-100), transparent 72%);
+  background:
+    radial-gradient(circle at 34% 30%, rgba(5, 199, 242, 0.32), transparent 55%),
+    radial-gradient(circle at 70% 74%, rgba(124, 58, 237, 0.22), transparent 55%),
+    radial-gradient(circle, var(--edumon-blue-200) 0%, transparent 72%);
+  filter: blur(4px);
 }
 
-.contacto-left__letras {
+.buzon-scene__img {
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 420px;
-  filter: drop-shadow(0 24px 36px rgba(15, 23, 42, 0.16));
-  transition: transform 0.3s ease;
+  filter: drop-shadow(0 26px 32px rgba(15, 23, 42, 0.24));
+  transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform-origin: center bottom;
+}
+.buzon-scene:hover .buzon-scene__img {
+  transform: translateY(-8px) scale(1.03);
 }
 
-.contacto-left__letras:hover {
-  transform: translateY(-6px);
+/* Poste corto que "clava" el buzón en el piso */
+.buzon-scene__post {
+  position: absolute;
+  z-index: 1;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24%;
+  height: 48px;
+  background: linear-gradient(180deg, var(--edumon-blue-500), var(--edumon-blue-800));
+  border-radius: 6px 6px 3px 3px;
+  clip-path: polygon(22% 0, 78% 0, 100% 100%, 0% 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Sombra proyectada en el piso */
+.buzon-scene__shadow {
+  position: absolute;
+  z-index: 0;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 66%;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(4, 42, 84, 0.30), transparent 70%);
+  filter: blur(3px);
+  transition: width 0.4s ease, opacity 0.4s ease;
+}
+.buzon-scene:hover .buzon-scene__shadow { width: 54%; opacity: 0.8; }
+
+/* Banderita lateral */
+.buzon-flag {
+  position: absolute;
+  z-index: 3;
+  top: 20%;
+  right: 6%;
+  width: 34px;
+  height: 24px;
+  background: linear-gradient(135deg, var(--edumon-danger), #ff8080);
+  border-radius: 3px 6px 6px 3px;
+  transform-origin: left center;
+  transform: rotate(30deg) translateY(6px);
+  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.35);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.buzon-flag::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: -8px;
+  width: 4px;
+  height: 42px;
+  border-radius: 4px;
+  background: var(--edumon-neutral-400);
+}
+.buzon-scene:hover .buzon-flag { transform: rotate(-6deg); }
+
+/* Contador de mensajes nuevos */
+.buzon-badge {
+  position: absolute;
+  z-index: 4;
+  top: 8%;
+  left: 10%;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--edumon-danger);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #fff;
+  box-shadow: 0 8px 18px rgba(239, 68, 68, 0.4);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .buzon-badge { animation: buzonBadgePulse 2.4s ease-in-out infinite; }
+}
+@keyframes buzonBadgePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.12); }
+}
+
+/* Carta que entra al buzón en bucle */
+.buzon-envelope {
+  position: absolute;
+  z-index: 3;
+  top: 4%;
+  left: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--edumon-blue-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .buzon-envelope { animation: buzonMail 4.6s ease-in-out infinite; }
+}
+@keyframes buzonMail {
+  0%        { transform: translate(-50%, -30px) rotate(-8deg); opacity: 0; }
+  14%       { opacity: 1; }
+  55%       { transform: translate(-50%, 44px) rotate(6deg); opacity: 1; }
+  70%, 100% { transform: translate(-50%, 58px) rotate(6deg); opacity: 0; }
+}
+
+/* Chip "soporte en línea" */
+.buzon-chip {
+  position: absolute;
+  z-index: 5;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--edumon-border);
+  box-shadow: var(--shadow-pop);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--edumon-ink);
+}
+.buzon-chip__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--edumon-success);
+  box-shadow: 0 0 0 4px rgba(65, 217, 88, 0.22);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .buzon-chip__dot { animation: pulse 2.4s infinite; }
+}
+
+/* Estrellitas alrededor del buzón */
+.buzon-spark { position: absolute; z-index: 4; pointer-events: none; }
+.buzon-spark--1 { top: 2%;  right: 22%; color: var(--edumon-warning); }
+.buzon-spark--2 { top: 42%; left: 0%;   color: var(--edumon-cyan-500); }
+.buzon-spark--3 { bottom: 24%; right: 0%; color: var(--edu-pink); }
+@media (prefers-reduced-motion: no-preference) {
+  .buzon-spark { animation: sparkleTwinkle 3s ease-in-out infinite; }
+  .buzon-spark--2 { animation-delay: -1s; }
+  .buzon-spark--3 { animation-delay: -2s; }
 }
 
 /* ── Tarjeta flotante: verde = estado "en línea", se conserva ── */
@@ -1957,7 +2257,7 @@ textarea:focus-visible {
   border: none;
   border-radius: 999px;
   margin-top: 10px;
-  background: var(--edumon-blue-600);
+  background: var(--gradient-cool);
   color: #fff;
   font-size: 1rem;
   font-weight: 700;
@@ -1966,14 +2266,13 @@ textarea:focus-visible {
   justify-content: center;
   gap: 10px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 10px 24px rgba(10, 90, 168, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .contacto-form-card__submit:hover {
-  background: var(--edumon-blue-700);
+  filter: saturate(1.15) brightness(1.03);
   transform: translateY(-2px);
-  /* FIX: antes rgba(37,99,235,...) = #2563EB, un azul ajeno a la
-     paleta. Ahora reutiliza el glow de marca (azul-600 + cian). */
   box-shadow: var(--glow-brand);
 }
 
@@ -2010,10 +2309,10 @@ textarea:focus-visible {
 /* ── Móvil ── */
 @media (max-width: 768px) {
   .contacto-left__title { font-size: 2rem; }
-  .contacto-left__img-wrap { min-height: 320px; }
-  .contacto-left__img-wrap::before { width: 300px; height: 300px; }
-  .contacto-left__letras { max-width: 300px; }
-  .contacto-support-card { top: 0; right: 50%; transform: translateX(50%); }
+  /* El buzón se mantiene grande en móvil (se pidió que no se viera
+     "chiquito"): solo se recorta un poco respecto al escritorio. */
+  .contacto-left__img-wrap { min-height: 400px; }
+  .buzon-scene { max-width: 340px; }
   .contacto-form-card { padding: 26px; }
   .form-row { grid-template-columns: 1fr; }
 }
@@ -2022,10 +2321,159 @@ textarea:focus-visible {
 @media (max-width: 480px) {
   .contacto-left__title { font-size: 1.8rem; }
   .contacto-left__text { font-size: 0.95rem; }
-  .contacto-left__letras { max-width: 250px; }
+  .contacto-left__img-wrap { min-height: 360px; }
+  .buzon-scene { max-width: min(320px, 80vw); }
+  .buzon-chip { font-size: 0.72rem; padding: 8px 12px; }
   .contacto-form-card { padding: 22px; border-radius: 22px; }
   .contacto-form-card__title { font-size: 1.25rem; }
   .contacto-form-card__submit { height: 52px; font-size: 0.95rem; }
+}
+
+/* ══════════════════════════════════════════════════════
+   SECCIÓN "APP MÓVIL" — descarga del APK (solo Android)
+   ══════════════════════════════════════════════════════ */
+.landing-app {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--space-section-desktop);
+  background:
+    radial-gradient(circle at 10% 90%, var(--edumon-cyan-100) 0%, transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-100) 100%);
+}
+@media (max-width: 1024px) { .landing-app { padding-block: var(--space-section-tablet); } }
+@media (max-width: 640px)  { .landing-app { padding-block: var(--space-section-mobile); } }
+
+.landing-app__grid {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.landing-app__title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  font-weight: 800;
+  color: var(--edumon-ink);
+  margin: 14px 0 12px;
+}
+.landing-app__text {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--edumon-muted);
+  max-width: 520px;
+  margin: 0 0 20px;
+}
+.landing-app__android {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--edumon-success-bg);
+  color: var(--edumon-success-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 22px;
+}
+.landing-app__cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+.landing-app__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 54px;
+  padding: 0 30px;
+  border: none;
+  border-radius: 999px;
+  background: var(--gradient-cool);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.98rem;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(10, 90, 168, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.landing-app__btn:hover:not(:disabled) {
+  filter: saturate(1.15) brightness(1.03);
+  transform: translateY(-2px);
+  box-shadow: var(--glow-brand);
+}
+.landing-app__btn:disabled {
+  background: var(--edumon-neutral-300);
+  color: var(--edumon-neutral-600);
+  cursor: not-allowed;
+}
+.landing-app__meta {
+  font-size: 0.82rem;
+  color: var(--edumon-subtle);
+  margin: 0;
+}
+
+.landing-app__visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+.landing-app__icon {
+  position: relative;
+  z-index: 2;
+  width: clamp(140px, 22vw, 200px);
+  aspect-ratio: 1;
+  border-radius: 24%;
+  background: var(--gradient-cool);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 30px 60px rgba(10, 90, 168, 0.32);
+}
+.landing-app__icon img {
+  width: 56%;
+  height: 56%;
+  filter: brightness(0) invert(1);
+}
+.landing-app__mascot {
+  position: absolute;
+  z-index: 1;
+  right: 4%;
+  bottom: -2%;
+  width: clamp(88px, 15vw, 140px);
+  filter: drop-shadow(0 18px 26px rgba(4, 42, 84, 0.18));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing-app__icon { animation: floatGentle 6s ease-in-out infinite; }
+}
+
+@media (max-width: 900px) {
+  .landing-app__grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
+  .landing-app__content { display: flex; flex-direction: column; align-items: center; }
+  .landing-app__cta { align-items: center; }
+  .landing-app__text { max-width: 560px; }
+  .landing-app__visual { order: -1; min-height: auto; margin-bottom: 8px; }
+  .landing-app .deco-bubbles { display: none; }
+}
+@media (max-width: 480px) {
+  .landing-app__btn { width: 100%; }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -2034,15 +2482,31 @@ textarea:focus-visible {
 .landing-footer {
   background: var(--edumon-footer-bg);
   color: #cbd5e1;
-  padding-top: var(--space-section-desktop);
+  padding-top: clamp(56px, 8vw, 84px);
 }
 .landing-footer__grid {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
   gap: 32px;
   padding-bottom: 48px;
+}
+
+/* Ilustración de las mascotas de Edumon — PNG con fondo transparente,
+   así que "flota" sobre el footer oscuro sin marco (nada de borde ni
+   caja: dibujaría un rectángulo alrededor de píxeles vacíos). */
+.footer-crew {
+  width: 100%;
+  max-width: 260px;
+  margin: 2px 0 16px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.35));
+}
+.footer-col__note {
+  font-size: 0.76rem;
+  color: #64748b;
+  margin: 10px 0 0;
+  line-height: 1.5;
 }
 .footer-brand__wordmark {
   display: flex;
@@ -2144,6 +2608,8 @@ textarea:focus-visible {
   .landing-footer__grid { grid-template-columns: 1fr; text-align: center; }
   .footer-col ul { align-items: center; }
   .footer-brand__made { margin-inline: auto; }
+  .footer-brand { display: flex; flex-direction: column; align-items: center; }
+  .footer-crew { margin-inline: auto; }
 }
 
 /* ══════════════════════════════════════════════════════

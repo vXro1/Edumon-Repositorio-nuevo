@@ -167,9 +167,16 @@ async function runRequest(endpoint, finalUrl, finalOpts, { silentAuth, isRetry =
       const error = new Error(details ? `${errorMsg}: ${details}` : errorMsg);
       error.validationErrors = data.errors; // [{ path, msg, ... }]
       error.errors = data.errors;           // alias esperado por parseValidationErrors.js
+      error.data = data;
       throw error;
     }
-    throw new Error(errorMsg);
+    // El body completo (data) se adjunta al Error porque algunos endpoints
+    // mandan campos extra junto al message que el llamador necesita leer —
+    // ej. DELETE /users/:id manda { message, cursosActivos: [...] } cuando
+    // bloquea la suspensión de un docente con cursos activos.
+    const error = new Error(errorMsg);
+    error.data = data;
+    throw error;
   }
 
   return data;

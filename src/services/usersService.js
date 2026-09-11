@@ -1,4 +1,5 @@
 import { apiFetch, apiFetchFormData } from './core/apiClient';
+import { assetUrl } from '@/utils/assetUrl';
 
 export const usersCreate = (body) =>
   apiFetch('/users', { method: 'POST', body: JSON.stringify(body) });
@@ -20,7 +21,15 @@ export const usersUpdateMyProfile = (body) =>
 export const usersUpdateMyPhoto = (formData) =>
   apiFetchFormData('/users/me/foto-perfil', { method: 'PUT', body: formData });
 
-export const usersGetDefaultPhotos = () => apiFetch('/users/fotos-predeterminadas');
+// Avatares predeterminados: el backend los sirve local (/static/avatares/…);
+// se devuelven con URL absoluta lista para <img> y para reenviar al guardar.
+export const usersGetDefaultPhotos = async () => {
+  const res = await apiFetch('/users/fotos-predeterminadas');
+  const fotos = Array.isArray(res?.fotos)
+    ? res.fotos.map((f) => ({ ...f, url: assetUrl(f.url) }))
+    : res?.fotos;
+  return { ...res, fotos };
+};
 
 export const usersGetById = (id) => apiFetch(`/users/${id}`);
 

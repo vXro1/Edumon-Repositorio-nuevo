@@ -1,6 +1,9 @@
 // src/components/ui/PadresCsvTemplate.jsx  (también exportable como util puro)
 //
-// Genera y descarga la plantilla CSV para registro masivo de padres de familia.
+// Genera y descarga la plantilla Excel para registro masivo de padres de
+// familia (POST /cursos/:id/usuarios-masivo). El backend dejó de aceptar
+// CSV: ahora exige .xlsx/.xlsm, así que la plantilla se genera como Excel
+// real (no un .csv renombrado, que el backend rechazaría).
 // Se puede usar de dos formas:
 //
 //   1. Como función utilitaria pura (sin React):
@@ -12,12 +15,9 @@
 //      <PadresCsvTemplateButton />
 //
 // Columnas según el endpoint POST /cursos/:id/usuarios-masivo:
-//   nombre, apellido, telefono, cedula
-//
-// La plantilla incluye:
-//   - Fila de encabezados (requerida por el backend)
-//   - 3 filas de ejemplo comentadas con datos ficticios colombianos
-//   - BOM UTF-8 para compatibilidad con Excel en Windows
+//   nombre, apellido, telefono, cedula (telefono es obligatorio aquí)
+
+import { descargarXlsx } from "@/utils/xlsxWriter";
 
 const COLUMNAS = ["nombre", "apellido", "telefono", "cedula"];
 
@@ -28,34 +28,11 @@ const EJEMPLOS = [
 ];
 
 /**
- * Genera el contenido CSV como string con BOM UTF-8.
- * @returns {string}
+ * Descarga la plantilla Excel directamente en el navegador.
+ * @param {string} [filename="plantilla_padres.xlsx"]
  */
-export function generarContenidoCsvPadres() {
-  const encabezado = COLUMNAS.join(",");
-  const filas = EJEMPLOS.map((fila) =>
-    fila.map((v) => `"${v}"`).join(",")
-  );
-  // BOM UTF-8 (\uFEFF) → Excel en Windows lo detecta correctamente
-  return "\uFEFF" + [encabezado, ...filas].join("\r\n");
-}
-
-/**
- * Descarga la plantilla CSV directamente en el navegador.
- * @param {string} [filename="plantilla_padres.csv"]
- */
-export function descargarPlantillaPadresCSV(filename = "plantilla_padres.csv") {
-  const contenido = generarContenidoCsvPadres();
-  const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = filename;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+export function descargarPlantillaPadresCSV(filename = "plantilla_padres.xlsx") {
+  descargarXlsx([COLUMNAS, ...EJEMPLOS], filename, "Padres");
 }
 
 // ─── Componente botón (uso opcional) ─────────────────────────────────────────
@@ -78,8 +55,8 @@ const DOWNLOAD_ICON = (
  *   className {string}  Clase CSS adicional
  */
 export default function PadresCsvTemplateButton({
-  label = "Descargar plantilla CSV",
-  filename = "plantilla_padres.csv",
+  label = "Descargar plantilla Excel",
+  filename = "plantilla_padres.xlsx",
   style = {},
   className = "",
 }) {

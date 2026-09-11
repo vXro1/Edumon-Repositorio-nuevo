@@ -1,6 +1,7 @@
 // src/lib/normalizers/foro.js
 
 import { normalizeUser } from "./user";
+import { assetUrl } from "@/utils/assetUrl";
 
 /**
  * Normaliza archivos del foro
@@ -15,7 +16,7 @@ export function normalizeArchivosForo(archivos) {
       archivo.publicId ||
       `file_${index}_${Date.now()}`,
 
-    url: archivo.url || archivo.secure_url || "",
+    url: assetUrl(archivo.url || archivo.secure_url || ""),
 
     nombre:
       archivo.nombre ||

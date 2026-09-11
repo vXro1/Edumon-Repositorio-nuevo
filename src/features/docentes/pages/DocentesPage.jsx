@@ -12,7 +12,7 @@ import { Modal, UserAvatar, Toast, Button, Badge, Avatar, Input, PhoneInput } fr
 import { Sk, EmptyState } from "@/features/cursos/components/shared/ui";
 import { normalizeUser } from "@/lib/normalizers";
 import useUserStore from "@/store/useUserStore";
-import { humanizeError } from "@/utils/humanizeError";
+import { humanizeError, humanizeCursosActivosError } from "@/utils/humanizeError";
 import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 import {
   contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
@@ -401,7 +401,7 @@ export default function DocentesPage() {
       notify("Docente suspendido");
       setDelTarget(null);
     } catch (err) {
-      notify(humanizeError(err, "Error al suspender docente"), "error");
+      notify(humanizeCursosActivosError(err) ?? humanizeError(err, "Error al suspender docente"), "error");
     } finally {
       setSaving(false);
     }
@@ -432,6 +432,14 @@ export default function DocentesPage() {
      y nunca refrescaba la lista aunque la importación sí hubiera funcionado. */
   const handleCsvUpload = async () => {
     if (!csvFile) return;
+    // El backend dejó de aceptar CSV: ahora exige Excel (.xlsx/.xlsm). El
+    // atributo accept del input ya filtra la mayoría de los casos, pero no
+    // todos los navegadores/SO lo respetan estrictamente en el selector.
+    const nombreArchivo = csvFile.name.toLowerCase();
+    if (!nombreArchivo.endsWith(".xlsx") && !nombreArchivo.endsWith(".xlsm")) {
+      notify("Solo se permiten archivos Excel (.xlsx, .xlsm)", "error");
+      return;
+    }
     setCsvLoading(true);
     try {
       const fd = new FormData();
@@ -491,7 +499,7 @@ export default function DocentesPage() {
             <RefreshCw size={15} />
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setShowCsv(true); resetCsv(); }}>
-            <Upload size={15} /> Importar CSV
+            <Upload size={15} /> Importar Excel
           </Button>
           <Button size="sm" onClick={() => { setForm(INIT); setCreateErrors({}); setShowCreate(true); }}>
             <Plus size={15} /> Registrar docente
@@ -694,7 +702,7 @@ export default function DocentesPage() {
       <Modal
         isOpen={showCsv}
         onClose={() => { setShowCsv(false); resetCsv(); }}
-        title="Importar docentes por CSV"
+        title="Importar docentes por Excel"
         description="El correo de acceso se genera automáticamente a partir de la cédula; no se incluye en el archivo."
         size="md"
       >
@@ -721,8 +729,10 @@ export default function DocentesPage() {
               <CsvFormatoTable />
 
               <p style={{ fontSize: 11.5, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.5 }}>
-                La primera fila debe ser el encabezado exacto (<code>nombre,apellido,telefono,cedula</code>),
-                en ese orden. El teléfono va en 10 dígitos (el +57 se agrega automáticamente).
+                Archivo Excel (.xlsx/.xlsm, máx 5MB). La fila de encabezado es opcional (se
+                detecta y se salta sola); las columnas van en este orden: <code>nombre, apellido, telefono, cedula</code>.
+                El teléfono va en 10 dígitos (el +57 se agrega automáticamente) y es opcional aquí.
+                Formatea cedula y telefono como <strong>Texto</strong> en Excel para no perder ceros a la izquierda.
                 No incluyas una columna de correo: el sistema la genera automáticamente
                 con la cédula. {TEXTO_CONTRASENA_INICIAL}
               </p>
@@ -743,17 +753,17 @@ export default function DocentesPage() {
             >
               <Upload size={24} style={{ margin: "0 auto var(--space-2)", color: "var(--color-text-muted)" }} />
               <p style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>
-                {csvFile ? csvFile.name : "Haz clic para seleccionar un archivo CSV"}
+                {csvFile ? csvFile.name : "Haz clic para seleccionar un archivo Excel"}
               </p>
               {!csvFile && (
                 <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "var(--space-1) 0 0" }}>
-                  Solo archivos .csv
+                  Solo archivos Excel (.xlsx, .xlsm)
                 </p>
               )}
               <input
                 ref={fileRef}
                 type="file"
-                accept=".csv"
+                accept=".xlsx,.xlsm"
                 style={{ display: "none" }}
                 onChange={e => setCsvFile(e.target.files[0] ?? null)}
               />

@@ -1,24 +1,21 @@
-// src/features/auth/components/forms/ResetPasswordForm.jsx
+// src/components/forms/ResetPasswordForm.jsx
+//
+// Restablecer contraseña con el código recibido por CORREO. El backend retiró
+// la recuperación por teléfono/WhatsApp, así que esta pantalla es solo email.
 import { useState, useRef, useEffect } from "react";
-import { Mail, Phone, Lock } from "lucide-react";
-import { Input, PhoneInput } from "@/components";
+import { Mail, Lock } from "lucide-react";
+import { Input } from "@/components";
 import AuthLayout from "./AuthLayout";
-import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 import { validarContrasenaNueva, TEXTO_REQUISITOS_CONTRASENA } from "@/utils/credenciales";
 
 const CODE_LENGTH = 6;
 
-const validate = ({ correo, telefono, codigo, contrasenaNueva, confirmar, method }) => {
+const validate = ({ correo, codigo, contrasenaNueva, confirmar }) => {
   const e = {};
-  if (method === "phone") {
-    if (!telefono?.trim())          e.telefono = "El número es requerido";
-    else if (!isValidPhone(telefono)) e.telefono = PHONE_ERROR;
-  } else {
-    if (!correo?.trim())
-      e.correo = "El correo es requerido";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
-      e.correo = "Ingresa un correo válido";
-  }
+  if (!correo?.trim())
+    e.correo = "El correo es requerido";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
+    e.correo = "Ingresa un correo válido";
   if (!codigo.trim())
     e.codigo = "El código es requerido";
   else if (!/^\d{4,8}$/.test(codigo.trim()))
@@ -31,15 +28,10 @@ const validate = ({ correo, telefono, codigo, contrasenaNueva, confirmar, method
   return e;
 };
 
-/* Oculta parcialmente el teléfono/correo al que se envió el código —
-   puramente visual, no toca el valor real que se envía al backend. */
-function maskContact(value, method) {
+/* Oculta parcialmente el correo al que se envió el código — puramente visual,
+   no toca el valor real que se envía al backend. */
+function maskContact(value) {
   if (!value) return "";
-  if (method === "phone") {
-    const digits = value.replace(/\D/g, "");
-    const last4 = digits.slice(-4) || digits;
-    return `+57 *** *** ${last4}`;
-  }
   const [user, domain] = value.split("@");
   if (!domain) return value;
   const visible = user.slice(0, 1);
@@ -123,15 +115,12 @@ const ResetPasswordForm = ({
   error = "",
   success = false,
   defaultEmail = "",
-  defaultPhone = "",
-  method = "email",
   onBack,
   onGoLogin,
   onResend,
 }) => {
   const [form, setForm] = useState({
     correo:          defaultEmail,
-    telefono:        defaultPhone,
     codigo:          "",
     contrasenaNueva: "",
     confirmar:       "",
@@ -159,15 +148,10 @@ const ResetPasswordForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const ve = validate({ ...form, method });
+    const ve = validate(form);
     if (Object.keys(ve).length) { setErrors(ve); return; }
     const { confirmar, ...rest } = form;
-    onSubmit({
-      ...rest,
-      // "+57XXXXXXXXXX" siempre, sin importar cómo lo haya escrito el usuario
-      telefono: rest.telefono ? normalizePhone(rest.telefono) ?? rest.telefono : rest.telefono,
-      method,
-    });
+    onSubmit(rest);
   };
 
   const handleResend = async () => {
@@ -181,7 +165,7 @@ const ResetPasswordForm = ({
     }
   };
 
-  const contactValue = method === "phone" ? form.telefono : form.correo;
+  const contactValue = form.correo;
 
   return (
     <AuthLayout>
@@ -190,15 +174,15 @@ const ResetPasswordForm = ({
         <p>
           {success
             ? "Tu contraseña fue actualizada correctamente."
-            : `Enviamos un código de verificación a tu ${method === "phone" ? "teléfono" : "correo"}.`}
+            : "Enviamos un código de verificación a tu correo."}
         </p>
       </div>
 
       {!success && contactValue && (
         <div style={{ textAlign: "center", marginBottom: 16 }}>
           <span className="auth-contact-chip">
-            {method === "phone" ? <Phone size={13} /> : <Mail size={13} />}
-            {maskContact(contactValue, method)}
+            <Mail size={13} />
+            {maskContact(contactValue)}
           </span>
         </div>
       )}
@@ -219,31 +203,21 @@ const ResetPasswordForm = ({
       ) : (
         <form onSubmit={handleSubmit} noValidate className="auth-form">
           {/* Si se llegó sin pasar por "Recuperar contraseña" (sin router
-              state), no hay teléfono/correo que mostrar — se deja el campo
-              editable como respaldo en vez de perder la posibilidad de usar
-              esta pantalla como punto de entrada directo. */}
+              state), no hay correo que mostrar — se deja el campo editable
+              como respaldo en vez de perder la posibilidad de usar esta
+              pantalla como punto de entrada directo. */}
           {!contactValue && (
-            method === "phone" ? (
-              <PhoneInput
-                label="Número de teléfono"
-                name="telefono"
-                value={form.telefono}
-                onChange={handleChange}
-                error={errors.telefono}
-              />
-            ) : (
-              <Input
-                label="Correo electrónico"
-                name="correo"
-                type="email"
-                placeholder="tucorreo@ejemplo.com"
-                value={form.correo}
-                onChange={handleChange}
-                leftIcon={<Mail size={16} />}
-                error={errors.correo}
-                autoComplete="email"
-              />
-            )
+            <Input
+              label="Correo electrónico"
+              name="correo"
+              type="email"
+              placeholder="tucorreo@ejemplo.com"
+              value={form.correo}
+              onChange={handleChange}
+              leftIcon={<Mail size={16} />}
+              error={errors.correo}
+              autoComplete="email"
+            />
           )}
 
           {/* Código OTP */}

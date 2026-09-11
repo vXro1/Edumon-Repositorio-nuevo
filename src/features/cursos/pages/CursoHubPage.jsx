@@ -4,12 +4,13 @@
 // Toda la lógica de datos y permisos viene de CursoProvider (React Query).
 // ─────────────────────────────────────────────────────────────────────────────
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, ClipboardList, MessageSquare, Users, Calendar } from "lucide-react";
+import { ArrowLeft, BookOpen, ClipboardList, MessageSquare, Users, Calendar, AlertCircle } from "lucide-react";
 
 import { CursoProvider, useCursoContext } from "../context/CursoContext";
 import { tienePermiso } from "@/security/roleMatrix";
 import { PERMISSIONS } from "@/security/permissions";
 import { Button } from "@/components";
+import { humanizeError } from "@/utils/humanizeError";
 
 import HubHeader        from "../components/hub/HubHeader";
 import HubTabs          from "../components/hub/HubTabs";
@@ -35,12 +36,40 @@ function CursoHubContent() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const {
-    cursoId, curso, cursoColor, loading, user,
+    cursoId, curso, cursoColor, loading, error, reloadCurso, user,
     canManageModules, canManageTasks, canGradeEntregas,
     canCreateForo, canViewParticipants, canManageParticipants, canSubmitEntrega,
   } = useCursoContext();
 
   const rawRole = user?.rol ?? user?.role ?? "";
+
+  // Permisos endurecidos en el backend (2026-09-02): GET /cursos/:id ahora
+  // devuelve 403 si el usuario no pertenece al curso/institución (antes lo
+  // veía cualquiera). Sin este guard, curso quedaba undefined y HubHeader/
+  // los tabs se renderizaban igual con datos vacíos, en vez de explicar por
+  // qué no hay nada que ver.
+  if (!loading && (error || !curso)) {
+    return (
+      <div style={{ maxWidth: 640, margin: "40px auto 0" }}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} style={{ marginBottom: 16 }}>
+          <ArrowLeft style={{ width: 15, height: 15 }} /> Volver
+        </Button>
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 10, textAlign: "center",
+          background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)",
+          borderRadius: 14, padding: "40px 24px",
+        }}>
+          <AlertCircle style={{ width: 32, height: 32, color: "var(--color-error-hover)" }} />
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text)", margin: 0 }}>
+            {humanizeError(error, "No se pudo cargar este curso")}
+          </p>
+          <Button size="sm" onClick={() => reloadCurso()} style={{ marginTop: 4 }}>
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Tabs visibles según permisos del usuario
   const tabs     = TAB_CONFIG.filter((t) => t.always || tienePermiso(rawRole, t.perm));

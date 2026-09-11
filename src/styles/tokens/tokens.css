@@ -319,7 +319,11 @@
      Quicksand, no Baloo 2. */
   --font-heading: "Baloo 2", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: var(--font-heading);
-  --font-sans:    "Quicksand", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Auxiliar / cuerpo: Nunito (se pidió explícitamente). Se sirve desde
+     Google Fonts vía <link> en index.html. Mantiene el mismo espíritu
+     redondeado que Quicksand pero con mejor legibilidad a tamaño de
+     párrafo y una familia de pesos más amplia (400-900). */
+  --font-sans:    "Nunito", "Quicksand", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body:    var(--font-sans);
   --font-mono:    "Fira Code", "Cascadia Code", "Consolas", monospace;
 

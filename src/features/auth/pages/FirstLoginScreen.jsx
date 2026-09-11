@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { usersGetDefaultPhotos, usersUpdateMyPhoto, usersUpdateMyProfile } from "@/services/usersService";
 import { authChangePassword } from "@/services/authService";
 import { humanizeError } from "@/utils/humanizeError";
+import { assetUrl } from "@/utils/assetUrl";
 import { validarContrasenaNueva, PASSWORD_RULES } from "@/utils/credenciales";
 import logoSvg from "@/assets/icons/logo.svg";
 import { readLoginPassword, clearLoginPassword } from "../utils/firstLoginPassword";
@@ -583,7 +584,8 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
       const fd = new FormData();
       fd.append("fotoPredeterminadaUrl", selected);
       const data   = await usersUpdateMyPhoto(fd);
-      const newUrl = data?.fotoPerfilUrl ?? selected;
+      // El backend responde con ruta relativa; se absolutiza para el <img>.
+      const newUrl = assetUrl(data?.fotoPerfilUrl) || selected;
       onComplete({ fotoPerfilUrl: newUrl }, newUrl);
     } catch (err) {
       setError(humanizeError(err, "Error al guardar el avatar. Intenta de nuevo."));

@@ -41,15 +41,31 @@ const TIPO_ENTREGA_LABELS = {
 // muestran ANTES de intentar subir en vez de solo después de un error
 // "Formato de archivo no permitido" sin ningún detalle de qué sí se acepta,
 // y el <input type="file"> los usa como filtro nativo del selector.
+// Ampliado 2026-09-02: ahora también admite .mov/gif/webp/avi, audio, Office
+// completo, .txt/.csv y comprimidos.
 const FORMATOS_PERMITIDOS_LABEL =
-  "PDF, Word (.doc/.docx), Excel (.xls/.xlsx), imágenes (.jpg/.png) o video (.mp4/.mpeg/.webm) — máx. 10 MB por archivo";
+  "PDF, Word, Excel, PowerPoint, texto (.txt/.csv), imágenes (.jpg/.png/.gif/.webp), " +
+  "video (.mp4/.mov/.avi/.webm/.mpeg), audio (.mp3/.wav/.ogg) o comprimidos (.zip/.rar/.7z) " +
+  "— máx. 10 MB por archivo, hasta 5 archivos";
 const FORMATOS_PERMITIDOS_ACCEPT =
-  ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.mp4,.mpeg,.webm," +
+  ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv," +
+  ".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.webm,.mpeg," +
+  ".mp3,.wav,.ogg,.zip,.rar,.7z," +
   "application/pdf,application/msword," +
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document," +
   "application/vnd.ms-excel," +
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet," +
-  "image/jpeg,image/png,video/mp4,video/mpeg,video/webm";
+  "application/vnd.ms-powerpoint," +
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation," +
+  "text/plain,text/csv," +
+  "image/jpeg,image/png,image/gif,image/webp," +
+  "video/mp4,video/mpeg,video/quicktime,video/webm,video/x-msvideo," +
+  "audio/mpeg,audio/wav,audio/ogg," +
+  "application/zip,application/x-rar-compressed,application/x-7z-compressed";
+
+const MAX_ARCHIVOS = 5;
+const MAX_ENLACES = 10;
+const ENLACE_RE = /^https?:\/\/.+/i;
 
 function formatFecha(s) {
   if (!s) return "—";
@@ -68,6 +84,9 @@ export default function FamiliaEntregaDetallePage() {
 
   const [texto, setTexto]       = useState("");
   const [archivos, setArchivos] = useState([]);
+  const [enlaces, setEnlaces]   = useState([]); // [{ url, titulo }]
+  const [enlaceUrl, setEnlaceUrl]     = useState("");
+  const [enlaceTitulo, setEnlaceTitulo] = useState("");
   const [saving, setSaving]     = useState(null); // "borrador" | "enviar" | null
   const [toast, setToast]       = useState({ msg: "", type: "success" });
   const fileRef = useRef(null);
@@ -89,7 +108,12 @@ export default function FamiliaEntregaDetallePage() {
       const raw = entregaData?.entrega ?? entregaData?.entregas?.[0] ?? null;
       const e = normalizeEntrega(raw);
       setEntrega(e);
-      if (e) setTexto(e.textoRespuesta ?? "");
+      if (e) {
+        setTexto(e.textoRespuesta ?? "");
+        setEnlaces(e.enlaces ?? []);
+      } else {
+        setEnlaces([]);
+      }
     } catch (err) {
       setLoadError(humanizeError(err, "No se pudo cargar este reto"));
     } finally {
@@ -123,6 +147,9 @@ export default function FamiliaEntregaDetallePage() {
       fd.append("textoRespuesta", texto);
       fd.append("estado", "borrador");
       archivos.forEach(f => fd.append("archivos", f));
+      // Siempre se manda (incluso vacío): un enlaces:[] en el PUT borra los
+      // que hubiera — así una eliminación local se refleja al guardar.
+      fd.append("enlaces", JSON.stringify(enlaces));
 
       if (esActualizacion) {
         await entregasUpdate(entrega._id, fd);
@@ -168,6 +195,36 @@ export default function FamiliaEntregaDetallePage() {
     } finally {
       setSaving(null);
     }
+  };
+
+  const handleAddEnlace = () => {
+    const url = enlaceUrl.trim();
+    if (!url) return;
+    if (!ENLACE_RE.test(url)) {
+      notify("El enlace debe empezar con http:// o https://", "error");
+      return;
+    }
+    if (enlaces.length >= MAX_ENLACES) {
+      notify(`Máximo ${MAX_ENLACES} enlaces`, "error");
+      return;
+    }
+    setEnlaces(prev => [...prev, { url, titulo: enlaceTitulo.trim() }]);
+    setEnlaceUrl("");
+    setEnlaceTitulo("");
+  };
+
+  const handleRemoveEnlace = (i) => setEnlaces(prev => prev.filter((_, j) => j !== i));
+
+  const handleAddArchivos = (fileList) => {
+    const nuevos = Array.from(fileList);
+    setArchivos(prev => {
+      const combinados = [...prev, ...nuevos];
+      if (combinados.length > MAX_ARCHIVOS) {
+        notify(`Máximo ${MAX_ARCHIVOS} archivos por entrega`, "error");
+        return combinados.slice(0, MAX_ARCHIVOS);
+      }
+      return combinados;
+    });
   };
 
   if (loading) {
@@ -398,7 +455,7 @@ export default function FamiliaEntregaDetallePage() {
             <input
               ref={fileRef} type="file" multiple style={{ display: "none" }}
               accept={FORMATOS_PERMITIDOS_ACCEPT}
-              onChange={e => setArchivos(prev => [...prev, ...Array.from(e.target.files)])}
+              onChange={e => { handleAddArchivos(e.target.files); e.target.value = ""; }}
             />
             <button
               type="button" onClick={() => fileRef.current?.click()}
@@ -450,11 +507,101 @@ export default function FamiliaEntregaDetallePage() {
                 ))}
               </div>
             )}
+
+            {/* Enlaces (Drive, YouTube…) — además de archivos, hasta 10 */}
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--color-border)" }}>
+              <p style={{ margin: "0 0 8px", fontSize: 12.5, fontWeight: 700, color: "var(--color-text)", display: "flex", alignItems: "center", gap: 6 }}>
+                <LinkIcon style={{ width: 13, height: 13 }} />
+                Enlaces {enlaces.length > 0 && `(${enlaces.length})`}
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input
+                  type="url"
+                  value={enlaceUrl}
+                  onChange={e => setEnlaceUrl(e.target.value)}
+                  placeholder="https://drive.google.com/…"
+                  style={{
+                    flex: "1 1 220px", padding: "9px 12px", fontSize: 13,
+                    borderRadius: 8, border: "1.5px solid var(--color-border)",
+                    background: "var(--color-bg)", color: "var(--color-text)", outline: "none",
+                  }}
+                />
+                <input
+                  type="text"
+                  value={enlaceTitulo}
+                  onChange={e => setEnlaceTitulo(e.target.value)}
+                  placeholder="Título (opcional)"
+                  style={{
+                    flex: "1 1 160px", padding: "9px 12px", fontSize: 13,
+                    borderRadius: 8, border: "1.5px solid var(--color-border)",
+                    background: "var(--color-bg)", color: "var(--color-text)", outline: "none",
+                  }}
+                />
+                <button
+                  type="button" onClick={handleAddEnlace}
+                  disabled={!enlaceUrl.trim() || enlaces.length >= MAX_ENLACES}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "9px 14px", borderRadius: 8, border: "none",
+                    background: "var(--color-primary)", color: "#fff",
+                    fontSize: 13, fontWeight: 600,
+                    cursor: (!enlaceUrl.trim() || enlaces.length >= MAX_ENLACES) ? "not-allowed" : "pointer",
+                    opacity: (!enlaceUrl.trim() || enlaces.length >= MAX_ENLACES) ? 0.5 : 1,
+                  }}
+                >
+                  <LinkIcon style={{ width: 13, height: 13 }} /> Agregar
+                </button>
+              </div>
+
+              {enlaces.length > 0 && (
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                  {enlaces.map((l, i) => (
+                    <div key={i} style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.15)",
+                      borderRadius: 8, padding: "7px 10px", fontSize: 12.5,
+                    }}>
+                      <LinkIcon style={{ width: 12, height: 12, color: "var(--color-primary)", flexShrink: 0 }} />
+                      <a href={l.url} target="_blank" rel="noreferrer" style={{
+                        flex: 1, minWidth: 0, color: "var(--color-primary)", textDecoration: "none",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {l.titulo || l.url}
+                      </a>
+                      <button
+                        type="button" onClick={() => handleRemoveEnlace(i)}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", flexShrink: 0 }}
+                      >
+                        <X style={{ width: 12, height: 12, color: "var(--color-error-hover)" }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         ) : (
-          <p style={{ margin: 0, fontSize: 14, color: "var(--color-text)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-            {entrega?.textoRespuesta || <span style={{ opacity: 0.6, fontStyle: "italic" }}>Sin respuesta escrita</span>}
-          </p>
+          <>
+            <p style={{ margin: 0, fontSize: 14, color: "var(--color-text)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              {entrega?.textoRespuesta || <span style={{ opacity: 0.6, fontStyle: "italic" }}>Sin respuesta escrita</span>}
+            </p>
+            {entrega?.enlaces?.length > 0 && (
+              <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
+                <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
+                  Enlaces
+                </p>
+                {entrega.enlaces.map((l, i) => (
+                  <a key={i} href={l.url} target="_blank" rel="noreferrer" style={{
+                    display: "flex", alignItems: "center", gap: 6, fontSize: 13,
+                    color: "var(--color-primary)", textDecoration: "none",
+                  }}>
+                    <LinkIcon style={{ width: 12, height: 12, flexShrink: 0 }} />
+                    {l.titulo || l.url}
+                  </a>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {entrega?.archivos?.length > 0 && (

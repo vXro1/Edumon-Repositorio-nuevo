@@ -15,6 +15,17 @@
 //   templateLabel     {string}    — texto del botón de plantilla
 //   acceptedColumns   {string[]}  — lista de columnas esperadas para hint visual
 //   maxFileSizeMB     {number}    — límite en MB (default: 5)
+//   acceptExtensions  {string[]}  — extensiones aceptadas, en minúscula con
+//                                   el punto (default: [".csv"]). El backend
+//                                   de cargas masivas de usuarios ahora exige
+//                                   Excel (.xlsx/.xlsm) en vez de CSV — este
+//                                   modal se reutiliza también para módulos
+//                                   (que sí siguen siendo CSV parseado en el
+//                                   cliente), por eso la extensión es
+//                                   configurable en vez de fija.
+//   fileTypeLabel     {string}    — nombre legible del formato para los
+//                                   textos de ayuda (default: derivado de
+//                                   acceptExtensions)
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { AppModal, Button } from "@/components";
@@ -69,6 +80,8 @@ export default function CsvUploadModal({
   templateLabel = "Descargar plantilla",
   acceptedColumns = [],
   maxFileSizeMB = 5,
+  acceptExtensions = [".csv"],
+  fileTypeLabel,
 }) {
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -76,6 +89,9 @@ export default function CsvUploadModal({
   const [status, setStatus] = useState(STATUS.IDLE);
   const [errorMsg, setErrorMsg] = useState("");
   const [result, setResult] = useState(null);
+
+  const acceptAttr = acceptExtensions.join(",");
+  const typeLabel = fileTypeLabel ?? acceptExtensions.join(" / ");
 
   useEffect(() => {
     if (!isOpen) {
@@ -91,11 +107,14 @@ export default function CsvUploadModal({
 
   const validateFile = useCallback((f) => {
     if (!f) return "No se seleccionó ningún archivo.";
-    if (!f.name.endsWith(".csv")) return "El archivo debe tener extensión .csv";
+    const nameLower = f.name.toLowerCase();
+    if (!acceptExtensions.some((ext) => nameLower.endsWith(ext))) {
+      return `El archivo debe tener extensión ${typeLabel}`;
+    }
     if (f.size > maxFileSizeMB * 1024 * 1024)
       return `El archivo supera el límite de ${maxFileSizeMB} MB.`;
     return null;
-  }, [maxFileSizeMB]);
+  }, [maxFileSizeMB, acceptExtensions, typeLabel]);
 
   const handleFileChange = useCallback((f) => {
     const err = validateFile(f);
@@ -210,7 +229,7 @@ export default function CsvUploadModal({
             <input
               ref={inputRef}
               type="file"
-              accept=".csv"
+              accept={acceptAttr}
               style={{ display: "none" }}
               onChange={(e) => handleFileChange(e.target.files?.[0])}
             />
@@ -250,7 +269,7 @@ export default function CsvUploadModal({
                     Arrastra tu archivo aquí
                   </p>
                   <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--color-text-muted)" }}>
-                    o haz clic para seleccionar · Solo .csv · Máx {maxFileSizeMB} MB
+                    o haz clic para seleccionar · Solo {typeLabel} · Máx {maxFileSizeMB} MB
                   </p>
                 </div>
               </div>

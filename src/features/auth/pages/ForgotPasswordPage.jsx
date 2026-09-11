@@ -10,23 +10,15 @@ export const ForgotPasswordPage = () => {
   const [error,     setError]     = useState("");
   const [sent,      setSent]      = useState(false);
   const [emailSent, setEmailSent] = useState("");
-  const [phoneSent, setPhoneSent] = useState("");
-  const [usedMethod, setUsedMethod] = useState("email");
   const navigate = useNavigate();
 
-  const handleSubmit = async ({ correo, telefono, method }) => {
+  // Recuperación SOLO por correo: el backend retiró la vía por teléfono/WhatsApp.
+  const handleSubmit = async ({ correo }) => {
     setLoading(true);
     setError("");
     try {
-      if (method === "phone") {
-        await authService.forgotPasswordPhone({ telefono });
-        setPhoneSent(telefono);
-        setUsedMethod("phone");
-      } else {
-        await authService.forgotPassword({ correo });
-        setEmailSent(correo);
-        setUsedMethod("email");
-      }
+      await authService.forgotPassword({ correo });
+      setEmailSent(correo);
       setSent(true);
     } catch (err) {
       setError(humanizeError(err, "Ocurrió un error. Intenta de nuevo."));
@@ -36,11 +28,7 @@ export const ForgotPasswordPage = () => {
   };
 
   const handleContinue = () => {
-    if (usedMethod === "phone") {
-      navigate("/reset-password", { state: { telefono: phoneSent, method: "phone" } });
-    } else {
-      navigate("/reset-password", { state: { correo: emailSent, method: "email" } });
-    }
+    navigate("/reset-password", { state: { correo: emailSent, method: "email" } });
   };
 
   return (
@@ -50,7 +38,6 @@ export const ForgotPasswordPage = () => {
       error={error}
       sent={sent}
       emailSent={emailSent}
-      phoneSent={phoneSent}
       onContinue={handleContinue}
       onBack={() => navigate("/login")}
     />

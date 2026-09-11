@@ -1,5 +1,5 @@
 // src/features/cursos/components/hub/HubHeader.jsx
-import { Users } from "lucide-react";
+import { Users, Archive } from "lucide-react";
 import { Sk } from "../shared/ui";
 // Mismo fallback que ya usan CursoCard.jsx/CursosPage.jsx/FamiliaCursosPage.jsx
 // para "curso sin portada" — antes esta cabecera usaba un degradado de color
@@ -110,25 +110,40 @@ export default function HubHeader({ curso, loading, esPadre = false, esEstudiant
         </div>
 
         {/* Franja de información — SIEMPRE texto oscuro sobre fondo claro,
-            nunca depende de cuán clara/oscura salga la foto de portada. */}
+            nunca depende de cuán clara/oscura salga la foto de portada.
+            FIX: antes la descripción tenía max-width: 68ch fijo sin importar
+            el ancho real de la tarjeta — en pantallas anchas dejaba un hueco
+            vacío enorme a la derecha (la tarjeta se veía "a medio llenar").
+            Ahora es un grid de 2 columnas: la descripción ocupa todo el
+            ancho de su columna, y los datos rápidos (participantes, estado)
+            se agrupan en una columna lateral separada por un borde — así el
+            espacio sobrante tiene un propósito en vez de quedar en blanco. */}
         <div className="hhead-info">
-          {curso.docente && (
-            <div className="hhead-docente">
-              <span className="hhead-docente-dot" />
-              <span className="hhead-docente-name">{curso.docente.nombre} {curso.docente.apellido}</span>
-              <span className="hhead-docente-role">Docente</span>
-            </div>
-          )}
+          <div className="hhead-info-main">
+            {curso.docente && (
+              <div className="hhead-docente">
+                <span className="hhead-docente-dot" />
+                <span className="hhead-docente-name">{curso.docente.nombre} {curso.docente.apellido}</span>
+                <span className="hhead-docente-role">Docente</span>
+              </div>
+            )}
 
-          {curso.descripcion && (
-            <p className="hhead-desc">{curso.descripcion}</p>
-          )}
+            {curso.descripcion && (
+              <p className="hhead-desc">{curso.descripcion}</p>
+            )}
+          </div>
 
-          <div className="hhead-meta-row">
+          <div className="hhead-info-stats">
             <span className="hhead-pill">
               <Users style={{ width: 13, height: 13 }} />
-              {curso.participantes?.length ?? 0} participantes
+              {curso.participantes?.length ?? curso.totalParticipantes ?? 0} participantes
             </span>
+            {curso.estado && curso.estado !== "activo" && (
+              <span className="hhead-pill hhead-pill--warn">
+                <Archive style={{ width: 13, height: 13 }} />
+                {curso.estado === "archivado" ? "Archivado" : curso.estado}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -223,12 +238,48 @@ const HUBHEADER_CSS = `
   overflow-wrap: anywhere;
 }
 
-/* ── Franja de información ── */
+/* ── Franja de información ──
+   Grid de 2 columnas en desktop: la descripción ocupa todo el ancho de su
+   columna (nada de max-width en ch que deje un hueco vacío a la derecha) y
+   los datos rápidos quedan agrupados en una columna lateral, separados por
+   un borde — en vez de una fila suelta al final que dejaba la tarjeta con
+   espacio sin usar. En mobile colapsa a una sola columna. */
 .hhead-info {
   width: 100%;
   box-sizing: border-box;
   border-top: 1px solid var(--color-border);
   padding: 18px 22px 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .hhead-info {
+    grid-template-columns: 1fr minmax(150px, 190px);
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+.hhead-info-main { min-width: 0; }
+
+.hhead-info-stats {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .hhead-info-stats {
+    flex-direction: column;
+    align-items: stretch;
+    padding-left: 24px;
+    border-left: 1px solid var(--color-border);
+    gap: 10px;
+  }
+  .hhead-info-stats .hhead-pill { justify-content: center; }
 }
 
 .hhead-docente {
@@ -268,16 +319,7 @@ const HUBHEADER_CSS = `
   font-size: 14px;
   color: var(--color-text-muted);
   margin: 0;
-  max-width: 68ch;
   line-height: 1.65;
-}
-
-.hhead-meta-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
 }
 
 .hhead-pill {
@@ -292,6 +334,12 @@ const HUBHEADER_CSS = `
   padding: 5px 12px;
   border-radius: 999px;
   white-space: nowrap;
+}
+
+.hhead-pill--warn {
+  color: #92400E;
+  background: rgba(217,119,6,0.12);
+  border-color: rgba(217,119,6,0.35);
 }
 
 /* ── Responsive ── */

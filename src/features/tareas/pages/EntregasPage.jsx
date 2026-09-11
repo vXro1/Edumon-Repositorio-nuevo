@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, Clock, Star, Loader2, RefreshCw,
   FileText, ExternalLink, ChevronDown, ChevronUp, Search, X,
-  ClipboardList,
+  ClipboardList, Link as LinkIcon,
 } from "lucide-react";
 
 import { entregasGetByTarea, entregasCalificar } from "@/features/entregas/services/entregasService";
@@ -304,6 +304,23 @@ export default function EntregasPage() {
               </div>
             )}
 
+            {/* Enlaces (Drive, YouTube…) */}
+            {calTarget.enlaces?.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", margin: "0 0 8px", textTransform: "uppercase" }}>Enlaces:</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {calTarget.enlaces.map((l, i) => (
+                    <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.2)", fontSize: 11.5, color: "var(--color-primary)", textDecoration: "none", fontWeight: 600 }}>
+                      <LinkIcon style={{ width: 12, height: 12 }} />
+                      {l.titulo || `Enlace ${i + 1}`}
+                      <ExternalLink style={{ width: 10, height: 10 }} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Formulario */}
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <Field label="Valoración (1-5 estrellas) *">
@@ -351,6 +368,7 @@ function EntregaCard({ entrega: e, onCalificar }) {
 
   const fecha    = e.fechaEnvio ?? e.createdAt;
   const archivos = e.archivos ?? e.archivosAdjuntos ?? [];
+  const enlaces  = e.enlaces ?? [];
 
   return (
     <div style={{
@@ -390,6 +408,7 @@ function EntregaCard({ entrega: e, onCalificar }) {
               ? new Date(fecha).toLocaleDateString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
               : "—"}
             {archivos.length > 0 && ` · ${archivos.length} adjunto${archivos.length > 1 ? "s" : ""}`}
+            {enlaces.length > 0 && ` · ${enlaces.length} enlace${enlaces.length > 1 ? "s" : ""}`}
           </p>
         </div>
 
@@ -436,6 +455,22 @@ function EntregaCard({ entrega: e, onCalificar }) {
             </div>
           )}
 
+          {enlaces.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Enlaces</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {enlaces.map((l, i) => (
+                  <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "rgba(12,106,196,0.06)", border: "1px solid rgba(12,106,196,0.2)", fontSize: 12.5, color: "var(--color-primary)", fontWeight: 600, textDecoration: "none" }}>
+                    <LinkIcon style={{ width: 13, height: 13 }} />
+                    {l.titulo || `Enlace ${i + 1}`}
+                    <ExternalLink style={{ width: 11, height: 11 }} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {e.calificacion && (
             <div style={{ background: "rgba(22,163,74,0.06)", borderRadius: 10, padding: "10px 14px", border: "1px solid rgba(22,163,74,0.15)" }}>
               <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--edu-green-600)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Calificación</p>
@@ -446,7 +481,7 @@ function EntregaCard({ entrega: e, onCalificar }) {
             </div>
           )}
 
-          {!e.textoRespuesta && archivos.length === 0 && !e.calificacion && (
+          {!e.textoRespuesta && archivos.length === 0 && enlaces.length === 0 && !e.calificacion && (
             <p style={{ fontSize: 13, color: "var(--color-text-muted)", fontStyle: "italic" }}>Sin contenido adicional</p>
           )}
         </div>
