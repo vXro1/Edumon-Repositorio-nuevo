@@ -1,18 +1,5 @@
-// src/features/familia/pages/FamiliaForosPage.jsx
-// ROL: Padre / Tutor — Navegador de foros por curso.
-//
-// Antes esta página tenía su propia mini-implementación de foro (ForoDetalle,
-// MensajeCard) con divs sin estilo, sin sidebar, sin panel de actividad, sin
-// animación de like y con el mismo bug de "likes" tratado como array cuando
-// el backend lo guarda como contador (ver normalizeMensaje). El resultado se
-// sentía como una pestaña de mensajes plana, no como un foro.
-//
-// ForumPage.jsx ya es "la vista canónica del foro — todos los roles usan esta
-// misma página" (su propio comentario lo dice), montada en
-// /curso/:cursoId/foro/:foroId con sidebar, panel de actividad, materiales de
-// apoyo, respuestas anidadas y likes funcionando de verdad. Esta página ahora
-// solo hace de directorio: lista los cursos del padre y sus foros, y al
-// hacer clic navega a esa misma vista canónica en vez de reimplementarla.
+// directorio de foros por curso — al hacer clic navega a la vista canónica
+// del foro (ForumPage, /curso/:cursoId/foro/:foroId) en vez de reimplementarla
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {

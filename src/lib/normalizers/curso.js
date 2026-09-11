@@ -1,15 +1,7 @@
-// src/lib/normalizers/curso.js
-
 import { normalizeUser } from "./user";
 import { assetUrl } from "@/utils/assetUrl";
 
-/**
- * Normaliza un registro de participante/inscripción de un curso.
- * Soporta:
- *  - objeto de inscripción con usuario anidado: { usuario: {...}, usuarioId: {...}, rol, fechaInscripcion }
- *  - objeto de usuario plano ya poblado
- *  - string (ID sin poblar)
- */
+// soporta inscripción con usuario anidado, usuario plano ya poblado, o string sin poblar
 function normalizeParticipante(p) {
   if (!p) return null;
 
@@ -46,10 +38,6 @@ function normalizeParticipante(p) {
   };
 }
 
-/**
- * Normaliza un curso individual
- * Compatible con backend parcial, poblado o frontend-only
- */
 export function normalizeCurso(curso) {
   if (!curso) return null;
 
@@ -134,18 +122,11 @@ export function normalizeCurso(curso) {
   };
 }
 
-/**
- * Normaliza múltiples cursos
- */
 export function normalizeCursos(cursos) {
   if (!Array.isArray(cursos)) return [];
   return cursos.map(normalizeCurso).filter(Boolean);
 }
 
-/**
- * Convierte lista de cursos a mapa por ID
- * Útil para acceso rápido en dashboards
- */
 export function normalizeCursosMap(cursos) {
   return normalizeCursos(cursos).reduce((acc, curso) => {
     acc[curso.id] = curso;

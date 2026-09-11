@@ -1,4 +1,3 @@
-// src/features/cursos/components/shared/ui.jsx
 import { useState } from "react";
 import { Star } from "lucide-react";
 import { Button } from "@/components";
@@ -98,11 +97,7 @@ export function InfoBlock({ label, children }) {
   );
 }
 
-// `label`: texto visible junto al ícono. Omitirlo solo para acciones de
-// significado verdaderamente universal (actualizar, cerrar "X") — cualquier
-// acción específica del dominio (editar, eliminar, ver, archivar,
-// participantes, responder...) debe pasar `label` para no depender de que
-// el usuario adivine qué hace el ícono (ver plan de corrección UX/UI).
+// label: omitir solo para acciones universales (actualizar, cerrar "X") — el resto lo necesita
 export function IconBtn({ color, onClick, title, label, children, disabled = false }) {
   return (
     <button
@@ -151,13 +146,10 @@ export const ESTADO_VARIANT = {
   calificada: "success",
 };
 
-// ── Calificación de entregas: el backend valora entregas de 1 a 5 estrellas
-// (calificarEntregaValidator.js), no con una nota numérica. Un solo par de
-// componentes de estrellas usado en todas las pantallas de entregas
-// (EntregasTab, CalificarEntrega, EntregasPage) evita que cada una invente
-// su propia variante visual/de datos.
+// el backend valora entregas de 1 a 5 estrellas, no con nota numérica — un solo
+// par de componentes compartido por todas las pantallas de entregas
 
-// Estrellas de solo lectura — para mostrar una valoración ya guardada.
+// solo lectura — para mostrar una valoración ya guardada
 export function StarRating({ value, size = 14, showLabel = false }) {
   const n = Number.isInteger(value) ? value : 0;
   if (n < 1) {

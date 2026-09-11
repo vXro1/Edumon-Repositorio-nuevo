@@ -1,8 +1,3 @@
-// src/features/auth/hooks/useAuth.js
-// ============================================================
-// Hook personalizado para consumir el contexto de autenticación
-// ============================================================
-
 import { useAuthContext, useUserContext } from "../context/AuthContext";
 
 // Full auth context — includes token, loading, showWarning (use for auth guards and session modals)

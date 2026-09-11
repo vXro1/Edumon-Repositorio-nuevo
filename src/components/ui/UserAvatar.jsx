@@ -1,9 +1,7 @@
-//ruta: src/components/ui/UserAvatar.jsx
 import { memo, useMemo, useState } from "react";
 import useUserStore from "@/store/useUserStore";
 
-// UserAvatar solo se usa dentro del dashboard (no aparece en login/landing),
-// así que su morado se reemplaza directamente por el nuevo azul de marca.
+// solo se usa dentro del dashboard, así que puede asumir el azul de marca directamente
 const PALETTE = [
   "var(--color-primary)",
   "#F23D7F",

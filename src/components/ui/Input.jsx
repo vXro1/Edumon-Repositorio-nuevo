@@ -1,4 +1,3 @@
-// src/components/ui/Input.jsx
 import { useState, useId, forwardRef } from "react";
 import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
 

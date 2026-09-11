@@ -1,4 +1,4 @@
-// src/components/ui/Modal.jsx — backward-compatible wrapper over AppModal
+// backward-compatible wrapper over AppModal
 import AppModal from "./AppModal";
 
 export default function Modal({

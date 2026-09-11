@@ -1,4 +1,3 @@
-// RUTA EDUMON WEB/src/components/navigation/Tabs.jsx
 const Tabs = () => {
   return (
     <nav>

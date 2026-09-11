@@ -1,5 +1,4 @@
-// src/services/core/requestQueue.js
-// Cola de solicitudes single-flight con gestión de AbortController
+// cola de solicitudes single-flight con gestión de AbortController
 const inflight = new Map(); // clave -> { promise, controller }
 
 let _uniqueCounter = 0;
@@ -7,20 +6,9 @@ let _uniqueCounter = 0;
 export const makeKey = (url, opts = {}) => {
   const method = (opts.method || 'GET').toUpperCase();
 
-  // Las mutaciones (POST/PUT/PATCH/DELETE) y cualquier request con body
-  // FormData NUNCA deben deduplicarse entre sí.
-  //
-  // Por qué: JSON.stringify(unFormData) siempre devuelve "{}" — FormData no
-  // expone sus campos como propiedades enumerables propias — así que dos PUT
-  // con contenido completamente distinto (ej. un guardado sin enlaces y otro
-  // con enlaces, al mismo /tareas/:id) generaban la MISMA key. Si ambos
-  // quedaban en vuelo al mismo tiempo, queueRequest() devolvía la promesa
-  // del PRIMERO para el SEGUNDO — el segundo request, con los datos
-  // correctos, nunca llegaba a hacer fetch().
-  //
-  // El dedup por key sí tiene sentido para GET (evitar refetches idénticos
-  // disparados por renders duplicados), así que solo se desactiva para
-  // mutaciones y para bodies no serializables como texto.
+  // mutaciones y bodies FormData nunca se deduplican: JSON.stringify(FormData)
+  // siempre da "{}", así que dos PUT distintos generarían la misma key y el
+  // segundo request perdería su fetch real
   if (method !== 'GET' || opts.body instanceof FormData) {
     return `${method}|${url}|${Date.now()}_${_uniqueCounter++}`;
   }
@@ -47,7 +35,7 @@ export function queueRequest(key, startFn) {
 
 export function abortAll() {
   for (const { controller } of inflight.values()) {
-    try { controller.abort(); } catch (e) { /* ignorar */ }
+    try { controller.abort(); } catch { /* ignorar */ }
   }
   inflight.clear();
 }

@@ -21,14 +21,9 @@ export const registerLogoutCallback = (cb) => {
   _logoutCallback = cb;
 };
 
-// El access_token (cookie httpOnly) expira a los 15 min (ver ACCESS_TOKEN_TTL
-// en authController.js del backend). Sin este refresh, cualquier formulario
-// largo (ej. crear tarea: título, descripción, módulo, participantes,
-// archivos) que tardara más de 15 min en enviarse, o simplemente llegar tras
-// haber navegado un rato, disparaba un 401 "TOKEN_EXPIRED" que forzaba logout
-// global — el usuario veía esto como "me pide el token" estando logeado.
-// _refreshPromise deduplica refrescos simultáneos si varias requests
-// expiran a la vez.
+// access_token expira a los 15 min; sin refresh, un formulario largo dispara
+// logout con TOKEN_EXPIRED a mitad de sesión. _refreshPromise deduplica
+// refrescos simultáneos cuando varias requests expiran a la vez.
 let _refreshPromise = null;
 
 async function tryRefreshToken() {
@@ -75,10 +70,7 @@ export const apiFetch = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
   const token = _tokenProvider ? _tokenProvider() : undefined;
 
-  // silentAuth: bandera interna, NO se manda al backend. Marca peticiones que
-  // preguntan "¿tengo sesión?" de forma rutinaria (ej. al arrancar la app).
-  // Un 401 ahí es normal ("no, no tienes sesión") y NO debe disparar el
-  // logout global — evita el bucle de reload infinito.
+  // silentAuth: bandera interna (no va al backend) para chequeos rutinarios de sesión — un 401 ahí no dispara logout global
   const { silentAuth, ...restOptions } = options;
 
   const opts = { method: "GET", ...restOptions };
@@ -88,9 +80,7 @@ export const apiFetch = async (endpoint, options = {}) => {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...opts.headers,
   };
-  // Necesario para que la cookie httpOnly (access_token/refresh_token) viaje
-  // en cada petición, incluidas las cross-origin en producción (Render, etc.)
-  opts.credentials = "include";
+  opts.credentials = "include"; // para que la cookie httpOnly viaje incluso cross-origin en producción
 
   const { url: finalUrl, opts: finalOpts } = applyReqInterceptors(url, opts);
   const key = makeKey(finalUrl, finalOpts);
@@ -101,11 +91,8 @@ export const apiFetch = async (endpoint, options = {}) => {
   });
 };
 
-// Extraído de apiFetch para poder reintentar UNA vez tras un refresh de
-// token exitoso sin volver a pasar por queueRequest (que deduplicaría la
-// segunda llamada contra sí misma si la key fuera idéntica — ver
-// requestQueue.js). La primera llamada siempre entra vía queueRequest;
-// el reintento post-refresh llama directo aquí.
+// separado de apiFetch para poder reintentar tras un refresh sin volver a pasar por queueRequest
+// (que deduplicaría la segunda llamada contra sí misma)
 async function runRequest(endpoint, finalUrl, finalOpts, { silentAuth, isRetry = false } = {}) {
   const res = await fetch(finalUrl, finalOpts);
 
@@ -118,20 +105,16 @@ async function runRequest(endpoint, finalUrl, finalOpts, { silentAuth, isRetry =
   }
 
   if (res.status === 401) {
-    // Login fallido por credenciales incorrectas — NO disparar el logout global
+    // credenciales incorrectas — no dispara logout global
     if (endpoint === "/auth/login") {
       throw new Error(data.message || "Teléfono o contraseña incorrectos. Verifica tus credenciales.");
     }
-    // Chequeo silencioso de sesión (getProfile al arrancar) — 401 esperado,
-    // no dispara logout global.
+    // chequeo silencioso de sesión (getProfile al arrancar) — 401 esperado
     if (silentAuth) {
       throw new Error(data.message || "No hay sesión activa.");
     }
 
-    // Access token expirado (15 min) a mitad de sesión: intentar refrescarlo
-    // UNA vez vía /auth/refresh (usa el refresh_token, cookie httpOnly de 7
-    // días) antes de forzar el logout global. Si el refresh funciona, se
-    // reintenta la petición original con la cookie ya renovada.
+    // token expirado: un intento de refresh vía /auth/refresh antes de forzar logout
     if (!isRetry && endpoint !== "/auth/refresh" && data.code === "TOKEN_EXPIRED") {
       const refreshed = await tryRefreshToken();
       if (refreshed) {
@@ -152,14 +135,8 @@ async function runRequest(endpoint, finalUrl, finalOpts, { silentAuth, isRetry =
   if (!res.ok) {
     const errorMsg = data.message || data.error || `Error ${res.status}`;
     if (res.status === 400 && Array.isArray(data.errors)) {
-      // express-validator (todos los validators del backend) devuelve
-      // { msg, path, ... } por cada error — NUNCA { message, field }. Leer
-      // esos nombres producía un mensaje literal "undefined, undefined" en
-      // el toast, sin decirle al usuario qué campo falló. Además, adjuntar
-      // el array crudo al Error (validationErrors/errors) es lo que permite
-      // pintar el mensaje justo debajo del input correspondiente — ver
-      // parseValidationErrors.js (usado en Eventos/Calendario) y los catch
-      // de creación de usuario/docente en Usuarios/DocentesPage.
+      // express-validator devuelve { msg, path }, no { message, field } — adjuntar
+      // el array crudo permite pintar el error debajo del input correspondiente
       const details = data.errors
         .map((e) => (e.path ? `${e.path}: ${e.msg}` : e.msg))
         .filter(Boolean)

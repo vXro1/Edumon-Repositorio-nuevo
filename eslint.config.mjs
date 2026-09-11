@@ -1,4 +1,5 @@
 import reactPlugin from "eslint-plugin-react";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 const ALL_GLOBALS = {
   // Browser
@@ -53,16 +54,13 @@ export default [
       "dist/**",
       "build/**",
       ".vite/**",
-      "src/_archive_*/**",
-      "src/_archive_auth_components/**",
-      "src/_archive_layouts/**",
     ],
   },
 
   // Archivos JS/JSX regulares
   {
     files: ["**/*.{js,jsx}"],
-    plugins: { react: reactPlugin },
+    plugins: { react: reactPlugin, "react-hooks": reactHooksPlugin },
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -73,6 +71,11 @@ export default [
     rules: {
       "react/react-in-jsx-scope": "off",
       "react/prop-types":         "off",
+      // Sin esto, no-unused-vars no reconoce que un componente/identificador
+      // usado solo dentro de JSX (ej. <Foo />) está "en uso".
+      "react/jsx-uses-vars":  "error",
+      "react-hooks/rules-of-hooks":   "error",
+      "react-hooks/exhaustive-deps":  "warn",
       "no-empty":       ["error", { allowEmptyCatch: true }],
       "no-unused-vars": ["warn",  { varsIgnorePattern: "^_", argsIgnorePattern: "^_" }],
       "no-undef":       "error",

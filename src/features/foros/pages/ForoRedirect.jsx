@@ -1,4 +1,3 @@
-// src/features/foros/pages/ForoRedirect.jsx
 // Redirección canónica: /foros/:id → /curso/:cursoId/foro/:id
 // Obtiene el foro para conseguir su cursoId y luego redirige.
 import { useEffect, useState } from 'react';

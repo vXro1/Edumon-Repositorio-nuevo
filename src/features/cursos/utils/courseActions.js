@@ -1,4 +1,3 @@
-// src/features/cursos/utils/courseActions.js
 // Fuente única de verdad: qué puede hacer cada rol dentro de un curso.
 // Las acciones son objetos navegables — NO texto decorativo.
 
@@ -129,10 +128,6 @@ export function getCourseActionsByRole(role, courseId) {
   }
 }
 
-/**
- * Devuelve solo la ruta principal del curso para ese rol.
- * Útil para el clic global de la tarjeta.
- */
 export function getCourseMainPath(courseId) {
   return `/cursos/${courseId}`;
 }

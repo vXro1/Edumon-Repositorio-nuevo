@@ -1,4 +1,3 @@
-// src/components/layout/Sidebar.jsx
 import { memo, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";

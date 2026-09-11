@@ -1,4 +1,3 @@
-// src/features/dashboard/padre/pages/PadreHomePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,7 +9,6 @@ import { cursosGetMine } from "@/features/cursos/services/cursosService";
 import { eventosGetHoy } from "@/features/eventos/services/eventosService";
 import { normalizeCurso } from "@/lib/normalizers";
 import CursoCard from "@/features/cursos/components/CursoCard";
-import { Button } from "@/components";
 
 /* ── Esqueleto de carga ────────────────────────────────────────── */
 function Sk({ h = 14, w = "100%", r = "var(--radius-sm)" }) {
@@ -255,12 +253,7 @@ export default function PadreHomePage() {
         )}
       </section>
 
-      {/* ── Eventos de hoy ──
-          Antes desaparecía por completo sin eventos hoy, dejando al padre
-          sin ningún rastro del calendario en el día a día salvo la
-          tarjeta de "Calendario" en Acciones rápidas. Ahora es permanente,
-          con esqueleto de carga y estado vacío, igual que en el
-          dashboard de administrador y docente. */}
+      {/* sección permanente (con esqueleto/estado vacío), no desaparece sin eventos hoy */}
       <section aria-label="Eventos de hoy">
         <SectionHeader
           title="Eventos de hoy"

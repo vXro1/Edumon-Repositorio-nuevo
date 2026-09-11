@@ -1,24 +1,15 @@
-// src/features/foros/components/ForumHeader.jsx
-// Encabezado del foro — tarjeta normal dentro del flujo de la página, con el
-// mismo lenguaje visual (borde, radio, sombra) que .fm-sidebar/.fm-main/
-// .fm-activity, en vez de una barra fija tipo app (ver ForumPage.jsx: antes
-// era `position: sticky` con su propio fondo/borde/sombra, una segunda barra
-// flotando debajo de la navbar real — lo que hacía sentir el foro como una
-// pieza de software aparte pegada al dashboard, no parte del mismo diseño).
+// tarjeta normal dentro del flujo, mismo lenguaje visual que .fm-sidebar/.fm-main, nunca sticky
 import { useState } from 'react';
 import { ArrowLeft, MessageSquare, Lock, Unlock, PanelLeft, PanelRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { sanitizeRichText, stripHtml } from '@/utils/richText';
 
-// Umbral a partir del cual la descripción se colapsa con "Ver más" — sin
-// esto, una descripción larga (varios párrafos + lista) empuja todo el
-// resto del foro (mensajes, estadísticas) fuera de la vista inicial y
-// domina la pantalla antes de que el usuario llegue al contenido real.
+// descripción larga se colapsa con "Ver más" para no empujar el resto del foro fuera de vista
 const DESC_COLLAPSE_THRESHOLD = 220;
 
 const ForumHeader = ({
   foro,
   cursoNombre,
-  cursoId,
+  cursoId: _cursoId,
   loading        = false,
   onBack,
   canManage      = false,
@@ -84,8 +75,6 @@ const ForumHeaderContent = ({
 
   return (
     <div>
-      {/* Volver — mismo botón de texto simple que usa el resto de la app
-          (ver CursoHubPage.jsx), en vez de estar embebido dentro de la barra. */}
       <button type="button" onClick={onBack} className="fm-back">
         <ArrowLeft size={15} />
         Volver a foros
@@ -93,8 +82,6 @@ const ForumHeaderContent = ({
 
       <div className="fm-header">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, minWidth: 0, flex: 1 }}>
-          {/* Ícono — mismo lenguaje de "badge cuadrado con color de sección"
-              que usa el resto del dashboard (ver .section-foros, rosa). */}
           <div className="fm-header-icon" data-closed={isClosed || undefined}>
             {isClosed ? <Lock size={20} /> : <MessageSquare size={20} />}
           </div>

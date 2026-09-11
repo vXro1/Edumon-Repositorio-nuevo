@@ -1,14 +1,7 @@
-// src/security/roleMatrix.js
-// USA ES module syntax (export/import) — requerido por Vite.
 import { PERMISSIONS } from "./permissions.js";
 
 // ─── Constantes de rol ────────────────────────────────────────────────────────
-// NOTA: no existe rol "estudiante" en el backend. Los perfiles familiares
-// (perfilFamiliarController.js) generan el token a partir del propio titular
-// (rol: 'padre') y solo varían perfilId/esTitular — el rol nunca cambia.
-// Si en el futuro un perfil de estudiante necesita permisos distintos a los
-// del padre titular, eso requiere bifurcar por `esTitular` en
-// getPermissionsForRole(), no agregar un rol nuevo aquí.
+// no existe rol "estudiante" — los perfiles familiares usan rol 'padre', solo varía esTitular
 export const ROLES = {
   ADMIN:      "administrador",
   DOCENTE:    "docente",
@@ -21,13 +14,9 @@ const ALL = Object.values(PERMISSIONS);
 
 const rolePermissions = {
 
-  // confirmado: usuarioPerteneceACurso() → true siempre para superadmin
   [ROLES.SUPERADMIN]: ALL,
 
-  // confirmado ALL por ausencia de restricción de tipo de permiso en todos los
-  // controladores revisados (calendario, cursos, eventos, foros, módulos).
-  // El aislamiento real de admin es por institucionId (capa de scope separada
-  // de la matriz de permisos), no por tipo de acción.
+  // el aislamiento real de admin es por institucionId, no por tipo de acción
  [ROLES.ADMIN]: ALL.filter(
     (p) =>
       ![
@@ -69,8 +58,7 @@ const rolePermissions = {
     PERMISSIONS.VIEW_NOTIFICATIONS,
   ],
 
-  // FIX: sin VIEW_COURSE_PARTICIPANTS — ningún controlador expone esa vista a
-  // padre (getParticipantesCurso solo chequea docente/admin).
+  // sin VIEW_COURSE_PARTICIPANTS — ningún controlador expone esa vista a padre
   [ROLES.PADRE]: [
     PERMISSIONS.VIEW_COURSES,            // confirmado: getMisCursos, obtenerCalendarioUsuario
 
@@ -80,19 +68,11 @@ const rolePermissions = {
     PERMISSIONS.VIEW_ENTREGAS,
     PERMISSIONS.SUBMIT_ENTREGA,
 
-    // FIX: faltaba POST_MENSAJE_FORO — mensajeForoController.crearMensaje
-    // permite a CUALQUIER participante con acceso al foro publicar un
-    // mensaje raíz (respuestaA null); la única restricción real para
-    // padre es al RESPONDER (ver abajo), no al publicar. Sin este permiso
-    // el composer del foro (ForumInput, gateado por canPostMessage) se
-    // ocultaba por completo para el padre — el foro se veía "abierto" pero
-    // no había ninguna forma de escribir, ni un mensaje nuevo ni una
-    // respuesta.
-    PERMISSIONS.VIEW_FOROS,              // confirmado: foro.tieneAcceso() incluye participante
+    // faltaba POST_MENSAJE_FORO: cualquier participante puede publicar un mensaje raíz,
+    // la restricción real para padre es solo al responder
+    PERMISSIONS.VIEW_FOROS,
     PERMISSIONS.POST_MENSAJE_FORO,
-    // confirmado: crearMensaje() con respuestaA solo deja al padre
-    // responder a mensajes cuyo autor sea docente/administrador (no a
-    // otro padre) — ver useForumPermissions.canReplyToMessage().
+    // al responder, padre solo puede hacerlo a mensajes de docente/administrador
     PERMISSIONS.REPLY_MENSAJE_FORO,
 
     PERMISSIONS.VIEW_EVENTS,             // confirmado: getEventos filtra por cursos del padre

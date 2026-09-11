@@ -1,24 +1,14 @@
-// src/features/eventos/pages/EventosPage.jsx
-
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import {
-  Calendar,
   Plus,
   RefreshCw,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   MapPin,
-  BookOpen,
   Trash2,
   Edit2,
   X,
-  List,
-  LayoutGrid,
   Image,
   Paperclip,
 } from "lucide-react";
@@ -33,17 +23,19 @@ import { normalizeCurso }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
 import { parseValidationErrors, summarizeValidationErrors } from "@/utils/parseValidationErrors";
 
-// ── Funciones auxiliares ─────────────────────────────────────────
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const DIAS_SEMANA = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-
+// solo 3 categorías son válidas para crear/editar (CATEGORIA_FORM_OPTIONS abajo);
+// el resto son estilos de fallback para eventos legado con valores que el backend ya no acepta
 const CATEGORIA_CFG = {
   tarea:          { color: "#6366F1", bg: "rgba(99,102,241,0.10)",  label: "Reto" },
   escuela_padres: { color: "#D97706", bg: "rgba(217,119,6,0.10)",   label: "Escuela de padres" },
+  institucional:  { color: "var(--color-primary)", bg: "rgba(12,106,196,0.10)",  label: "Institucional" },
   reunion:        { color: "var(--color-primary)", bg: "rgba(12,106,196,0.10)",  label: "Reunión" },
   actividad:      { color: "var(--edu-green-600)", bg: "rgba(22,163,74,0.10)",   label: "Actividad" },
   otro:           { color: "#64748B", bg: "rgba(100,116,139,0.10)", label: "Otro" },
 };
+
+// único enum que el backend acepta para "categoria"
+const CATEGORIA_FORM_OPTIONS = ["escuela_padres", "tarea", "institucional"];
 
 function catCfg(cat) { return CATEGORIA_CFG[cat] ?? CATEGORIA_CFG.otro; }
 
@@ -66,24 +58,16 @@ function FieldError({ message }) {
   );
 }
 
-// ── StyledInput, StyledSelect y FieldGroup eliminados — reemplazados por
-//    Input, Textarea y Select del design system con prop label ─────────────
-
 const INIT_FORM = {
   titulo: "", descripcion: "", fechaInicio: "", fechaFin: "",
-  hora: "", ubicacion: "", categoria: "otro",
+  hora: "", ubicacion: "", categoria: "institucional",
 };
 
 export default function EventosPage() {
   const [eventos,   setEventos]   = useState([]);
   const [cursos,    setCursos]    = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [view,      setView]      = useState("lista");
   const [toast,     setToast]     = useState({ msg: "", type: "success" });
-
-  const today = new Date();
-  const [calYear,  setCalYear]  = useState(today.getFullYear());
-  const [calMonth, setCalMonth] = useState(today.getMonth());
 
   const [showForm,       setShowForm]       = useState(false);
   const [editTarget,     setEditTarget]     = useState(null);
@@ -162,7 +146,8 @@ export default function EventosPage() {
       fechaFin:    toLocalInput(ev.fechaFin),
       hora:        ev.hora        ?? "",
       ubicacion:   ev.ubicacion   ?? "",
-      categoria:   ev.categoria   ?? "otro",
+      // categoría legado que el backend ya no acepta -> cae a "institucional"
+      categoria:   CATEGORIA_FORM_OPTIONS.includes(ev.categoria) ? ev.categoria : "institucional",
     });
     const ids = (ev.cursosIds ?? ev.cursos ?? []).map(c => c._id ?? c);
     setCursosIds(ids);
@@ -180,6 +165,10 @@ export default function EventosPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (cursosIds.length === 0) {
+      setErrors({ cursosIds: "Selecciona al menos un curso" });
+      return;
+    }
     setSaving(true);
     setErrors({});
     try {
@@ -196,11 +185,6 @@ export default function EventosPage() {
       setShowForm(false);
       load();
     } catch (err) {
-      // El backend manda un array `errors` (express-validator) con el campo
-      // exacto (`path`) y el motivo (`msg`) de cada validación fallida.
-      // Antes solo se mostraba el mensaje genérico de humanizeError; ahora
-      // se reparte cada mensaje debajo de su input correspondiente y el
-      // toast muestra un resumen en vez de un texto genérico.
       const fieldErrors = parseValidationErrors(err);
       if (fieldErrors) {
         setErrors(fieldErrors);
@@ -415,11 +399,45 @@ export default function EventosPage() {
               onChange={(e) => updateForm("categoria", e.target.value)}
               required
             >
-              {Object.entries(CATEGORIA_CFG).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
+              {CATEGORIA_FORM_OPTIONS.map((key) => (
+                <option key={key} value={key}>{CATEGORIA_CFG[key].label}</option>
               ))}
             </Select>
             <FieldError message={errors.categoria} />
+          </div>
+
+          {/* el backend exige cursosIds como array en cada creación/edición */}
+          <div>
+            <p style={{ fontSize: 11.5, fontWeight: 700, color: "var(--color-text-muted)",
+              textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6, margin: "0 0 6px" }}>
+              Cursos asociados *
+            </p>
+            {cursos.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
+                No tienes cursos disponibles para asociar.
+              </p>
+            ) : (
+              <div style={{
+                display: "flex", flexDirection: "column", gap: 6,
+                maxHeight: 160, overflowY: "auto",
+                border: "1px solid var(--color-border)", borderRadius: 8, padding: 8,
+              }}>
+                {cursos.map((c) => (
+                  <label
+                    key={c._id}
+                    style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={cursosIds.includes(c._id)}
+                      onChange={() => { clearError("cursosIds"); toggleCurso(c._id); }}
+                    />
+                    {c.nombre}
+                  </label>
+                ))}
+              </div>
+            )}
+            <FieldError message={errors.cursosIds} />
           </div>
 
           {/* Imagen de portada */}

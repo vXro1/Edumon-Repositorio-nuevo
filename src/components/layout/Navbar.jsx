@@ -1,4 +1,3 @@
-// src/components/layout/Navbar.jsx
 import { memo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,6 +6,8 @@ import {
 import { UserAvatar } from "@/components";
 import { useSearch } from "@/context/SearchContext";
 import { ROLE_LABELS } from "@/config/navigation/navGroups";
+import { notificacionesGetConteoNoLeidas } from "@/features/notificaciones/services/notificacionesService";
+import { getSocket } from "@/lib/socket";
 
 export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleDrawer }) {
   const navigate  = useNavigate();
@@ -14,7 +15,22 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
 
   const [scrolled,    setScrolled]    = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [noLeidas,    setNoLeidas]    = useState(0);
   const profileRef = useRef(null);
+
+  // backend empuja "notificaciones:conteo" por socket; este badge no necesita polling propio
+  useEffect(() => {
+    notificacionesGetConteoNoLeidas()
+      .then((res) => setNoLeidas(res.noLeidas ?? 0))
+      .catch(() => {});
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    const onConteo = ({ noLeidas: n }) => setNoLeidas(n ?? 0);
+    socket.on("notificaciones:conteo", onConteo);
+    return () => socket.off("notificaciones:conteo", onConteo);
+  }, []);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 4);
@@ -87,9 +103,32 @@ export const Navbar = memo(function Navbar({ user, logout, drawerOpen, onToggleD
           className="nav-icon-btn"
           onClick={() => navigate("/notificaciones")}
           title="Notificaciones"
-          aria-label="Notificaciones"
+          aria-label={noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
+          style={{ position: "relative" }}
         >
           <Bell size={18} />
+          {noLeidas > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                minWidth: 15,
+                height: 15,
+                borderRadius: "50%",
+                background: "var(--color-error)",
+                color: "#fff",
+                fontSize: 9,
+                fontWeight: 800,
+                lineHeight: "15px",
+                textAlign: "center",
+                padding: "0 3px",
+                border: "1.5px solid var(--color-surface)",
+              }}
+            >
+              {noLeidas > 9 ? "9+" : noLeidas}
+            </span>
+          )}
         </button>
 
         <div className="nav-divider" />

@@ -1,5 +1,3 @@
-// src/features/foros/hooks/useForumData.js
-// Hooks de TanStack Query para la obtención de datos y mutaciones del foro.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   forosGetById,
@@ -94,11 +92,7 @@ function toggleLikeEnLista(mensajes, msgId) {
   });
 }
 
-// Actualización optimista: el corazón cambia de estado al instante, sin
-// esperar la respuesta del servidor ni el refetch de la lista completa. Antes,
-// como onSuccess solo invalidaba y GET /mensajes-foro/foro/:foroId nunca trae
-// yaLeDioLike (ver normalizeMensaje), el corazón se veía "apagarse" solo tras
-// cada like hasta el fix del normalizador — esto además lo vuelve instantáneo.
+// actualización optimista: el corazón cambia de estado al instante, sin esperar el refetch
 export const useLikeMessage = (foroId, currentUserId = null) => {
   const qc = useQueryClient();
   const queryKey = [...queryKeys.foros.messages(foroId), currentUserId];

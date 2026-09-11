@@ -1,5 +1,4 @@
-// src/utils/humanizeError.js
-// Traduce errores técnicos de API/red en mensajes legibles en español.
+// traduce errores técnicos de API/red en mensajes legibles en español
 
 const STATUS_MESSAGES = {
   400: "Revisa los datos ingresados",
@@ -24,33 +23,18 @@ const PATTERN_MESSAGES = [
   [/cast error|invalid.*id/i,          "Uno de los campos tiene un formato inválido"],
   [/network error|failed to fetch|networkerror|request failed/i, "Sin conexión. Revisa tu internet e intenta de nuevo"],
   [/timeout/i,                         "La solicitud tardó demasiado. Intenta de nuevo"],
-  // Tipo de archivo no permitido (multer fileFilter / validaciones de adjuntos).
-  // FIX: el backend a veces manda "Formato de archivo no permitido" (sin la
-  // palabra "tipo" ni "mimetype" — ver cloudinaryMiddleware.js), que no
-  // calzaba con ningún patrón de aquí y se mostraba tal cual, crudo y sin
-  // decir qué formatos sí se aceptan.
   [/file type|tipo de archivo|mimetype|formato.*archivo|formato.*permitido/i,
     "Este tipo de archivo no es compatible. Prueba con una imagen, PDF o documento permitido"],
-  // Mensajes técnicos genéricos que no traen su propio texto específico —
-  // si el backend ya manda un mensaje concreto (ej. "El título debe tener
-  // entre 3 y 200 caracteres"), esos NUNCA caen aquí: no calzan con ningún
-  // patrón y se muestran tal cual más abajo.
   [/internal server error|server error|^error$/i, "Ocurrió un error de nuestro lado. Intenta más tarde"],
   [/bad request|invalid input/i,       "Revisa la información ingresada"],
   [/validation/i,                      "Revisa los datos ingresados"],
 ];
 
-/**
- * Convierte un error de API en un mensaje amigable en español.
- * @param {unknown} err  — el error capturado (axios/fetch/Error)
- * @param {string}  fallback — valor por defecto cuando nada coincide
- */
 export function humanizeError(err, fallback = "Ocurrió un error. Intenta de nuevo") {
   if (!err) return fallback;
 
   const status = err?.response?.status ?? err?.status;
 
-  // Extraer el mensaje crudo de múltiples ubicaciones posibles
   const raw =
     err?.response?.data?.message ||
     err?.response?.data?.error ||
@@ -63,12 +47,7 @@ export function humanizeError(err, fallback = "Ocurrió un error. Intenta de nue
     if (regex.test(lower)) return human;
   }
 
-  // FIX: el código de estado HTTP tenía prioridad sobre el mensaje real del
-  // backend. Cuando el backend manda un motivo concreto y legible (ej. "La
-  // tarea está cerrada y no acepta entregas"), eso es siempre más útil que
-  // el genérico por status ("Revisa los datos ingresados") — mostrarlo tal
-  // cual. El genérico por status queda como respaldo solo cuando el backend
-  // no mandó nada legible.
+  // un mensaje concreto del backend es más útil que el genérico por status
   if (
     raw &&
     raw.length < 100 &&

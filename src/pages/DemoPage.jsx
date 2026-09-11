@@ -1,8 +1,5 @@
-// src/pages/DemoPage.jsx
-// Vista previa del dashboard sin iniciar sesión: reutiliza las mismas clases
-// CSS que MainLayout/Sidebar/Navbar (fidelidad visual con el diseño real)
-// pero con datos estáticos y sin ninguna llamada a la API ni navegación real
-// a rutas protegidas — nada de lo que se muestra aquí requiere autenticación.
+// vista previa del dashboard sin sesión: mismas clases CSS que MainLayout/Sidebar/Navbar,
+// datos estáticos, sin llamadas a la API ni navegación real a rutas protegidas
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -183,11 +180,8 @@ export default function DemoPage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
 
-  // Los tokens de marca (azul) están scopeados a .app-shell — reflejar la
-  // clase en <body> para que el banner (fuera del árbol de .app-shell) y los
-  // toasts (createPortal a document.body) también hereden el azul del
-  // dashboard en lugar del morado de login/landing. Mismo mecanismo que
-  // MainLayout.jsx usa para el dashboard real.
+  // tokens de marca escopeados a .app-shell — reflejarla en <body> para que banner/toasts
+  // (fuera del árbol o en portal) también hereden el azul, no el morado de login
   useEffect(() => {
     document.body.classList.add("app-shell");
     return () => document.body.classList.remove("app-shell");

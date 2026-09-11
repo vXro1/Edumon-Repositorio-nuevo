@@ -1,4 +1,3 @@
-// src/features/auth/pages/FirstLoginScreen.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -213,10 +212,7 @@ function BackgroundDecor() {
 }
 
 /* ── Micro-componentes ──────────────────────────────────────── */
-// maxStep = paso más lejano ya alcanzado. Los pasos ya completados (num <
-// maxStep) se pueden reabrir haciendo clic para corregir algo; los que aún
-// no se han completado (num > maxStep) no son clicables — se avanza solo
-// terminando el paso actual, nunca saltando adelante.
+// maxStep = paso más lejano alcanzado; solo los completados se pueden reabrir, nunca se salta adelante
 function Stepper({ step, maxStep, onStepClick }) {
   const steps = ["Foto", "Datos", "Listo"];
   return (
@@ -422,7 +418,7 @@ function PasswordInput({ value, onChange, placeholder, hasError = false }) {
 
 function PasswordStrength({ password }) {
   if (!password) return null;
-  // Mismos requisitos que valida el backend (ver utils/credenciales.js)
+  // mismos requisitos que valida el backend
   const checks = PASSWORD_RULES.map(r => ({ label: r.label, ok: r.test(password) }));
   const score = checks.filter(c => c.ok).length;
   const barColor = ["var(--color-error-hover)", "var(--color-error-hover)", "#F59E0B", "var(--edu-green-600)", "var(--edu-green-600)"][score];
@@ -568,11 +564,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 
   const hasSelection = selected !== null;
 
-  // Los avatares son predeterminados (vienen del backend) — no se permite
-  // subir una foto propia en este paso, así que solo se guarda la URL
-  // elegida. usersUpdateMyPhoto (PUT /users/me/foto-perfil) es el mismo
-  // endpoint que ya usa PerfilPage para esto; el intento anterior llamaba a
-  // PATCH /users/foto-perfil, una ruta que no existe (404).
+  // solo avatares predeterminados en este paso, no subida de foto propia
   const handleContinue = async () => {
     if (!hasSelection) {
       setError("Debes seleccionar un avatar para continuar.");
@@ -596,10 +588,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
 
   return (
     <div>
-      {/* Vista previa del avatar actual — object-fit: contain (no cover) para
-          que ningún personaje quede cortado sin importar la proporción
-          original de la imagen; el fondo detrás del avatar rellena el
-          espacio sobrante en vez de recortar. */}
+      {/* object-fit: contain, no cover — para que ningún personaje quede cortado */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28 }}>
         <div
           className={`fls-preview-ring${!hasSelection ? " idle" : ""}`}
@@ -644,10 +633,7 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
         Elige el avatar que te represente
       </p>
 
-      {/* Grid de avatares predeterminados — cada tile tiene un fondo suave
-          propio y usa object-fit:contain, así ningún avatar (cuadrado,
-          vertical, horizontal, redondo, con personajes grandes o
-          pequeños) se recorta ni se deforma. */}
+      {/* object-fit:contain en cada tile, así ningún avatar se recorta ni se deforma */}
       {loadingPhotos ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", marginBottom: 24 }}>
           {Array.from({ length: 8 }).map((_, i) => <AvatarSkeleton key={i} />)}
@@ -770,23 +756,16 @@ function StepData({ user, loginPassword, onComplete, onBack }) {
 
     setSaving(true);
     try {
-      // 1. Actualizar correo (y nombre/apellido si fueron editados)
       const updateBody = {
         correo:   form.correo.trim(),
         nombre:   form.nombre.trim(),
         apellido: form.apellido.trim(),
       };
-      // PUT /users/me/profile, no PUT /users/:id: ese último es admin-only,
-      // y este paso lo ejecuta CUALQUIER usuario nuevo (docente, padre...)
-      // en su primer ingreso — con el endpoint admin-only, todo el mundo salvo
-      // administradores recibía 403 al intentar completar el wizard.
+      // /users/me/profile, no /users/:id (admin-only) — este paso lo corre cualquier usuario nuevo
       const userData = await usersUpdateMyProfile(updateBody);
 
-      // 2. Cambiar contraseña — el backend pone primerInicioSesion en false
-      // al cambiarla, pero su respuesta no trae el usuario actualizado (solo
-      // un mensaje), así que el merge de abajo lo refleja a mano; si no,
-      // ProtectedRoute seguiría viendo primerInicioSesion:true y devolvería
-      // al usuario a este mismo wizard en cuanto navegue a otra pantalla.
+      // el backend pone primerInicioSesion:false pero no lo devuelve — se refleja a mano
+      // para que ProtectedRoute no vuelva a mandar al usuario a este wizard
       await authChangePassword({
         contrasenaActual: loginPassword,
         contrasenaNueva:  form.contraseñaNueva,
@@ -966,17 +945,14 @@ const STEP_TITLES = [
 
 export default function FirstLoginScreen() {
   const { user, updateUser, logout } = useAuth();
-  // Ver utils/firstLoginPassword.js — se lee de sessionStorage en vez de
-  // location.state porque el bloqueo del botón "atrás" (más abajo) toca el
-  // History API nativo y puede dejar el state de la ruta en null.
+  // se lee de sessionStorage, no location.state: el bloqueo del botón "atrás" toca
+  // el History API y puede dejar el state de la ruta en null
   const [loginPassword] = useState(() => readLoginPassword());
 
   const [step, setStep]       = useState(1);
   const [maxStep, setMaxStep] = useState(1);
 
-  // Prevenir la navegación hacia atrás del navegador durante el flujo — la
-  // salida real ahora es el botón "Salir" de la cabecera, que sí cierra
-  // sesión de forma explícita en vez de dejar al usuario a medio autenticar.
+  // bloquea "atrás" del navegador durante el flujo — la salida real es el botón "Salir"
   useEffect(() => {
     window.history.pushState(null, document.title, window.location.href);
     const handlePop = () => {
@@ -986,9 +962,7 @@ export default function FirstLoginScreen() {
     return () => window.removeEventListener("popstate", handlePop);
   }, []);
 
-  // Ir a un paso ya alcanzado (retroceder para corregir algo). Nunca permite
-  // adelantar: goToStep se llama solo desde controles que ya validan
-  // num <= maxStep (Stepper, botón "Volver").
+  // solo retrocede — los controles que llaman esto ya validan num <= maxStep
   const goToStep = (n) => setStep(n);
 
   const handlePhotoComplete = (updatedUser, _photoUrl) => {

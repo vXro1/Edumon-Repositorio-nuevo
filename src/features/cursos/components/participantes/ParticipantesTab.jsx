@@ -1,9 +1,8 @@
-// src/features/cursos/components/participantes/ParticipantesTab.jsx
 import { useState, useEffect, useCallback, useContext } from "react";
 import CursoContext from "../../context/CursoContext";
 import {
   Users, UserMinus, Upload, UserPlus, Mail, Phone, Hash,
-  Shield, Calendar, Clock, Eye, Edit2,
+  Shield, Calendar, Clock, Eye,
 } from "lucide-react";
 import {
   cursosGetParticipantes,
@@ -34,11 +33,7 @@ const ROL_META = {
   "padre/tutor": { label: "Padre/Tutor", color: "#FBBF24" },
 };
 
-// Sin fecha real, devuelve null (no "—"): InfoRow ya oculta filas con
-// valor falsy — un placeholder aquí rompía ese comportamiento y dejaba
-// filas vacías tipo "Registro —" para roles (docente) a los que el backend
-// nunca les manda fechaRegistro/ultimoAcceso (ver GET /api/users/:id,
-// restringido a administrador/superadmin en userRoutes.js).
+// null (no "—") cuando no hay fecha — InfoRow ya oculta filas con valor falsy
 function formatDate(iso) {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
@@ -78,10 +73,7 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
   const cursoId = ctx?.cursoId ?? cursoIdProp;
   const canManage = ctx?.canManageParticipants ?? canManageProp;
   const { user } = useAuth();
-  // GET /api/users/:id (usado para traer el detalle completo) está
-  // restringido a administrador/superadmin en el backend (userRoutes.js) —
-  // para cualquier otro rol es un 403 garantizado, así que ni se intenta:
-  // se muestra directo el dato ya disponible de la lista de participantes.
+  // GET /api/users/:id está restringido a admin/superadmin — para otros roles ni se intenta
   const puedeVerDetalleCompleto = user?.rol === "administrador" || user?.rol === "superadmin";
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,8 +131,7 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
 
     setSaving(true);
     try {
-      // No se envía "contraseña": el backend aplica la regla única del sistema
-      // (contraseña inicial = cédula). El teléfono siempre viaja como +57XXXXXXXXXX.
+      // no se envía "contraseña" — el backend siempre usa la cédula como contraseña inicial
       await cursosAddParticipante(cursoId, {
         nombre, apellido, cedula,
         telefono: normalizePhone(telefono),
@@ -153,14 +144,8 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
   };
 
   // ── Carga masiva CSV ──────────────────────────────────────────────────────
-  // El backend (registrarUsuariosMasivo → procesarUsuariosCSV) responde con
-  // los conteos anidados bajo "resumen" y el detalle bajo "detalles"
-  // ({ resumen: {total, exitosos, errores, duplicados}, detalles: {...} }) —
-  // devolver esa respuesta tal cual (como hacía antes) dejaba a SuccessPanel
-  // (en CsvUploadModal) leyendo campos de nivel superior que nunca existían,
-  // por eso el resumen se veía como "Total —, Creados 0" sin importar el
-  // resultado real. Se adapta aquí a la misma forma plana que ya usa
-  // ModulosTab.jsx: { total, exitosos, fallidos, detalle[] }.
+  // el backend responde con { resumen, detalles } anidados; se adapta a la
+  // forma plana que espera SuccessPanel: { total, exitosos, fallidos, detalle[] }
   const handleCsvUpload = async (file) => {
     const formData = new FormData();
     formData.append("archivoCSV", file);
@@ -209,9 +194,7 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
     setViewDetail(null);
 
     if (!puedeVerDetalleCompleto) {
-      // Docente: no tiene permiso para GET /api/users/:id — usar directo
-      // los datos que ya trae la lista, sin disparar una petición que
-      // sabemos que va a fallar con 403.
+      // docente no tiene permiso para GET /api/users/:id, no se intenta
       setViewDetail(normalizeUser(u));
       return;
     }

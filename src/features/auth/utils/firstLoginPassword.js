@@ -1,14 +1,6 @@
-// src/features/auth/utils/firstLoginPassword.js
-// Puente entre LoginPage (conoce la contraseña temporal en texto plano justo
-// al iniciar sesión) y FirstLoginScreen (la necesita en el paso 2 para poder
-// llamar a change-password, que exige la contraseña actual).
-//
-// Antes viajaba por location.state de react-router. Eso se rompía en cuanto
-// algo tocaba el History API nativo entre medio — y FirstLoginScreen hace
-// exactamente eso (window.history.pushState para bloquear el botón "atrás"
-// del navegador), así que el estado de la ruta podía quedar en null incluso
-// sin que el usuario navegara manualmente. sessionStorage no depende del
-// historial del navegador, así que sobrevive a esa interferencia.
+// puente entre LoginPage y FirstLoginScreen (necesita la contraseña actual para
+// change-password). sessionStorage en vez de location.state: FirstLoginScreen
+// hace pushState para bloquear el botón "atrás", lo que dejaba el state de ruta en null
 const KEY = "edumon_first_login_pwd";
 
 export const stashLoginPassword = (password) => {

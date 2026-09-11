@@ -1,11 +1,8 @@
-// src/features/cursos/components/tareas/TareaDetalle.jsx
-
 import {
   Calendar,
   CheckSquare,
   Clock,
   Download,
-  FileText,
   FolderOpen,
   Link as LinkIcon,
   Lock,
@@ -99,9 +96,7 @@ function nombreCompleto(p) {
   return `${p?.nombre ?? ""} ${p?.apellido ?? ""}`.trim();
 }
 
-// El backend a veces manda estos campos como null, undefined, o incluso un
-// objeto (por ejemplo un error de populate). String(...) los normaliza a
-// texto sin explotar, a diferencia de asumir que siempre es un string.
+// el backend a veces manda estos campos como null, undefined, o un objeto (error de populate)
 function safeText(value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "string") return value.trim();

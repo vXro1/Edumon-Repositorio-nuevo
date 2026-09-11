@@ -1,4 +1,3 @@
-// src/features/cursos/components/modules/ModulosTab.jsx
 import { useState, useEffect, useCallback, useContext } from "react";
 import CursoContext from "../../context/CursoContext";
 import { BookOpen, Eye, Pencil, Trash2, Upload } from "lucide-react";
@@ -81,21 +80,14 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
     catch { notify("Error al eliminar", "error"); }
   };
 
-  // ── Carga masiva CSV ──────────────────────────────────────────────────────
-  // CsvUploadModal entrega un File. Aquí:
-  //   1. Parseamos el CSV en el cliente con parsearCsvModulos()
-  //   2. Creamos cada módulo individualmente (no hay endpoint masivo para módulos)
-  //   3. Devolvemos el resumen { total, exitosos, fallidos, detalle[] }
-  //      con el mismo shape que espera SuccessPanel en CsvUploadModal
+  // parsea en cliente y crea cada módulo individualmente (no hay endpoint masivo)
   const handleCsvUpload = async (file) => {
-    // Paso 1 — parsear. Lanza Error si el archivo es inválido.
     const rows = await parsearCsvModulos(file);
 
     if (rows.length === 0) {
       throw new Error("El archivo no contiene filas de datos.");
     }
 
-    // Paso 2 — crear en loop
     let exitosos = 0;
     const detalle = [];
 
@@ -115,10 +107,8 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
       }
     }
 
-    // Paso 3 — refrescar lista
     await load();
 
-    // Paso 4 — devolver resumen para el panel de SuccessPanel del modal
     return {
       total:    rows.length,
       exitosos,

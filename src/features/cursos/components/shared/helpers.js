@@ -1,4 +1,3 @@
-// src/features/cursos/components/shared/helpers.js
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers de formato y normalización compartidos entre tabs
 // ─────────────────────────────────────────────────────────────────────────────

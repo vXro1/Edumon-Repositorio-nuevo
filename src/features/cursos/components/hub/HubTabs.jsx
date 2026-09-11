@@ -1,44 +1,36 @@
-// src/features/cursos/components/hub/HubTabs.jsx
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export default function HubTabs({ tabs, activeTab, onTabChange }) {
   const navRef = useRef(null);
   const btnRefs = useRef({});
   const mountedRef = useRef(false);
   const [indicator, setIndicator] = useState({ left: 0, width: 0, ready: false });
-  // FIX (visto en captura de prueba): sin esto, el indicador "nace" en 0 y
-  // se DESLIZA hasta el tab activo apenas carga la página — se ve como un
-  // bug (arranca a la izquierda de la nada) en vez de una animación
-  // intencional. La transición solo debe correr cuando el usuario CAMBIA
-  // de tab, no en el primer render.
+  // sin esto el indicador "nace" en 0 y desliza hasta el tab activo al cargar —
+  // la transición solo debe correr cuando el usuario cambia de tab
   const [animate, setAnimate] = useState(false);
 
-  // Mide la posición/ancho real del botón activo para deslizar el
-  // indicador hacia ahí — en vez del borde de cada tab prendiéndose/
-  // apagándose de golpe, como era antes.
-  const measure = () => {
+  const measure = useCallback(() => {
     const btn = btnRefs.current[activeTab];
     const nav = navRef.current;
     if (!btn || !nav) return;
     const navBox = nav.getBoundingClientRect();
     const btnBox = btn.getBoundingClientRect();
     setIndicator({ left: btnBox.left - navBox.left + nav.scrollLeft, width: btnBox.width, ready: true });
-  };
+  }, [activeTab]);
 
   useLayoutEffect(() => {
     measure();
     if (!mountedRef.current) {
       mountedRef.current = true;
-      // Deja pintar la posición inicial sin transición y RECIÉN ahí
-      // habilita la animación para los cambios de tab siguientes.
+      // pinta la posición inicial sin transición, luego habilita la animación
       requestAnimationFrame(() => setAnimate(true));
     }
-  }, [activeTab, tabs.length]);
+  }, [measure, tabs.length]);
 
   useEffect(() => {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [activeTab]);
+  }, [measure]);
 
   return (
     <nav

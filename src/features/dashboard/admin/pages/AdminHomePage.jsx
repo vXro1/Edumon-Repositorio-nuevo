@@ -1,10 +1,9 @@
-// src/features/dashboard/admin/pages/AdminHomePage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users, BookOpen, Building2, Plus, ChevronRight,
   UserCheck, Bell, Calendar, GraduationCap, Shield,
-  Clock, Mail, MailOpen, Sparkles,
+  Mail, MailOpen, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usersGetAll } from "@/services/usersService";

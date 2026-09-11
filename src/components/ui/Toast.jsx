@@ -1,16 +1,9 @@
-// src/components/ui/Toast.jsx
-// Canonical Toast notification — fixed bottom-right, auto-dismisses via makeNotify.
-// API: <Toast msg="..." type="success|error|info" />
-// Renders nothing when msg is falsy.
-//
-// Usa createPortal para escapar de cualquier ancestro con transform que crearía
-// un stacking context separado y pondría el toast detrás del modal overlay.
+// fixed bottom-right, auto-dismisses via makeNotify; createPortal para escapar
+// de un ancestro con transform que pondría el toast detrás del modal overlay
 import { createPortal } from "react-dom";
 import { CheckCircle2, AlertCircle, Info } from "lucide-react";
 
-// Todo depende de tokens semánticos vía color-mix() — nada hardcodeado.
-// "info" usa --color-primary, scopeado a .app-shell (ver MainLayout.jsx):
-// azul en el dashboard, morado en login/landing, automático.
+// "info" usa --color-primary, scopeado a .app-shell: azul en dashboard, morado en login
 const VARIANTS = {
   success: {
     bg:     "color-mix(in srgb, var(--color-success) 10%, transparent)",

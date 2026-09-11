@@ -1,4 +1,3 @@
-// src/features/buzon/pages/BuzonPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import {
   Mail, MailOpen, Inbox, RefreshCw, Building2,

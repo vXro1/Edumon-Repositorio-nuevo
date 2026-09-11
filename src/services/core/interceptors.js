@@ -1,4 +1,3 @@
-// src/services/core/interceptors.js
 // Registro simple de interceptores (request/response)
 export const requestInterceptors = [];
 export const responseInterceptors = [];

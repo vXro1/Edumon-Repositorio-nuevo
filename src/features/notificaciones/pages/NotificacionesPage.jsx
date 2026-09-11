@@ -1,5 +1,3 @@
-// src/features/notificaciones/pages/NotificacionesPage.jsx
-
 import { useState, useEffect, useCallback } from "react";
 import {
   Bell, BellOff, Check, CheckCheck, Trash2,
@@ -14,6 +12,7 @@ import {
   notificacionesDelete,
   notificacionesLimpiarAntiguas,
 } from "@/features/notificaciones/services/notificacionesService";
+import { getSocket } from "@/lib/socket";
 
 import { Toast, Button, Badge } from "@/components";
 import { IconBtn } from "@/features/cursos/components/shared/ui";
@@ -128,6 +127,31 @@ export default function NotificacionesPage() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  /* En vivo: el backend emite "notificaciones:nueva" + "notificaciones:conteo"
+     a la sala privada del usuario (io.to(`user:${userId}`), ver
+     socketHandlers.js) cada vez que se crea una notificación — no importa
+     qué la disparó (foro, entrega calificada, buzón, etc.). El socket ya
+     está conectado a nivel de app (AuthContext) apenas hay sesión; acá solo
+     nos suscribimos mientras la pantalla está montada. Recargar la página
+     entera de un tirón (en vez de mergear a mano el item nuevo) es a
+     propósito: es la misma función `load()` que ya usan los filtros y la
+     paginación, así que respeta el filtro/página activos sin duplicar lógica. */
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const onNueva = () => load();
+    const onConteo = ({ noLeidas: n }) => setNoLeidas(n ?? 0);
+
+    socket.on("notificaciones:nueva", onNueva);
+    socket.on("notificaciones:conteo", onConteo);
+
+    return () => {
+      socket.off("notificaciones:nueva", onNueva);
+      socket.off("notificaciones:conteo", onConteo);
+    };
   }, [load]);
 
   /* ───────── acciones ───────── */

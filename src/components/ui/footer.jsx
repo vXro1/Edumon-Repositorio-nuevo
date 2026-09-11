@@ -1,4 +1,3 @@
-// src/components/ui/footer.jsx
 import logo from "@/assets/icons/logo.svg";
 
 export default function Footer({

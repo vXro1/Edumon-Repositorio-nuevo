@@ -1,4 +1,3 @@
-// src/context/SearchContext.jsx
 import { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
 
 const SearchContext = createContext(null);

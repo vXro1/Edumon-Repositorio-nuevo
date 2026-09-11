@@ -1,9 +1,8 @@
-// src/features/instituciones/pages/MiInstitucionPage.jsx
 // ROL: Administrador — detalle de la institución propia
 import { useState, useEffect } from "react";
 import {
   Building2, Phone, Mail, MapPin, Hash, Users,
-  BookOpen, RefreshCw, Shield, Calendar, GraduationCap,
+  BookOpen, Shield, GraduationCap,
   AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -124,10 +123,7 @@ export default function MiInstitucionPage() {
         <StatCard icon={Shield}         label="Administradores" value="1"              color="#D97706" bg="rgba(217,119,6,0.10)"  loading={false} />
       </div>
 
-      {/* ── Cuadrícula de contenido principal — .layout-split ya resuelve el
-           colapso a una columna en pantallas angostas (min-width:768px es
-           donde pasa a 2 columnas); un grid inline aquí no podría reaccionar
-           a ningún breakpoint. ── */}
+      {/* .layout-split ya resuelve el colapso a una columna en pantallas angostas */}
       <div className="layout-split">
 
         {/* Tarjeta de información institucional */}

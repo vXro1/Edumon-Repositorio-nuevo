@@ -1,5 +1,3 @@
-// src/features/familia/pages/FamiliaCursosPage.jsx
-// ROL: Padre / Tutor — Mis cursos
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Search, AlertCircle } from "lucide-react";
@@ -18,9 +16,7 @@ function Sk({ h = 14, w = "100%", r = 6 }) {
   );
 }
 
-// FIX: no tenía nada de estilo propio — solo un cuadrado gris. Mismo look
-// que la card real (aspect-ratio 1/1, borde redondeado) para que el
-// esqueleto no "salte" cuando llegan los datos.
+// mismo look que la card real para que el esqueleto no "salte" al llegar los datos
 function SkCard() {
   return (
     <div style={{
@@ -37,14 +33,6 @@ function SkCard() {
   );
 }
 
-// FIX: toda la página estaba prácticamente sin estilos (encabezado sin
-// layout, buscador sin bordes/padding, estados de error/vacío sin
-// formato) — se veía rota, sobre todo con muchos cursos donde nada
-// contenía el espacio. Reescrita con el mismo lenguaje visual que el
-// resto de la sección "familia" (FamiliaEntregasPage/FamiliaTareasPage):
-// bloque de encabezado con ícono, buscador con borde, grid de CursoCard
-// (la card que sí funcionaba bien) con estados de carga/error/vacío
-// consistentes.
 export default function FamiliaCursosPage() {
   const navigate = useNavigate();
 

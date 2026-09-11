@@ -1,4 +1,3 @@
-// src/features/auth/pages/SesionesPage.jsx
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Shield, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";

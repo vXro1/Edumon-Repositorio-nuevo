@@ -1,4 +1,3 @@
-// src/components/ui/FileUpload.jsx
 // Reusable file upload component — drag-and-drop zone + compact attachment button mode
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Paperclip, X, FileText, Film, File } from "lucide-react";

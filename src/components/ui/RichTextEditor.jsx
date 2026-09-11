@@ -1,4 +1,3 @@
-// src/components/ui/RichTextEditor.jsx
 import { useEffect, useId, useRef } from "react";
 import { Bold, Italic, Underline, List, ListOrdered } from "lucide-react";
 import { isRichTextEmpty } from "@/utils/richText";

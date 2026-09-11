@@ -1,0 +1,51 @@
+# Uso:
+#   docker compose up --build
+#   Frontend: http://localhost:8080
+#   Backend directo (debug):  http://localhost:4000
+
+services:
+  backend:
+    build:
+      context: "../Backend"
+    container_name: edumon-backend
+    init: true
+    env_file:
+      - "../Backend/.env"
+    environment:
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    networks:
+      - edumon-net
+    ports:
+      - "4000:4000"   # publicado solo para poder pegarle directo al probar
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      # Sin build-args a propósito: VITE_API_URL queda como el placeholder
+      # de runtime (ver Dockerfile) y el entrypoint del contenedor lo
+      # resuelve a "/api" — que es justo la ruta que nginx reenvía al
+      # backend interno más abajo. Esto es lo que hace que el navegador
+      # nunca necesite saber que el backend se llama "backend:4000".
+    container_name: edumon-frontend
+    depends_on:
+      - backend
+    environment:
+      # Nombre de servicio + puerto interno del backend en esta red de
+      # Docker. Solo hace falta tocarlo si el servicio de arriba se
+      # renombra o el backend expone otro puerto.
+      BACKEND_INTERNAL_URL: http://backend:4000
+    networks:
+      - edumon-net
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+networks:
+  edumon-net:
+    driver: bridge
+
+volumes:
+  uploads:

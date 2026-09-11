@@ -1,4 +1,3 @@
-// src/security/permissions.js
 export const PERMISSIONS = {
 
   // ─── Permisos base (existentes — compatibilidad mantenida) ────────────────

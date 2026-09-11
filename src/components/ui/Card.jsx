@@ -1,4 +1,3 @@
-// src/components/ui/Card.jsx
 import { useState } from "react";
 
 /* ─── BADGE ─── */

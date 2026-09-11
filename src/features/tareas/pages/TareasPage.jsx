@@ -1,5 +1,3 @@
-// src/features/tareas/pages/TareasPage.jsx
-
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,14 +7,9 @@ import {
 
 // API
 import { cursosGetMine, cursosGetParticipantes, modulosGetByCurso } from "@/features/cursos/services/cursosService";
-// NOTA: se agrega `tareasUpdate` — sigue el mismo patrón de las demás funciones
-// del service (tareasCreate, tareasCerrar, tareasDelete). Debe hacer
-// PUT /api/tareas/:id enviando el FormData tal cual (sin fijar
-// Content-Type a mano, para que el browser agregue el boundary correcto).
 import { tareasGetAll, tareasGetById, tareasCreate, tareasUpdate, tareasCerrar, tareasDelete } from "@/features/cursos/services/tareasService";
 
 // Hooks & Context
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useSearch } from "@/context/SearchContext";
 
 // Utils
@@ -75,8 +68,6 @@ function FileChip({ file, onRemove }) {
           {(file.size / 1024).toFixed(1)} KB
         </p>
       </div>
-      {/* Botón con texto, no solo un ícono — que "quitar este archivo" sea
-          obvio sin tener que pasar el mouse encima para leer un title. */}
       <button
         type="button"
         onClick={onRemove}
@@ -94,9 +85,7 @@ function FileChip({ file, onRemove }) {
   );
 }
 
-/* ── Fila de un adjunto YA existente en el servidor (tipo "archivo") ──
-   Se puede marcar para borrar; el borrado real ocurre en el backend
-   (archivosAEliminar) recién cuando se envía el formulario.          */
+/* ── Adjunto ya existente en el servidor — el borrado real solo ocurre al guardar */
 function ExistingFileRow({ archivo, marcado, onToggle }) {
   return (
     <div style={{
@@ -176,7 +165,6 @@ function toDatetimeLocalValue(iso) {
 
 export default function TareasPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { registerSearchHandler } = useSearch();
 
   const [tareas,        setTareas]        = useState([]);
@@ -217,10 +205,9 @@ export default function TareasPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [deleting,   setDeleting]   = useState(false);
 
-  const notify = makeNotify(setToast);
+  const notify = useMemo(() => makeNotify(setToast), []);
 
-  // Mínimo permitido para el input datetime-local: ahora mismo. El backend
-  // rechaza fechaEntrega que no sea estrictamente futura (createTareaValidator).
+  // Mínimo del datetime-local: el backend rechaza fechaEntrega que no sea futura
   const minFechaEntrega = useMemo(
     () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     []
@@ -272,7 +259,7 @@ export default function TareasPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -334,9 +321,6 @@ export default function TareasPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
 
-    // Validaciones alineadas con createTareaValidator.js: titulo, cursoId,
-    // moduloId y fechaEntrega (futura) son obligatorios; participantesSeleccionados
-    // es obligatorio solo cuando asignacionTipo === "seleccionados".
     if (!form.titulo.trim()) { notify("El título es requerido", "error"); return; }
     if (!form.cursoId)       { notify("Selecciona un curso", "error"); return; }
     if (!form.moduloId)      { notify("Selecciona un módulo", "error"); return; }
@@ -350,8 +334,7 @@ export default function TareasPage() {
       return;
     }
 
-    // Enlaces con URL vacía se descartan silenciosamente (el usuario pudo
-    // haber agregado una fila y arrepentirse sin borrarla).
+    // enlaces con URL vacía se descartan (fila agregada y luego abandonada)
     const enlacesValidos = enlaces
       .filter(en => en.url?.trim())
       .map(en => ({
@@ -370,31 +353,17 @@ export default function TareasPage() {
       fd.append("fechaEntrega",  form.fechaEntrega);
       fd.append("asignacionTipo", form.asignacionTipo);
       fd.append("tipoEntrega",    form.tipoEntrega || "archivo");
-      // NOTA: no se envía docenteId — el backend siempre lo fuerza a
-      // req.user.userId (createTarea.js) e ignora cualquier valor del body.
+      // docenteId no se envía — el backend siempre lo fuerza a req.user.userId
 
-      // FIX: createTareaValidator.js tiene `.isArray()` sobre este campo, y
-      // ese validator corre en la cadena de middlewares ANTES que el
-      // controller. JSON.stringify(array) llega a Multer como un string
-      // plano, así que isArray() lo rechaza con 400 ("Los participantes
-      // seleccionados deben ser un array") — el request nunca alcanza el
-      // parseJSONArray() del controller, que solo existe para campos SIN
-      // isArray() en el validator (enlaces, nuevosEnlaces, archivosAEliminar).
-      // La notación de corchetes `campo[]` hace que Multer (vía append-field)
-      // arme un array real en req.body incluso con un solo valor — a
-      // diferencia de repetir el key sin corchetes, que con un solo elemento
-      // queda como string suelto y también falla el validator.
+      // participantesSeleccionados[] (no JSON.stringify) — el validator tiene
+      // isArray() y corre antes del parseJSONArray() del controller
       if (form.asignacionTipo === "seleccionados") {
         participantesSeleccionados.forEach(id => fd.append("participantesSeleccionados[]", id));
       }
 
       archivos.forEach(file => fd.append("archivos", file));
 
-      // Enlaces de referencia: "enlaces" NO tiene isArray() en el validator,
-      // así que JSON.stringify() sí funciona — el controller lo parsea con
-      // parseJSONArray(). La notación de corchetes NO sirve aquí porque son
-      // objetos anidados ({url, nombre}), no strings sueltos, y Multer/busboy
-      // no reconstruye "enlaces[0][url]" en multipart/form-data.
+      // "enlaces" no tiene isArray() en el validator, así que JSON.stringify() funciona aquí
       if (enlacesValidos.length > 0) {
         fd.append("enlaces", JSON.stringify(enlacesValidos));
       }
@@ -414,10 +383,7 @@ export default function TareasPage() {
     }
   };
 
-  // ── Abrir modal de edición, precargando datos de la tarea ────────────────
-  // Extraído para poder aplicarlo dos veces: con el dato (posiblemente
-  // parcial) que ya trae la lista, y de nuevo cuando llega la versión
-  // completa desde el servidor (ver fetch en openEdit).
+  // Reutilizada: precarga con el dato de la lista y de nuevo con el fetch fresco
   const applyEditTarea = (t) => {
     const cursoId = t.curso?._id ?? t.curso?.id ?? (typeof t.cursoId === "object" ? t.cursoId?._id : t.cursoId) ?? "";
     const moduloId = t.modulo?._id ?? t.modulo?.id ?? (typeof t.moduloId === "object" ? t.moduloId?._id : t.moduloId) ?? "";
@@ -438,9 +404,7 @@ export default function TareasPage() {
       .map(p => (typeof p === "object" ? p._id : p));
     setEditParticipantesSeleccionados(seleccionadosIds);
 
-    // t.adjuntos y t.archivosAdjuntos apuntan al mismo array ya normalizado
-    // (normalizeTarea.js expone ambos alias sobre los mismos datos) — mezcla
-    // archivos y enlaces, distinguidos por "tipo".
+    // mezcla archivos y enlaces, distinguidos por "tipo"
     const adjuntos = t.adjuntos ?? t.archivosAdjuntos ?? [];
     setEditArchivosExistentes(adjuntos.filter(a => a.tipo === "archivo"));
     setEditEnlacesExistentes(adjuntos.filter(a => a.tipo === "enlace"));
@@ -455,15 +419,12 @@ export default function TareasPage() {
 
     setShowEdit(true);
 
-    // La fila que abrió el modal viene de la lista paginada (tareasGetAll),
-    // que puede quedar desactualizada. Se vuelve a pedir por ID para que el
-    // form de edición siempre parta de TODOS los datos reales — adjuntos y
-    // enlaces incluidos — en vez de lo que haya quedado en memoria.
+    // la fila de la lista puede estar desactualizada; se repite el fetch por ID
     try {
       const fresh = await tareasGetById(t._id);
       applyEditTarea(normalizeTarea(fresh));
     } catch {
-      // Si falla, se sigue trabajando con los datos de la lista (ya cargados arriba)
+      // si falla, se sigue con los datos de la lista
     }
   };
 
@@ -498,10 +459,7 @@ export default function TareasPage() {
       fd.append("tipoEntrega",    editForm.tipoEntrega || "archivo");
       fd.append("estado",         editForm.estado || "activa");
 
-      // FIX: mismo problema que en handleCreate — ver el comentario extenso
-      // ahí. El validator de updateTareaValidator.js también tiene
-      // isArray() sobre participantesSeleccionados y corre antes que el
-      // controller, así que JSON.stringify() aquí también producía 400.
+      // mismo caso que en handleCreate: participantesSeleccionados[], no JSON.stringify
       if (editForm.asignacionTipo === "seleccionados") {
         editParticipantesSeleccionados.forEach(id => fd.append("participantesSeleccionados[]", id));
       }
@@ -511,11 +469,7 @@ export default function TareasPage() {
       }
 
       if (enlacesNuevosValidos.length > 0) {
-        // El controlador de updateTarea lee primero "nuevosEnlaces" y, si no
-        // viene, cae a "enlaces" — se usa "nuevosEnlaces" explícitamente para
-        // que quede claro que son enlaces A AGREGAR, no el listado completo.
-        // "nuevosEnlaces" tampoco tiene isArray() en el validator, así que
-        // JSON.stringify() aquí sí es correcto (a diferencia de participantes).
+        // "nuevosEnlaces" explícito (no "enlaces") para dejar claro que son a agregar, no el listado completo
         fd.append("nuevosEnlaces", JSON.stringify(enlacesNuevosValidos));
       }
 
@@ -545,10 +499,7 @@ export default function TareasPage() {
     }
   };
 
-  // NOTA: tareasDelete (DELETE /tareas/:id) en el backend no borra el reto —
-  // solo lo cierra y limpia sus archivos adjuntos. Se etiqueta como "cerrar",
-  // no "eliminar", para no prometer algo que el backend no hace (el reto
-  // sigue existiendo, solo pasa a estado "cerrada" sin sus archivos).
+  // tareasDelete no borra el reto, solo lo cierra y limpia sus adjuntos — de ahí "cerrar" y no "eliminar"
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -766,7 +717,7 @@ export default function TareasPage() {
                 </Select>
               </Field>
 
-              {/* Módulo — obligatorio al crear (createTareaValidator.js) */}
+              {/* Módulo — obligatorio al crear */}
               <Field label="Módulo *">
                 <Select value={form.moduloId} onChange={f("moduloId")} required disabled={!form.cursoId}>
                   <option value="">
@@ -776,7 +727,7 @@ export default function TareasPage() {
                 </Select>
               </Field>
 
-              {/* Fecha de entrega — obligatoria y debe ser futura (createTareaValidator.js) */}
+              {/* Fecha de entrega — obligatoria y debe ser futura */}
               <Field label="Fecha de entrega *">
                 <Input
                   type="datetime-local"
@@ -1300,12 +1251,7 @@ function TareaCard({ tarea: t, onVerEntregas, onEditar, onCerrar, onDelete }) {
       })
     : null;
 
-  // FIX: t.adjuntos mezcla archivos Y enlaces — el backend no tiene un campo
-  // "enlaces" separado en el modelo Tarea, ambos viven juntos en
-  // archivosAdjuntos distinguidos por "tipo" (ver normalizeTarea.js). Antes
-  // se contaba t.adjuntos.length entero y se etiquetaba como "archivo(s)",
-  // así que un enlace guardado correctamente nunca se veía reflejado en la
-  // tarjeta de la lista — solo era visible entrando a "Editar".
+  // t.adjuntos mezcla archivos y enlaces distinguidos por "tipo" — hay que separarlos, no solo contarlos
   const todosAdjuntos = t.adjuntos ?? [];
   const totalArchivos = todosAdjuntos.filter(a => a.tipo !== "enlace").length;
   const totalEnlaces  = todosAdjuntos.filter(a => a.tipo === "enlace").length;
@@ -1390,10 +1336,7 @@ function TareaCard({ tarea: t, onVerEntregas, onEditar, onCerrar, onDelete }) {
           </Button>
         )}
 
-        {/* Distinto del botón "Cerrar" de arriba: este también borra los
-            archivos adjuntos del reto (backend: tareasDelete). No borra el
-            reto en sí — sigue existiendo, solo cerrado — por eso el título
-            lo deja explícito en vez de decir "Eliminar reto". */}
+        {/* a diferencia de "Cerrar", este también borra los archivos adjuntos */}
         <Button variant="ghost-danger" size="sm" onClick={onDelete} title="Cerrar reto y eliminar sus archivos adjuntos">
           <Trash2 size={13} />
         </Button>
