@@ -337,6 +337,20 @@ body {
 .landing {
   overflow-x: clip;
   width: 100%;
+
+  /* FIX: el reset global pone background-color:#FAFAFA en <body>; como
+     las secciones sin fondo propio (pilares/aprende/contacto) son
+     transparentes, ese gris se colaba entre las secciones con fondo
+     blanco explícito (hero/quiénes/app/footer), rompiendo la
+     uniformidad de fondo pedida. Fondo blanco explícito aquí para que
+     toda la Landing comparta un único color de fondo real. */
+  background: var(--edumon-bg);
+
+  /* Nunito (--font-heading/--font-body, definidas en tokens.css) es la
+     familia de toda la app. Regular por defecto aquí; Black (900) solo
+     en títulos (ver selectores de título más abajo). */
+  font-family: var(--font-body);
+  font-weight: 400;
 }
 
 img { max-width: 100%; height: auto; display: block; object-fit: contain; }
@@ -449,18 +463,19 @@ textarea:focus-visible {
 .landing-nav__logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   text-decoration: none;
   flex-shrink: 0;
 }
-.landing-nav__logo img { width: 32px; height: 32px; }
-.landing-nav__wordmark {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 1.15rem;
-  color: var(--edumon-ink);
+.landing-nav__logo-img {
+  height: 42px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
 }
-.landing-nav__wordmark span { color: var(--edumon-blue-600); }
+@media (max-width: 480px) {
+  .landing-nav__logo-img { height: 34px; max-width: 120px; }
+}
 
 .landing-nav__links {
   list-style: none;
@@ -589,14 +604,10 @@ textarea:focus-visible {
   align-items: center;
   overflow: hidden;
   padding-block: clamp(32px, 6vh, 64px);
-  /* Fondo con más color (se pidió subir la saturación general): los
-     halos de esquina más intensos y el degradado base cierra en
-     azul-100 en vez de -50. */
-  background:
-    radial-gradient(circle at 6% 10%, var(--edumon-cyan-100) 0%, transparent 46%),
-    radial-gradient(circle at 94% 90%, rgba(252, 189, 0, 0.16) 0%, transparent 42%),
-    radial-gradient(circle at 78% 4%, rgba(124, 58, 237, 0.10) 0%, transparent 34%),
-    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-100) 100%);
+  /* Fondo unificado: el mismo color de fondo principal de la marca en
+     toda la Landing Page, sin degradados que hagan lucir esta sección
+     distinta del resto. */
+  background: var(--edumon-bg);
 }
 
 .landing-hero__content-row {
@@ -631,7 +642,7 @@ textarea:focus-visible {
 
 .landing-hero__title {
   font-family: var(--font-heading);
-  font-weight: 800;
+  font-weight: 900;
   font-size: clamp(2.2rem, 4.2vw, 3.4rem);
   line-height: 1.12;
   margin: 0;
@@ -640,18 +651,22 @@ textarea:focus-visible {
 .gradient-word {
   /* MEJORA: el degradado termina en cian (token de acento) para dar un
      toque de calidez sin salir de la familia azul de marca. */
-  background: linear-gradient(
-    135deg, var(--edumon-blue-900) 0%, var(--edumon-blue-600) 42%, var(--edumon-blue-400) 72%, var(--edu-accent-cyan) 100%
-  );
+  background:
+    linear-gradient(
+      120deg,
+      var(--edumon-blue-700),
+      var(--edumon-blue-400),
+      var(--edumon-cyan-400)
+    );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .landing-hero__subtitle {
-  font-size: clamp(1rem, 1.1vw + 0.6rem, 1.15rem);
+  font-size: clamp(1rem, 1.1vw + 14rem, 1.15rem);
   line-height: 1.65;
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
   margin: 0;
   max-width: 500px;
 }
@@ -888,7 +903,7 @@ textarea:focus-visible {
 .pilares-title {
   font-family: var(--font-heading);
 
-  font-weight: 800;
+  font-weight: 900;
 
   font-size: clamp(1.7rem, 3vw, 2.4rem);
 
@@ -941,7 +956,7 @@ textarea:focus-visible {
 
   margin: 0 auto 40px;
 
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
 
   font-size: 1rem;
 
@@ -1078,7 +1093,7 @@ textarea:focus-visible {
 .pilar-card__title {
   font-family: var(--font-heading);
 
-  font-weight: 700;
+  font-weight: 900;
 
   font-size: 1.1rem;
 
@@ -1097,7 +1112,7 @@ textarea:focus-visible {
 
   line-height: 1.65;
 
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
 
   margin: 0;
 
@@ -1225,14 +1240,14 @@ textarea:focus-visible {
 .aprende-head__title {
   font-family: var(--font-heading);
   font-size: clamp(1.6rem, 3vw, 2.1rem);
-  font-weight: 800;
+  font-weight: 900;
   color: var(--edumon-ink);
   margin: 0 0 10px;
 }
 .aprende-head__desc {
   font-size: 0.95rem;
   line-height: 1.6;
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
   margin: 0;
 }
 
@@ -1511,7 +1526,7 @@ textarea:focus-visible {
 
   font-size: 21px;
 
-  font-weight: 700;
+  font-weight: 900;
 
   line-height: 1.3;
 
@@ -1532,7 +1547,7 @@ textarea:focus-visible {
 
   line-height: 1.55;
 
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
 
   display: -webkit-box;
 
@@ -1758,9 +1773,7 @@ textarea:focus-visible {
    y "aprende" sin romper el tono claro general.
    ══════════════════════════════════════════════════════ */
 .landing-section--alt {
-  background:
-    radial-gradient(circle at 88% 8%, var(--edumon-cyan-100) 0%, transparent 40%),
-    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-100) 100%);
+  background: var(--edumon-bg);
 }
 .landing-quienes {
   position: relative;
@@ -1772,7 +1785,7 @@ textarea:focus-visible {
 }
 .quienes-content__title {
   font-family: var(--font-heading);
-  font-weight: 800;
+  font-weight: 900;
   font-size: clamp(1.9rem, 3.4vw, 2.6rem);
   margin: 14px 0 4px;
   color: var(--edumon-ink);
@@ -1795,7 +1808,7 @@ textarea:focus-visible {
 .quienes-content__text {
   font-size: 0.98rem;
   line-height: 1.7;
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
   max-width: 560px;
   margin: 0 0 14px;
 }
@@ -1856,7 +1869,7 @@ textarea:focus-visible {
 }
 .quienes-member-card__role {
   font-size: 0.8rem;
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
 }
 
 @media (max-width: 900px) {
@@ -1907,7 +1920,7 @@ textarea:focus-visible {
 .contacto-left__title {
   font-family: var(--font-heading);
   font-size: clamp(2rem, 3vw, 3rem);
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.15;
   color: var(--edumon-ink);
   margin-bottom: 18px;
@@ -1919,7 +1932,7 @@ textarea:focus-visible {
 
 .contacto-left__text {
   max-width: 560px;
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
   line-height: 1.8;
   font-size: 1rem;
   margin-bottom: 32px;
@@ -2204,13 +2217,14 @@ textarea:focus-visible {
 }
 
 .contacto-form-card__title {
+  font-family: var(--font-heading);
   font-size: 1.45rem;
-  font-weight: 800;
+  font-weight: 900;
   margin-bottom: 6px;
 }
 
 .contacto-form-card__sub {
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
   margin-bottom: 28px;
 }
 
@@ -2284,7 +2298,7 @@ textarea:focus-visible {
   margin-top: 20px;
   text-align: center;
   font-size: 0.78rem;
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
 }
 
 /* MEJORA: breakpoint intermedio — el grid mínimo (360px + 380px + gap)
@@ -2336,9 +2350,7 @@ textarea:focus-visible {
   position: relative;
   overflow: hidden;
   padding-block: var(--space-section-desktop);
-  background:
-    radial-gradient(circle at 10% 90%, var(--edumon-cyan-100) 0%, transparent 42%),
-    linear-gradient(180deg, #ffffff 0%, var(--edumon-blue-100) 100%);
+  background: var(--edumon-bg);
 }
 @media (max-width: 1024px) { .landing-app { padding-block: var(--space-section-tablet); } }
 @media (max-width: 640px)  { .landing-app { padding-block: var(--space-section-mobile); } }
@@ -2360,14 +2372,14 @@ textarea:focus-visible {
 .landing-app__title {
   font-family: var(--font-heading);
   font-size: clamp(1.8rem, 3.2vw, 2.6rem);
-  font-weight: 800;
+  font-weight: 900;
   color: var(--edumon-ink);
   margin: 14px 0 12px;
 }
 .landing-app__text {
   font-size: 1rem;
   line-height: 1.7;
-  color: var(--edumon-muted);
+  color: var(--edumon-ink);
   max-width: 520px;
   margin: 0 0 20px;
 }
@@ -2420,44 +2432,29 @@ textarea:focus-visible {
 }
 .landing-app__meta {
   font-size: 0.82rem;
-  color: var(--edumon-subtle);
+  color: var(--edumon-ink);
   margin: 0;
 }
 
+/* Único recurso visual de la sección: el logo de Edumon (sin la
+   mascota de cuerpo completo). Se apoya solo en clamp()/max-width
+   para escalar de forma fluida en cualquier ancho, sin desbordar. */
 .landing-app__visual {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  width: 100%;
 }
-.landing-app__icon {
+.landing-app__logo-img {
   position: relative;
-  z-index: 2;
-  width: clamp(140px, 22vw, 200px);
-  aspect-ratio: 1;
-  border-radius: 24%;
-  background: var(--gradient-cool);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 30px 60px rgba(10, 90, 168, 0.32);
-}
-.landing-app__icon img {
-  width: 56%;
-  height: 56%;
-  filter: brightness(0) invert(1);
-}
-.landing-app__mascot {
-  position: absolute;
   z-index: 1;
-  right: 4%;
-  bottom: -2%;
-  width: clamp(88px, 15vw, 140px);
-  filter: drop-shadow(0 18px 26px rgba(4, 42, 84, 0.18));
+  width: min(100%, clamp(180px, 26vw, 320px));
+  height: auto;
+  filter: drop-shadow(0 24px 40px rgba(4, 42, 84, 0.18));
 }
 @media (prefers-reduced-motion: no-preference) {
-  .landing-app__icon { animation: floatGentle 6s ease-in-out infinite; }
+  .landing-app__logo-img { animation: floatGentle 6s ease-in-out infinite; }
 }
 
 @media (max-width: 900px) {
@@ -2469,19 +2466,21 @@ textarea:focus-visible {
   .landing-app__content { display: flex; flex-direction: column; align-items: center; }
   .landing-app__cta { align-items: center; }
   .landing-app__text { max-width: 560px; }
-  .landing-app__visual { order: -1; min-height: auto; margin-bottom: 8px; }
+  .landing-app__visual { order: -1; margin-bottom: 8px; }
   .landing-app .deco-bubbles { display: none; }
 }
 @media (max-width: 480px) {
   .landing-app__btn { width: 100%; }
+  .landing-app__logo-img { width: min(70%, 220px); }
 }
 
 /* ══════════════════════════════════════════════════════
    FOOTER
    ══════════════════════════════════════════════════════ */
 .landing-footer {
-  background: var(--edumon-footer-bg);
-  color: #cbd5e1;
+  background: var(--edumon-bg);
+  color: var(--edumon-ink);
+  border-top: 1px solid var(--edumon-border);
   padding-top: clamp(56px, 8vw, 84px);
 }
 .landing-footer__grid {
@@ -2504,7 +2503,7 @@ textarea:focus-visible {
 }
 .footer-col__note {
   font-size: 0.76rem;
-  color: #64748b;
+  color: var(--edumon-ink);
   margin: 10px 0 0;
   line-height: 1.5;
 }
@@ -2512,20 +2511,20 @@ textarea:focus-visible {
   display: flex;
   gap: 2px;
   font-family: var(--font-heading);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 1.3rem;
   margin-bottom: 10px;
 }
-/* Degradado de una sola familia (azul claro → blanco), coherente
-   sobre fondo oscuro. */
-.footer-brand__wordmark span:nth-child(1) { color: var(--edumon-blue-300); }
-.footer-brand__wordmark span:nth-child(2) { color: var(--edumon-blue-400); }
-.footer-brand__wordmark span:nth-child(3) { color: #a7c7fb; }
-.footer-brand__wordmark span:nth-child(4) { color: #bfd7fc; }
-.footer-brand__wordmark span:nth-child(5) { color: #d8e6fd; }
-.footer-brand__wordmark span:nth-child(6) { color: #ffffff; }
-.footer-brand__tagline { font-size: 0.9rem; line-height: 1.6; margin: 0 0 14px; color: #94a3b8; }
-.footer-brand__tagline strong { color: #fff; }
+/* Degradado de una sola familia de azul de marca, oscuro → claro,
+   legible sobre el fondo blanco uniforme de la página. */
+.footer-brand__wordmark span:nth-child(1) { color: var(--edumon-blue-900); }
+.footer-brand__wordmark span:nth-child(2) { color: var(--edumon-blue-800); }
+.footer-brand__wordmark span:nth-child(3) { color: var(--edumon-blue-700); }
+.footer-brand__wordmark span:nth-child(4) { color: var(--edumon-blue-600); }
+.footer-brand__wordmark span:nth-child(5) { color: var(--edumon-blue-500); }
+.footer-brand__wordmark span:nth-child(6) { color: var(--edumon-blue-400); }
+.footer-brand__tagline { font-size: 0.9rem; line-height: 1.6; margin: 0 0 14px; color: var(--edumon-ink); }
+.footer-brand__tagline strong { color: var(--edumon-ink); }
 .footer-brand__made {
   display: inline-flex;
   align-items: center;
@@ -2533,18 +2532,19 @@ textarea:focus-visible {
   font-size: 0.78rem;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--edumon-blue-50);
   margin-bottom: 10px;
-  color: var(--edumon-blue-300);
+  color: var(--edumon-blue-700);
 }
-.footer-brand__authors { font-size: 0.78rem; color: #64748b; }
+.footer-brand__authors { font-size: 0.78rem; color: var(--edumon-ink); }
 
 .footer-col__title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  color: #fff;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  color: var(--edumon-ink);
   font-size: 0.9rem;
   margin-bottom: 16px;
 }
@@ -2553,18 +2553,18 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #94a3b8;
+  color: var(--edumon-ink);
   text-decoration: none;
   font-size: 0.85rem;
   transition: color 0.2s ease;
 }
-.footer-col a:hover { color: #fff; }
+.footer-col a:hover { color: var(--edumon-blue-600); }
 .footer-contact-item {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--edumon-ink);
   margin-bottom: 12px;
 }
 /* Mismo tratamiento neutro y sobrio para ambos botones sociales,
@@ -2579,26 +2579,27 @@ textarea:focus-visible {
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--edumon-ink);
+  background: var(--edumon-blue-50);
+  border: 1px solid var(--edumon-border);
   margin-bottom: 10px;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 .footer-social-btn:hover {
-  background: var(--edumon-blue-700);
+  background: var(--edumon-blue-600);
   border-color: var(--edumon-blue-600);
+  color: #fff;
 }
-.footer-social-sub { font-size: 0.78rem; color: #64748b; line-height: 1.5; }
+.footer-social-sub { font-size: 0.78rem; color: var(--edumon-ink); line-height: 1.5; }
 
 .landing-footer__bottom {
   position: relative;
   z-index: 1;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--edumon-border);
   padding: 20px var(--container-pad);
   text-align: center;
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--edumon-ink);
 }
 
 @media (max-width: 900px) {
