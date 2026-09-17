@@ -325,7 +325,7 @@ export default function UsuariosPage() {
   /* ── Edit ── */
   const openEdit = (u) => {
     setEditTarget(u);
-    setForm({ nombre: u.nombre ?? "", apellido: u.apellido ?? "", cedula: u.cedula ?? "", correo: u.correo ?? "", telefono: u.telefono ?? "", contrasena: "", rol: u.rol ?? "docente" });
+    setForm({ nombre: u.nombre ?? "", apellido: u.apellido ?? "", cedula: u.cedula ?? "", correo: u.correo ?? "", telefono: u.telefono ?? "", contrasena: "", rol: u.rol ?? "docente", institucionIdSA: u.institucionId ?? "" });
   };
 
   const handleEdit = async (e) => {
@@ -335,12 +335,25 @@ export default function UsuariosPage() {
     if (form.cedula.trim() && !isValidCedula(form.cedula)) { notify(CEDULA_ERROR, "error"); return; }
     if (form.telefono.trim() && !isValidPhone(form.telefono)) { notify(PHONE_ERROR, "error"); return; }
 
+    const rolApi = toApiRol(form.rol);
+
+    // el backend exige institucionId al ascender a alguien a docente/administrador
+    // (el admin normal ya va forzado a la suya; esto solo aplica al superadmin,
+    // que sí puede elegir a cuál institución)
+    if (isSuperadmin && ["docente", "administrador"].includes(rolApi) && !form.institucionIdSA) {
+      notify("Selecciona una institución para este rol", "error");
+      return;
+    }
+
     setSaving(true);
     try {
-      const body = { nombre: form.nombre.trim(), apellido: form.apellido.trim(), cedula: form.cedula.trim(), correo: form.correo.trim(), rol: toApiRol(form.rol) };
+      const body = { nombre: form.nombre.trim(), apellido: form.apellido.trim(), cedula: form.cedula.trim(), correo: form.correo.trim(), rol: rolApi };
       // Solo se manda el teléfono si quedó en el formato del sistema (+57XXXXXXXXXX)
       const telefono = normalizePhone(form.telefono);
       if (telefono) body.telefono = telefono;
+      if (isSuperadmin && ["docente", "administrador"].includes(rolApi)) {
+        body.institucionId = form.institucionIdSA;
+      }
       await usersUpdate(editTarget._id, body);
       notify("Usuario actualizado");
       setEditTarget(null);
@@ -601,6 +614,20 @@ export default function UsuariosPage() {
                 </StyledSelect>
               </FieldGroup>
             </div>
+            {/* Superadmin: a qué institución queda el usuario al ascenderlo a
+                docente/administrador (un admin normal ya va forzado a la suya) */}
+            {isSuperadmin && ["docente", "administrador"].includes(toApiRol(form.rol)) && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <FieldGroup label="Institución *">
+                  <StyledSelect value={form.institucionIdSA} onChange={f("institucionIdSA")}>
+                    <option value="">Seleccionar institución...</option>
+                    {institutions.map(inst => (
+                      <option key={inst._id} value={inst._id}>{inst.nombre}</option>
+                    ))}
+                  </StyledSelect>
+                </FieldGroup>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
             <BtnCancel onClick={() => setEditTarget(null)} />
