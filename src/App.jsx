@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AppRoutes from "./routes/AppRoutes";
 import { AuthProvider } from "./features/auth/context/AuthContext";
+import SessionWarningModal from "./features/auth/components/SessionWarningModal";
 import { SearchProvider } from "./context/SearchContext";
 import { ToastProvider } from "./context/ToastContext";
 import { BreadcrumbProvider } from "./context/BreadcrumbContext";
@@ -25,6 +26,7 @@ function App() {
               <AppRoutes />
             </BreadcrumbProvider>
           </SearchProvider>
+          <SessionWarningModal />
         </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>
