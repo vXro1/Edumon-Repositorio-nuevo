@@ -132,7 +132,7 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
         {canManage && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Button variant="secondary" size="sm" onClick={() => setCsvOpen(true)}>
-              <Upload style={{ width: 13, height: 13 }} /> Carga CSV
+              <Upload style={{ width: 13, height: 13 }} /> Agregar varios módulos
             </Button>
             <Button size="sm" onClick={openCreate}>+ Nuevo módulo</Button>
           </div>
@@ -316,8 +316,8 @@ export default function ModulosTab({ cursoId: cursoIdProp, canManage: canManageP
         onClose={() => setCsvOpen(false)}
         onUpload={handleCsvUpload}
         onDownloadTemplate={descargarPlantillaModulosCSV}
-        title="Carga masiva de módulos"
-        description="Sube un CSV con los módulos a crear. La columna 'titulo' es requerida; 'descripcion' es opcional."
+        title="Agregar varios módulos"
+        description="Sube un archivo con la lista de módulos a crear. La columna 'titulo' es requerida; 'descripcion' es opcional."
         templateLabel="Descargar plantilla"
         acceptedColumns={CSV_COLUMNAS_MODULOS}
         maxFileSizeMB={5}

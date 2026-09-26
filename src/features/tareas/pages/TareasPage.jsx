@@ -16,9 +16,10 @@ import { useSearch } from "@/context/SearchContext";
 import { normalizeCurso } from "@/lib/normalizers/curso";
 import { normalizeTarea } from "@/lib/normalizers/tarea";
 import { humanizeError } from "@/utils/humanizeError";
+import { sanitizeRichText, isRichTextEmpty } from "@/utils/richText";
 
 // Shared UI — componentes del sistema
-import { Toast, AppModal, Modal, Button, Badge, Input, Select } from "@/components";
+import { Toast, AppModal, Modal, Button, Badge, Input, Select, RichTextEditor } from "@/components";
 import { Sk, EmptyState, Field } from "../../cursos/components/shared/ui";
 import { makeNotify } from "@/features/cursos/components/shared/helpers";
 
@@ -291,6 +292,9 @@ export default function TareasPage() {
   // ── Helpers de campo ──────────────────────────────────────────────────────
   const f = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.value }));
   const ef = (key) => (e) => setEditForm(p => ({ ...p, [key]: e.target.value }));
+  // RichTextEditor entrega el HTML directo (no un evento) en su onChange
+  const fRich  = (key) => (html) => setForm(p => ({ ...p, [key]: html }));
+  const efRich = (key) => (html) => setEditForm(p => ({ ...p, [key]: html }));
 
   // ── Helpers de enlaces de referencia (crear) ──────────────────────────────
   const addEnlace = () => setEnlaces(prev => [...prev, { ...EMPTY_ENLACE }]);
@@ -346,8 +350,8 @@ export default function TareasPage() {
     try {
       const fd = new FormData();
       fd.append("titulo",        form.titulo);
-      fd.append("descripcion",   form.descripcion);
-      fd.append("criterios",     form.criterios);
+      fd.append("descripcion",   sanitizeRichText(form.descripcion));
+      fd.append("criterios",     isRichTextEmpty(form.criterios) ? "" : sanitizeRichText(form.criterios));
       fd.append("cursoId",       form.cursoId);
       fd.append("moduloId",      form.moduloId);
       fd.append("fechaEntrega",  form.fechaEntrega);
@@ -450,8 +454,8 @@ export default function TareasPage() {
     try {
       const fd = new FormData();
       fd.append("titulo",         editForm.titulo);
-      fd.append("descripcion",    editForm.descripcion);
-      fd.append("criterios",      editForm.criterios);
+      fd.append("descripcion",    sanitizeRichText(editForm.descripcion));
+      fd.append("criterios",      isRichTextEmpty(editForm.criterios) ? "" : sanitizeRichText(editForm.criterios));
       fd.append("cursoId",        editForm.cursoId);
       fd.append("moduloId",       editForm.moduloId);
       fd.append("fechaEntrega",   editForm.fechaEntrega);
@@ -685,28 +689,24 @@ export default function TareasPage() {
 
               {/* Descripción */}
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Descripción">
-                  <Input
-                    as="textarea"
-                    value={form.descripcion}
-                    onChange={f("descripcion")}
-                    placeholder="Instrucciones para los padres..."
-                    rows={3}
-                  />
-                </Field>
+                <RichTextEditor
+                  label="Descripción"
+                  value={form.descripcion}
+                  onChange={fRich("descripcion")}
+                  minHeight={90}
+                  placeholder="Instrucciones para los padres..."
+                />
               </div>
 
               {/* Criterios de evaluación */}
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Criterios de evaluación">
-                  <Input
-                    as="textarea"
-                    value={form.criterios}
-                    onChange={f("criterios")}
-                    placeholder="Cómo se evaluará este reto..."
-                    rows={3}
-                  />
-                </Field>
+                <RichTextEditor
+                  label="Criterios de evaluación"
+                  value={form.criterios}
+                  onChange={fRich("criterios")}
+                  minHeight={90}
+                  placeholder="Cómo se evaluará este reto..."
+                />
               </div>
 
               {/* Curso */}
@@ -937,16 +937,22 @@ export default function TareasPage() {
 
               {/* Descripción */}
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Descripción">
-                  <Input as="textarea" value={editForm.descripcion} onChange={ef("descripcion")} rows={3} />
-                </Field>
+                <RichTextEditor
+                  label="Descripción"
+                  value={editForm.descripcion}
+                  onChange={efRich("descripcion")}
+                  minHeight={90}
+                />
               </div>
 
               {/* Criterios */}
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Criterios de evaluación">
-                  <Input as="textarea" value={editForm.criterios} onChange={ef("criterios")} rows={3} />
-                </Field>
+                <RichTextEditor
+                  label="Criterios de evaluación"
+                  value={editForm.criterios}
+                  onChange={efRich("criterios")}
+                  minHeight={90}
+                />
               </div>
 
               {/* Curso */}

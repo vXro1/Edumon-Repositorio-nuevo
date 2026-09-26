@@ -58,7 +58,7 @@ export default function MiInstitucionPage() {
   const [inst,    setInst]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
-  const [stats,   setStats]   = useState({ cursos: 0, docentes: 0 });
+  const [stats,   setStats]   = useState({ cursos: 0, docentes: 0, padres: 0, administradores: 0 });
   const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
@@ -79,13 +79,17 @@ export default function MiInstitucionPage() {
     (async () => {
       setStatsLoading(true);
       try {
-        const [cursosRes, docentesRes] = await Promise.all([
+        const [cursosRes, docentesRes, padresRes, adminsRes] = await Promise.all([
           cursosGetAll({ limit: 1 }),
           usersGetAll({ rol: "docente", limit: 1 }),
+          usersGetAll({ rol: "padre", limit: 1 }),
+          usersGetAll({ rol: "administrador", limit: 1 }),
         ]);
         setStats({
-          cursos:   cursosRes.pagination?.total ?? cursosRes.cursos?.length ?? 0,
-          docentes: docentesRes.pagination?.totalUsers ?? docentesRes.users?.length ?? 0,
+          cursos:          cursosRes.pagination?.total   ?? cursosRes.cursos?.length   ?? 0,
+          docentes:        docentesRes.pagination?.totalUsers ?? docentesRes.users?.length ?? 0,
+          padres:          padresRes.pagination?.totalUsers   ?? padresRes.users?.length   ?? 0,
+          administradores: adminsRes.pagination?.totalUsers   ?? adminsRes.users?.length   ?? 0,
         });
       } catch { /* silencioso */ }
       finally { setStatsLoading(false); }
@@ -119,8 +123,8 @@ export default function MiInstitucionPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 24 }}>
         <StatCard icon={BookOpen}       label="Cursos activos"  value={stats.cursos}   color="var(--color-primary)" bg="rgba(12,106,196,0.10)" loading={statsLoading} />
         <StatCard icon={GraduationCap}  label="Docentes"        value={stats.docentes} color="var(--edu-green-600)" bg="rgba(22,163,74,0.10)"  loading={statsLoading} />
-        <StatCard icon={Users}          label="Estudiantes"     value="—"              color="#6366F1" bg="rgba(99,102,241,0.10)" loading={false} />
-        <StatCard icon={Shield}         label="Administradores" value="1"              color="#D97706" bg="rgba(217,119,6,0.10)"  loading={false} />
+        <StatCard icon={Users}          label="Padres de familia" value={stats.padres}          color="#6366F1" bg="rgba(99,102,241,0.10)" loading={statsLoading} />
+        <StatCard icon={Shield}         label="Administradores"   value={stats.administradores} color="#D97706" bg="rgba(217,119,6,0.10)"  loading={statsLoading} />
       </div>
 
       {/* .layout-split ya resuelve el colapso a una columna en pantallas angostas */}

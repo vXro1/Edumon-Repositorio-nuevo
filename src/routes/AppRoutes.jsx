@@ -66,7 +66,7 @@ const SesionesPage = lazy(() => import("../features/auth/pages/SesionesPage"));
 
 const ALL_ROLES = ["administrador", "superadmin", "docente", "padre", "padre/tutor", "estudiante"];
 
-const PageLoader = () => <LoadingScreen message="Cargando..." />;
+const PageLoader = () => <LoadingScreen message="Cargando página, espera un momento" />;
 
 export default function AppRoutes() {
   return (

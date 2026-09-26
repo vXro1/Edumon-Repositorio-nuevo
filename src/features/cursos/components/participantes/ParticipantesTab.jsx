@@ -17,6 +17,7 @@ import { Badge, Button, Input, AppModal, UserAvatar, Toast, CsvUploadModal, Phon
 import { Sk, EmptyState, Field, iconBtn } from "../shared/ui";
 import { makeNotify } from "../shared/helpers";
 import { descargarPlantillaPadresCSV, CSV_COLUMNAS_PADRES } from "@/components/ui/PadresCsvTemplate";
+import { HEADER_PALETTE } from "@/utils/xlsxWriter";
 import { normalizePhone, isValidPhone, PHONE_ERROR } from "@/utils/normalizePhone";
 import {
   contrasenaInicial, TEXTO_CONTRASENA_INICIAL,
@@ -243,7 +244,7 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
               }}
             >
               <Upload style={{ width: 14, height: 14 }} />
-              Carga masiva Excel
+              Agregar varios padres
             </button>
 
             {/* Botón: agregar individual */}
@@ -381,10 +382,11 @@ export default function ParticipantesTab({ cursoId: cursoIdProp, canManage: canM
         onClose={() => setCsvOpen(false)}
         onUpload={handleCsvUpload}
         onDownloadTemplate={descargarPlantillaPadresCSV}
-        title="Carga masiva de padres de familia"
-        description="Sube un Excel (.xlsx/.xlsm) con los datos de los padres. Si el usuario ya existe por cédula, se agrega directamente sin crear cuenta nueva."
+        title="Agregar varios padres de familia"
+        description="Sube un archivo Excel (.xlsx/.xlsm) con los datos de los padres. Si el usuario ya existe por cédula, se agrega directamente sin crear cuenta nueva."
         templateLabel="Descargar plantilla"
         acceptedColumns={CSV_COLUMNAS_PADRES}
+        columnColors={HEADER_PALETTE}
         acceptExtensions={[".xlsx", ".xlsm"]}
         fileTypeLabel="Excel (.xlsx, .xlsm)"
         maxFileSizeMB={5}

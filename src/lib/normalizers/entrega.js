@@ -85,6 +85,7 @@ export function normalizeEntrega(data) {
             correo: data.padre.correo || "",
             telefono: data.padre.telefono || "",
             rol: data.padre.rol || "padre",
+            fotoPerfilUrl: assetUrl(data.padre.fotoPerfilUrl || ""),
           }
         : data.padreId && typeof data.padreId === "object"
         ? {
@@ -94,10 +95,13 @@ export function normalizeEntrega(data) {
             correo: data.padreId.correo || "",
             telefono: data.padreId.telefono || "",
             rol: data.padreId.rol || "padre",
+            fotoPerfilUrl: assetUrl(data.padreId.fotoPerfilUrl || ""),
           }
         : null,
 
-    // Tarea
+    // Tarea — criterios es un STRING plano en el backend (ver
+    // lib/normalizers/tarea.js), no un array; con Array.isArray() esto
+    // siempre caía en [] y los criterios nunca se veían para el padre.
     tarea:
       data.tarea && typeof data.tarea === "object"
         ? {
@@ -105,9 +109,7 @@ export function normalizeEntrega(data) {
             titulo: data.tarea.titulo || "Tarea",
             descripcion: data.tarea.descripcion || "",
             fechaEntrega: data.tarea.fechaEntrega || null,
-            criterios: Array.isArray(data.tarea.criterios)
-              ? data.tarea.criterios
-              : [],
+            criterios: typeof data.tarea.criterios === "string" ? data.tarea.criterios : "",
           }
         : data.tareaId && typeof data.tareaId === "object"
         ? {
@@ -115,9 +117,7 @@ export function normalizeEntrega(data) {
             titulo: data.tareaId.titulo || "Tarea",
             descripcion: data.tareaId.descripcion || "",
             fechaEntrega: data.tareaId.fechaEntrega || null,
-            criterios: Array.isArray(data.tareaId.criterios)
-              ? data.tareaId.criterios
-              : [],
+            criterios: typeof data.tareaId.criterios === "string" ? data.tareaId.criterios : "",
           }
         : null,
 

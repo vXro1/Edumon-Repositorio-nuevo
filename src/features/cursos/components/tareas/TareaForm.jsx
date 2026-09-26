@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { FileText, Upload, X, Globe, Users, Link2, Calendar, Clock, Eye, ZoomIn, ZoomOut, RotateCcw, ExternalLink, Check, Trash2 } from "lucide-react";
-import { Input, Textarea, Select, Checkbox } from "@/components";
+import { Input, Select, Checkbox, RichTextEditor } from "@/components";
 import { Field, Sk } from "../shared/ui";
 
 const TIPO_ENTREGA_OPTS = [
@@ -612,6 +612,12 @@ export default function TareaForm({
     setForm(f => ({ ...f, [key]: e.target.value }));
   };
 
+  // RichTextEditor entrega el HTML directo (no un evento) en su onChange
+  const setRich = (key) => (html) => {
+    clearError(key);
+    setForm(f => ({ ...f, [key]: html }));
+  };
+
   const toggleParticipante = (id) => {
     clearError("participantes");
     setForm(f => ({
@@ -669,20 +675,20 @@ export default function TareaForm({
         </div>
 
         {/* Descripción */}
-        <Textarea
+        <RichTextEditor
           label="Descripción"
           value={form.descripcion}
-          onChange={set("descripcion")}
-          rows={3}
+          onChange={setRich("descripcion")}
+          minHeight={90}
           placeholder="Instrucciones para los participantes..."
         />
 
         <div>
-          <Textarea
+          <RichTextEditor
             label="Criterios de evaluación"
             value={form.criterios}
-            onChange={set("criterios")}
-            rows={3}
+            onChange={setRich("criterios")}
+            minHeight={90}
             placeholder="Criterios específicos, formato esperado..."
           />
           <FieldError message={errors.criterios} />

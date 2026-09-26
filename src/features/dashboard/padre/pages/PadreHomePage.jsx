@@ -7,7 +7,10 @@ import {
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { cursosGetMine } from "@/features/cursos/services/cursosService";
 import { eventosGetHoy } from "@/features/eventos/services/eventosService";
-import { normalizeCurso } from "@/lib/normalizers";
+import { tareasGetAll } from "@/features/cursos/services/tareasService";
+import { entregasGetAll } from "@/features/entregas/services/entregasService";
+import { notificacionesGetConteoNoLeidas } from "@/features/notificaciones/services/notificacionesService";
+import { normalizeCurso, normalizeTarea } from "@/lib/normalizers";
 import CursoCard from "@/features/cursos/components/CursoCard";
 
 /* ── Esqueleto de carga ────────────────────────────────────────── */
@@ -127,19 +130,37 @@ export default function PadreHomePage() {
   const { user }   = useAuth();
   const navigate   = useNavigate();
 
-  const [loading,  setLoading]  = useState(true);
-  const [cursos,   setCursos]   = useState([]);
-  const [eventos,  setEventos]  = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [cursos,      setCursos]      = useState([]);
+  const [eventos,     setEventos]     = useState([]);
+  const [noLeidas,    setNoLeidas]    = useState(0);
+  const [pendientes,  setPendientes]  = useState(0);
 
   useEffect(() => {
     (async () => {
       try {
-        const [cursosRes, eventosRes] = await Promise.all([
+        const [cursosRes, eventosRes, tareasRes, entregasRes, notifsRes] = await Promise.all([
           cursosGetMine({ limit: 6 }),
           eventosGetHoy(),
+          tareasGetAll({ limit: 100 }),
+          entregasGetAll({ limit: 100 }),
+          notificacionesGetConteoNoLeidas(),
         ]);
         setCursos((cursosRes.cursos   ?? []).map(normalizeCurso));
         setEventos(eventosRes.eventos ?? []);
+        setNoLeidas(notifsRes?.noLeidas ?? 0);
+
+        // "pendiente" = reto abierto de un hijo que esta familia aún no envió
+        // (entregasGetAll solo devuelve entregas ya enviadas/tarde, nunca
+        // borradores ni las que faltan — hay que cruzarlo contra las tareas)
+        const tareas = (tareasRes?.tareas ?? []).map(normalizeTarea);
+        const tareaIdsEnviadas = new Set(
+          (entregasRes?.entregas ?? []).map((e) => e.tareaId?._id ?? e.tareaId)
+        );
+        const abiertasSinEnviar = tareas.filter(
+          (t) => t.estado === "activa" && !tareaIdsEnviadas.has(t._id)
+        );
+        setPendientes(abiertasSinEnviar.length);
       } catch { /* silencioso */ }
       finally  { setLoading(false); }
     })();
@@ -188,8 +209,8 @@ export default function PadreHomePage() {
         <div className="grid-stats">
           <StatCard value={cursos.length}  label="Cursos activos"      icon={BookOpen} colorClass="stat-icon-purple" loading={loading} />
           <StatCard value={eventos.length} label="Eventos hoy"         icon={Calendar} colorClass="stat-icon-green"  loading={loading} />
-          <StatCard value="—"              label="Notificaciones"      icon={Bell}     colorClass="stat-icon-yellow" loading={false} />
-          <StatCard value="—"              label="Entregas pendientes" icon={FileText} colorClass="stat-icon-cyan"   loading={false} />
+          <StatCard value={noLeidas}       label="Notificaciones"      icon={Bell}     colorClass="stat-icon-yellow" loading={loading} />
+          <StatCard value={pendientes}     label="Entregas pendientes" icon={FileText} colorClass="stat-icon-cyan"   loading={loading} />
         </div>
       </section>
 

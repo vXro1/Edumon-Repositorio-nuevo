@@ -281,6 +281,9 @@ export default function NotificacionesPage() {
             <p style={{ margin: 0, fontSize: 12.5, color: "#64748B" }}>
               {noLeidas > 0 ? `${noLeidas} sin leer` : "Todo al día"}
             </p>
+            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#94A3B8" }}>
+              Puedes borrar las notificaciones leídas de hace más de {DIAS_LIMPIEZA} días con "Limpiar antiguas".
+            </p>
           </div>
         </div>
 
@@ -387,7 +390,7 @@ export default function NotificacionesPage() {
                   icon={<Bell style={{ width: 16, height: 16 }} />}
                 />
 
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: 0, fontWeight: 700 }}>
                     {tipoConfig.label}
                     {n.prioridad === "critica" && (
@@ -408,10 +411,10 @@ export default function NotificacionesPage() {
                   </p>
                 </div>
 
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "flex-start" }}>
                   {!n.leido && (
                     <IconBtn
-                      label="Marcar como leída"
+                      title="Marcar como leída"
                       color="var(--edu-green-600)"
                       onClick={() => handleMarkRead(n._id)}
                     >
@@ -420,7 +423,7 @@ export default function NotificacionesPage() {
                   )}
 
                   <IconBtn
-                    label="Eliminar"
+                    title="Eliminar"
                     color="var(--color-error-hover)"
                     onClick={() => handleDelete(n._id)}
                   >

@@ -14,6 +14,7 @@ import {
 
 import { Badge, Button } from "@/components";
 import { InfoBlock } from "../shared/ui";
+import { sanitizeRichText, isRichTextEmpty } from "@/utils/richText";
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -218,6 +219,9 @@ export default function TareaDetalle({
   const fechaActualizacion = t.updatedAt ?? t.fechaActualizacion;
 
   const titulo = t.titulo || "Sin título";
+  // descripcion/criterios se escriben con RichTextEditor (HTML sanitizado),
+  // así que se renderizan como HTML en vez de texto plano — si no, negrita/
+  // listas/separadores se verían como texto crudo ("<b>...</b>")
   const descripcion = safeText(t.descripcion);
   const criterios = safeText(t.criterios);
   const observaciones = safeText(t.observaciones);
@@ -259,14 +263,26 @@ export default function TareaDetalle({
         {/* Columna principal */}
         <div style={{ flex: "2 1 380px", minWidth: 280, display: "flex", flexDirection: "column", gap: 18 }}>
           <InfoBlock label="Descripción">
-            <p style={{ margin: 0, lineHeight: 1.8, fontSize: 14 }}>
-              {descripcion || <span style={{ opacity: 0.6, fontStyle: "italic" }}>Sin descripción</span>}
-            </p>
+            {isRichTextEmpty(descripcion) ? (
+              <p style={{ margin: 0, lineHeight: 1.8, fontSize: 14 }}>
+                <span style={{ opacity: 0.6, fontStyle: "italic" }}>Sin descripción</span>
+              </p>
+            ) : (
+              <div
+                className="rich-content"
+                style={{ lineHeight: 1.8, fontSize: 14 }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(descripcion) }}
+              />
+            )}
           </InfoBlock>
 
-          {criterios && (
+          {!isRichTextEmpty(criterios) && (
             <InfoBlock label="Criterios de evaluación">
-              <p style={{ margin: 0, lineHeight: 1.8, fontSize: 14 }}>{criterios}</p>
+              <div
+                className="rich-content"
+                style={{ lineHeight: 1.8, fontSize: 14 }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(criterios) }}
+              />
             </InfoBlock>
           )}
 

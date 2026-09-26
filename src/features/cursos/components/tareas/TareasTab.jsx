@@ -13,6 +13,7 @@ import {
   SectionHeader,
 } from "../shared/ui";
 import { normalizeTarea } from "@/lib/normalizers/tarea";
+import { sanitizeRichText, isRichTextEmpty } from "@/utils/richText";
 import { humanizeError } from "@/utils/humanizeError";
 import { parseValidationErrors, summarizeValidationErrors } from "@/utils/parseValidationErrors";
 
@@ -236,8 +237,8 @@ export default function TareasTab({ cursoId: cursoIdProp, canManage: canManagePr
     try {
       const fd = new FormData();
       fd.append("titulo", form.titulo.trim());
-      fd.append("descripcion", form.descripcion.trim());
-      fd.append("criterios", form.criterios?.trim() ?? "");
+      fd.append("descripcion", sanitizeRichText(form.descripcion));
+      fd.append("criterios", isRichTextEmpty(form.criterios) ? "" : sanitizeRichText(form.criterios));
       fd.append("cursoId", cursoId);
       fd.append("asignacionTipo", form.asignacionTipo);
       fd.append("tipoEntrega", form.tipoEntrega || "archivo");

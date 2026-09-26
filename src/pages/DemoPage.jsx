@@ -30,7 +30,7 @@ const DEMO_USERS = {
 const STATS_BY_ROLE = {
   docente: [
     { value: 3,   label: "Mis cursos",             icon: BookOpen,       colorClass: "stat-icon-purple" },
-    { value: 68,  label: "Estudiantes en total",    icon: Users,          colorClass: "stat-icon-green" },
+    { value: 68,  label: "Padres de familia",        icon: Users,          colorClass: "stat-icon-green" },
     { value: 4,   label: "Retos activos",           icon: ClipboardList, colorClass: "stat-icon-cyan" },
     { value: 2,   label: "Eventos hoy",             icon: Calendar,       colorClass: "stat-icon-yellow" },
   ],
@@ -201,7 +201,7 @@ export default function DemoPage() {
 
   const hora   = new Date().getHours();
   const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
-  const totalEstudiantes = DEMO_CURSOS.reduce((a, c) => a + c.participantes.length, 0);
+  const totalPadres = DEMO_CURSOS.reduce((a, c) => a + c.participantes.length, 0);
 
   const goHome = () => { setSection("home"); setDrawerOpen(false); };
 
@@ -407,7 +407,7 @@ export default function DemoPage() {
                         <span className="welcome-chip">{DEMO_CURSOS.length} cursos activos</span>
                         <span className="welcome-chip">{DEMO_TAREAS.length} retos activos</span>
                         <span className="welcome-chip">{DEMO_EVENTOS.length} eventos hoy</span>
-                        <span className="welcome-chip">{totalEstudiantes} estudiantes</span>
+                        <span className="welcome-chip">{totalPadres} padres de familia</span>
                       </div>
                     </div>
                   </div>

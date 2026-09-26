@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { useAuthContext } from "@/features/auth/context/AuthContext";
 import { buzonEnviar } from "@/features/buzon/services/buzonService";
 import { appMovilGetActual } from "@/services/appMovilService";
 import { normalizePhone } from "@/utils/normalizePhone";
@@ -304,7 +303,7 @@ const PILARES = [
   {
     icon: <IconHome size={40} />,
     title: "Educación completa, en un solo lugar",
-    desc: "Crea y comparte actividades sobre valores, emociones, convivencia familiar y prevención, todo desde un solo lugar fácil de usar. Porque educar es más que solo materias.",
+    desc: "Crea y comparte experiencias sobre valores, emociones, vínculos afectivos, convivencia familiar y cuidado, todo desde un solo lugar, fácil de usar. Porque en la primera infancia educar es acompañar el desarrollo integral.",
   },
   {
     icon: <IconUsers size={40} />,
@@ -842,7 +841,6 @@ function ModuloCarousel() {
 }
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuthContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("inicio");
   const [formData, setFormData] = useState({
@@ -854,10 +852,6 @@ export default function LandingPage() {
   // Versión activa del APK (GET /apk/actual, público). null = sin publicar
   // (404) — la sección "App" cae con gracia a "Próximamente".
   const [appBuild, setAppBuild] = useState(null);
-
-  useEffect(() => {
-    if (!loading && isAuthenticated) navigate("/dashboard", { replace: true });
-  }, [isAuthenticated, loading, navigate]);
 
   useEffect(() => {
     let alive = true;
@@ -1011,10 +1005,12 @@ export default function LandingPage() {
             </h1>
 
             <p className="landing-hero__subtitle">
-              Edumon junta a profesores, estudiantes y familias en un solo
-              lugar, para ayudar a cada niño a crecer bien en sus estudios,
-              sus emociones y su convivencia.
-            </p>
+             Edumon integra a profesores, 
+             estudiantes y familias en un mismo espacio,
+              para acompañar a cada niño en su desarrollo integral,
+               fortaleciendo sus aprendizajes, 
+               emociones, vínculos y convivencia.
+              </p>
 
             <div className="landing-hero__actions">
               <a
@@ -1117,8 +1113,8 @@ export default function LandingPage() {
             </h2>
 
             <p className="aprende-head__desc">
-              Cada módulo trae retos prácticos para aplicar con tus hijos desde
-              el primer día — nada de teoría complicada.
+              Cada módulo propone experiencias prácticas para compartir y aprender con tus hijos desde el primer día, 
+              con orientaciones sencillas y cercanas para acompañar su desarrollo integral.
             </p>
           </div>
 
@@ -1373,7 +1369,7 @@ export default function LandingPage() {
               App móvil
             </div>
 
-            <h2 className="landing-app__title">Llevá Edumon en el bolsillo</h2>
+            <h2 className="landing-app__title">Lleva Edumon en el bolsillo</h2>
 
             <p className="landing-app__text">
               Consulta tareas, entregas, foros y avisos desde el celular. La app

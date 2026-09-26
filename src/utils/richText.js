@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 
-const ALLOWED_TAGS = ["b", "strong", "i", "em", "u", "ul", "ol", "li", "p", "br"];
+const ALLOWED_TAGS = ["b", "strong", "i", "em", "u", "ul", "ol", "li", "p", "br", "hr"];
 
 // sanitiza el HTML del RichTextEditor antes de guardar o usar dangerouslySetInnerHTML
 export function sanitizeRichText(html) {

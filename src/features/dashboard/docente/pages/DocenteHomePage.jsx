@@ -196,7 +196,9 @@ export default function DocenteHomePage() {
     })();
   }, []);
 
-  const totalEstudiantes = cursos.reduce((a, c) => a + (c.participantes?.length ?? 0), 0);
+  // "participantes" de un curso son cuentas de padres de familia, no de
+  // estudiantes (los estudiantes no tienen cuenta propia en la plataforma)
+  const totalPadres = cursos.reduce((a, c) => a + (c.participantes?.length ?? 0), 0);
   const hora   = new Date().getHours();
   const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
 
@@ -230,9 +232,9 @@ export default function DocenteHomePage() {
                   {eventos.length} {eventos.length === 1 ? "evento hoy" : "eventos hoy"}
                 </span>
               )}
-              {totalEstudiantes > 0 && (
+              {totalPadres > 0 && (
                 <span className="welcome-chip">
-                  {totalEstudiantes} {totalEstudiantes === 1 ? "estudiante" : "estudiantes"}
+                  {totalPadres} {totalPadres === 1 ? "padre de familia" : "padres de familia"}
                 </span>
               )}
             </div>
@@ -245,7 +247,7 @@ export default function DocenteHomePage() {
         <SectionHeader title="Tu actividad" />
         <div className="grid-stats">
           <StatCard value={cursos.length}        label="Mis cursos"           icon={BookOpen}      colorClass="stat-icon-purple" loading={loading} />
-          <StatCard value={totalEstudiantes}      label="Estudiantes en total" icon={Users}         colorClass="stat-icon-green"  loading={loading} />
+          <StatCard value={totalPadres}           label="Padres de familia"    icon={Users}         colorClass="stat-icon-green"  loading={loading} />
           <StatCard value={tareas.length}         label="Retos activos"        icon={ClipboardList} colorClass="stat-icon-cyan"   loading={loading} />
           <StatCard value={eventos.length}        label="Eventos hoy"          icon={Calendar}      colorClass="stat-icon-yellow" loading={loading} />
         </div>
