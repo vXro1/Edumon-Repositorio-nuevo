@@ -92,7 +92,7 @@ function esc(s) {
 // Un color de encabezado distinto por columna (se repite en ciclo si hay
 // más columnas que colores) — más fácil de leer/rellenar que un encabezado
 // de un solo color plano.
-const HEADER_PALETTE = ["2563EB", "7C3AED", "059669", "D97706", "DB2777", "0891B2"];
+export const HEADER_PALETTE = ["2563EB", "7C3AED", "059669", "D97706", "DB2777", "0891B2"];
 const HEADER_FONT_COLOR = "FFFFFFFF";
 const TEXT_COLOR = "FF1F2937";
 const ZEBRA_FILL = "FFF3F4F6";

@@ -1,0 +1,130 @@
+/* src/features/appMovil/pages/AppMovilPage.css
+   Responsividad del panel de Super Admin para el APK. El resto de la
+   página usa estilos inline (colores/tokens), pero eso no puede expresar
+   media queries — así que los puntos que de verdad rompían en móvil
+   (la tabla de 5 columnas y la cabecera) viven aquí. */
+
+/* ── Pulido visual: la página era una tabla plana en blanco y negro ── */
+
+/* Barra de acento azul→cian arriba de la card de la versión activa,
+   coherente con el resto del sitio (landing, login) en vez de un
+   recuadro genérico con borde gris. */
+.appmovil-hero-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-cool, linear-gradient(135deg, #0A5AA8, #25CEF5));
+}
+
+/* Cabecera del historial con tinte de marca en vez de blanco plano */
+.appmovil-history-head {
+  background: linear-gradient(180deg, rgba(12, 106, 196, 0.05), transparent);
+}
+
+/* Feedback de hover en cada fila del historial (desktop) */
+.appmovil-table tbody tr {
+  transition: background-color 120ms ease;
+}
+.appmovil-table tbody tr:hover {
+  background: var(--color-bg);
+}
+
+/* Tarjetas del historial en móvil: sombra suave para que se sientan
+   tarjetas reales, no solo texto con una línea alrededor */
+@media (max-width: 640px) {
+  .appmovil-table tr {
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  }
+  .appmovil-table tbody tr:hover {
+    background: var(--color-surface);
+  }
+}
+
+/* ── Cabecera: título arriba, botones abajo a ancho completo en móvil ── */
+@media (max-width: 480px) {
+  .appmovil-header {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .appmovil-header > div:last-child {
+    width: 100%;
+  }
+  .appmovil-header > div:last-child > button {
+    flex: 1;
+  }
+}
+
+/* ── Card de la versión activa: ícono centrado arriba en pantallas chicas ── */
+@media (max-width: 480px) {
+  .appmovil-current-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .appmovil-current-card > div:last-child {
+    min-width: 0 !important;
+    width: 100%;
+  }
+  .appmovil-current-card .appmovil-current-actions {
+    justify-content: center;
+  }
+}
+
+/* ── Historial de versiones: tabla → tarjetas apiladas en móvil ──
+   Técnica estándar "responsive table": se ocultan los <th>, cada <td>
+   pasa a ser una fila propia con su etiqueta (data-label) a la izquierda
+   y el valor a la derecha, y cada <tr> se convierte en una tarjeta. */
+@media (max-width: 640px) {
+  .appmovil-table thead {
+    display: none;
+  }
+  .appmovil-table,
+  .appmovil-table tbody,
+  .appmovil-table tr,
+  .appmovil-table td {
+    display: block;
+    width: 100%;
+  }
+  .appmovil-table tr {
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    margin: 10px;
+    padding: 4px 12px;
+  }
+  .appmovil-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border) !important;
+    text-align: right;
+  }
+  .appmovil-table td:last-child {
+    border-bottom: none !important;
+  }
+  .appmovil-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+  }
+  .appmovil-table td[data-label="Acciones"] > div {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+/* ── Modales: los pares Versión / Código de versión se apilan solos si
+   no caben (auto-fit), sin necesitar su propia media query ── */
+.appmovil-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import {
@@ -12,7 +12,7 @@ import { tareasGetById } from "@/features/cursos/services/tareasService";
 
 import { normalizeEntregas, normalizeEntrega } from "@/lib/normalizers/entrega";
 import { normalizeTarea } from "@/lib/normalizers/tarea";
-import { Modal, Toast, Button, Input, Badge } from "@/components";
+import { Modal, Toast, Button, Input, Badge, UserAvatar } from "@/components";
 import { Sk, EmptyState, Field, StarRating, StarRatingInput } from "../../cursos/components/shared/ui";
 import { humanizeError } from "@/utils/humanizeError";
 
@@ -32,6 +32,13 @@ const ESTADO_BADGE = { enviada: "info", tarde: "error", calificada: "success", b
 export default function EntregasPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // El componente NO se desmonta al navegar entre /tareas/A/entregas y
+  // /tareas/B/entregas (misma ruta, distinto param), así que una respuesta
+  // vieja que llega tarde podía pisar el estado del reto nuevo y mezclar
+  // entregas de otro reto — este ref deja descartar respuestas obsoletas.
+  const idRef = useRef(id);
+  idRef.current = id;
 
   const [tarea,      setTarea]      = useState(null);
   const [entregas,   setEntregas]   = useState([]);
@@ -54,22 +61,28 @@ export default function EntregasPage() {
 
   // entregasGetByTarea ya devuelve padreId y calificacion.docenteId poblados, no hace falta reenriquecer
   const load = useCallback(async () => {
+    const requestedId = id;
     setLoading(true);
     setError(null);
     try {
       const [entregasData, tareaData] = await Promise.all([
-        entregasGetByTarea(id, { limit: 100 }),
-        tareasGetById(id).catch(() => null),
+        entregasGetByTarea(requestedId, { limit: 100 }),
+        tareasGetById(requestedId).catch(() => null),
       ]);
+
+      // si mientras esperábamos la respuesta el usuario ya navegó a otro
+      // reto, esta respuesta quedó obsoleta — descartarla evita mezclar
+      // entregas del reto anterior con las del que se está viendo ahora
+      if (requestedId !== idRef.current) return;
 
       if (tareaData) setTarea(normalizeTarea(tareaData.tarea ?? tareaData));
 
       setEntregas(normalizeEntregas(entregasData.entregas));
       if (entregasData.estadisticas) setStats(entregasData.estadisticas);
     } catch (err) {
-      setError(humanizeError(err, "Error al cargar entregas"));
+      if (requestedId === idRef.current) setError(humanizeError(err, "Error al cargar entregas"));
     } finally {
-      setLoading(false);
+      if (requestedId === idRef.current) setLoading(false);
     }
   }, [id]);
 
@@ -80,7 +93,9 @@ export default function EntregasPage() {
     const q = search.toLowerCase();
     const nombre = `${e.padre?.nombre ?? ""} ${e.padre?.apellido ?? ""}`.toLowerCase();
     const matchSearch = !q || nombre.includes(q);
-    const matchEst    = !filterEst || e.estado === filterEst;
+    // el backend nunca guarda estado:"calificada" (calificar solo llena
+    // calificacion, sin tocar estado) — ese filtro hay que resolverlo aparte
+    const matchEst    = !filterEst || (filterEst === "calificada" ? !!e.calificacion : e.estado === filterEst);
     return matchSearch && matchEst;
   });
 
@@ -183,7 +198,7 @@ export default function EntregasPage() {
           { value: stats.total ?? entregas.length, label: "Total",       color: "var(--color-text)" },
           { value: stats.enviadas   ?? 0,           label: "Enviadas",   color: "var(--color-primary)"           },
           { value: stats.tarde      ?? 0,           label: "Tarde",      color: "var(--color-error-hover)"           },
-          { value: stats.calificadas ?? 0,          label: "Calificadas",color: "var(--edu-green-600)"           },
+          { value: stats.valoradas ?? 0,            label: "Calificadas",color: "var(--edu-green-600)"           },
         ].map(({ value, label, color }) => (
           <div key={label} style={{ background: "var(--color-surface)", borderRadius: 14, border: "1px solid var(--color-border)", boxShadow: "var(--clay-card)", padding: "14px 20px", textAlign: "center", minWidth: 110 }}>
             <p style={{ fontSize: 26, fontWeight: 800, color, margin: 0 }}>{value}</p>
@@ -372,15 +387,8 @@ function EntregaCard({ entrega: e, onCalificar }) {
         style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Avatar */}
-        <div style={{
-          width: 40, height: 40, borderRadius: "50%",
-          background: "rgba(12,106,196,0.10)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 14, fontWeight: 700, color: "var(--color-primary)", flexShrink: 0,
-        }}>
-          {(e.padre?.nombre?.[0] ?? "P").toUpperCase()}
-        </div>
+        {/* Avatar — foto real si el padre tiene una, si no las iniciales con color */}
+        <UserAvatar user={e.padre} size={40} />
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>

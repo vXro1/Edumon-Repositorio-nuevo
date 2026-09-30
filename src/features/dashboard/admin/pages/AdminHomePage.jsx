@@ -448,7 +448,7 @@ function AdminDashboard() {
         <SectionHeader title="Acciones rápidas" />
         <div className="grid-auto-sm">
           <ActionCard icon={Plus}      label="Gestionar cursos"   desc="Ver todos mis cursos"  colorClass="stat-icon-cyan"   onClick={() => navigate("/cursos")} />
-          <ActionCard icon={UserCheck} label="Gestionar docentes" desc="Registrar o importar CSV" colorClass="stat-icon-green"  onClick={() => navigate("/docentes")} />
+          <ActionCard icon={UserCheck} label="Gestionar docentes" desc="Registrar uno o varios a la vez" colorClass="stat-icon-green"  onClick={() => navigate("/docentes")} />
           <ActionCard icon={Users}     label="Usuarios"           desc="Ver todos los usuarios"   colorClass="stat-icon-purple" onClick={() => navigate("/usuarios")} />
           <ActionCard icon={Building2} label="Mi institución"     desc="Datos y configuración"    colorClass="stat-icon-yellow" onClick={() => navigate("/institucion")} />
         </div>

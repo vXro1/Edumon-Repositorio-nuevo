@@ -445,6 +445,27 @@
 .rte-editable ul,
 .rte-editable ol { margin: 4px 0 8px 22px; padding: 0; }
 .rte-editable li { margin-bottom: 2px; }
+.rte-editable hr {
+  border: none;
+  border-top: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  margin: 10px 0;
+}
+
+/* ── Salida de solo-lectura del HTML que produce RichTextEditor (negrita/
+   listas/separadores) — mismas reglas que .rte-editable, para usar con
+   dangerouslySetInnerHTML donde sea que se muestre esa descripción. ──── */
+.rich-content p { margin: 0 0 8px; }
+.rich-content p:last-child { margin-bottom: 0; }
+.rich-content ul,
+.rich-content ol { margin: 4px 0 8px 22px; padding: 0; }
+.rich-content li { margin-bottom: 2px; }
+.rich-content hr {
+  border: none;
+  border-top: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  margin: 10px 0;
+}
 
 .rte-placeholder {
   position: absolute;

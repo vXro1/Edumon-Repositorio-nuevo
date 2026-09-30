@@ -399,12 +399,12 @@ export default function CalendarWidget({
         </div>
       </div>
 
-      {/* ── Layout de dos columnas ─────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+      {/* ── Layout de dos columnas (grid: nunca deja espacio vacío al
+           envolver, a diferencia de un flex con ancho fijo) ──────────── */}
+      <div className="calendar-layout">
 
         {/* ── CALENDARIO ────────────────────────────────────────────── */}
         <div style={{
-          flex: "0 0 340px", minWidth: 280,
           background: "var(--color-surface)",
           borderRadius: 16, border: "1px solid var(--color-border)",
           overflow: "hidden", boxShadow: "var(--clay-card)",
@@ -575,7 +575,7 @@ export default function CalendarWidget({
         </div>
 
         {/* ── PANEL DERECHO ─────────────────────────────────────────── */}
-        <div style={{ flex: 1, minWidth: 260, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
 
           {!selected && !loading && (
             <div style={{

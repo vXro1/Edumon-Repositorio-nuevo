@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from "react";
-import { Bold, Italic, Underline, List, ListOrdered } from "lucide-react";
+import { Bold, Italic, Underline, List, ListOrdered, Minus } from "lucide-react";
 import { isRichTextEmpty } from "@/utils/richText";
 
 const TOOLBAR_BTNS = [
@@ -8,6 +8,7 @@ const TOOLBAR_BTNS = [
   { cmd: "underline", icon: Underline, label: "Subrayado" },
   { cmd: "insertUnorderedList", icon: List, label: "Lista con viñetas" },
   { cmd: "insertOrderedList", icon: ListOrdered, label: "Lista numerada" },
+  { cmd: "insertHorizontalRule", icon: Minus, label: "Separador" },
 ];
 
 /* ══════════════════════════════════════════════════════════════

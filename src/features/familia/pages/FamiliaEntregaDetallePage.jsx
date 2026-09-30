@@ -16,6 +16,7 @@ import {
 } from "@/features/entregas/services/entregasService";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { normalizeTarea, normalizeEntrega } from "@/lib/normalizers";
+import { sanitizeRichText, isRichTextEmpty } from "@/utils/richText";
 import { humanizeError } from "@/utils/humanizeError";
 import { Toast, Badge, Button } from "@/components";
 import { Sk, ESTADO_VARIANT, StarRating } from "../../cursos/components/shared/ui";
@@ -355,13 +356,26 @@ export default function FamiliaEntregaDetallePage() {
         <p style={{ margin: 0, fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)", marginBottom: 8 }}>
           Instrucciones del reto
         </p>
-        <p style={{ margin: 0, fontSize: 13.5, color: "var(--color-text)", lineHeight: 1.7 }}>
-          {tarea.descripcion || <span style={{ opacity: 0.6, fontStyle: "italic" }}>Sin descripción</span>}
-        </p>
-        {tarea.criterios && (
-          <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
-            <strong style={{ color: "var(--color-text)" }}>Criterios: </strong>{tarea.criterios}
+        {isRichTextEmpty(tarea.descripcion) ? (
+          <p style={{ margin: 0, fontSize: 13.5, color: "var(--color-text)", lineHeight: 1.7 }}>
+            <span style={{ opacity: 0.6, fontStyle: "italic" }}>Sin descripción</span>
           </p>
+        ) : (
+          <div
+            className="rich-content"
+            style={{ fontSize: 13.5, color: "var(--color-text)", lineHeight: 1.7 }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(tarea.descripcion) }}
+          />
+        )}
+        {!isRichTextEmpty(tarea.criterios) && (
+          <div style={{ marginTop: 10 }}>
+            <strong style={{ fontSize: 13, color: "var(--color-text)" }}>Criterios</strong>
+            <div
+              className="rich-content"
+              style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.6, marginTop: 2 }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichText(tarea.criterios) }}
+            />
+          </div>
         )}
         {/* Antes este bloque no tenía ningún título — quedaba pegado debajo
             de los criterios sin ninguna señal de que era material aparte
@@ -396,8 +410,11 @@ export default function FamiliaEntregaDetallePage() {
         )}
       </div>
 
-      {/* Calificación (si ya la calificaron) */}
-      {entrega?.estado === "calificada" && (() => {
+      {/* Calificación (si ya la calificaron) — el backend nunca pone
+          estado:"calificada" (el enum de Entrega solo admite borrador/
+          enviada/tarde); calificar solo llena calificacion.valoracion sin
+          tocar estado, así que hay que detectarlo por eso, no por estado. */}
+      {entrega?.calificacion?.valoracion != null && (() => {
         const val = entrega.calificacion?.valoracion;
         const valida = Number.isInteger(val) && val >= 1 && val <= 5;
         return (

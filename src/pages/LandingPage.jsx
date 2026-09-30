@@ -2,15 +2,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { useAuthContext } from "@/features/auth/context/AuthContext";
 import { buzonEnviar } from "@/features/buzon/services/buzonService";
 import { appMovilGetActual } from "@/services/appMovilService";
 import { normalizePhone } from "@/utils/normalizePhone";
 import { formatBytes } from "@/utils/formatBytes";
-import logo from "@/assets/icons/logo.svg";
-import edumonLetras from "@/assets/img/letras.svg";
+import edumonLogo from "@/assets/icons/titulo.svg";
 import mascota from "@/assets/img/cuerpocompleto.svg";
-import letras from "@/assets/img/letras.svg";
 import soporte from "@/assets/img/Buzonsoporte.svg";
 // Versión reducida de avatars.png (2,8 MB → ~0,4 MB): solo se muestra a
 // ~260px en el footer, no hace falta la resolución completa.
@@ -306,7 +303,7 @@ const PILARES = [
   {
     icon: <IconHome size={40} />,
     title: "Educación completa, en un solo lugar",
-    desc: "Crea y comparte actividades sobre valores, emociones, convivencia familiar y prevención, todo desde un solo lugar fácil de usar. Porque educar es más que solo materias.",
+    desc: "Crea y comparte experiencias sobre valores, emociones, vínculos afectivos, convivencia familiar y cuidado, todo desde un solo lugar, fácil de usar. Porque en la primera infancia educar es acompañar el desarrollo integral.",
   },
   {
     icon: <IconUsers size={40} />,
@@ -844,7 +841,6 @@ function ModuloCarousel() {
 }
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuthContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("inicio");
   const [formData, setFormData] = useState({
@@ -856,10 +852,6 @@ export default function LandingPage() {
   // Versión activa del APK (GET /apk/actual, público). null = sin publicar
   // (404) — la sección "App" cae con gracia a "Próximamente".
   const [appBuild, setAppBuild] = useState(null);
-
-  useEffect(() => {
-    if (!loading && isAuthenticated) navigate("/dashboard", { replace: true });
-  }, [isAuthenticated, loading, navigate]);
 
   useEffect(() => {
     let alive = true;
@@ -949,8 +941,7 @@ export default function LandingPage() {
       <header className="landing-header">
         <nav className="landing-nav">
           <a href="#inicio" className="landing-nav__logo" onClick={(e) => handleNav(e, "#inicio")}>
-            <img src={logo} alt="Edumon logo" />
-            <span className="landing-nav__wordmark">edu<span>mon</span></span>
+            <img src={edumonLogo} alt="Edumon" className="landing-nav__logo-img" />
           </a>
 
           <ul className="landing-nav__links">
@@ -1014,10 +1005,12 @@ export default function LandingPage() {
             </h1>
 
             <p className="landing-hero__subtitle">
-              Edumon junta a profesores, estudiantes y familias en un solo
-              lugar, para ayudar a cada niño a crecer bien en sus estudios,
-              sus emociones y su convivencia.
-            </p>
+             Edumon integra a profesores, 
+             estudiantes y familias en un mismo espacio,
+              para acompañar a cada niño en su desarrollo integral,
+               fortaleciendo sus aprendizajes, 
+               emociones, vínculos y convivencia.
+              </p>
 
             <div className="landing-hero__actions">
               <a
@@ -1120,8 +1113,8 @@ export default function LandingPage() {
             </h2>
 
             <p className="aprende-head__desc">
-              Cada módulo trae retos prácticos para aplicar con tus hijos desde
-              el primer día — nada de teoría complicada.
+              Cada módulo propone experiencias prácticas para compartir y aprender con tus hijos desde el primer día, 
+              con orientaciones sencillas y cercanas para acompañar su desarrollo integral.
             </p>
           </div>
 
@@ -1376,7 +1369,7 @@ export default function LandingPage() {
               App móvil
             </div>
 
-            <h2 className="landing-app__title">Llevá Edumon en el bolsillo</h2>
+            <h2 className="landing-app__title">Lleva Edumon en el bolsillo</h2>
 
             <p className="landing-app__text">
               Consulta tareas, entregas, foros y avisos desde el celular. La app
@@ -1421,10 +1414,7 @@ export default function LandingPage() {
           </div>
 
           <div className="landing-app__visual" aria-hidden="true">
-            <div className="landing-app__icon">
-              <img src={logo} alt="" />
-            </div>
-            <img src={mascota} alt="" className="landing-app__mascot" />
+            <img src={edumonLogo} alt="" className="landing-app__logo-img" />
           </div>
         </div>
       </section>
@@ -1537,10 +1527,10 @@ export default function LandingPage() {
                 <IconSend size={18} color="#fff" />
               </div>
               <div>
-                <h2 id="confirm-modal-title" style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#111" }}>
+                <h2 id="confirm-modal-title" style={{ margin: 0, fontSize: "1.05rem", fontWeight: 900, color: "#0D0D0D" }}>
                   Confirmar envío
                 </h2>
-                <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b" }}>
+                <p style={{ margin: 0, fontSize: "0.8rem", color: "#0D0D0D" }}>
                   Revisa tu información antes de enviar
                 </p>
               </div>
@@ -1554,13 +1544,13 @@ export default function LandingPage() {
                 { label: "Institución", value: formData.institucion || "—" },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: "flex", gap: "0.5rem", fontSize: "0.85rem" }}>
-                  <span style={{ fontWeight: 700, color: "#475569", minWidth: 90 }}>{label}:</span>
-                  <span style={{ color: "#0f172a", wordBreak: "break-word" }}>{value}</span>
+                  <span style={{ fontWeight: 700, color: "#0D0D0D", minWidth: 90 }}>{label}:</span>
+                  <span style={{ color: "#0D0D0D", wordBreak: "break-word" }}>{value}</span>
                 </div>
               ))}
               <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "0.6rem", fontSize: "0.85rem" }}>
-                <span style={{ fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Mensaje:</span>
-                <span style={{ color: "#0f172a", lineHeight: 1.5, display: "block" }}>{formData.mensaje}</span>
+                <span style={{ fontWeight: 700, color: "#0D0D0D", display: "block", marginBottom: 4 }}>Mensaje:</span>
+                <span style={{ color: "#0D0D0D", lineHeight: 1.5, display: "block" }}>{formData.mensaje}</span>
               </div>
             </div>
 
@@ -1569,7 +1559,7 @@ export default function LandingPage() {
                 onClick={() => setShowConfirm(false)}
                 style={{
                   padding: "0.6rem 1.25rem", borderRadius: 10, border: "1.5px solid #e2e8f0",
-                  background: "#fff", color: "#475569", fontWeight: 600, fontSize: "0.875rem",
+                  background: "#fff", color: "#0D0D0D", fontWeight: 600, fontSize: "0.875rem",
                   cursor: "pointer",
                 }}
               >

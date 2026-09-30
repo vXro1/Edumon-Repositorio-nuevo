@@ -187,15 +187,18 @@ export default function InstitucionesPage() {
       notify("Nombre y NIT son obligatorios", "error");
       return;
     }
-    if (!form.adminNombre.trim() || !form.adminApellido.trim() || !adminCedula || !adminCorreo) {
-      notify("Completa los datos del administrador (nombre, apellido, cédula y correo)", "error");
+    // el teléfono del admin es su usuario para iniciar sesión (login es por
+    // teléfono, no hay login por correo) -- sin él, la cuenta queda creada
+    // pero nadie puede entrar nunca; por eso es obligatorio, no opcional.
+    if (!form.adminNombre.trim() || !form.adminApellido.trim() || !adminCedula || !adminCorreo || !form.adminTelefono.trim()) {
+      notify("Completa los datos del administrador (nombre, apellido, cédula, correo y teléfono)", "error");
       return;
     }
     if (!isValidCedula(adminCedula)) { notify(CEDULA_ERROR, "error"); return; }
     if (form.telefono && !isValidPhone(form.telefono)) {
       notify(`Teléfono de la institución: ${PHONE_ERROR}`, "error"); return;
     }
-    if (form.adminTelefono && !isValidPhone(form.adminTelefono)) {
+    if (!isValidPhone(form.adminTelefono)) {
       notify(`Teléfono del administrador: ${PHONE_ERROR}`, "error"); return;
     }
 
@@ -461,9 +464,10 @@ export default function InstitucionesPage() {
                 required
               />
               <PhoneInput
-                label="Teléfono"
+                label="Teléfono *"
                 value={form.adminTelefono}
                 onChange={f("adminTelefono")}
+                required
               />
               <div style={{ gridColumn: "1 / -1" }}>
                 <Input

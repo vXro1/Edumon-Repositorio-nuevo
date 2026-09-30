@@ -102,15 +102,19 @@
   .sidebar-item .lbl { display: none; }
   .sidebar-item::before { display: none; }
 
-  /* Tarjeta de usuario — solo avatar y botón de logout */
+  /* Tarjeta de usuario — solo avatar y botón de logout.
+     !important porque .sidebar-card / .sidebar-card .who se redeclaran sin
+     media query más abajo en este archivo (bloque "COMPLEMENTO"): con
+     igual especificidad, esa regla posterior ganaba en 768-1023px y volvía
+     a mostrar el nombre/rol, desbordando el riel angosto de 64px. */
   .sidebar-card {
-    padding: 10px 6px;
+    padding: 10px 6px !important;
     justify-content: center;
     gap: var(--space-2);
     flex-direction: column;
     align-items: center;
   }
-  .sidebar-card .who { display: none; }
+  .sidebar-card .who { display: none !important; }
 }
 
 /* Escritorio: sidebar completo de 248px (sigue siendo fixed) */
@@ -699,6 +703,21 @@
   .layout-split { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--space-6); }
 }
 
+/* ── Calendario: mes + lista de eventos — grid en vez de flex con ancho
+   fijo: con flex-wrap, si la tarjeta del mes (ancho fijo) no cabe junto a
+   la lista, queda sola en su fila pegada a la izquierda con todo el resto
+   vacío ("no centrado"); con grid, cada columna siempre llena su fracción
+   del ancho disponible, apilada en 1 columna en pantallas angostas. ──── */
+.calendar-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (min-width: 640px) {
+  .calendar-layout { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); }
+}
+
 /* ──────────────────────────────────────────────────────────────────────
    SECTION HELPERS
    ────────────────────────────────────────────────────────────────────── */
@@ -1268,6 +1287,9 @@ button.sidebar-card:focus-visible,
   color: var(--color-text-muted);
   margin: 0;
   white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Navbar: icono de chevron ────────────────────────────────────── */

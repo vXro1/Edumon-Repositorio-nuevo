@@ -9,19 +9,29 @@ export default defineConfig({
     proxy: {
       // /api, /uploads (archivos subidos) y /static (avatares) los sirve el backend
       '/api': {
-        target: 'https://backend-edumon.onrender.com',
+        target: 'https://edumon.uniautonoma.edu.co',
         changeOrigin: true,
         secure: true,
       },
       '/uploads': {
-        target: 'https://backend-edumon.onrender.com',
+        target: 'https://edumon.uniautonoma.edu.co',
         changeOrigin: true,
         secure: true,
       },
       '/static': {
-        target: 'https://backend-edumon.onrender.com',
+        target: 'https://edumon.uniautonoma.edu.co',
         changeOrigin: true,
         secure: true,
+      },
+      // socket.io (notificaciones en tiempo real): en producción nginx lo
+      // reenvía solo, pero en dev el server de Vite necesita esta entrada
+      // (con ws:true) o el cliente intenta conectar contra sí mismo y las
+      // notificaciones en vivo nunca llegan, aunque la API REST sí funcione.
+      '/socket.io': {
+        target: 'https://edumon.uniautonoma.edu.co',
+        changeOrigin: true,
+        secure: true,
+        ws: true,
       },
     },
   },

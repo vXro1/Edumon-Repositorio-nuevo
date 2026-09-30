@@ -48,6 +48,35 @@ async function tryRefreshToken() {
   }
 }
 
+// Sin esto, un fetch sobre datos móviles muertos se queda colgado
+// indefinidamente (spinner infinito, sin mensaje de error). Los adjuntos
+// (fotos, PDFs de una entrega) necesitan más margen que una llamada normal.
+const REQUEST_TIMEOUT_MS = 30_000;
+const UPLOAD_TIMEOUT_MS  = 120_000; // acorde al timeout('90s') del backend + margen
+
+// combina el signal de dedup de requestQueue con un timeout propio, sin pisar
+// una cancelación real (abortAll/abortKey) -- esa sigue viéndose como antes.
+function withTimeout(signal, ms) {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(signal.reason);
+  if (signal?.aborted) controller.abort(signal.reason);
+  else signal?.addEventListener('abort', onAbort, { once: true });
+
+  const timer = setTimeout(() => {
+    const timeoutError = new Error('La solicitud tardó demasiado. Verifica tu conexión e intenta de nuevo.');
+    timeoutError.name = 'TimeoutError';
+    controller.abort(timeoutError);
+  }, ms);
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+    },
+  };
+}
+
 function applyReqInterceptors(url, opts) {
   let ctx = { url, opts };
   for (const fn of requestInterceptors) {
@@ -94,7 +123,21 @@ export const apiFetch = async (endpoint, options = {}) => {
 // separado de apiFetch para poder reintentar tras un refresh sin volver a pasar por queueRequest
 // (que deduplicaría la segunda llamada contra sí misma)
 async function runRequest(endpoint, finalUrl, finalOpts, { silentAuth, isRetry = false } = {}) {
-  const res = await fetch(finalUrl, finalOpts);
+  const isUpload = finalOpts.body instanceof FormData;
+  const { signal: timedSignal, cleanup } = withTimeout(
+    finalOpts.signal,
+    isUpload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS,
+  );
+
+  let res;
+  try {
+    res = await fetch(finalUrl, { ...finalOpts, signal: timedSignal });
+  } catch (err) {
+    if (err?.name === 'TimeoutError') throw new Error(err.message);
+    throw err;
+  } finally {
+    cleanup();
+  }
 
   applyResInterceptors(res);
 

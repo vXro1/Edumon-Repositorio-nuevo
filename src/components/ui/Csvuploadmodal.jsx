@@ -75,13 +75,18 @@ export default function CsvUploadModal({
   onClose,
   onUpload,
   onDownloadTemplate,
-  title = "Carga masiva CSV",
+  title = "Agregar varios a la vez",
   description,
   templateLabel = "Descargar plantilla",
   acceptedColumns = [],
   maxFileSizeMB = 5,
   acceptExtensions = [".csv"],
   fileTypeLabel,
+  // Colores hex (sin "#") en el mismo orden que acceptedColumns — cuando se
+  // pasa, indica que la plantilla descargable ya viene coloreada por
+  // columna (ver xlsxWriter.js) y lo refleja aquí para que el usuario
+  // reconozca el mismo patrón al abrir el archivo.
+  columnColors,
 }) {
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -166,6 +171,13 @@ export default function CsvUploadModal({
       <AppModal.Body>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
+        {columnColors && (
+          <p style={{ fontSize: 12, color: "var(--color-text)", margin: 0, lineHeight: 1.5 }}>
+            La plantilla se descarga lista para usar: cada columna tiene un color
+            distinto (igual que abajo) para que sea más fácil ver dónde va cada dato.
+          </p>
+        )}
+
         {/* Plantilla + columnas hint */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -173,17 +185,25 @@ export default function CsvUploadModal({
         }}>
           {acceptedColumns.length > 0 && (
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {acceptedColumns.map((col) => (
-                <span key={col} style={{
-                  fontSize: 11, padding: "2px 8px", borderRadius: 20,
-                  background: "var(--color-bg)",
-                  color: "var(--color-text-muted)",
-                  fontFamily: "monospace", fontWeight: 500,
-                  border: "1px solid var(--color-border)",
-                }}>
-                  {col}
-                </span>
-              ))}
+              {acceptedColumns.map((col, i) => {
+                const hex = columnColors?.[i % columnColors.length];
+                return (
+                  <span key={col} style={hex ? {
+                    fontSize: 11, padding: "2px 8px", borderRadius: 20,
+                    background: `#${hex}`,
+                    color: "#fff",
+                    fontFamily: "monospace", fontWeight: 600,
+                  } : {
+                    fontSize: 11, padding: "2px 8px", borderRadius: 20,
+                    background: "var(--color-bg)",
+                    color: "var(--color-text-muted)",
+                    fontFamily: "monospace", fontWeight: 500,
+                    border: "1px solid var(--color-border)",
+                  }}>
+                    {col}
+                  </span>
+                );
+              })}
             </div>
           )}
           {onDownloadTemplate && (

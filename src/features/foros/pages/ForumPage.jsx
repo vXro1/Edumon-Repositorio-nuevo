@@ -674,6 +674,21 @@ const FORUM_CSS = `
   }
   .fm-header {
     padding: 16px;
+    /* .fm-header-actions tiene flex-shrink:0 (los botones nunca se
+       encogen) y el bloque del título tiene min-width:0 (sí puede
+       encogerse infinito) — en fila, flexbox prefiere aplastar el título
+       hasta quedar en una columna angosta antes que envolver los botones
+       a su propia fila, y space-between deja un hueco enorme en el medio.
+       Apilar en columna evita ambos problemas. */
+    flex-direction: column;
+    align-items:    stretch;
+  }
+  .fm-header-actions {
+    width: 100%;
+  }
+  .fm-header-actions .fm-action {
+    flex: 1 1 0;
+    justify-content: center;
   }
   .fm-action { padding: 8px 12px; font-size: 13px; }
 }

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Star } from "lucide-react";
 import { Button } from "@/components";
 
 export function Sk({ h = 16, w = "100%", r = 8 }) {
@@ -149,6 +148,28 @@ export const ESTADO_VARIANT = {
 // el backend valora entregas de 1 a 5 estrellas, no con nota numérica — un solo
 // par de componentes compartido por todas las pantallas de entregas
 
+// Estrella "redondita" — mismo contorno de 5 puntas de siempre, pero con
+// stroke grueso + linejoin/linecap redondeados del mismo color que el
+// relleno: eso "acolchona" cada pico en vez del contorno afilado típico
+// (look Soft UI/Claymorphism, más amigable que un ícono de estrella genérico).
+function RoundStar({ size, filled, color = "#F59E0B" }) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24"
+      style={{ flexShrink: 0, transition: "transform 120ms" }}
+    >
+      <path
+        d="M12 3.5l2.47 5.15 5.53.62-4.12 3.83 1.11 5.55L12 15.9l-4.99 2.75 1.11-5.55-4.12-3.83 5.53-.62L12 3.5z"
+        fill={filled ? color : "none"}
+        stroke={filled ? color : "var(--color-border)"}
+        strokeWidth={2.4}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 // solo lectura — para mostrar una valoración ya guardada
 export function StarRating({ value, size = 14, showLabel = false }) {
   const n = Number.isInteger(value) ? value : 0;
@@ -162,14 +183,7 @@ export function StarRating({ value, size = 14, showLabel = false }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          style={{
-            width: size, height: size,
-            fill: i <= n ? "#F59E0B" : "none",
-            color: i <= n ? "#F59E0B" : "var(--color-border)",
-          }}
-        />
+        <RoundStar key={i} size={size} filled={i <= n} />
       ))}
       {showLabel && (
         <span style={{ fontSize: 12, color: "var(--color-text-muted)", marginLeft: 4 }}>
@@ -197,17 +211,12 @@ export function StarRatingInput({ value, onChange, size = 26 }) {
             style={{
               background: "none", border: "none", cursor: "pointer",
               padding: 2, display: "flex", alignItems: "center",
+              transform: filled && hover === n ? "scale(1.12)" : "scale(1)",
+              transition: "transform 120ms",
             }}
             aria-label={`${n} estrella${n > 1 ? "s" : ""}`}
           >
-            <Star
-              style={{
-                width: size, height: size,
-                fill: filled ? "#F59E0B" : "none",
-                color: filled ? "#F59E0B" : "var(--color-border)",
-                transition: "all 120ms",
-              }}
-            />
+            <RoundStar size={size} filled={filled} />
           </button>
         );
       })}

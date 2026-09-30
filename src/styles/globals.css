@@ -46,8 +46,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── @THEME INLINE ── */
-@theme inline {
-  --font-sans:    var(--font-sans);
-  --font-heading: var(--font-display);
-}
+/* FIX: este bloque declaraba --font-sans: var(--font-sans) — una
+   referencia circular (Tailwind emite las variables de @theme al mismo
+   :root que ya las define). Eso invalida la propiedad "en tiempo de
+   valor computado" en TODA la app: cualquier font-family: var(--font-*)
+   caía al genérico del navegador (serif) en vez de a Nunito. Nada en
+   el código usa las utilidades Tailwind font-sans/font-heading (se usa
+   var(--font-heading)/var(--font-body) directamente en cada hoja de
+   estilos), así que el bloque no cumplía ninguna función real. */

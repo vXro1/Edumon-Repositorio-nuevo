@@ -18,6 +18,7 @@ import {
   isValidCedula, CEDULA_ERROR, toCedula,
 } from "@/utils/credenciales";
 import { descargarPlantillaDocentesCSV, CSV_COLUMNAS_DOCENTES } from "@/components/ui/DocentesCsvTemplate";
+import { HEADER_PALETTE } from "@/utils/xlsxWriter";
 
 /* ── Fila esqueleto ─────────────────────────────────────────────────── */
 function SkRow() {
@@ -118,13 +119,13 @@ function CsvFormatoTable() {
     }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
         <thead>
-          <tr style={{ background: "var(--color-surface-2)" }}>
+          <tr>
             {CSV_COLUMNAS_DOCENTES.map((col, i) => (
               <th key={col} style={{
                 padding: "8px 12px", textAlign: "left",
-                fontWeight: 700, color: "var(--color-text)",
-                borderBottom: "1px solid var(--color-border)",
-                borderRight: i < CSV_COLUMNAS_DOCENTES.length - 1 ? "1px solid var(--color-border)" : "none",
+                fontWeight: 700, color: "#fff",
+                background: `#${HEADER_PALETTE[i % HEADER_PALETTE.length]}`,
+                borderRight: i < CSV_COLUMNAS_DOCENTES.length - 1 ? "1px solid rgba(255,255,255,0.35)" : "none",
               }}>
                 {i + 1}. {col}
               </th>
@@ -479,7 +480,7 @@ export default function DocentesPage() {
             <RefreshCw size={15} />
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setShowCsv(true); resetCsv(); }}>
-            <Upload size={15} /> Importar Excel
+            <Upload size={15} /> Agregar varios docentes
           </Button>
           <Button size="sm" onClick={() => { setForm(INIT); setCreateErrors({}); setShowCreate(true); }}>
             <Plus size={15} /> Registrar docente
@@ -678,8 +679,8 @@ export default function DocentesPage() {
       <Modal
         isOpen={showCsv}
         onClose={() => { setShowCsv(false); resetCsv(); }}
-        title="Importar docentes por Excel"
-        description="El correo de acceso se genera automáticamente a partir de la cédula; no se incluye en el archivo."
+        title="Agregar varios docentes"
+        description="Sube un archivo con la lista de docentes. El correo de acceso se genera automáticamente a partir de la cédula; no se incluye en el archivo."
         size="md"
       >
         {!csvResult ? (
@@ -701,6 +702,11 @@ export default function DocentesPage() {
                   <Download size={14} /> Descargar plantilla
                 </Button>
               </div>
+
+              <p style={{ fontSize: 12, color: "var(--color-text)", margin: 0, lineHeight: 1.5 }}>
+                La plantilla se descarga lista para usar: cada columna tiene un color
+                distinto (igual que abajo) para que sea más fácil ver dónde va cada dato.
+              </p>
 
               <CsvFormatoTable />
 
