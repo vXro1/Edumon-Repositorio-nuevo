@@ -1,20 +1,3 @@
-// src/lib/normalizers/tarea.js
-//
-// Único punto de normalización de una "Tarea" que llega del backend.
-// Todo lo que se agrega o cambia aquí debe respetar EXACTAMENTE el
-// contrato del backend (Tarea.js / createTareaValidator.js /
-// updateTareaValidator.js / tareasController.js):
-//
-//   - etiquetas               -> Array<String>
-//   - criterios               -> String (NO es un array de objetos)
-//   - archivosAdjuntos        -> Array<{ tipo: "archivo" | "enlace", url, nombre, ... }>
-//                                Los "enlaces" NO son un campo aparte en el modelo:
-//                                el backend los guarda mezclados dentro de
-//                                archivosAdjuntos con tipo: "enlace".
-//   - participantesSeleccionados -> Array<ObjectId> o Array<Usuario poblado>
-//
-// Cualquier campo que no exista en el backend (puntajeMaximo, permiteEntregaTardia,
-// etc.) se mantiene solo como valor por defecto de UI, nunca se envía de vuelta.
 import { assetUrl } from "@/utils/assetUrl";
 
 /**
@@ -229,13 +212,6 @@ export function normalizeTarea(tarea) {
       []
   );
 
-  // Criterios: en el backend es un STRING plano, no un array de objetos
-  // (ver createTareaValidator.js: body('criterios').optional().trim()).
-  // Antes existía normalizeCriterios(), que asumía una estructura de
-  // {titulo, descripcion, puntaje}[] que nunca existió en el backend —
-  // por eso siempre devolvía [] y el dato "desaparecía" en pantalla aunque
-  // sí estuviera guardado. Se eliminó esa función y aquí simplemente se
-  // pasa el string tal cual, sin transformarlo.
   const criterios = typeof tarea.criterios === "string" ? tarea.criterios : "";
 
   // Participantes seleccionados
@@ -315,8 +291,6 @@ export function normalizeTarea(tarea) {
           tarea.docenteId?.id ||
           null,
 
-    // Módulo (antes se perdía: solo copiaba tarea.modulo, que nunca llega
-    // del backend; el backend siempre envía tarea.moduloId poblado)
     modulo,
     moduloId:
       typeof tarea.moduloId === "string"
@@ -359,8 +333,6 @@ export function normalizeTarea(tarea) {
 
     criterios,
 
-    // Participantes (antes no se copiaba en absoluto, por eso el bloque
-    // "Asignada a (N)" de TareaDetalle.jsx nunca se mostraba)
     participantesSeleccionados,
 
     // Progreso / estadísticas

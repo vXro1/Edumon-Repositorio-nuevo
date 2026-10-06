@@ -5,8 +5,6 @@ export default function HubTabs({ tabs, activeTab, onTabChange }) {
   const btnRefs = useRef({});
   const mountedRef = useRef(false);
   const [indicator, setIndicator] = useState({ left: 0, width: 0, ready: false });
-  // sin esto el indicador "nace" en 0 y desliza hasta el tab activo al cargar —
-  // la transición solo debe correr cuando el usuario cambia de tab
   const [animate, setAnimate] = useState(false);
 
   const measure = useCallback(() => {

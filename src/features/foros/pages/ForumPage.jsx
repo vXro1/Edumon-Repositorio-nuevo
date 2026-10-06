@@ -667,7 +667,6 @@ const FORUM_CSS = `
   }
 }
 
-/* el texto de los botones nunca se oculta, aunque no haya espacio */
 @media (max-width: 767px) {
   .fm-messages-scroll {
     padding: 10px 12px 4px;

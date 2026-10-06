@@ -213,7 +213,6 @@ export default function DocentesPage() {
       const params = debSearch
         ? { rol: "docente", page: 1, limit: 1000 }
         : { rol: "docente", page, limit: LIMIT };
-      // sin esto el backend devuelve activos e inactivos mezclados
       if (estadoFilter) params.estado = estadoFilter;
       const res = await usersGetAll(params);
       const normalized = (res.users ?? []).map(normalizeUser);

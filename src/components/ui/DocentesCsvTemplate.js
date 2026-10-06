@@ -16,9 +16,6 @@ const FILAS_EJEMPLO = [
   ["Ana",    "Torres",   "3012223344", "1122334455"],
 ];
 
-// El backend ya no acepta CSV: exige .xlsx/.xlsm (máx 5MB), con cedula y
-// telefono idealmente como Texto para no perder ceros a la izquierda —
-// por eso la plantilla se genera como Excel real, no como texto plano.
 export function descargarPlantillaDocentesCSV() {
   const filas = [CSV_COLUMNAS_DOCENTES, ...FILAS_EJEMPLO];
   descargarXlsx(filas, "plantilla_docentes.xlsx", "Docentes");

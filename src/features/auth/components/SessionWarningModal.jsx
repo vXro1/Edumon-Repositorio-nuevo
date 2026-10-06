@@ -5,9 +5,6 @@ import { useAuthContext } from "../context/AuthContext";
 
 const WARNING_SECONDS = 120; // debe coincidir con WARNING_BEFORE_MS de sessionManager
 
-// showWarning se activa 2 min antes del cierre por inactividad (sessionManager.js);
-// sin este modal, el aviso quedaba calculado pero nunca se mostraba y la sesión
-// se cerraba en silencio, pudiendo perder lo que el padre estaba escribiendo.
 export default function SessionWarningModal() {
   const { showWarning, stayLoggedIn, logout } = useAuthContext();
   const [segundosRestantes, setSegundosRestantes] = useState(WARNING_SECONDS);

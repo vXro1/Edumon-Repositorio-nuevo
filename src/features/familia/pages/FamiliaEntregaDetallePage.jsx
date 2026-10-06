@@ -124,10 +124,6 @@ export default function FamiliaEntregaDetallePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // FIX: antes solo miraba entrega.estado, nunca tarea.estado — un padre
-  // no se enteraba de que el reto estaba cerrado hasta que el envío le
-  // fallaba con un toast de error. Ahora se muestra un aviso explícito
-  // (más abajo) y el formulario se deshabilita antes de que intente nada.
   const tareaCerrada = tarea?.estado === "cerrada";
   const canEdit = !tareaCerrada && (!entrega || entrega.estado === "borrador");
   const canSend = !tareaCerrada && entrega?.estado === "borrador";
@@ -377,10 +373,6 @@ export default function FamiliaEntregaDetallePage() {
             />
           </div>
         )}
-        {/* Antes este bloque no tenía ningún título — quedaba pegado debajo
-            de los criterios sin ninguna señal de que era material aparte
-            (archivos/enlaces que el docente adjuntó a la tarea), así que
-            era fácil no darse cuenta de que estaba ahí. */}
         {(materialArchivos.length > 0 || materialEnlaces.length > 0) && (
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--color-border)" }}>
           <p style={{ margin: "0 0 8px", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-muted)" }}>

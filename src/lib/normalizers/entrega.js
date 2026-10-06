@@ -99,9 +99,6 @@ export function normalizeEntrega(data) {
           }
         : null,
 
-    // Tarea — criterios es un STRING plano en el backend (ver
-    // lib/normalizers/tarea.js), no un array; con Array.isArray() esto
-    // siempre caía en [] y los criterios nunca se veían para el padre.
     tarea:
       data.tarea && typeof data.tarea === "object"
         ? {

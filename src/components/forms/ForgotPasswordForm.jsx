@@ -1,8 +1,3 @@
-// src/components/forms/ForgotPasswordForm.jsx
-//
-// Recuperación de contraseña SOLO por correo. El backend eliminó la vía por
-// teléfono/WhatsApp (endpoints /auth/*-phone y estrategia Twilio retirados);
-// el registro exige correo a todos, así que el correo siempre existe.
 import { useState } from "react";
 import { Mail, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components";

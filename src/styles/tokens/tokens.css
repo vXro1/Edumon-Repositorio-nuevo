@@ -9,13 +9,6 @@
    Fuente única de verdad para todos los tokens de diseño.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── Fuentes web ──────────────────────────────────────────────────
-   Nunito es ahora la ÚNICA familia de toda la app (antes: Baloo 2 en
-   títulos + Quicksand en cuerpo). Se sirve vía Google Fonts <link> en
-   index.html (pesos 400/500/600/700/800/900) — no hace falta @font-face
-   aquí. --font-heading/--font-display y --font-sans/--font-body
-   apuntan a la misma familia: Black (900) en títulos, Regular (400) en
-   texto general, vía el font-weight que ya define cada componente. */
 :root {
   /* ──────────────────────────────────────────────────────────────────
      PALETA DE MARCA EN BRUTO
@@ -240,9 +233,6 @@
   --shadow-focus-error:   0 0 0 3px rgba(239, 68, 68, 0.28);
   --shadow-focus-success: 0 0 0 3px rgba(65, 217, 88, 0.28);
 
-  /* Antes hardcodeados directamente en cards.css / accessibility.css como
-     rgba(140,56,240,...) — tokenizados para poder sobreescribirlos solo
-     dentro de .app-shell sin tocar login/landing. */
   --color-border-brand: rgba(140, 56, 240, 0.18);
   --color-selection:    rgba(140, 56, 240, 0.18);
 
@@ -283,10 +273,6 @@
   /* ──────────────────────────────────────────────────────────────────
      TIPOGRAFÍA
      ────────────────────────────────────────────────────────────────── */
-  /* Nunito en toda la app — títulos y cuerpo comparten familia (antes:
-     Baloo 2 en títulos + Quicksand en cuerpo). El peso hace la
-     jerarquía: 900/Black donde el componente pide título, 400/Regular
-     por defecto en el resto. */
   --font-heading: "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: var(--font-heading);
   --font-sans:    "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -418,17 +404,6 @@
   --z-backdrop: 39;
 }
 
-/* ──────────────────────────────────────────────────────────────────────
-   REPINTADO DE MARCA — SOLO DASHBOARD (.app-shell)
-   .app-shell envuelve todas las rutas protegidas (ver MainLayout.jsx).
-   Login (/login, /forgot-password, /reset-password) y la página de
-   aterrizaje (/) viven FUERA de .app-shell y jamás heredan este bloque:
-   siguen resolviendo los tokens morados originales de :root sin ningún
-   cambio, tal como se pidió.
-
-   Primario → azul (antes morado). Secundario (rosa) y acento (cian) se
-   conservan igual que en :root — no se tocan.
-   ────────────────────────────────────────────────────────────────────── */
 .app-shell {
   --color-primary:         var(--edu-blue-500);
   --color-primary-hover:   var(--edu-blue-600);
@@ -454,9 +429,6 @@
   --clay-card-hover:   0 0px 0 rgba(0,0,0,0.04), 0 8px 28px rgba(12,106,196,0.14), inset 0 1px 0 rgba(255,255,255,0.90);
   --clay-icon-active:  0 4px 12px rgba(12, 106, 196, 0.30), inset 0 1px 0 rgba(255,255,255,0.25);
 
-  /* Fondo blanco liso — nada de mesh cian/morado detrás de la tarjeta de
-     usuario del sidebar (antes --gradient-mesh mezclaba morado+cian+verde+
-     amarillo en radiales). */
   --gradient-mesh:       linear-gradient(180deg, #FFFFFF 0%, var(--edu-blue-50) 100%);
   --gradient-brand:      linear-gradient(135deg, var(--edu-blue-600) 0%, var(--edu-blue-500) 50%, var(--edu-blue-400) 100%);
   --gradient-brand-full: linear-gradient(135deg, var(--edu-blue-700) 0%, var(--edu-blue-500) 50%, var(--edu-blue-300) 100%);

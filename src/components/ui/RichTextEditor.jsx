@@ -42,9 +42,6 @@ export default function RichTextEditor({
   const editorId = id ?? autoId;
   const empty = isRichTextEmpty(value);
 
-  // Sin esto, Chrome/Firefox envuelven cada línea en un <div> al presionar
-  // Enter (en vez de <p>) — como sanitizeRichText() no permite <div>,
-  // DOMPurify lo quitaría y fusionaría todas las líneas en una sola.
   useEffect(() => {
     try { document.execCommand("defaultParagraphSeparator", false, "p"); } catch { /* no-op */ }
   }, []);

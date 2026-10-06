@@ -39,11 +39,6 @@ function CursoHubContent() {
 
   const rawRole = user?.rol ?? user?.role ?? "";
 
-  // Permisos endurecidos en el backend (2026-09-02): GET /cursos/:id ahora
-  // devuelve 403 si el usuario no pertenece al curso/institución (antes lo
-  // veía cualquiera). Sin este guard, curso quedaba undefined y HubHeader/
-  // los tabs se renderizaban igual con datos vacíos, en vez de explicar por
-  // qué no hay nada que ver.
   if (!loading && (error || !curso)) {
     return (
       <div style={{ maxWidth: 640, margin: "40px auto 0" }}>

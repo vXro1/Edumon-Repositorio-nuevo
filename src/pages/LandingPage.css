@@ -1,24 +1,3 @@
-/* ══════════════════════════════════════════════════════════════
-   EDUMON — LANDING PAGE
-   V3: correcciones críticas + armonía de color + responsividad.
-
-   Cambios respecto a V2 (todos documentados inline con "FIX:" o "MEJORA:"):
-   1) FIX: el bloque :root nunca se cerraba, invalidando TODO el CSS
-      posterior. Se cierra correctamente.
-   2) FIX: varios `#FFFF` (hex inválido de 4 dígitos) dejaban íconos
-      y bordes blanco-sobre-blanco, invisibles. Reemplazados por
-      colores reales de la paleta.
-   3) FIX: el botón de contacto usaba un azul (#2563EB) ajeno a la
-      paleta de marca. Ahora usa los tokens --edumon-blue-*.
-   4) MEJORA: variedad de color disciplinada (azul/cian/ámbar) en
-      los íconos de "pilares" en vez de un solo tono plano —
-      da vida sin añadir ruido cromático nuevo.
-   5) MEJORA: ritmo visual entre secciones (alterna blanco / azul-50
-      muy sutil) en vez de blanco repetido en toda la página.
-   6) MEJORA: responsividad reforzada — nuevo breakpoint intermedio
-      en la sección de contacto que antes podía desbordar entre
-      ~900px y 1100px.
-   ══════════════════════════════════════════════════════════════ */
 :root {
   /* ================================================================
      PALETA DE COLOR EDUMON
@@ -172,9 +151,6 @@
   --color-info: var(--edumon-cyan-500);
   --color-info-light: var(--edumon-cyan-50);
 
-  /* MEJORA: glow de marca reutilizable (azul + cian) para hovers
-     de botones — es el único "toque divertido" de sombra de color
-     en toda la hoja, usado con moderación en 2-3 lugares. */
   --glow-brand:
     0 10px 22px rgba(5, 199, 242, 0.22),
     0 6px 14px rgba(10, 90, 168, 0.35);
@@ -270,8 +246,6 @@
       var(--edumon-blue-400)
     );
 
-  /* MEJORA: divisor de pilares con leve giro a cian — un guiño de
-     color puntual y contenido, no un arcoíris nuevo. */
   --gradient-divider:
     linear-gradient(
       90deg,
@@ -279,15 +253,6 @@
       var(--edumon-cyan-400)
     );
 
-  /* ================================================================
-     LAYOUT / CONTENEDOR
-     FIX: estas 5 variables se usaban en toda la hoja pero nunca se
-     definían (ni aquí ni en tokens.css global) — un var() no
-     resuelto invalida la declaración entera, así que en la práctica
-     TODOS los contenedores tenían padding-inline:0, las secciones
-     padding-block:0, y las cards sin sombra "pop" ni anillo de foco.
-     Eso era la causa real de los contenedores pegados al borde y
-     las secciones amontonadas. ================================== */
   --container-max: 1280px;
   --container-pad: clamp(20px, 4.5vw, 48px);
 
@@ -297,8 +262,6 @@
 
   --focus-ring: 0 0 0 3px rgba(12, 106, 196, 0.45);
 
-  /* MEJORA: sombras más contenidas — las anteriores (24/48px) daban un
-     efecto "flotante" pesado que sumaba a la sensación de saturación. */
   --shadow-pop:
     0 18px 36px rgba(15, 23, 42, 0.12),
     0 6px 14px rgba(15, 23, 42, 0.07);
@@ -320,8 +283,7 @@
   --edu-pink-soft: #fdecf4;
   --edu-cyan-soft: #e6f9fd;
   --edu-amber-soft: #fef3e2;
-} /* FIX: esta llave faltaba — sin ella, TODO el CSS de abajo quedaba
-     anidado dentro de :root y el navegador lo ignoraba por completo. */
+} 
 
 * { box-sizing: border-box; }
 
@@ -338,12 +300,6 @@ body {
   overflow-x: clip;
   width: 100%;
 
-  /* FIX: el reset global pone background-color:#FAFAFA en <body>; como
-     las secciones sin fondo propio (pilares/aprende/contacto) son
-     transparentes, ese gris se colaba entre las secciones con fondo
-     blanco explícito (hero/quiénes/app/footer), rompiendo la
-     uniformidad de fondo pedida. Fondo blanco explícito aquí para que
-     toda la Landing comparta un único color de fondo real. */
   background: var(--edumon-bg);
 
   /* Nunito (--font-heading/--font-body, definidas en tokens.css) es la
@@ -385,13 +341,6 @@ textarea:focus-visible {
   box-sizing: border-box;
 }
 
-/* FIX: apuntaba a .pilares-inner / .aprende-inner, clases que no
-   existen en el JSX (los contenedores reales son .pilares-content /
-   .aprende-content), así que su texto (label/título/subtítulo)
-   nunca recibía padding lateral y quedaba pegado al borde en
-   pantallas angostas. Solo padding-inline aquí: .pilares-grid y
-   .modulo-embla ya centran y limitan su propio ancho más abajo, así
-   que no conviene duplicar max-width/margin-inline en el padre. */
 .pilares-content,
 .aprende-content {
   padding-inline: var(--container-pad);
@@ -526,7 +475,6 @@ textarea:focus-visible {
 }
 .landing-nav__cta:hover {
   transform: translateY(-1px);
-  /* MEJORA: glow de marca en vez de sombra gris plana */
   box-shadow: var(--glow-brand);
   filter: saturate(1.15) brightness(1.03);
 }
@@ -585,9 +533,6 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-/* MEJORA: el menú de escritorio empezaba a apretarse antes de 900px
-   en pantallas con navegación larga; se adelanta el breakpoint del
-   hamburger y se evita que los links compriman el logo/CTA. */
 @media (max-width: 960px) {
   .landing-nav__links { display: none; }
   .landing-nav__cta { display: none; }
@@ -649,8 +594,6 @@ textarea:focus-visible {
   color: var(--edumon-ink);
 }
 .gradient-word {
-  /* MEJORA: el degradado termina en cian (token de acento) para dar un
-     toque de calidez sin salir de la familia azul de marca. */
   background:
     linear-gradient(
       120deg,
@@ -699,7 +642,6 @@ textarea:focus-visible {
 }
 .landing-hero__btn-primary:hover {
   filter: saturate(1.15) brightness(1.03);
-  /* MEJORA: glow azul+cian — único acento "divertido" del hero */
   box-shadow: var(--glow-brand);
 }
 .landing-hero__btn-secondary {
@@ -711,15 +653,6 @@ textarea:focus-visible {
 .landing-hero__btn-primary:hover,
 .landing-hero__btn-secondary:hover { transform: translateY(-2px); }
 
-/* FIX: .edumon-mascot-ring y .edumon-mascot-img no tenían ninguna
-   regla propia (ancho/alto/posición) — el ring quedaba en 0×0
-   invisible y la mascota se apoyaba solo en el reset global
-   img{max-width:100%}, sin límite propio ni relación con el resto
-   del hero.
-   MEJORA: la mascota es el elemento con más personalidad de toda la
-   marca — se agranda para que sea el foco visual del hero, con un
-   halo multicolor (azul + cian + ámbar) en vez de un círculo plano,
-   y un balanceo suave para que se sienta viva. */
 .edumon-mascot-visual {
   padding: 0 !important;
   position: relative;
@@ -816,13 +749,6 @@ textarea:focus-visible {
   .landing-hero__btn-primary,
   .landing-hero__btn-secondary { flex: 1 1 220px; }
 
-  /* FIX: HERO_BUBBLES está posicionado en % pensado para el layout
-     de escritorio (texto a la izquierda, mascota a la derecha). En
-     mobile el contenido se apila en una sola columna centrada y esas
-     mismas burbujas terminaban flotando literalmente encima del
-     párrafo y los botones. Se recorta el contenedor de burbujas a la
-     mitad inferior de la sección (zona de la mascota), donde sí
-     tienen espacio para respirar sin tapar texto. */
   .landing-hero .deco-bubbles { clip-path: inset(46% 0 0 0); }
 }
 
@@ -939,8 +865,6 @@ textarea:focus-visible {
 
   border-radius: 999px;
 
-  /* MEJORA: leve degradado azul → cian en vez de azul plano,
-     coherente con el resto de la paleta (no color nuevo). */
   background: var(--gradient-divider);
 
   opacity: 0.85;
@@ -1026,26 +950,14 @@ textarea:focus-visible {
 
   box-shadow: var(--shadow-pop);
 
-  /* FIX: era border-color:#FFFF (hex inválido de 4 dígitos).
-     Ahora un azul suave real, coherente con el resto del hover. */
   border-color: var(--edumon-blue-200);
 }
 
-/* MEJORA: fondo blanco plano en las 3 cards → cada una lleva un
-   tinte suave del mismo color que su ícono y su barra inferior, así
-   la sección deja de sentirse "genérica" sin perder legibilidad. */
 .pilar-card:nth-child(1) { background: var(--edu-violet-soft); }
 .pilar-card:nth-child(2) { background: var(--edumon-cyan-50); }
 .pilar-card:nth-child(3) { background: var(--edumon-warning-bg); }
 
 
-/* ─────────────────────────────────────────
-   ICONO
-   MEJORA: antes background/color eran ambos #FFFF (inválido),
-   dejando el ícono invisible. Ahora cada card tiene un color
-   propio (azul / cian / ámbar) tomado de la paleta existente,
-   coordinado con la barra inferior de cada card.
-───────────────────────────────────────── */
 
 .pilar-card__icon-circle {
   width: 72px;
@@ -1148,14 +1060,6 @@ textarea:focus-visible {
 }
 
 
-/* ─────────────────────────────────────────
-   DIFERENCIACIÓN POR CARD
-   (fondo + color del ícono van juntos, coordinados con la barra)
-   MEJORA: ahora que la card en sí lleva un tinte de color, el
-   círculo pasa a blanco sólido + sombra de color a juego, para
-   que siga funcionando como una "insignia" que resalta sobre el
-   fondo en vez de fundirse con él.
-───────────────────────────────────────── */
 
 .pilar-card:nth-child(1) .pilar-card__icon-circle {
   background: #ffffff;
@@ -1189,11 +1093,6 @@ textarea:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* FIX: mismo problema que en el hero — PILARES_BUBBLES está
-     pensado para una sección ancha y baja; en mobile el bloque de
-     texto (label + título + subtítulo) queda mucho más alto en
-     proporción y las burbujas terminaban encima de esas líneas. Se
-     recortan fuera de esa franja superior. */
   .landing-pilares .deco-bubbles { clip-path: inset(22% 0 0 0); }
 }
 
@@ -1217,9 +1116,6 @@ textarea:focus-visible {
   z-index: 1;
 }
 
-/* Cabecera de la sección — antes vivía como un bloque enorme de estilos
-   inline en el JSX; ahora en clases, reutilizando el patrón de
-   .section-label / .pilares-label. */
 .aprende-head {
   text-align: center;
   max-width: 640px;
@@ -1412,10 +1308,6 @@ textarea:focus-visible {
 }
 
 
-/* Card activa — MEJORA: en vez de un borde/sombra azul plano para
-   todas, cada card usa su propio color (--m-color, ya asignado por
-   JS desde la paleta de MODULOS) para el anillo y el glow, así el
-   carrusel se siente vivo y cada módulo tiene identidad propia. */
 
 .modulo-embla__slide__inner.is-active .modulo-card {
   border-color: var(--m-color, var(--edumon-blue-200));
@@ -1765,13 +1657,6 @@ textarea:focus-visible {
   .modulo-card__title { font-size: 20px; }
 }
 
-/* ══════════════════════════════════════════════════════
-   QUIÉNES SOMOS
-   MEJORA: antes background: #FFFF (hex inválido, se veía igual
-   que el resto de la página). Ahora un degradado casi imperceptible
-   hacia azul-50 que separa visualmente esta sección de "pilares"
-   y "aprende" sin romper el tono claro general.
-   ══════════════════════════════════════════════════════ */
 .landing-section--alt {
   background: var(--edumon-bg);
 }
@@ -1837,9 +1722,6 @@ textarea:focus-visible {
   box-shadow: var(--shadow-pop);
 }
 
-/* Avatar de integrante — antes eran bloques rectangulares con estilos
-   inline; ahora una "insignia" circular con iniciales y gradiente de
-   marca, coherente con el resto del sistema. */
 .quienes-member-card__avatar {
   width: clamp(64px, 12vw, 84px);
   height: clamp(64px, 12vw, 84px);
@@ -2301,10 +2183,6 @@ textarea:focus-visible {
   color: var(--edumon-ink);
 }
 
-/* MEJORA: breakpoint intermedio — el grid mínimo (360px + 380px + gap)
-   podía desbordar en ventanas de ~900–1100px antes de caer a 1 columna
-   en 1024px. Se relajan los mínimos primero, y solo se colapsa a 1
-   columna si de verdad no cabe. */
 @media (max-width: 1180px) {
   .landing-contacto {
     grid-template-columns: minmax(300px, 1fr) minmax(320px, 480px);

@@ -563,11 +563,6 @@
   cursor: not-allowed;
 }
 
-/* Casilla de verificación — min-height/min-width explícitos: la regla
-   global de accesibilidad input[type="checkbox"]{min-height:44px} (ver
-   reset.css) tiene más especificidad que .check-input y sólo limita el
-   alto, así que sin esto el checkbox quedaba 22px de ancho x 44px de alto
-   (un rectángulo, no un cuadrado). */
 .check-input {
   width: 22px;
   height: 22px;

@@ -214,7 +214,6 @@ function BackgroundDecor() {
 }
 
 /* ── Micro-componentes ──────────────────────────────────────── */
-// maxStep = paso más lejano alcanzado; solo los completados se pueden reabrir, nunca se salta adelante
 function Stepper({ step, maxStep, onStepClick }) {
   const steps = ["Foto", "Datos", "Listo"];
   return (

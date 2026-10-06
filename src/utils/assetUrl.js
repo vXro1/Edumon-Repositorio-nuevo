@@ -1,15 +1,3 @@
-// src/utils/assetUrl.js
-//
-// El backend pasó de Cloudinary (URLs absolutas https://res.cloudinary.com/…)
-// a almacenamiento local en disco (commit "Cambio de servicios, y guardar
-// archivos en local"). Ahora devuelve rutas RELATIVAS:
-//   · /uploads/pub/…    → archivos públicos (fotos de perfil, portadas, APK)
-//   · /uploads/priv/…   → adjuntos privados de entregas (sirve tras sesión)
-//   · /static/avatares/… → avatares predeterminados
-//
-// En producción el API vive en otro origen (Render, etc. — ver VITE_API_URL),
-// así que una ruta relativa resolvería contra el origen del FRONT y daría 404.
-// Este helper le antepone el origen del backend cuando hace falta.
 
 const RAW_BASE = import.meta.env.VITE_API_URL ?? "/api";
 

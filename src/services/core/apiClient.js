@@ -48,9 +48,6 @@ async function tryRefreshToken() {
   }
 }
 
-// Sin esto, un fetch sobre datos móviles muertos se queda colgado
-// indefinidamente (spinner infinito, sin mensaje de error). Los adjuntos
-// (fotos, PDFs de una entrega) necesitan más margen que una llamada normal.
 const REQUEST_TIMEOUT_MS = 30_000;
 const UPLOAD_TIMEOUT_MS  = 120_000; // acorde al timeout('90s') del backend + margen
 

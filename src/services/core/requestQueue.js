@@ -6,9 +6,6 @@ let _uniqueCounter = 0;
 export const makeKey = (url, opts = {}) => {
   const method = (opts.method || 'GET').toUpperCase();
 
-  // mutaciones y bodies FormData nunca se deduplican: JSON.stringify(FormData)
-  // siempre da "{}", así que dos PUT distintos generarían la misma key y el
-  // segundo request perdería su fetch real
   if (method !== 'GET' || opts.body instanceof FormData) {
     return `${method}|${url}|${Date.now()}_${_uniqueCounter++}`;
   }

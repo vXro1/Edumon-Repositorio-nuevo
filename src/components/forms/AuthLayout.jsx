@@ -9,9 +9,6 @@ import circulo1 from "@/assets/img/circulos/circulo1.svg";
 import circulo5 from "@/assets/img/circulos/circulo5.svg";
 import circulo9 from "@/assets/img/circulos/circulo9.svg";
 
-// Solo 3 acentos decorativos (antes 12 disponibles / 8 en uso): dos anclas
-// grandes recortadas por el borde y un satélite pequeño. Menos elementos,
-// más aire — para que el logo sea lo único que compite por la atención.
 const AUTH_BUBBLES = [
   { src: circulo1, top: "-16%", left: "-14%", size: 240, opacity: 0.28 },
   { src: circulo5, bottom: "-18%", right: "-12%", size: 210, opacity: 0.24 },
@@ -123,7 +120,6 @@ export const AUTH_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Fondo con más vida (antes un azul plano muy apagado). */
   background:
     radial-gradient(circle at 12% 10%, rgba(5, 199, 242, 0.18) 0%, transparent 40%),
     radial-gradient(circle at 88% 90%, rgba(124, 58, 237, 0.14) 0%, transparent 42%),

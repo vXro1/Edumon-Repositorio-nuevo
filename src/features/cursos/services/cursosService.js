@@ -16,10 +16,6 @@ export const cursosGetMine = (params = {}) => {
   return apiFetch(`/cursos/mis-cursos${qs ? `?${qs}` : ''}`);
 };
 
-// /mis-cursos solo trae cursos donde el usuario es participante: el
-// administrador nunca lo es, así que para él la lista salía vacía (eventos
-// sin cursos para asociar, calendario sin actividades). El admin usa GET
-// /cursos, que el backend ya filtra por su institución.
 export const cursosGetVisibles = (rol, params = {}) =>
   normalizeRole(rol) === ROLES.ADMIN ? cursosGetAll(params) : cursosGetMine(params);
 

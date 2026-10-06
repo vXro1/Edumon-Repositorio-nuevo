@@ -24,8 +24,6 @@ import { normalizeCurso }from "@/lib/normalizers";
 import { humanizeError } from "@/utils/humanizeError";
 import { parseValidationErrors, summarizeValidationErrors } from "@/utils/parseValidationErrors";
 
-// solo 3 categorías son válidas para crear/editar (CATEGORIA_FORM_OPTIONS abajo);
-// el resto son estilos de fallback para eventos legado con valores que el backend ya no acepta
 const CATEGORIA_CFG = {
   tarea:          { color: "#6366F1", bg: "rgba(99,102,241,0.10)",  label: "Reto" },
   escuela_padres: { color: "#D97706", bg: "rgba(217,119,6,0.10)",   label: "Escuela de padres" },
@@ -149,7 +147,6 @@ export default function EventosPage() {
       fechaFin:    toLocalInput(ev.fechaFin),
       hora:        ev.hora        ?? "",
       ubicacion:   ev.ubicacion   ?? "",
-      // categoría legado que el backend ya no acepta -> cae a "institucional"
       categoria:   CATEGORIA_FORM_OPTIONS.includes(ev.categoria) ? ev.categoria : "institucional",
     });
     const ids = (ev.cursosIds ?? ev.cursos ?? []).map(c => c._id ?? c);

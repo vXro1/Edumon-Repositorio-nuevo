@@ -236,11 +236,6 @@
 }
 .sidebar-item:active { transform: scale(0.97); }
 
-/* Indicador de activo — antes era un inset box-shadow de 3px simulando un
-   borde: al no respetar el border-radius del item, la esquina se veía
-   recortada en un arco en vez de una barra recta ("esa margen azul" rota).
-   Un pseudo-elemento propio con su propio radio, que crece desde el centro
-   al activarse, evita el bug y además anima. */
 .sidebar-item::before {
   content: "";
   position: absolute;
@@ -844,11 +839,6 @@
 /* ──────────────────────────────────────────────────────────────────────
    TARJETA DE ESTADÍSTICA — píldora elevada Soft UI
    ────────────────────────────────────────────────────────────────────── */
-/* Sin :hover/:active — esta tarjeta es puramente informativa (ningún
-   StatCard del dashboard tiene onClick). Antes se elevaba, agrandaba
-   sombra y hacía girar el ícono al pasar el mouse — exactamente las
-   señales visuales de un botón, lo que llevaba a un usuario a esperar que
-   hiciera algo al hacer clic. Ver plan de corrección UX/UI, sección 1. */
 .stat-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

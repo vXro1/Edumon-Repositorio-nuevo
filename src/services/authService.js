@@ -37,10 +37,6 @@ export const authService = {
     try { sessionStorage.clear(); } catch {}
   },
 
-  // Recuperación de contraseña: SOLO por correo. El backend eliminó los
-  // endpoints /auth/forgot-password-phone y /auth/reset-password-phone
-  // (commit "Servicio de correo" — el registro exige correo a todos y la
-  // estrategia de WhatsApp/Twilio se retiró).
   forgotPassword: async (body) => apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body) }),
 
   resetPassword: async (body) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
