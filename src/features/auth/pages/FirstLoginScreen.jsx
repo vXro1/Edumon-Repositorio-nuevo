@@ -10,6 +10,8 @@ import logoSvg from "@/assets/icons/logo.svg";
 import { readLoginPassword, clearLoginPassword } from "../utils/firstLoginPassword";
 import {
   CheckCircle2,
+  Check,
+  Circle,
   Eye,
   EyeOff,
   RefreshCw,
@@ -443,7 +445,7 @@ function PasswordStrength({ password }) {
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {checks.map((c, i) => (
             <span key={i} style={{ fontSize: 11, color: c.ok ? "var(--edu-green-600)" : "var(--color-text-muted)", display: "flex", alignItems: "center", gap: 3 }}>
-              <span>{c.ok ? "✓" : "○"}</span> {c.label}
+              {c.ok ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} {c.label}
             </span>
           ))}
         </div>
@@ -624,8 +626,12 @@ function StepAvatar({ currentPhotoUrl, onComplete }) {
           color: hasSelection ? "#6366F1" : "var(--color-text-muted)",
           marginTop: 12,
           transition: "color 200ms",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 4,
         }}>
-          {hasSelection ? "Avatar seleccionado ✓" : "Sin avatar seleccionado"}
+          {hasSelection ? <>Avatar seleccionado <Check size={13} strokeWidth={3} /></> : "Sin avatar seleccionado"}
         </p>
       </div>
 

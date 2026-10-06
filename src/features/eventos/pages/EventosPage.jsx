@@ -13,7 +13,8 @@ import {
   Paperclip,
 } from "lucide-react";
 
-import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { cursosGetVisibles } from "@/features/cursos/services/cursosService";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { eventosGetAll, eventosCreate, eventosUpdate, eventosDelete } from "@/features/eventos/services/eventosService";
 
 import { Modal, Toast, Button, Input, Textarea, Select } from "@/components";
@@ -64,6 +65,7 @@ const INIT_FORM = {
 };
 
 export default function EventosPage() {
+  const { user } = useAuth();
   const [eventos,   setEventos]   = useState([]);
   const [cursos,    setCursos]    = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -91,10 +93,11 @@ export default function EventosPage() {
   };
 
   useEffect(() => {
-    cursosGetMine({ limit: 50 })
+    if (!user) return;
+    cursosGetVisibles(user.rol, { limit: 50 })
       .then(d => setCursos((d.cursos ?? []).map(normalizeCurso)))
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   const load = useCallback(async () => {
     setLoading(true);

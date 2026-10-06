@@ -1,7 +1,8 @@
 // calendario general para docente y administrador
 import { useState, useEffect, useCallback } from "react";
 import { CalendarDays } from "lucide-react";
-import { cursosGetMine } from "@/features/cursos/services/cursosService";
+import { cursosGetVisibles } from "@/features/cursos/services/cursosService";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { calendarioGetByCurso } from "@/features/calendario/services/calendarioService";
 import { eventosDelete, eventosCreateSimple, eventosUpdateSimple } from "@/features/eventos/services/eventosService";
 import { usePermission, PERMISSIONS } from "@/hooks/usePermission";
@@ -232,6 +233,7 @@ function EditEventoModal({ evento, onClose, onSaved }) {
 // ══════════════════════════════════════════════════════════════════════════
 export default function CalendarioPage() {
   const canManage = usePermission(PERMISSIONS.CREATE_EVENTS);
+  const { user } = useAuth();
 
   const [cursos,     setCursos]     = useState([]);
   const [items,      setItems]      = useState([]);
@@ -242,10 +244,11 @@ export default function CalendarioPage() {
   const [editEvt,    setEditEvt]    = useState(null);
 
   const load = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     setError(false);
     try {
-      const cursosRes  = await cursosGetMine({ limit: 50 });
+      const cursosRes  = await cursosGetVisibles(user.rol, { limit: 50 });
       const cursosList = cursosRes?.cursos ?? [];
       setCursos(cursosList);
 
@@ -279,7 +282,7 @@ export default function CalendarioPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => { load(); }, [load]);
 

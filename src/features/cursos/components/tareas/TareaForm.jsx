@@ -567,7 +567,7 @@ function EnlacesInput({ enlaces, onChange }) {
           </p>
         )}
         <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "var(--color-text-muted)" }}>
-          Escribe la URL y presiona ✓ (o Enter) para agregarla
+          Escribe la URL y confirma (o presiona Enter) para agregarla
         </p>
       </div>
     </div>

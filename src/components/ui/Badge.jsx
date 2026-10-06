@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+
 /* ─────────────────────────────────────────────────────────────────────────
    Badges — Soft UI:
    • Relleno de color suave (10-15%) + borde fino del mismo tono
@@ -149,13 +151,10 @@ export default function Badge({
             cursor:       "pointer",
             padding:      0,
             color:        p.text,
-            fontSize:     "9px",
-            fontWeight:   700,
-            lineHeight:   1,
             flexShrink:   0,
           }}
         >
-          ✕
+          <X size={9} strokeWidth={3} />
         </button>
       )}
     </span>

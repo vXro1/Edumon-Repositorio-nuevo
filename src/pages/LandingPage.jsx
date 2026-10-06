@@ -43,6 +43,13 @@ const IconSparkles = ({ size = 14, className }) => (
   </svg>
 );
 
+const IconCheck = ({ size = 16, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}
+    stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
 const IconHome = ({ size = 22 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1220,9 +1227,9 @@ export default function LandingPage() {
             </p>
 
             <div className="contacto-beneficios">
-              <div className="beneficio"><span>✓</span> Implementación guiada</div>
-              <div className="beneficio"><span>✓</span> Capacitación para docentes</div>
-              <div className="beneficio"><span>✓</span> Soporte continuo</div>
+              <div className="beneficio"><span><IconCheck size={15} /></span> Implementación guiada</div>
+              <div className="beneficio"><span><IconCheck size={15} /></span> Capacitación para docentes</div>
+              <div className="beneficio"><span><IconCheck size={15} /></span> Soporte continuo</div>
             </div>
 
             <div className="contacto-left__img-wrap">
